@@ -30,6 +30,8 @@ Tested exclusively in a linux environment
 * [HMMER](http://hmmer.org)
 * [MEGAN 6](http://ab.inf.uni-tuebingen.de/software/megan6/) 
 * Perl
+* [Prodigal](https://github.com/hyattpd/prodigal/releases/)
+* [Prokka](https://github.com/tseemann/prokka)
 * Python 2.x
 * Java >=1.8
 * [R](https://www.r-project.org)
