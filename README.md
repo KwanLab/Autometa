@@ -13,10 +13,21 @@ USAGE:
 autometa.py asm.fasta output_directory
 ```
 
-Optionally, you can carry out the pre-processing step of separating contigs based on taxonomic kingdom (Eukaryota, Bacteria, Archaea and unclassified):
+Optionally, you can carry out the pre-processing step of separating contigs based on taxonomic kingdom (Eukaryota, Bacteria, Archaea and unclassified).  
 ```bash
-separate_kingdoms.py asm.fasta output_directory
+separate_kingdoms.py asm.fasta output_directory 16
 ```
+The last specifies the number of threads to use when running [Diamond](https://github.com/bbuchfink/diamond/) blast searches.
 
+Dependencies/Requirements
+-------------------------
+
+Tested exclusively in a linux environment
+
+* (Optional, see above) [Diamond](https://github.com/bbuchfink/diamond/)
+* [MEGAN 6](http://ab.inf.uni-tuebingen.de/software/megan6/) 
+* Python 2.x
+* Java >=1.8
+* [R](https://www.r-project.org)
 
 
