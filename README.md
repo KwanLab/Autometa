@@ -24,8 +24,12 @@ Dependencies/Requirements
 
 Tested exclusively in a linux environment
 
+* [DBSCAN R package](https://cran.r-project.org/web/packages/dbscan/index.html)
 * (Optional, see above) [Diamond](https://github.com/bbuchfink/diamond/)
+* [ggplot2 R package](http://ggplot2.org)
+* [HMMER](http://hmmer.org)
 * [MEGAN 6](http://ab.inf.uni-tuebingen.de/software/megan6/) 
+* Perl
 * Python 2.x
 * Java >=1.8
 * [R](https://www.r-project.org)
