@@ -182,7 +182,7 @@ if asm_sam_path[-3:] == '.gz':
 			if not line[0] == '@':
 				line_list = line.split('\t')
 				read_name = line_list[0]
-				contig_name = line_list[1]
+				contig_name = line_list[2]
 				read_species = species_classification_for_read(read_name, ranges, non_unique_reads) # Returns None if a non-unique read
 				if read_species:
 					if contig_name in contig_classifications:
@@ -199,7 +199,7 @@ else:
 			if not line[0] == '@':
 				line_list = line.split('\t')
 				read_name = line_list[0]
-				contig_name = line_list[1]
+				contig_name = line_list[2]
 				read_species = species_classification_for_read(read_name, ranges, non_unique_reads) # Returns None if a non-unique read
 				if read_species:
 					if contig_name in contig_classifications:
