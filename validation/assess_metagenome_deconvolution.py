@@ -132,6 +132,7 @@ if ref_sam_path[-3:] == '.gz':
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
+				print line_list
 				read_name = line_list[0]
 				contig_name = line_list[1]
 				contig_species = species[contig_name]
