@@ -132,9 +132,8 @@ if ref_sam_path[-3:] == '.gz':
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
-				print line_list
 				read_name = line_list[0]
-				contig_name = line_list[1]
+				contig_name = line_list[2]
 				contig_species = species[contig_name]
 				# Find if read "belongs" to the species that this contig is from
 				if not does_read_belong(read_name, contig_species, ranges):
@@ -146,7 +145,7 @@ else:
 			if not line[0] == '@':
 				line_list = line.split('\t')
 				read_name = line_list[0]
-				contig_name = line_list[1]
+				contig_name = line_list[2]
 				contig_species = species[contig_name]
 				# Find if read "belongs" to the species that this contig is from
 				if not does_read_belong(read_name, contig_species, ranges):
