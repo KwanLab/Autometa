@@ -134,8 +134,9 @@ if ref_sam_path[-3:] == '.gz':
 				line_list = line.split('\t')
 				read_name = line_list[0]
 				contig_name = line_list[1]
+				contig_species = species[contig_name]
 				# Find if read "belongs" to the species that this contig is from
-				if not does_read_belong(read_name, contig_name, ranges, species):
+				if not does_read_belong(read_name, contig_species, ranges):
 					non_unique_reads[read_name] = 1
 else:
 	with open(ref_sam_path) as ref_sam:
@@ -145,8 +146,9 @@ else:
 				line_list = line.split('\t')
 				read_name = line_list[0]
 				contig_name = line_list[1]
+				contig_species = species[contig_name]
 				# Find if read "belongs" to the species that this contig is from
-				if not does_read_belong(read_name, contig_name, ranges, species):
+				if not does_read_belong(read_name, contig_species, ranges):
 					non_unique_reads[read_name] = 1
 
 # 3a. Make a data structure that records the number of unique reads for each bin.
