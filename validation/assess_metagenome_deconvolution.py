@@ -19,6 +19,7 @@
 import sys
 import getopt
 import gzip
+from time import gmtime, strftime
 
 def is_alignment_congruent_with_ref(read_name, contig_aligned_to, read_ranges, contig_species):
 	species = contig_species[contig_aligned_to]
@@ -98,10 +99,12 @@ print 'Assembly SAM: ' + asm_sam_path
 print 'Bin classifications table: ' + bin_classifications_table_path
 print 'Bin column: ' + bin_column
 print 'Output prefix: ' + output_prefix
+strftime("%Y-%m-%d %H:%M:%S")
 print '\n'
 
 # 1. Parse read ranges table, so that we can spot non-unique reads in the reference alignment
 print 'Parsing read ranges table...'
+strftime("%Y-%m-%d %H:%M:%S")
 ranges = {} # Dictionary of dictionaries, keyed by species
 range_table_rows = ((row.rstrip('\n')) for row in open(ref_read_ranges_table_path))
 for i,row in enumerate(range_table_rows):
@@ -111,6 +114,7 @@ for i,row in enumerate(range_table_rows):
 
 # 2. Go through reference contig table, and remember which species each contig belongs to
 print 'Parsing contig species table...'
+strftime("%Y-%m-%d %H:%M:%S")
 species = {} # Dictionary, keyed by contig, stores species
 species_table_rows = ((row.rstrip('\n')) for row in open(ref_species_table_path))
 for i,row in enumerate(species_table_rows):
@@ -123,6 +127,7 @@ for i,row in enumerate(species_table_rows):
 # (because they must be in their originating genome, therefore seeing one outside means they occur in at least two)
 # Note: this does not flag up reads that occur more than once in their originating genomes
 print 'Finding non-unique reads in reference SAM...'
+strftime("%Y-%m-%d %H:%M:%S")
 non_unique_reads = {} # Dictionary that just contains reads found in more than one genome
 
 # If sam file is a gz file, use gzip, otherwise normal open
@@ -153,6 +158,7 @@ else:
 
 # 3a. Make a data structure that records the number of unique reads for each bin.
 print 'Working out how many unique reads there are per genome...'
+strftime("%Y-%m-%d %H:%M:%S")
 number_of_unique_reads = {} # Dictionary keyed by bin name
 for genome in ranges:
 	start_read = int(ranges[genome]['start'])
@@ -168,6 +174,7 @@ for genome in ranges:
 
 # 4. Go through assembly sam file, and count read classifications for each contig
 print 'Parsing assembly SAM, counting species reads...'
+strftime("%Y-%m-%d %H:%M:%S")
 contig_classifications = {} # Dictionary of dictionaries, which will hold running tallies of reads assigned to different species
 
 # If sam file is a gz file, use gzip
@@ -210,6 +217,7 @@ else:
 # Output table in the format contig\tgenome\treads\tpercent
 chimera_table_path = output_prefix + '_chimera_table'
 print 'Writing chimera table ' + chimera_table_path + '...'
+strftime("%Y-%m-%d %H:%M:%S")
 chimera_table = open(chimera_table_path, 'w')
 chimera_table.write('contig\tgenome\treads\tpercent\n')
 for contig in contig_classifications:
@@ -220,6 +228,7 @@ chimera_table.close
 
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
 print 'Making bin datastructure...'
+strftime("%Y-%m-%d %H:%M:%S")
 contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
 bin_table_rows = ((row.rstrip('\n')) for row in open(bin_classifications_table_path))
 
@@ -274,6 +283,7 @@ for contig in contig_bins:
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
 print 'Writing binning accuracy table ' + bin_accuracy_table_path + '...'
+strftime("%Y-%m-%d %H:%M:%S")
 bin_accuracy_table = open(bin_accuracy_table_path, 'w')
 bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
 for bin_name in bin_classifications:
@@ -297,6 +307,7 @@ for bin_name in bin_classifications:
 
 bin_recovery_table_path = output_prefix + '_bin_recovery_table'
 print 'Writing binning recovery table ' + bin_recovery_table_path + '...'
+strftime("%Y-%m-%d %H:%M:%S")
 bin_recovery_table = open(bin_recovery_table_path, 'w')
 bin_recovery_table.write('genome\tbin\treads\tpercent\n')
 for species in genome_reads_in_bins:
