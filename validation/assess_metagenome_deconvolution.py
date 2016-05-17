@@ -163,7 +163,7 @@ for genome in ranges:
 	counter = start_read
 	unique_reads = 0
 	while counter <= end_read:
-		read_name = 'read_' + counter
+		read_name = 'read_' + str(counter)
 		if read_name not in non_unique_reads:
 			unique_reads += 1
 		counter += 1
