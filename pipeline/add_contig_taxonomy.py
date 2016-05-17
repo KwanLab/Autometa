@@ -123,9 +123,7 @@ with open(tax_table_path) as tax_table:
 		if taxRank in name_lookup.keys() and taxName in name_lookup[taxRank].keys():
 			taxid = name_lookup[taxRank][taxName]
 		else:
-			print 'Error, could not find taxid: '
-			print line
-			sys.exit(2)
+			taxid = 1 # Treat unknowns as root
 
 		# Now get the taxid of the next canonical rank (if applicable)
 		while taxRank not in rank_priority:
