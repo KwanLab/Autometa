@@ -28,7 +28,7 @@ with open(names_dmp_path) as names_dmp:
 		line_list = line.rstrip('\n').split('|')
 		# Remove trailing and leading spaces
 		for i,value in enumerate(line_list):
-			line_list[i] = value.strip
+			line_list[i] = value.strip()
 
 		# Only add scientific name entries
 		if line_list[3] == 'scientific name':
@@ -41,7 +41,7 @@ with open(nodes_dmp_path) as nodes_dmp:
 		line_list = line.rstrip('\n').split('|')
 		# Remove trailing and leading spaces
 		for i,value in enumerate(line_list):
-			line_list[i] = value.rstrip
+			line_list[i] = value.strip()
 
 		taxids[ line_list[0] ][ 'parent' ] = line_list[1]
 		taxids[ line_list[0] ][ 'rank' ] = line_list[2]
