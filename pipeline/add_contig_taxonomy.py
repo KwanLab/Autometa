@@ -13,7 +13,7 @@ from time import gmtime, strftime
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom']
+rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
 
 def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# Function that determines for a given taxid, whether the majority of proteins
@@ -129,6 +129,10 @@ with open(tax_table_path) as tax_table:
 			taxid = 1 # Treat unknowns as root
 
 		# Now get the taxid of the next canonical rank (if applicable)
+		if taxRank == 'no rank':
+			taxid = 1
+			taxRank = 'root'
+
 		if taxid != 1:
 			while taxRank not in rank_priority:
 				taxid = taxids[taxid]['parent']
