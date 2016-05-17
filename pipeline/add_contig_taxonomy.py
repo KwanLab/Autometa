@@ -126,9 +126,10 @@ with open(tax_table_path) as tax_table:
 			taxid = 1 # Treat unknowns as root
 
 		# Now get the taxid of the next canonical rank (if applicable)
-		while taxRank not in rank_priority:
-			taxid = taxids[taxid]['parent']
-			taxRank = taxids[taxid]['rank']
+		if taxid != 1:
+			while taxRank not in rank_priority:
+				taxid = taxids[taxid]['parent']
+				taxRank = taxids[taxid]['rank']
 
 		# Keep running total of taxids for each contig
 		if contigName not in protein_classifications:
