@@ -50,6 +50,8 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 
 def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
+	print 'potentialParentTaxid: ' + potentialParentTaxid
+	print 'childTaxid: ' + childTaxid
 	while current_taxid != 1:
 		if potentialParentTaxid == current_taxid:
 			return True
