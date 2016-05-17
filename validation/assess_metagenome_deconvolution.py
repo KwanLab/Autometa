@@ -20,6 +20,8 @@ import sys
 import getopt
 import gzip
 from time import gmtime, strftime
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 def is_alignment_congruent_with_ref(read_name, contig_aligned_to, read_ranges, contig_species):
 	species = contig_species[contig_aligned_to]
@@ -217,6 +219,7 @@ chimera_table = open(chimera_table_path, 'w')
 chimera_table.write('contig\tgenome\treads\tpercent\n')
 for contig in contig_classifications:
 	percents = get_species_percents(contig_classifications[contig])
+	pp.pprint(percents)
 	for species in contig_classifications[contig]:
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
