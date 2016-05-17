@@ -9,7 +9,9 @@
 #    If no result, move up to next taxonomic level
 
 import sys
-from time import gmtime, strftime
+from time import *
+from tqdm import *
+import subprocess
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -109,11 +111,14 @@ canonical_ranks = {
 	'genus': 1,
 	'species': 1
 }
-counter = 1 # Debug
+# Work out number of lines in file
+wc_output = subprocess.check_output('wc', '-l', tax_table_path)
+wc_list = wc_output.split()
+number_of_lines = wc_list[0]
+
 with open(tax_table_path) as tax_table:
-	for line in tax_table:
-		print counter # Debug
-		counter += 1 # Debug
+	for line in tqdm(tax_table, total=number_of_lines):
+
 		line_list = line.rstrip('\n').split('\t')
 		seqNameList = line_list[0].split('_')
 		seqNameList.pop()
@@ -161,13 +166,14 @@ for contig in protein_classifications:
 	acceptedTaxid = None
 	for rank in rank_priority:
 		# Order in descending order of votes
-		ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
-		for taxid in ordered_taxids:
-			if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
-				acceptedTaxid = taxid
-				break
-	if acceptedTaxid is None:
-		acceptedTaxid = 1 # Root
+		if rank in protein_classifications[contig]:
+			ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
+			for taxid in ordered_taxids:
+				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
+					acceptedTaxid = taxid
+					break
+		if acceptedTaxid is None:
+			acceptedTaxid = 1 # Root
 
 	top_taxids[contig] = acceptedTaxid
 
