@@ -155,15 +155,11 @@ else:
 print 'Working out how many unique reads there are per genome...'
 number_of_unique_reads = {} # Dictionary keyed by bin name
 for genome in ranges:
-	start_read = ranges[genome]['start']
-	end_read = ranges[genome]['end']
-	start_read_list = start_read.split('_')
-	end_read_list = start_read.split('_')
-	start_read_number = int(start_read_list[1])
-	end_read_number = int(end_read_list[1])
-	counter = start_read_number
+	start_read = int(ranges[genome]['start'])
+	end_read = int(ranges[genome]['end'])
+	counter = start_read
 	unique_reads = 0
-	while counter <= end_read_number:
+	while counter <= end_read:
 		read_name = 'read_' + counter
 		if read_name not in non_unique_reads:
 			unique_reads += 1
