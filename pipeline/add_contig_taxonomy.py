@@ -15,7 +15,7 @@ pp = pprint.PrettyPrinter(indent=4)
 
 rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom']
 
-def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary)
+def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# Function that determines for a given taxid, whether the majority of proteins
 	# in a contig, with rank equal to or above the given rank, are common ancestors of 
 	# the taxid.  If the majority are, this function returns True, otherwise it returns 
@@ -45,7 +45,7 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary)
 	else:
 		return False
 
-def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary)
+def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
 	while current_taxid != 1:
 		if potentialParentTaxid == current_taxid:
