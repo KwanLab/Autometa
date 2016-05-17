@@ -158,12 +158,8 @@ if ref_sam_path[-3:] == '.gz':
 				if not does_read_belong(read_name, contig_species, ranges):
 					non_unique_reads[read_name] = 1
 else:
-	wc_output = subprocess.check_output(['wc', '-l', ref_sam_path])
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with open(ref_sam_path) as ref_sam:
-		for line in tqdm(ref_sam, total=number_of_lines):
+		for line in tqdm(ref_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -214,12 +210,8 @@ if asm_sam_path[-3:] == '.gz':
 					else:
 						contig_classifications[contig_name] = { read_species: 1 }
 else:
-	wc_output = subprocess.check_output(['wc', '-l', asm_sam_path])
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with open(asm_sam_path) as asm_sam:
-		for line in tqdm(asm_sam, total=number_of_lines):
+		for line in tqdm(asm_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
