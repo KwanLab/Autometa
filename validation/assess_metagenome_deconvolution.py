@@ -224,7 +224,9 @@ chimera_table.close
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
 print strftime("%Y-%m-%d %H:%M:%S") + ' Making bin datastructure...'
 contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
-bin_table_rows = ((row.rstrip('\n')) for row in open(bin_classifications_table_path))
+bin_table_rows = None
+with open(bin_classifications_table_path) as bin_classifications_table:
+	bin_table_rows = bin_classifications_table.read().splitlines()
 
 # Find out which column to use for bin classification 
 bin_column_index = None
