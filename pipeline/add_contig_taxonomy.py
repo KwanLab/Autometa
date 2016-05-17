@@ -114,7 +114,7 @@ canonical_ranks = {
 # Work out number of lines in file
 wc_output = subprocess.check_output(['wc', '-l', tax_table_path])
 wc_list = wc_output.split()
-number_of_lines = wc_list[0]
+number_of_lines = int(wc_list[0])
 
 with open(tax_table_path) as tax_table:
 	for line in tqdm(tax_table, total=number_of_lines):
