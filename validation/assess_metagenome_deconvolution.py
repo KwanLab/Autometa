@@ -255,7 +255,7 @@ for i,value in enumerate(first_line_list):
 if number_found > 1:
 	print 'Error, bin table has more than one contig column'
 	sys.exit(2)
-if not contig_column_index:
+if contig_column_index is None:
 	print 'Error, could not find contig column in bin table'
 	sys.exit(2)
 
