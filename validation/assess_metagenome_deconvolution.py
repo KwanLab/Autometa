@@ -127,7 +127,7 @@ wc_output = subprocess.check_output(['wc', '-l', ref_species_table_path])
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
-number_sam_lines = last_read + number_of_lines
+number_sam_lines = int(last_read) + number_of_lines
 
 species = {} # Dictionary, keyed by contig, stores species
 species_table_rows = ((row.rstrip('\n')) for row in open(ref_species_table_path))
