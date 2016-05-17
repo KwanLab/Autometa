@@ -99,12 +99,12 @@ print 'Assembly SAM: ' + asm_sam_path
 print 'Bin classifications table: ' + bin_classifications_table_path
 print 'Bin column: ' + bin_column
 print 'Output prefix: ' + output_prefix
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S")
 print '\n'
 
 # 1. Parse read ranges table, so that we can spot non-unique reads in the reference alignment
-print 'Parsing read ranges table...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Parsing read ranges table...'
+
 ranges = {} # Dictionary of dictionaries, keyed by species
 range_table_rows = ((row.rstrip('\n')) for row in open(ref_read_ranges_table_path))
 for i,row in enumerate(range_table_rows):
@@ -113,8 +113,7 @@ for i,row in enumerate(range_table_rows):
 		ranges[row_list[0]] = { 'start':row_list[2], 'end':row_list[3] }
 
 # 2. Go through reference contig table, and remember which species each contig belongs to
-print 'Parsing contig species table...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Parsing contig species table...'
 species = {} # Dictionary, keyed by contig, stores species
 species_table_rows = ((row.rstrip('\n')) for row in open(ref_species_table_path))
 for i,row in enumerate(species_table_rows):
@@ -126,8 +125,7 @@ for i,row in enumerate(species_table_rows):
 # Non-unique reads are spotted in the sam file as reads that occur in genomes other than their originating genome
 # (because they must be in their originating genome, therefore seeing one outside means they occur in at least two)
 # Note: this does not flag up reads that occur more than once in their originating genomes
-print 'Finding non-unique reads in reference SAM...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Finding non-unique reads in reference SAM...'
 non_unique_reads = {} # Dictionary that just contains reads found in more than one genome
 
 # If sam file is a gz file, use gzip, otherwise normal open
@@ -157,8 +155,7 @@ else:
 					non_unique_reads[read_name] = 1
 
 # 3a. Make a data structure that records the number of unique reads for each bin.
-print 'Working out how many unique reads there are per genome...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Working out how many unique reads there are per genome...'
 number_of_unique_reads = {} # Dictionary keyed by bin name
 for genome in ranges:
 	start_read = int(ranges[genome]['start'])
@@ -173,8 +170,7 @@ for genome in ranges:
 	number_of_unique_reads[genome] = unique_reads
 
 # 4. Go through assembly sam file, and count read classifications for each contig
-print 'Parsing assembly SAM, counting species reads...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Parsing assembly SAM, counting species reads...'
 contig_classifications = {} # Dictionary of dictionaries, which will hold running tallies of reads assigned to different species
 
 # If sam file is a gz file, use gzip
@@ -216,8 +212,7 @@ else:
 # 5. We now have enough information to write a table showing how chimeric contigs are
 # Output table in the format contig\tgenome\treads\tpercent
 chimera_table_path = output_prefix + '_chimera_table'
-print 'Writing chimera table ' + chimera_table_path + '...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Writing chimera table ' + chimera_table_path + '...'
 chimera_table = open(chimera_table_path, 'w')
 chimera_table.write('contig\tgenome\treads\tpercent\n')
 for contig in contig_classifications:
@@ -227,8 +222,7 @@ for contig in contig_classifications:
 chimera_table.close
 
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
-print 'Making bin datastructure...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Making bin datastructure...'
 contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
 bin_table_rows = ((row.rstrip('\n')) for row in open(bin_classifications_table_path))
 
@@ -282,8 +276,7 @@ for contig in contig_bins:
 
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
-print 'Writing binning accuracy table ' + bin_accuracy_table_path + '...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Writing binning accuracy table ' + bin_accuracy_table_path + '...'
 bin_accuracy_table = open(bin_accuracy_table_path, 'w')
 bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
 for bin_name in bin_classifications:
@@ -306,8 +299,7 @@ for bin_name in bin_classifications:
 			genome_reads_in_bins[species][bin_name] = bin_classifications[bin_name][species]
 
 bin_recovery_table_path = output_prefix + '_bin_recovery_table'
-print 'Writing binning recovery table ' + bin_recovery_table_path + '...'
-strftime("%Y-%m-%d %H:%M:%S")
+print strftime("%Y-%m-%d %H:%M:%S") + 'Writing binning recovery table ' + bin_recovery_table_path + '...'
 bin_recovery_table = open(bin_recovery_table_path, 'w')
 bin_recovery_table.write('genome\tbin\treads\tpercent\n')
 for species in genome_reads_in_bins:
