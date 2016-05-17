@@ -177,6 +177,8 @@ total_contigs = len(protein_classifications)
 for contig in tqdm(protein_classifications, total=total_contigs):
 	acceptedTaxid = None
 	for rank in rank_priority:
+		if acceptedTaxid is not None:
+			break
 		# Order in descending order of votes
 		if rank in protein_classifications[contig]:
 			ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
@@ -184,8 +186,8 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
 					acceptedTaxid = taxid
 					break
-		if acceptedTaxid is None:
-			acceptedTaxid = 1 # Root
+	if acceptedTaxid is None:
+		acceptedTaxid = 1 # Root
 
 	top_taxids[contig] = acceptedTaxid
 
