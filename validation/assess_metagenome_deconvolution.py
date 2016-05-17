@@ -211,6 +211,9 @@ else:
 					else:
 						contig_classifications[contig_name] = { read_species: 1 }
 
+pp.pprint(contig_classifications)
+sys.exit()
+
 # 5. We now have enough information to write a table showing how chimeric contigs are
 # Output table in the format contig\tgenome\treads\tpercent
 chimera_table_path = output_prefix + '_chimera_table'
