@@ -306,6 +306,9 @@ for contig in contig_bins:
 		else:
 			bin_classifications[current_bin][species] = number_reads
 
+pp.pprint(bin_classifications)
+sys.exit()
+
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning accuracy table ' + bin_accuracy_table_path + '...'
