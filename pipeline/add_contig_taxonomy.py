@@ -65,8 +65,12 @@ nodes_dmp_path = taxdump_dir_path + '/nodes.dmp'
 
 taxids = {}
 print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid names'
+wc_output = subprocess.check_output(['wc', '-l', names_dmp_path])
+wc_list = wc_output.split()
+number_of_lines = int(wc_list[0])
+
 with open(names_dmp_path) as names_dmp:
-	for line in names_dmp:
+	for line in tqdm(names_dmp, total=number_of_lines):
 		line_list = line.rstrip('\n').split('|')
 		# Remove trailing and leading spaces
 		for i,value in enumerate(line_list):
@@ -78,7 +82,11 @@ with open(names_dmp_path) as names_dmp:
 			taxids[line_list[0]] = { 'name': line_list[1] }
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid nodes'
-with open(nodes_dmp_path) as nodes_dmp:
+wc_output = subprocess.check_output(['wc', '-l', nodes_dmp_path])
+wc_list = wc_output.split()
+number_of_lines = int(wc_list[0])
+
+with open(nodes_dmp_path) as tqdm(nodes_dmp, total=number_of_lines):
 	for line in nodes_dmp:
 		line_list = line.rstrip('\n').split('|')
 		# Remove trailing and leading spaces
