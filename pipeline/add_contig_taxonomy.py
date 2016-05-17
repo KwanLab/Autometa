@@ -112,7 +112,7 @@ canonical_ranks = {
 	'species': 1
 }
 # Work out number of lines in file
-wc_output = subprocess.check_output('wc', '-l', tax_table_path)
+wc_output = subprocess.check_output(['wc', '-l', tax_table_path])
 wc_list = wc_output.split()
 number_of_lines = wc_list[0]
 
