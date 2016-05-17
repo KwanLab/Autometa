@@ -218,7 +218,7 @@ chimera_table.write('contig\tgenome\treads\tpercent\n')
 for contig in contig_classifications:
 	percents = get_species_percents(contig_classifications[contig])
 	for species in contig_classifications[contig]:
-		chimera_table.write(contig + '\t' + species + '\t' + contig_classifications[contig][species] + '\t' + percents[species] + '\n')
+		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
 
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
@@ -282,7 +282,7 @@ bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
 for bin_name in bin_classifications:
 	percents = get_species_percents(bin_classifications[bin_name])
 	for species in bin_classifications[bin_name]:
-		bin_accuracy_table.write(bin_name + '\t' + species + '\t' + bin_classifications[bin_name][species] + '\t' + percents[species] + '\n')
+		bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
 bin_accuracy_table.close
 
 # 8. Make a 'Binning recovery' table, header: genome\tbin\treads\tpercent
@@ -312,5 +312,5 @@ for species in genome_reads_in_bins:
 		percents[bin_name] = percent
 
 	for bin_name in genome_reads_in_bins[species]:
-		bin_recovery_table.write(species + '\t' + bin_name + '\t' + genome_reads_in_bins[species][bin_name] + '\t' + percents[bin_name] + '\n')
+		bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
 bin_recovery_table.close
