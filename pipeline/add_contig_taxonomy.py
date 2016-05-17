@@ -22,6 +22,8 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# in a contig, with rank equal to or above the given rank, are common ancestors of 
 	# the taxid.  If the majority are, this function returns True, otherwise it returns 
 	# False
+	print 'taxid ' + taxid
+	print 'rank ' + rank
 
 	# First we make a modified rank_priority list that only includes the current rank and above
 	ranks_to_consider = None
