@@ -32,7 +32,7 @@ with open(names_dmp_path) as names_dmp:
 
 		# Only add scientific name entries
 		if line_list[3] == 'scientific name':
-			line_list[1].replace(' ', '_')
+			line_list[1] = line_list[1].replace(' ', '_')
 			taxids[line_list[0]] = { 'name': line_list[1] }
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid nodes'
