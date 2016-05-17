@@ -126,6 +126,7 @@ print strftime("%Y-%m-%d %H:%M:%S") + ' Parsing contig species table...'
 wc_output = subprocess.check_output(['wc', '-l', ref_species_table_path])
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
+number_of_contigs = number_of_lines
 
 number_sam_lines = int(last_read) + number_of_lines
 
@@ -157,8 +158,12 @@ if ref_sam_path[-3:] == '.gz':
 				if not does_read_belong(read_name, contig_species, ranges):
 					non_unique_reads[read_name] = 1
 else:
+	wc_output = subprocess.check_output(['wc', '-l', ref_sam_path])
+	wc_list = wc_output.split()
+	number_of_lines = int(wc_list[0])
+
 	with open(ref_sam_path) as ref_sam:
-		for line in tqdm(ref_sam, total=number_sam_lines):
+		for line in tqdm(ref_sam, total=number_of_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -172,7 +177,9 @@ else:
 # 3a. Make a data structure that records the number of unique reads for each bin.
 print strftime("%Y-%m-%d %H:%M:%S") + ' Working out how many unique reads there are per genome...'
 number_of_unique_reads = {} # Dictionary keyed by bin name
-for genome in ranges:
+number_of_genomes = len(ranges)
+
+for genome in tqdm(ranges, total=number_of_genomes):
 	start_read = int(ranges[genome]['start'])
 	end_read = int(ranges[genome]['end'])
 	counter = start_read
@@ -207,8 +214,12 @@ if asm_sam_path[-3:] == '.gz':
 					else:
 						contig_classifications[contig_name] = { read_species: 1 }
 else:
+	wc_output = subprocess.check_output(['wc', '-l', asm_sam_path])
+	wc_list = wc_output.split()
+	number_of_lines = int(wc_list[0])
+
 	with open(asm_sam_path) as asm_sam:
-		for line in tqdm(asm_sam, total=number_sam_lines):
+		for line in tqdm(asm_sam, total=number_of_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -233,7 +244,7 @@ chimera_table_path = output_prefix + '_chimera_table'
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing chimera table ' + chimera_table_path + '...'
 chimera_table = open(chimera_table_path, 'w')
 chimera_table.write('contig\tgenome\treads\tpercent\n')
-for contig in contig_classifications:
+for contig in tqdm(contig_classifications, total=number_of_contigs):
 	percents = get_species_percents(contig_classifications[contig])
 	pp.pprint(percents)
 	for species in contig_classifications[contig]:

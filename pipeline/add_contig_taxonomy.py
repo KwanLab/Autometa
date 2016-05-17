@@ -56,9 +56,10 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 		current_taxid = taxidDictionary[current_taxid]['parent']
 	return False
 
-tax_table_path = sys.argv[1]
-taxdump_dir_path = sys.argv[2]
-output_file_path = sys.argv[3]
+contig_table_path = sys.argv[1]
+tax_table_path = sys.argv[2]
+taxdump_dir_path = sys.argv[3]
+output_file_path = sys.argv[4]
 
 # Process NCBI taxdump files
 names_dmp_path = taxdump_dir_path + '/names.dmp'
@@ -171,7 +172,9 @@ with open(tax_table_path) as tax_table:
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
 top_taxids = {}
-for contig in protein_classifications:
+total_contigs = len(protein_classifications)
+
+for contig in tqdm(protein_classifications, total=total_contigs):
 	acceptedTaxid = None
 	for rank in rank_priority:
 		# Order in descending order of votes
@@ -187,3 +190,38 @@ for contig in protein_classifications:
 	top_taxids[contig] = acceptedTaxid
 
 pp.pprint(top_taxids)
+
+print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
+taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
+for contig in tqdm(top_taxids, total=total_contigs):
+	taxon_paths[contig] = {}
+	current_taxid = top_taxids[contig]
+
+	while current_taxid != 1:
+		current_rank = taxids[current_taxid]['rank']
+		if current_rank in canonical_ranks:
+			taxon_paths[contig][current_rank] = taxids[current_taxid]['name']
+		current_taxid = taxids[current_taxid]['parent']
+
+	for rank in rank_priority:
+		if rank not in taxon_paths[contig]:
+			taxon_paths[contig][rank] = 'unclassified'
+
+print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
+output_table = open(output_file_path, 'w')
+with open(contig_table_path) as contig_table:
+	for i,line in enumerate(tqdm(contig_table, total=(total_contigs+1))):
+		if i == 0:
+			original_line = line.rstrip('\n')
+			new_header = original_line + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n'
+			output_table.write(new_header)
+		else:
+			original_line = line.rstrip('\n')
+			line_list = original_line.split('\t')
+			contig_name = line_list[0]
+			if contig_name not in top_taxids:
+				print 'Error, could not find ' + contig_name + ' in ' + output_file_path
+				sys.exit(2)
+			new_line = origina_line + '\t' + taxon_paths[contig_name]['kingdom'] + '\t' + taxon_paths[contig_name]['phylum'] + '\t' + taxon_paths[contig_name]['class'] + '\t' + taxon_paths[contig_name]['order'] + '\t' + taxon_paths[contig_name]['family'] + '\t' + taxon_paths[contig_name]['genus'] + taxon_paths[contig_name]['species'] + '\t' + top_taxids[contig_name] + '\n'
+			output_table.write(new_line)
+output_table.close
