@@ -114,16 +114,20 @@ number_of_lines = int(wc_list[0])
 
 ranges = {} # Dictionary of dictionaries, keyed by species
 range_table_rows = ((row.rstrip('\n')) for row in open(ref_read_ranges_table_path))
+last_read = 0
 for i,row in enumerate(tqdm(range_table_rows, total=number_of_lines)):
 	if not i == 0:
 		row_list = row.split('\t')
 		ranges[row_list[0]] = { 'start':row_list[2], 'end':row_list[3] }
+		last_read = row_list[3]
 
 # 2. Go through reference contig table, and remember which species each contig belongs to
 print strftime("%Y-%m-%d %H:%M:%S") + ' Parsing contig species table...'
 wc_output = subprocess.check_output(['wc', '-l', ref_species_table_path])
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
+
+number_sam_lines = last_read + number_of_lines
 
 species = {} # Dictionary, keyed by contig, stores species
 species_table_rows = ((row.rstrip('\n')) for row in open(ref_species_table_path))
@@ -141,13 +145,8 @@ non_unique_reads = {} # Dictionary that just contains reads found in more than o
 
 # If sam file is a gz file, use gzip, otherwise normal open
 if ref_sam_path[-3:] == '.gz':
-	zcat = subprocess.Popen(('zcat', ref_sam_path), stdout=subprocess.PIPE)
-	wc_output = subprocess.check_output(('wc', '-l'), stdin=zcat.stdout)
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with gzip.open(ref_sam_path, 'rb') as ref_sam:
-		for line in tqdm(ref_sam, total=number_of_lines):
+		for line in tqdm(ref_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -158,12 +157,8 @@ if ref_sam_path[-3:] == '.gz':
 				if not does_read_belong(read_name, contig_species, ranges):
 					non_unique_reads[read_name] = 1
 else:
-	wc_output = subprocess.check_output(['wc', '-l', ref_sam_path])
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with open(ref_sam_path) as ref_sam:
-		for line in tqdm(ref_sam, total=number_of_lines):
+		for line in tqdm(ref_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -195,13 +190,8 @@ contig_classifications = {} # Dictionary of dictionaries, which will hold runnin
 
 # If sam file is a gz file, use gzip
 if asm_sam_path[-3:] == '.gz':
-	zcat = subprocess.Popen(('zcat', asm_sam_path), stdout=subprocess.PIPE)
-	wc_output = subprocess.check_output(('wc', '-l'), stdin=zcat.stdout)
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with gzip.open(asm_sam_path, 'rb') as asm_sam:
-		for line in tqdm(asm_sam, total=number_of_lines):
+		for line in tqdm(asm_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
@@ -217,12 +207,8 @@ if asm_sam_path[-3:] == '.gz':
 					else:
 						contig_classifications[contig_name] = { read_species: 1 }
 else:
-	wc_output = subprocess.check_output(['wc', '-l', asm_sam_path])
-	wc_list = wc_output.split()
-	number_of_lines = int(wc_list[0])
-
 	with open(asm_sam_path) as asm_sam:
-		for line in tqdm(asm_sam, total=number_of_lines):
+		for line in tqdm(asm_sam, total=number_sam_lines):
 			# Skip header section, where lines begin with '@'
 			if not line[0] == '@':
 				line_list = line.split('\t')
