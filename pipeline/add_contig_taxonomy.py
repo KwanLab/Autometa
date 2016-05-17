@@ -87,8 +87,8 @@ wc_output = subprocess.check_output(['wc', '-l', nodes_dmp_path])
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
-with open(nodes_dmp_path) as tqdm(nodes_dmp, total=number_of_lines):
-	for line in nodes_dmp:
+with open(nodes_dmp_path) as nodes_dmp:
+	for line in tqdm(nodes_dmp, total=number_of_lines):
 		line_list = line.rstrip('\n').split('|')
 		# Remove trailing and leading spaces
 		for i,value in enumerate(line_list):
