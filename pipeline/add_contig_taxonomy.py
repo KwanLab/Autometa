@@ -109,8 +109,11 @@ canonical_ranks = {
 	'genus': 1,
 	'species': 1
 }
+counter = 1 # Debug
 with open(tax_table_path) as tax_table:
 	for line in tax_table:
+		print counter # Debug
+		counter += 1 # Debug
 		line_list = line.rstrip('\n').split('\t')
 		seqNameList = line_list[0].split('_')
 		seqNameList.pop()
