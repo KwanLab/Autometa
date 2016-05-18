@@ -17,6 +17,15 @@ import pdb
 pp = pprint.PrettyPrinter(indent=4)
 
 rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
+canonical_ranks = {
+	'superkingdom': 1,
+	'phylum': 1,
+	'class': 1,
+	'order': 1,
+	'family': 1,
+	'genus': 1,
+	'species': 1
+}
 
 def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# Function that determines for a given taxid, whether the majority of proteins
@@ -56,6 +65,43 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 			return True
 		current_taxid = taxidDictionary[current_taxid]['parent']
 	return False
+
+def lowest_majority(contigDictionary, taxidDictionary)
+	taxid_totals = {} # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
+	for rank in rank_priority:
+		if rank in contigDictionary:
+			for taxid in contigDictionary[rank]:
+				# We need to add to taxid_totals for each taxid in the tax_path
+				current_taxid = taxid
+				current_rank = rank
+				while int(current_taxid) != 1:
+					if current_rank in canonical_ranks:
+						if current_rank in taxid_totals:
+							if current_taxid in taxid_totals[current_rank]:
+								taxid_totals[current_rank][current_taxid] += 1
+							else:
+								taxid_totals[current_rank][current_taxid] = 1
+						else:
+							taxid_totals[current_rank] = { current_taxid: 1 }
+					current_taxid = taxidDictionary[current_taxid]['parent']
+					current_rank = taxidDictionary[current_taxid]['rank']
+
+	# Now we need to determine which is the first level to have a majority
+	for rank in rank_priority:
+		total_votes = 0
+		taxid_leader = None
+		taxid_leader_votes = 0
+		for taxid in taxid_totals[rank]:
+			total_votes += taxid_totals[rank][taxid]
+			if taxid_totals[rank][taxid] > taxid_leader_votes:
+				taxid_leader = taxid
+				taxid_leader_votes = taxid_totals[rank][taxid]
+		majority_threshold = float(total_votes)/2
+		if taxid_leader_votes > majority_threshold:
+			return taxid_leader_votes
+
+	# Just in case
+	return 1
 
 contig_table_path = sys.argv[1]
 tax_table_path = sys.argv[2]
@@ -111,15 +157,7 @@ for taxid in taxids:
 print strftime("%Y-%m-%d %H:%M:%S") + ' Parsing taxonomy table'
 protein_classifications = {} # protein_classifications[contig][rank][taxid] (running total of each thing)
 number_of_proteins = {}
-canonical_ranks = {
-	'superkingdom': 1,
-	'phylum': 1,
-	'class': 1,
-	'order': 1,
-	'family': 1,
-	'genus': 1,
-	'species': 1
-}
+
 # Work out number of lines in file
 wc_output = subprocess.check_output(['wc', '-l', tax_table_path])
 wc_list = wc_output.split()
@@ -188,8 +226,11 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
 					acceptedTaxid = taxid
 					break
+	
+	# If acceptedTaxid is still None at this point, there was some kind of draw, so we need to find the lowest taxonomic level where there is a
+	# majority
 	if acceptedTaxid is None:
-		acceptedTaxid = 1 # Root
+		acceptedTaxid = lowest_majority(protein_classifications[contig], taxids)
 
 	top_taxids[contig] = acceptedTaxid
 
