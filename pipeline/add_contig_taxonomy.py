@@ -265,7 +265,7 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 
 	top_taxids[contig] = acceptedTaxid
 
-pdb.set_trace()
+#pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
@@ -283,7 +283,7 @@ for contig in tqdm(top_taxids, total=total_contigs):
 		if rank not in taxon_paths[contig]:
 			taxon_paths[contig][rank] = 'unclassified'
 
-pdb.set_trace()
+#pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
@@ -300,6 +300,6 @@ with open(contig_table_path) as contig_table:
 			if contig_name not in top_taxids:
 				print 'Error, could not find ' + contig_name + ' in ' + output_file_path
 				sys.exit(2)
-			new_line = origina_line + '\t' + taxon_paths[contig_name]['kingdom'] + '\t' + taxon_paths[contig_name]['phylum'] + '\t' + taxon_paths[contig_name]['class'] + '\t' + taxon_paths[contig_name]['order'] + '\t' + taxon_paths[contig_name]['family'] + '\t' + taxon_paths[contig_name]['genus'] + taxon_paths[contig_name]['species'] + '\t' + top_taxids[contig_name] + '\n'
+			new_line = original_line + '\t' + taxon_paths[contig_name]['kingdom'] + '\t' + taxon_paths[contig_name]['phylum'] + '\t' + taxon_paths[contig_name]['class'] + '\t' + taxon_paths[contig_name]['order'] + '\t' + taxon_paths[contig_name]['family'] + '\t' + taxon_paths[contig_name]['genus'] + taxon_paths[contig_name]['species'] + '\t' + top_taxids[contig_name] + '\n'
 			output_table.write(new_line)
 output_table.close
