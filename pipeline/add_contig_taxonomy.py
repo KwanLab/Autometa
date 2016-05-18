@@ -13,6 +13,7 @@ from time import *
 from tqdm import *
 import subprocess
 import pprint
+import pdb
 pp = pprint.PrettyPrinter(indent=4)
 
 rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
@@ -22,9 +23,6 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# in a contig, with rank equal to or above the given rank, are common ancestors of 
 	# the taxid.  If the majority are, this function returns True, otherwise it returns 
 	# False
-	print 'isConsistentWithOtherOrfs'
-	print 'taxid ' + taxid
-	print 'rank ' + rank
 
 	# First we make a modified rank_priority list that only includes the current rank and above
 	ranks_to_consider = None
@@ -53,9 +51,6 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 
 def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
-	print 'isCommonAncestor'
-	print 'potentialParentTaxid: ' + potentialParentTaxid
-	print 'childTaxid: ' + childTaxid
 	while current_taxid != 1:
 		if potentialParentTaxid == current_taxid:
 			print 'True'
@@ -178,14 +173,13 @@ with open(tax_table_path) as tax_table:
 		else:
 			number_of_proteins[contigName] = 1
 
+pdb.set_trace()
+
 print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
 top_taxids = {}
 total_contigs = len(protein_classifications)
 
 for contig in tqdm(protein_classifications, total=total_contigs):
-	print 'Contig: ' + contig
-	print 'protein_classifications: '
-	pp.pprint(protein_classifications[contig])
 	acceptedTaxid = None
 	for rank in rank_priority:
 		if acceptedTaxid is not None:
@@ -193,7 +187,6 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 		# Order in descending order of votes
 		if rank in protein_classifications[contig]:
 			ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
-			pp.pprint(ordered_contigs)
 			#sys.exit()
 			for taxid in ordered_taxids:
 				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
@@ -203,8 +196,6 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 		acceptedTaxid = 1 # Root
 
 	top_taxids[contig] = acceptedTaxid
-
-pp.pprint(top_taxids)
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
