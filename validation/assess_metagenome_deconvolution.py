@@ -279,8 +279,9 @@ if contig_column_index is None:
 
 for i,row in enumerate(bin_table_rows):
 	if i != 0:
-		contig = row[contig_column_index]
-		bin_name = row[bin_column_index]
+		row_list = row.split('\t')
+		contig = row_list[contig_column_index]
+		bin_name = row_list[bin_column_index]
 		contig_bins[contig] = bin_name
 
 pdb.set_trace()
