@@ -298,8 +298,10 @@ with open(contig_table_path) as contig_table:
 			line_list = original_line.split('\t')
 			contig_name = line_list[0]
 			if contig_name not in top_taxids:
-				print 'Error, could not find ' + contig_name + ' in ' + output_file_path
-				sys.exit(2)
+				# In this case we fill up the record with 'unclassified' - probably this results from the contig having no blast hits
+				top_taxids[contig_name] = {}
+				for rank in rank_priority:
+					top_taxids[contig_name][rank] = 'unclassified'
 			new_line = str(original_line) + '\t' + str(taxon_paths[contig_name]['superkingdom']) + '\t' + str(taxon_paths[contig_name]['phylum']) + '\t' + str(taxon_paths[contig_name]['class']) + '\t' + str(taxon_paths[contig_name]['order']) + '\t' + str(taxon_paths[contig_name]['family']) + '\t' + str(taxon_paths[contig_name]['genus']) + str(taxon_paths[contig_name]['species']) + '\t' + str(top_taxids[contig_name]) + '\n'
 			output_table.write(new_line)
 output_table.close
