@@ -240,8 +240,6 @@ for contig in tqdm(contig_classifications, total=number_of_contigs):
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
 
-pdb.set_trace()
-
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
 print strftime("%Y-%m-%d %H:%M:%S") + ' Making bin datastructure...'
 contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
@@ -277,11 +275,15 @@ if contig_column_index is None:
 	print 'Error, could not find contig column in bin table'
 	sys.exit(2)
 
+pdb.set_trace()
+
 for i,row in enumerate(range_table_rows):
-	if not i == 0:
+	if i != 0:
 		contig = row[contig_column_index]
 		bin_name = row[bin_column_index]
 		contig_bins[contig] = bin_name
+
+pdb.set_trace()
 
 # Now make a data structure that totals up the species reads for each bin
 bin_classifications = {} # Dictionary keyed by bins, then species
@@ -297,6 +299,8 @@ for contig in contig_bins:
 		else:
 			bin_classifications[current_bin][species] = number_reads
 
+pdb.set_trace()
+
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning accuracy table ' + bin_accuracy_table_path + '...'
@@ -307,6 +311,8 @@ for bin_name in bin_classifications:
 	for species in bin_classifications[bin_name]:
 		bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
 bin_accuracy_table.close
+
+pdb.set_trace()
 
 # 8. Make a 'Binning recovery' table, header: genome\tbin\treads\tpercent
 print 'Counting genome reads in bins...'
@@ -320,6 +326,8 @@ for bin_name in bin_classifications:
 			genome_reads_in_bins[species][bin_name] += bin_classifications[bin_name][species]
 		else:
 			genome_reads_in_bins[species][bin_name] = bin_classifications[bin_name][species]
+
+pdb.set_trace()
 
 bin_recovery_table_path = output_prefix + '_bin_recovery_table'
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning recovery table ' + bin_recovery_table_path + '...'
