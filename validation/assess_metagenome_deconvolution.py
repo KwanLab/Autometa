@@ -275,9 +275,9 @@ if contig_column_index is None:
 	print 'Error, could not find contig column in bin table'
 	sys.exit(2)
 
-pdb.set_trace()
+#pdb.set_trace()
 
-for i,row in enumerate(range_table_rows):
+for i,row in enumerate(bin_table_rows):
 	if i != 0:
 		contig = row[contig_column_index]
 		bin_name = row[bin_column_index]
