@@ -66,7 +66,7 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 		current_taxid = taxidDictionary[current_taxid]['parent']
 	return False
 
-def lowest_majority(contigDictionary, taxidDictionary)
+def lowest_majority(contigDictionary, taxidDictionary):
 	taxid_totals = {} # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
 	for rank in rank_priority:
 		if rank in contigDictionary:
