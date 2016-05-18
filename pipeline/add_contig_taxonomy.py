@@ -68,14 +68,29 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 
 def lowest_majority(contigDictionary, taxidDictionary):
 	taxid_totals = {} # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
+
 	for rank in rank_priority:
 		if rank in contigDictionary:
+			ranks_to_consider = None
+			for i, rankName in enumerate(rank_priority):
+				if rankName == rank:
+				ranks_to_consider = rank_priority[i:]
+				break
+
 			for taxid in contigDictionary[rank]:
+				# Make a dictionary to total the number of canonical ranks hit while traversing the path
+				# - so that we can add 'unclassified' to any that don't exist
+				# Later we need to make sure that 'unclassified' doesn't ever win
+				ranks_in_path = {}
+				for rank_to_consider in ranks_to_consider:
+					ranks_in_path[rank_to_consider] = 0
+
 				# We need to add to taxid_totals for each taxid in the tax_path
 				current_taxid = taxid
 				current_rank = rank
 				while int(current_taxid) != 1:
 					if current_rank in canonical_ranks:
+						ranks_in_path[current_rank] += 1
 						if current_rank in taxid_totals:
 							if current_taxid in taxid_totals[current_rank]:
 								taxid_totals[current_rank][current_taxid] += 1
@@ -85,6 +100,21 @@ def lowest_majority(contigDictionary, taxidDictionary):
 							taxid_totals[current_rank] = { current_taxid: 1 }
 					current_taxid = taxidDictionary[current_taxid]['parent']
 					current_rank = taxidDictionary[current_taxid]['rank']
+
+				# Now go through ranks_in_path. Where total = 0, add 'unclassified'
+				for rank_to_consider in ranks_to_consider:
+					if ranks_in_path[rank_to_consider] == 0:
+						if rank_to_consider in taxid_totals:
+							if 'unclassified' in taxid_totals[rank_to_consider]:
+								taxid_totals[rank_to_consider]['unclassified'] += 1
+							else:
+								taxid_totals[rank_to_consider]['unclassified'] = 1
+						else:
+							taxid_totals[rank_to_consider] = { 'unclassified': 1 }
+
+	# If there are any gaps in the taxonomy paths for any of the proteins in the contig,
+	# we need to add 'unclassified' to the relevant canonical taxonomic rank.
+	# However, we must never allow 'unclassified' to win! (That just won't really tell us anything)
 
 	# Now we need to determine which is the first level to have a majority
 	for rank in rank_priority:
@@ -98,8 +128,8 @@ def lowest_majority(contigDictionary, taxidDictionary):
 					taxid_leader = taxid
 					taxid_leader_votes = taxid_totals[rank][taxid]
 			majority_threshold = float(total_votes)/2
-			if taxid_leader_votes > majority_threshold:
-				return taxid_leader_votes
+			if taxid_leader_votes > majority_threshold and taxid_leader != 'unclassified':
+				return taxid_leader
 
 	# Just in case
 	return 1
