@@ -238,7 +238,7 @@ with open(tax_table_path) as tax_table:
 		else:
 			number_of_proteins[contigName] = 1
 
-pdb.set_trace()
+#pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
 top_taxids = {}
@@ -273,7 +273,7 @@ for contig in tqdm(top_taxids, total=total_contigs):
 	taxon_paths[contig] = {}
 	current_taxid = top_taxids[contig]
 
-	while current_taxid != 1:
+	while int(current_taxid) != 1:
 		current_rank = taxids[current_taxid]['rank']
 		if current_rank in canonical_ranks:
 			taxon_paths[contig][current_rank] = taxids[current_taxid]['name']
