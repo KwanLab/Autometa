@@ -288,7 +288,8 @@ pdb.set_trace()
 
 # Now make a data structure that totals up the species reads for each bin
 bin_classifications = {} # Dictionary keyed by bins, then species
-for contig in contig_bins:
+total_contigs = len(contig_bins)
+for contig in tqdm(contig_bins, total=total_contigs):
 	current_bin = contig_bins[contig]
 	if current_bin not in bin_classifications:
 		bin_classifications[current_bin] = {}
