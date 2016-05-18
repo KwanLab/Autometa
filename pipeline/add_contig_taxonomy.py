@@ -99,8 +99,6 @@ with open(nodes_dmp_path) as nodes_dmp:
 		taxids[ line_list[0] ][ 'parent' ] = line_list[1]
 		taxids[ line_list[0] ][ 'rank' ] = line_list[2]
 
-#pp.pprint(taxids)
-
 name_lookup = {} # Dictionary of dictionaries, keyed by rank then name
 for taxid in taxids:
 	rank = taxids[taxid]['rank']

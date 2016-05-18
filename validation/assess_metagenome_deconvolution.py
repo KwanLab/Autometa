@@ -228,9 +228,6 @@ else:
 					else:
 						contig_classifications[contig_name] = { read_species: 1 }
 
-#pp.pprint(contig_classifications)
-#sys.exit()
-
 # 5. We now have enough information to write a table showing how chimeric contigs are
 # Output table in the format contig\tgenome\treads\tpercent
 chimera_table_path = output_prefix + '_chimera_table'
@@ -286,9 +283,6 @@ for i,row in enumerate(range_table_rows):
 		bin_name = row[bin_column_index]
 		contig_bins[contig] = bin_name
 
-pp.pprint(contig_bins)
-sys.exit()
-
 # Now make a data structure that totals up the species reads for each bin
 bin_classifications = {} # Dictionary keyed by bins, then species
 for contig in contig_bins:
@@ -302,9 +296,6 @@ for contig in contig_bins:
 			bin_classifications[current_bin][species] += number_reads
 		else:
 			bin_classifications[current_bin][species] = number_reads
-
-#pp.pprint(bin_classifications)
-#sys.exit()
 
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
