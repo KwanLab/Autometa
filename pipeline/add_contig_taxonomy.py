@@ -22,6 +22,7 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# in a contig, with rank equal to or above the given rank, are common ancestors of 
 	# the taxid.  If the majority are, this function returns True, otherwise it returns 
 	# False
+	print 'isConsistentWithOtherOrfs'
 	print 'taxid ' + taxid
 	print 'rank ' + rank
 
@@ -52,12 +53,15 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 
 def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
+	print 'isCommonAncestor'
 	print 'potentialParentTaxid: ' + potentialParentTaxid
 	print 'childTaxid: ' + childTaxid
 	while current_taxid != 1:
 		if potentialParentTaxid == current_taxid:
+			print 'True'
 			return True
 		current_taxid = taxidDictionary[current_taxid]['parent']
+	print 'False'
 	return False
 
 contig_table_path = sys.argv[1]
@@ -179,6 +183,9 @@ top_taxids = {}
 total_contigs = len(protein_classifications)
 
 for contig in tqdm(protein_classifications, total=total_contigs):
+	print 'Contig: ' + contig
+	print 'protein_classifications: '
+	pp.pprint(protein_classifications[contig])
 	acceptedTaxid = None
 	for rank in rank_priority:
 		if acceptedTaxid is not None:
@@ -186,6 +193,8 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 		# Order in descending order of votes
 		if rank in protein_classifications[contig]:
 			ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
+			pp.pprint(ordered_contigs)
+			#sys.exit()
 			for taxid in ordered_taxids:
 				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
 					acceptedTaxid = taxid
