@@ -74,8 +74,8 @@ def lowest_majority(contigDictionary, taxidDictionary):
 			ranks_to_consider = None
 			for i, rankName in enumerate(rank_priority):
 				if rankName == rank:
-				ranks_to_consider = rank_priority[i:]
-				break
+					ranks_to_consider = rank_priority[i:]
+					break
 
 			for taxid in contigDictionary[rank]:
 				# Make a dictionary to total the number of canonical ranks hit while traversing the path
