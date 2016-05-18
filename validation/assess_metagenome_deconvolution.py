@@ -238,7 +238,6 @@ chimera_table = open(chimera_table_path, 'w')
 chimera_table.write('contig\tgenome\treads\tpercent\n')
 for contig in tqdm(contig_classifications, total=number_of_contigs):
 	percents = get_species_percents(contig_classifications[contig])
-	pp.pprint(percents)
 	for species in contig_classifications[contig]:
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
@@ -284,6 +283,9 @@ for i,row in enumerate(range_table_rows):
 		bin_name = row[bin_column_index]
 		contig_bins[contig] = bin_name
 
+pp.pprint(contig_bins)
+sys.exit()
+
 # Now make a data structure that totals up the species reads for each bin
 bin_classifications = {} # Dictionary keyed by bins, then species
 for contig in contig_bins:
@@ -298,8 +300,8 @@ for contig in contig_bins:
 		else:
 			bin_classifications[current_bin][species] = number_reads
 
-pp.pprint(bin_classifications)
-sys.exit()
+#pp.pprint(bin_classifications)
+#sys.exit()
 
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
