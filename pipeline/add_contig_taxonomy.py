@@ -91,14 +91,15 @@ def lowest_majority(contigDictionary, taxidDictionary):
 		total_votes = 0
 		taxid_leader = None
 		taxid_leader_votes = 0
-		for taxid in taxid_totals[rank]:
-			total_votes += taxid_totals[rank][taxid]
-			if taxid_totals[rank][taxid] > taxid_leader_votes:
-				taxid_leader = taxid
-				taxid_leader_votes = taxid_totals[rank][taxid]
-		majority_threshold = float(total_votes)/2
-		if taxid_leader_votes > majority_threshold:
-			return taxid_leader_votes
+		if rank in taxid_totals:
+			for taxid in taxid_totals[rank]:
+				total_votes += taxid_totals[rank][taxid]
+				if taxid_totals[rank][taxid] > taxid_leader_votes:
+					taxid_leader = taxid
+					taxid_leader_votes = taxid_totals[rank][taxid]
+			majority_threshold = float(total_votes)/2
+			if taxid_leader_votes > majority_threshold:
+				return taxid_leader_votes
 
 	# Just in case
 	return 1
