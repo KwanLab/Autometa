@@ -40,9 +40,9 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 		if rankName in contigDictionary:
 			for current_taxid in contigDictionary[rankName]:
 				if isCommonAncestor(current_taxid, taxid, taxidDictionary):
-					consistentTotal += 1
+					consistentTotal += contigDictionary[rankName][current_taxid]
 				else:
-					inconsistentTotal += 1
+					inconsistentTotal += contigDictionary[rankName][current_taxid]
 
 	if consistentTotal > inconsistentTotal:
 		return True
