@@ -53,10 +53,8 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
 	while current_taxid != 1:
 		if potentialParentTaxid == current_taxid:
-			print 'True'
 			return True
 		current_taxid = taxidDictionary[current_taxid]['parent']
-	print 'False'
 	return False
 
 contig_table_path = sys.argv[1]

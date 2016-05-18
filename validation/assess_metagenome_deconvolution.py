@@ -23,6 +23,7 @@ from time import *
 from tqdm import *
 import subprocess
 import pprint
+import pdb
 pp = pprint.PrettyPrinter(indent=4)
 
 def is_alignment_congruent_with_ref(read_name, contig_aligned_to, read_ranges, contig_species):
@@ -241,6 +242,8 @@ for contig in tqdm(contig_classifications, total=number_of_contigs):
 	for species in contig_classifications[contig]:
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
+
+pdb.set_trace()
 
 # 6. We need to go through the bin table to make a datastructure containing the classification of each contig
 print strftime("%Y-%m-%d %H:%M:%S") + ' Making bin datastructure...'
