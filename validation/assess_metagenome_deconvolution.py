@@ -284,13 +284,16 @@ for i,row in enumerate(bin_table_rows):
 		bin_name = row_list[bin_column_index]
 		contig_bins[contig] = bin_name
 
-pdb.set_trace()
+#pdb.set_trace()
 
 # Now make a data structure that totals up the species reads for each bin
 bin_classifications = {} # Dictionary keyed by bins, then species
-total_contigs = len(contig_bins)
+total_contigs = len(contig_bins.keys())
 for contig in tqdm(contig_bins, total=total_contigs):
-	current_bin = contig_bins[contig]
+	current_bin = contig_bins.get(contig)
+	if current_bin is None:
+		print 'Contig ' + contig + ' not found in contig_bins'
+		pp.pprint(contig_bins)
 	if current_bin not in bin_classifications:
 		bin_classifications[current_bin] = {}
 
