@@ -300,6 +300,6 @@ with open(contig_table_path) as contig_table:
 			if contig_name not in top_taxids:
 				print 'Error, could not find ' + contig_name + ' in ' + output_file_path
 				sys.exit(2)
-			new_line = original_line + '\t' + taxon_paths[contig_name]['kingdom'] + '\t' + taxon_paths[contig_name]['phylum'] + '\t' + taxon_paths[contig_name]['class'] + '\t' + taxon_paths[contig_name]['order'] + '\t' + taxon_paths[contig_name]['family'] + '\t' + taxon_paths[contig_name]['genus'] + taxon_paths[contig_name]['species'] + '\t' + top_taxids[contig_name] + '\n'
+			new_line = original_line + '\t' + taxon_paths[contig_name]['superkingdom'] + '\t' + taxon_paths[contig_name]['phylum'] + '\t' + taxon_paths[contig_name]['class'] + '\t' + taxon_paths[contig_name]['order'] + '\t' + taxon_paths[contig_name]['family'] + '\t' + taxon_paths[contig_name]['genus'] + taxon_paths[contig_name]['species'] + '\t' + top_taxids[contig_name] + '\n'
 			output_table.write(new_line)
 output_table.close
