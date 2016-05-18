@@ -51,7 +51,7 @@ def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 
 def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 	current_taxid = childTaxid
-	while current_taxid != 1:
+	while int(current_taxid) != 1:
 		if potentialParentTaxid == current_taxid:
 			return True
 		current_taxid = taxidDictionary[current_taxid]['parent']
@@ -193,6 +193,8 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 
 	top_taxids[contig] = acceptedTaxid
 
+pdb.set_trace()
+
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
 for contig in tqdm(top_taxids, total=total_contigs):
@@ -208,6 +210,8 @@ for contig in tqdm(top_taxids, total=total_contigs):
 	for rank in rank_priority:
 		if rank not in taxon_paths[contig]:
 			taxon_paths[contig][rank] = 'unclassified'
+
+pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
