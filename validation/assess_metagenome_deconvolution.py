@@ -87,7 +87,7 @@ print 'Reference SAM: ' + ref_sam_path
 print 'Contig species table: ' + ref_species_table_path
 print 'Read ranges table: ' + ref_read_ranges_table_path
 print 'Assembly SAM: ' + asm_sam_path
-print 'Bin classifications table: ' + bin_classifications_table_path
+print 'Bin classifications table(s): ' + (' ').join(bin_classifications_table_paths)
 print 'Bin column: ' + bin_column
 print 'Output prefix: ' + output_prefix
 print strftime("%Y-%m-%d %H:%M:%S")
@@ -340,7 +340,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		percents = {}
 		for bin_name in genome_reads_in_bins[species]:
 			number_of_reads = genome_reads_in_bins[species][bin_name]
-			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*100
+			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*200 # Here we assume paired reads
 			percents[bin_name] = percent
 
 		for bin_name in genome_reads_in_bins[species]:
