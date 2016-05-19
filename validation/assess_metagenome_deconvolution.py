@@ -58,8 +58,8 @@ def get_species_percents(read_counts):
 	for species in read_counts:
 		total_read_count += read_counts[species]
 	if total_read_count == 0:
-		print 'get_species_percents: total_read_count = 0'
-		sys.exit(2)
+		# This can happen if there is missing data (e.g. a junk bin)
+		return None
 	for species in read_counts:
 		percent = (float(read_counts[species])/float(total_read_count))*100
 		percents[species] = percent
@@ -309,7 +309,7 @@ for contig in tqdm(contig_bins, total=total_contigs):
 			else:
 				bin_classifications[current_bin][species] = number_reads
 
-pdb.set_trace()
+#pdb.set_trace()
 
 # 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
 bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
@@ -318,8 +318,9 @@ bin_accuracy_table = open(bin_accuracy_table_path, 'w')
 bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
 for bin_name in bin_classifications:
 	percents = get_species_percents(bin_classifications[bin_name])
-	for species in bin_classifications[bin_name]:
-		bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
+	if percents is not None:
+		for species in bin_classifications[bin_name]:
+			bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
 bin_accuracy_table.close
 
 pdb.set_trace()
