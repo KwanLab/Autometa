@@ -302,6 +302,7 @@ with open(contig_table_path) as contig_table:
 				taxon_paths[contig_name] = {}
 				for rank in rank_priority:
 					taxon_paths[contig_name][rank] = 'unclassified'
+					top_taxids[contig_name] = 'unclassified'
 			new_line = str(original_line) + '\t' + str(taxon_paths[contig_name]['superkingdom']) + '\t' + str(taxon_paths[contig_name]['phylum']) + '\t' + str(taxon_paths[contig_name]['class']) + '\t' + str(taxon_paths[contig_name]['order']) + '\t' + str(taxon_paths[contig_name]['family']) + '\t' + str(taxon_paths[contig_name]['genus']) + str(taxon_paths[contig_name]['species']) + '\t' + str(top_taxids[contig_name]) + '\n'
 			output_table.write(new_line)
 output_table.close
