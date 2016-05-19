@@ -17,7 +17,7 @@
 #		Tells you the percent of each contig that belongs to different genomes
 
 import sys
-import getopt
+import argparse 
 import gzip
 from time import *
 from tqdm import *
@@ -73,29 +73,23 @@ bin_classifications_table_path = None # -b --bintable
 output_prefix = None
 bin_column = None
 
-opts,args = getopt.getopt(sys.argv[1:],"hr:s:q:a:b:o:c",["help", "refsam=", "refspecies=", "readranges=", "asmsam=", "bintable=", "outputprefix=", "column="])
+parser = argparse.ArgumentParser(description='Script to assess the metagenome deconvolution method')
+parser.add_argument('-r','--refsam', help='sam alignment to ref genomes', required=True)
+parser.add_argument('-s', '--refspecies', help='ref contig species table', required=True)
+parser.add_argument('-q', '--readranges', help='ref read table', required=True)
+parser.add_argument('-a', '--asmsam', help='sam alignment to assembly', required=True)
+parser.add_argument('-b', '--bintable', help='bin classification table for assembly', nargs='+', required=True)
+parser.add_argument('-c', '--column', help='bin column name', default = 'db.cluster')
+parser.add_argument('-o', '--outputprefix', help='bin column name', required=True)
+args = vars(parser.parse_args())
 
-for opt, arg in opts:
-	if opt in ('-h', '--help'):
-		print 'assess_metagenome_deconvolution.py -r <sam alignment to ref genomes> -s <ref contig species table> -q <ref read table> -a <sam alignment to assembly> -b <bin classification table for assembly>'
-		sys.exit()
-	elif opt in ('-r', '--refsam'):
-		ref_sam_path = arg
-	elif opt in ('-s', '--refspecies'):
-		ref_species_table_path = arg
-	elif opt in ('-q', '--readranges'):
-		ref_read_ranges_table_path = arg
-	elif opt in ('-a', '--asmsam'):
-		asm_sam_path = arg
-	elif opt in ('-b', '--bintable'):
-		bin_classifications_table_path = arg
-	elif opt in ('-o', '--outputprefix'):
-		output_prefix = arg
-	elif opt in ('-c', '--column'):
-		bin_column = arg
-
-if not bin_column:
-	bin_column = 'db.cluster' # Default value for bin column header to look out for
+ref_sam_path = args['refsam']
+ref_species_table_path = args['refspecies']
+ref_read_ranges_table_path = args['readranges']
+asm_sam_path = args['asmsam']
+bin_classifications_table_path =  args['bintable']
+output_prefix = args['outputprefix']
+bin_column = args['bintable']
 
 print 'Reference SAM: ' + ref_sam_path
 print 'Contig species table: ' + ref_species_table_path
