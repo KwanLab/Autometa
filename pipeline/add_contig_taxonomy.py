@@ -288,7 +288,7 @@ for contig in tqdm(top_taxids, total=total_contigs):
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
 with open(contig_table_path) as contig_table:
-	for i,line in enumerate(tqdm(contig_table, total=(total_contigs+1))):
+	for i,line in enumerate(contig_table):
 		if i == 0:
 			original_line = line.rstrip('\n')
 			new_header = original_line + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n'
@@ -303,6 +303,6 @@ with open(contig_table_path) as contig_table:
 				for rank in rank_priority:
 					taxon_paths[contig_name][rank] = 'unclassified'
 					top_taxids[contig_name] = 'unclassified'
-			new_line = str(original_line) + '\t' + str(taxon_paths[contig_name]['superkingdom']) + '\t' + str(taxon_paths[contig_name]['phylum']) + '\t' + str(taxon_paths[contig_name]['class']) + '\t' + str(taxon_paths[contig_name]['order']) + '\t' + str(taxon_paths[contig_name]['family']) + '\t' + str(taxon_paths[contig_name]['genus']) + str(taxon_paths[contig_name]['species']) + '\t' + str(top_taxids[contig_name]) + '\n'
+			new_line = str(original_line) + '\t' + str(taxon_paths[contig_name]['superkingdom']) + '\t' + str(taxon_paths[contig_name]['phylum']) + '\t' + str(taxon_paths[contig_name]['class']) + '\t' + str(taxon_paths[contig_name]['order']) + '\t' + str(taxon_paths[contig_name]['family']) + '\t' + str(taxon_paths[contig_name]['genus']) + '\t' + str(taxon_paths[contig_name]['species']) + '\t' + str(top_taxids[contig_name]) + '\n'
 			output_table.write(new_line)
 output_table.close
