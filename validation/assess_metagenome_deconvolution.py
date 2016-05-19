@@ -297,12 +297,17 @@ for contig in tqdm(contig_bins, total=total_contigs):
 	if current_bin not in bin_classifications:
 		bin_classifications[current_bin] = {}
 
-	for species in contig_classifications[contig]:
-		number_reads = contig_classifications[contig][species]
-		if species in bin_classifications[current_bin]:
-			bin_classifications[current_bin][species] += number_reads
-		else:
-			bin_classifications[current_bin][species] = number_reads
+	# Sometimes contigs that are in the bin_classifications table do not exist in the alignments
+	# - perhaps this means these are junk contigs?
+	# Anyway, we have to check here that these exist
+
+	if contig in contig_classifications:
+		for species in contig_classifications[contig]:
+			number_reads = contig_classifications[contig][species]
+			if species in bin_classifications[current_bin]:
+				bin_classifications[current_bin][species] += number_reads
+			else:
+				bin_classifications[current_bin][species] = number_reads
 
 pdb.set_trace()
 
