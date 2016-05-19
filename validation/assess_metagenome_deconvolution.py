@@ -350,7 +350,7 @@ for species in genome_reads_in_bins:
 	percents = {}
 	for bin_name in genome_reads_in_bins[species]:
 		number_of_reads = genome_reads_in_bins[species][bin_name]
-		percent = (number_of_reads / number_of_unique_reads[species])*100
+		percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*100
 		percents[bin_name] = percent
 
 	for bin_name in genome_reads_in_bins[species]:
