@@ -115,7 +115,7 @@ wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 number_of_contigs = number_of_lines
 
-number_sam_lines = int(last_read) + number_of_lines
+number_sam_lines = (int(last_read)*2) + number_of_lines # We assume paired-end reads here
 
 species = {} # Dictionary, keyed by contig, stores species
 species_table_rows = ((row.rstrip('\n')) for row in open(ref_species_table_path))
