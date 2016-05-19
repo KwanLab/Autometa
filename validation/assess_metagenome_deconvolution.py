@@ -65,14 +65,6 @@ def get_species_percents(read_counts):
 		percents[species] = percent
 	return percents
 
-ref_sam_path = None # -r --refsam
-ref_species_table_path = None # -s --refspecies, table made by make_simulated_metagenome_control_fasta.py
-ref_read_ranges_table_path = None # -q --readranges, table made by make_simulated_metagenome.py
-asm_sam_path = None # -a --asmsam
-bin_classifications_table_path = None # -b --bintable
-output_prefix = None
-bin_column = None
-
 parser = argparse.ArgumentParser(description='Script to assess the metagenome deconvolution method')
 parser.add_argument('-r','--refsam', help='sam alignment to ref genomes', required=True)
 parser.add_argument('-s', '--refspecies', help='ref contig species table', required=True)
@@ -87,7 +79,7 @@ ref_sam_path = args['refsam']
 ref_species_table_path = args['refspecies']
 ref_read_ranges_table_path = args['readranges']
 asm_sam_path = args['asmsam']
-bin_classifications_table_path =  args['bintable']
+bin_classifications_table_paths =  args['bintable']
 output_prefix = args['outputprefix']
 bin_column = args['bintable']
 
@@ -99,7 +91,7 @@ print 'Bin classifications table: ' + bin_classifications_table_path
 print 'Bin column: ' + bin_column
 print 'Output prefix: ' + output_prefix
 print strftime("%Y-%m-%d %H:%M:%S")
-print '\n'
+print 
 
 # 1. Parse read ranges table, so that we can spot non-unique reads in the reference alignment
 print strftime("%Y-%m-%d %H:%M:%S") + ' Parsing read ranges table...'
@@ -234,119 +226,123 @@ for contig in tqdm(contig_classifications, total=number_of_contigs):
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
 
-# 6. We need to go through the bin table to make a datastructure containing the classification of each contig
-print strftime("%Y-%m-%d %H:%M:%S") + ' Making bin datastructure...'
-contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
-bin_table_rows = None
-with open(bin_classifications_table_path) as bin_classifications_table:
-	bin_table_rows = bin_classifications_table.read().splitlines()
+##### Here we iterate over all entries in bin_classifications_table_paths
+for bin_classifications_table_path in bin_classifications_table_paths:
+	print 'Considering ' + bin_classifications_table_path
+	pathList = bin_classifications_table_path.split('/')
+	filename = None
+	if '.' in pathList[-1]:
+		filenameList = pathList[-1].split('.')
+		filenameList.pop()
+		filename = ('.').join(filenameList)
+	else: 
+		filename = pathList[-1]
 
-# Find out which column to use for bin classification 
-bin_column_index = None
-number_found = 0
-first_line_list = bin_table_rows[0].split('\t')
-for i,value in enumerate(first_line_list):
-	if value == bin_column:
-		bin_column_index = i
-		number_found += 1
-if number_found > 1:
-	print 'Error, bin table has more than one column headed ' + bin_column
-	sys.exit(2)
-if not bin_column_index:
-	print 'Error, could not find column ' + bin_column + ' in bin table'
-	sys.exit(2)
+	current_output_prefix = output_prefix + '_' + filename
 
-contig_column_index = None
-number_found = 0
-for i,value in enumerate(first_line_list):
-	if value == 'contig':
-		contig_column_index = i
-		number_found += 1
-if number_found > 1:
-	print 'Error, bin table has more than one contig column'
-	sys.exit(2)
-if contig_column_index is None:
-	print 'Error, could not find contig column in bin table'
-	sys.exit(2)
+	# 6. We need to go through the bin table to make a datastructure containing the classification of each contig
+	print strftime("%Y-%m-%d %H:%M:%S") + ' Making bin datastructure...'
+	contig_bins = {} # Dictionary, keyed by contig, stores bin classifications
+	bin_table_rows = None
+	with open(bin_classifications_table_path) as bin_classifications_table:
+		bin_table_rows = bin_classifications_table.read().splitlines()
 
-#pdb.set_trace()
+	# Find out which column to use for bin classification 
+	bin_column_index = None
+	number_found = 0
+	first_line_list = bin_table_rows[0].split('\t')
+	for i,value in enumerate(first_line_list):
+		if value == bin_column:
+			bin_column_index = i
+			number_found += 1
+	if number_found > 1:
+		print 'Error, bin table has more than one column headed ' + bin_column
+		sys.exit(2)
+	if not bin_column_index:
+		print 'Error, could not find column ' + bin_column + ' in bin table'
+		sys.exit(2)
 
-for i,row in enumerate(bin_table_rows):
-	if i != 0:
-		row_list = row.split('\t')
-		contig = row_list[contig_column_index]
-		bin_name = row_list[bin_column_index]
-		contig_bins[contig] = bin_name
+	contig_column_index = None
+	number_found = 0
+	for i,value in enumerate(first_line_list):
+		if value == 'contig':
+			contig_column_index = i
+			number_found += 1
+	if number_found > 1:
+		print 'Error, bin table has more than one contig column'
+		sys.exit(2)
+	if contig_column_index is None:
+		print 'Error, could not find contig column in bin table'
+		sys.exit(2)
 
-#pdb.set_trace()
+	for i,row in enumerate(bin_table_rows):
+		if i != 0:
+			row_list = row.split('\t')
+			contig = row_list[contig_column_index]
+			bin_name = row_list[bin_column_index]
+			contig_bins[contig] = bin_name
 
-# Now make a data structure that totals up the species reads for each bin
-bin_classifications = {} # Dictionary keyed by bins, then species
-total_contigs = len(contig_bins.keys())
-for contig in tqdm(contig_bins, total=total_contigs):
-	current_bin = contig_bins.get(contig)
-	if current_bin is None:
-		print 'Contig ' + contig + ' not found in contig_bins'
-		pp.pprint(contig_bins)
-	if current_bin not in bin_classifications:
-		bin_classifications[current_bin] = {}
+	# Now make a data structure that totals up the species reads for each bin
+	bin_classifications = {} # Dictionary keyed by bins, then species
+	total_contigs = len(contig_bins.keys())
+	for contig in tqdm(contig_bins, total=total_contigs):
+		current_bin = contig_bins.get(contig)
+		if current_bin is None:
+			print 'Contig ' + contig + ' not found in contig_bins'
+			pp.pprint(contig_bins)
+		if current_bin not in bin_classifications:
+			bin_classifications[current_bin] = {}
 
-	# Sometimes contigs that are in the bin_classifications table do not exist in the alignments
-	# - perhaps this means these are junk contigs?
-	# Anyway, we have to check here that these exist
+		# Sometimes contigs that are in the bin_classifications table do not exist in the alignments
+		# - perhaps this means these are junk contigs?
+		# Anyway, we have to check here that these exist
 
-	if contig in contig_classifications:
-		for species in contig_classifications[contig]:
-			number_reads = contig_classifications[contig][species]
-			if species in bin_classifications[current_bin]:
-				bin_classifications[current_bin][species] += number_reads
-			else:
-				bin_classifications[current_bin][species] = number_reads
+		if contig in contig_classifications:
+			for species in contig_classifications[contig]:
+				number_reads = contig_classifications[contig][species]
+				if species in bin_classifications[current_bin]:
+					bin_classifications[current_bin][species] += number_reads
+				else:
+					bin_classifications[current_bin][species] = number_reads
 
-#pdb.set_trace()
+	# 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
+	bin_accuracy_table_path = current_output_prefix + '_bin_accuracy_table'
+	print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning accuracy table ' + bin_accuracy_table_path + '...'
+	bin_accuracy_table = open(bin_accuracy_table_path, 'w')
+	bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
+	for bin_name in bin_classifications:
+		percents = get_species_percents(bin_classifications[bin_name])
+		if percents is not None:
+			for species in bin_classifications[bin_name]:
+				bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
+	bin_accuracy_table.close
 
-# 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
-bin_accuracy_table_path = output_prefix + '_bin_accuracy_table'
-print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning accuracy table ' + bin_accuracy_table_path + '...'
-bin_accuracy_table = open(bin_accuracy_table_path, 'w')
-bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
-for bin_name in bin_classifications:
-	percents = get_species_percents(bin_classifications[bin_name])
-	if percents is not None:
+	# 8. Make a 'Binning recovery' table, header: genome\tbin\treads\tpercent
+	print 'Counting genome reads in bins...'
+	genome_reads_in_bins = {}
+	for bin_name in bin_classifications:
 		for species in bin_classifications[bin_name]:
-			bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
-bin_accuracy_table.close
+			if species not in genome_reads_in_bins:
+				genome_reads_in_bins[species] = {}
 
-pdb.set_trace()
+			if bin_name in genome_reads_in_bins[species]:
+				genome_reads_in_bins[species][bin_name] += bin_classifications[bin_name][species]
+			else:
+				genome_reads_in_bins[species][bin_name] = bin_classifications[bin_name][species]
 
-# 8. Make a 'Binning recovery' table, header: genome\tbin\treads\tpercent
-print 'Counting genome reads in bins...'
-genome_reads_in_bins = {}
-for bin_name in bin_classifications:
-	for species in bin_classifications[bin_name]:
-		if species not in genome_reads_in_bins:
-			genome_reads_in_bins[species] = {}
+	bin_recovery_table_path = current_output_prefix + '_bin_recovery_table'
+	print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning recovery table ' + bin_recovery_table_path + '...'
+	bin_recovery_table = open(bin_recovery_table_path, 'w')
+	bin_recovery_table.write('genome\tbin\treads\tpercent\n')
+	for species in genome_reads_in_bins:
+		# Percents are calculated based on the previously calculated number of unique reads per reference genome
+		# because - not all the genome might end up in bins/assembled
+		percents = {}
+		for bin_name in genome_reads_in_bins[species]:
+			number_of_reads = genome_reads_in_bins[species][bin_name]
+			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*100
+			percents[bin_name] = percent
 
-		if bin_name in genome_reads_in_bins[species]:
-			genome_reads_in_bins[species][bin_name] += bin_classifications[bin_name][species]
-		else:
-			genome_reads_in_bins[species][bin_name] = bin_classifications[bin_name][species]
-
-pdb.set_trace()
-
-bin_recovery_table_path = output_prefix + '_bin_recovery_table'
-print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning recovery table ' + bin_recovery_table_path + '...'
-bin_recovery_table = open(bin_recovery_table_path, 'w')
-bin_recovery_table.write('genome\tbin\treads\tpercent\n')
-for species in genome_reads_in_bins:
-	# Percents are calculated based on the previously calculated number of unique reads per reference genome
-	# because - not all the genome might end up in bins/assembled
-	percents = {}
-	for bin_name in genome_reads_in_bins[species]:
-		number_of_reads = genome_reads_in_bins[species][bin_name]
-		percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*100
-		percents[bin_name] = percent
-
-	for bin_name in genome_reads_in_bins[species]:
-		bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
-bin_recovery_table.close
+		for bin_name in genome_reads_in_bins[species]:
+			bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
+	bin_recovery_table.close
