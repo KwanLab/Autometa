@@ -226,6 +226,9 @@ for contig in tqdm(contig_classifications, total=number_of_contigs):
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
 
+# As we iterate through the supplied tables, we will claculate the 'clustering quotient' for each one, and hold it in a data structure
+clustering_quotients = {} # Keyed by bin_classification_table_path
+
 ##### Here we iterate over all entries in bin_classifications_table_paths
 for bin_classifications_table_path in bin_classifications_table_paths:
 	print 'Considering ' + bin_classifications_table_path
@@ -306,19 +309,25 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 					bin_classifications[current_bin][species] = number_reads
 
 	# 7. Make 'Binning accuracy' table, header: bin\tgenome\treads\tpercent
+	bin_accuracy_values = []
 	bin_accuracy_table_path = current_output_prefix + '_bin_accuracy_table'
 	print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning accuracy table ' + bin_accuracy_table_path + '...'
 	bin_accuracy_table = open(bin_accuracy_table_path, 'w')
 	bin_accuracy_table.write('bin\tgenome\treads\tpercent\n')
 	for bin_name in bin_classifications:
 		percents = get_species_percents(bin_classifications[bin_name])
+
 		if percents is not None:
+			percent_list = percents.values()
+			percent_list.sort(reverse=True)
+			bin_accuracy_values.append(percent_list[0])
 			for species in bin_classifications[bin_name]:
 				bin_accuracy_table.write(bin_name + '\t' + species + '\t' + str(bin_classifications[bin_name][species]) + '\t' + str(percents[species]) + '\n')
 	bin_accuracy_table.close
 
 	# 8. Make a 'Binning recovery' table, header: genome\tbin\treads\tpercent
 	print 'Counting genome reads in bins...'
+	genome_recovery_values = []
 	genome_reads_in_bins = {}
 	for bin_name in bin_classifications:
 		for species in bin_classifications[bin_name]:
@@ -343,6 +352,31 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*200 # Here we assume paired reads
 			percents[bin_name] = percent
 
+		recovery_values_list = percents.values()
+		recovery_values_list.sort(reverse=True)
+		genome_recovery_values.append(recovery_values_list[0])
+
 		for bin_name in genome_reads_in_bins[species]:
 			bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
 	bin_recovery_table.close
+
+	# Work out clustering quotient
+
+	# First we have to pad out genome_recovery_values if some of the original species are not missing
+	while len(genome_recovery_values) < len(ranges.keys()):
+		genome_recovery_values.append(float(0))
+
+	bin_accuracy_average = float(sum(bin_accuracy_values)) / len(bin_accuracy_values)
+	genome_recovery_average = float(sum(genome_recovery_values)) / len(genome_recovery_values)
+
+	cluster_quotient = bin_accuracy_average - genome_recovery_average
+	clustering_quotients[bin_classifications_table_path] = cluster_quotient
+
+# Print out table of cluster quotients
+clustering_table_path = output_prefix + '_clustering_quotients'
+clustering_table = open(clustering_table_path, 'w')
+clustering_table.write('table\tclustering_quotient\n')
+for table in clustering_quotients:
+	clustering_table.write(table + '\t' + clustering_quotients[table] + '\n')
+
+clustering_table.close
