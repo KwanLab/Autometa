@@ -81,7 +81,7 @@ ref_read_ranges_table_path = args['readranges']
 asm_sam_path = args['asmsam']
 bin_classifications_table_paths =  args['bintable']
 output_prefix = args['outputprefix']
-bin_column = args['bintable']
+bin_column = args['column']
 
 print 'Reference SAM: ' + ref_sam_path
 print 'Contig species table: ' + ref_species_table_path
