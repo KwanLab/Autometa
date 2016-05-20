@@ -405,6 +405,6 @@ clustering_table_path = output_prefix + '_clustering_quotients'
 clustering_table = open(clustering_table_path, 'w')
 clustering_table.write('table\tbin_accuracy\tgenome_recovery\tclustering_quotient\n')
 for table in clustering_quotients:
-	clustering_table.write(table + '\t' + str(bin_accuracy_averages[table]) + '\t' + str(genome_recovery_averages[table]) + '\t' str(clustering_quotients[table]) + '\n')
+	clustering_table.write(table + '\t' + str(bin_accuracy_averages[table]) + '\t' + str(genome_recovery_averages[table]) + '\t' + str(clustering_quotients[table]) + '\n')
 
 clustering_table.close
