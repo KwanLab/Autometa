@@ -271,7 +271,7 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		if cluster not in contig_classifications:
 			contig_classifications[cluster] = {}
 		if taxRank not in contig_classifications[cluster]:
-			contig_classifications[cluster] = {}
+			contig_classifications[cluster][taxRank] = {}
 
 		if taxid not in contig_classifications[cluster][taxRank]:
 			contig_classifications[cluster][taxRank][taxid] = length
