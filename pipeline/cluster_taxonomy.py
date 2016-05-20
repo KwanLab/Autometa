@@ -255,6 +255,9 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		length = line_list[length_index]
 		taxid = line_list[taxid_index]
 
+		if taxid == 'unclassified':
+			taxid = 1
+
 		taxRank = taxids[taxid]['rank']
 
 		# Now get the taxid of the next canonical rank (if applicable)
