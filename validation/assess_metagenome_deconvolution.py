@@ -24,6 +24,7 @@ from tqdm import *
 import subprocess
 import pprint
 import pdb
+import os.path
 pp = pprint.PrettyPrinter(indent=4)
 
 def is_alignment_congruent_with_ref(read_name, contig_aligned_to, read_ranges, contig_species):
@@ -83,12 +84,34 @@ bin_classifications_table_paths =  args['bintable']
 output_prefix = args['outputprefix']
 bin_column = args['column']
 
+if not os.path.exists(ref_sam_path):
+	print 'Error, could not find ' + ref_sam_path
+	sys.exti(2)
 print 'Reference SAM: ' + ref_sam_path
+if not os.path.exists(ref_species_table_path):
+	print 'Error, could not find ' + ref_species_table_path
+	sys.exit(2)
 print 'Contig species table: ' + ref_species_table_path
+if not os.path.exists(ref_read_ranges_table_path):
+	print 'Error, could not find ' + ref_read_ranges_table_path
+	sys.exit(2)
 print 'Read ranges table: ' + ref_read_ranges_table_path
+if not os.path.exists(asm_sam_path):
+	print 'Error, could not find ' + asm_sam_path
+	sys.exit(2)
 print 'Assembly SAM: ' + asm_sam_path
+for bin_classifications_table_path in bin_classifications_table_paths:
+	if not os.path.exists(bin_classifications_table_path):
+		print 'Error, could not find ' + bin_classifications_table_path
+		sys.exit(2)
 print 'Bin classifications table(s): ' + (' ').join(bin_classifications_table_paths)
 print 'Bin column: ' + bin_column
+output_list = output_prefix.split('/')
+output_list.pop()
+output_dir = ('/').join(output_list)
+if not os.path.isdir(output_dir):
+	print 'Error, ' + output_dir + ' is not a valid directory for output'
+	sys.exit(2)
 print 'Output prefix: ' + output_prefix
 print strftime("%Y-%m-%d %H:%M:%S")
 print 
@@ -262,7 +285,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		print 'Error, bin table has more than one column headed ' + bin_column
 		sys.exit(2)
 	if not bin_column_index:
-		print 'Error, could not find column ' + bin_column + ' in bin table'
+		print 'Error, could not find column ' + bin_column + ' in bin table ' + bin_classifications_table_path
 		sys.exit(2)
 
 	contig_column_index = None
