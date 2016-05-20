@@ -279,15 +279,15 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 			contig_classifications[cluster][taxRank] = {}
 
 		if taxid not in contig_classifications[cluster][taxRank]:
-			contig_classifications[cluster][taxRank][taxid] = length
+			contig_classifications[cluster][taxRank][taxid] = int(length)
 		else:
-			contig_classifications[cluster][taxRank][taxid] += length
+			contig_classifications[cluster][taxRank][taxid] += int(length)
 
 		# Count length of contigs per cluster
 		if contig in length_of_contigs:
-			length_of_contigs[contig] += length
+			length_of_contigs[contig] += int(length)
 		else:
-			length_of_contigs[contig] = length
+			length_of_contigs[contig] = int(length)
 
 #pdb.set_trace()
 
