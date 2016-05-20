@@ -245,6 +245,8 @@ if column_count['length'] > 1:
 if column_count['taxid'] > 1:
 	print 'Error, there is more than one "taxid" column in ' + contig_table_path
 
+pdb.set_trace()
+
 for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 	if i > 0:
 		line_list = line.rstrip('\n').split('\t')
