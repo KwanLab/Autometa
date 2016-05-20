@@ -252,6 +252,8 @@ chimera_table.close
 
 # As we iterate through the supplied tables, we will claculate the 'clustering quotient' for each one, and hold it in a data structure
 clustering_quotients = {} # Keyed by bin_classification_table_path
+bin_accuracy_averages = {}
+genome_recovery_averages = {}
 
 ##### Here we iterate over all entries in bin_classifications_table_paths
 for bin_classifications_table_path in bin_classifications_table_paths:
@@ -395,12 +397,14 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 
 	cluster_quotient = bin_accuracy_average - genome_recovery_average
 	clustering_quotients[bin_classifications_table_path] = cluster_quotient
+	bin_accuracy_averages[bin_classifications_table_path] = bin_accuracy_average
+	genome_recovery_averages[bin_classifications_table_path] = genome_recovery_average
 
 # Print out table of cluster quotients
 clustering_table_path = output_prefix + '_clustering_quotients'
 clustering_table = open(clustering_table_path, 'w')
-clustering_table.write('table\tclustering_quotient\n')
+clustering_table.write('table\tbin_accuracy\tgenome_recovery\tclustering_quotient\n')
 for table in clustering_quotients:
-	clustering_table.write(table + '\t' + str(clustering_quotients[table]) + '\n')
+	clustering_table.write(table + '\t' + str(bin_accuracy_averages[table]) + '\t' + str(genome_recovery_averages[table]) + '\t' str(clustering_quotients[table]) + '\n')
 
 clustering_table.close
