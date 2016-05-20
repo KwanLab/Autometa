@@ -105,6 +105,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		print 'Error, could not find ' + bin_classifications_table_path
 		sys.exit(2)
 print 'Bin classifications table(s): ' + (' ').join(bin_classifications_table_paths)
+# To do - move column detection here so as not to waste time if the tables are not formatted right
 print 'Bin column: ' + bin_column
 output_list = output_prefix.split('/')
 output_list.pop()
@@ -400,6 +401,6 @@ clustering_table_path = output_prefix + '_clustering_quotients'
 clustering_table = open(clustering_table_path, 'w')
 clustering_table.write('table\tclustering_quotient\n')
 for table in clustering_quotients:
-	clustering_table.write(table + '\t' + clustering_quotients[table] + '\n')
+	clustering_table.write(table + '\t' + str(clustering_quotients[table]) + '\n')
 
 clustering_table.close
