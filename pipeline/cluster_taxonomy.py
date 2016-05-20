@@ -245,15 +245,15 @@ if column_count['length'] > 1:
 if column_count['taxid'] > 1:
 	print 'Error, there is more than one "taxid" column in ' + contig_table_path
 
-pdb.set_trace()
+#pdb.set_trace()
 
 for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 	if i > 0:
 		line_list = line.rstrip('\n').split('\t')
-		contig = line[contig_index]
-		cluster = line[cluster_index]
-		length = line[length_index]
-		taxid = line[taxid_index]
+		contig = line_list[contig_index]
+		cluster = line_list[cluster_index]
+		length = line_list[length_index]
+		taxid = line_list[taxid_index]
 
 		taxRank = taxids[taxid]['rank']
 
