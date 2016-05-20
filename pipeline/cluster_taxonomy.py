@@ -192,21 +192,21 @@ contig_classifications = {}
 length_of_contigs = {}
 
 # Work out number of lines in file
-wc_output = subprocess.check_output(['wc', '-l', tax_table_path])
+wc_output = subprocess.check_output(['wc', '-l', contig_table_path])
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
 # Determine contig, length and cluster indexes
-tax_table = open(tax_table_path, 'r')
-tax_table_lines = tax_table.read().splitlines()
-tax_table.close
-tax_table_first_line_list = tax_table_lines[0].split('\t')
+contig_table = open(contig_table_path, 'r')
+contig_table_lines = contig_table.read().splitlines()
+contig_table.close
+contig_table_first_line_list = contig_table_lines[0].split('\t')
 column_count = {}
 contig_index = None
 cluster_index = None
 length_index = None
 taxid_index = None
-for i,heading in enumerate(tax_table_first_line_list):
+for i,heading in enumerate(contig_table_first_line_list):
 	if heading == 'contig':
 		contig_index = i
 	if heading == 'db.cluster':
@@ -222,30 +222,30 @@ for i,heading in enumerate(tax_table_first_line_list):
 		column_count[heading] = 1
 
 if contig_index is None:
-	print 'Error, could not find a "contig" column in ' + tax_table_path
+	print 'Error, could not find a "contig" column in ' + contig_table_path
 	sys.exit(2)
 if cluster_index is None:
-	print 'Error, could not find a "db.cluster" column in ' + tax_table_path
+	print 'Error, could not find a "db.cluster" column in ' + contig_table_path
 	sys.exit(2)
 if length_index is None:
-	print 'Error, could not find a "length" column in  ' + tax_table_path
+	print 'Error, could not find a "length" column in  ' + contig_table_path
 	sys.exit(2)
 if taxid_index is None:
-	print 'Error, could not find a "taxid" column in ' + tax_table_path
+	print 'Error, could not find a "taxid" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['contig'] > 1:
-	print 'Error, there is more than one "contig" column in ' + tax_table_path
+	print 'Error, there is more than one "contig" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['db.cluster'] > 1:
-	print 'Error, there is more than one "db.cluster" column in ' + tax_table_path
+	print 'Error, there is more than one "db.cluster" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['length'] > 1:
-	print 'Error, there is more than one "length" column in ' + tax_table_path
+	print 'Error, there is more than one "length" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['taxid'] > 1:
-	print 'Error, there is more than one "taxid" column in ' + tax_table_path
+	print 'Error, there is more than one "taxid" column in ' + contig_table_path
 
-for i,line in enumerate(tqdm(tax_table_lines, total=number_of_lines)):
+for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 	if i > 0:
 		line_list = line.rstrip('\n').split('\t')
 		contig = line[contig_index]
