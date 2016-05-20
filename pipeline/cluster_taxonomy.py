@@ -320,7 +320,7 @@ for cluster in tqdm(contig_classifications, total=total_clusters):
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
-for cluster in tqdm(top_taxids, total=total_contigs):
+for cluster in tqdm(top_taxids, total=len(top_taxids)):
 	taxon_paths[cluster] = {}
 	current_taxid = top_taxids[cluster]
 
