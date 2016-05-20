@@ -333,5 +333,5 @@ print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
 output_table.write('cluster\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n')
 for cluster in taxon_paths:
-	output_table.write(str(cluster + '\t' + str(taxon_paths[cluster]['superkingdom']) + '\t' + str(taxon_paths[cluster]['phylum']) + '\t' + str(taxon_paths[cluster]['class']) + '\t' + str(taxon_paths[cluster]['order']) + '\t' + str(taxon_paths[cluster]['family']) + '\t' + str(taxon_paths[cluster]['genus']) + '\t' + str(taxon_paths[cluster]['species']) + '\t' + str(top_taxids[cluster]) + '\n')
+	output_table.write(str(cluster) + '\t' + str(taxon_paths[cluster]['superkingdom']) + '\t' + str(taxon_paths[cluster]['phylum']) + '\t' + str(taxon_paths[cluster]['class']) + '\t' + str(taxon_paths[cluster]['order']) + '\t' + str(taxon_paths[cluster]['family']) + '\t' + str(taxon_paths[cluster]['genus']) + '\t' + str(taxon_paths[cluster]['species']) + '\t' + str(top_taxids[cluster]) + '\n')
 output_table.close
