@@ -400,6 +400,8 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 	bin_accuracy_averages[bin_classifications_table_path] = bin_accuracy_average
 	genome_recovery_averages[bin_classifications_table_path] = genome_recovery_average
 
+pdb.set_trace()
+
 # Print out table of cluster quotients
 clustering_table_path = output_prefix + '_clustering_quotients'
 clustering_table = open(clustering_table_path, 'w')
