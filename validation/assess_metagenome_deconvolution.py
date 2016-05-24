@@ -375,7 +375,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		percents = {}
 		for bin_name in genome_reads_in_bins[species]:
 			number_of_reads = genome_reads_in_bins[species][bin_name]
-			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*200 # Here we assume paired reads
+			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*50 # Here we assume paired reads
 			percents[bin_name] = percent
 
 		recovery_values_list = percents.values()
