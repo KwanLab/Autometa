@@ -4,7 +4,7 @@ import sys
 import argparse 
 
 parser = argparse.ArgumentParser(description='Script to assess the metagenome deconvolution using single-copy marker genes')
-parser.add_argument('-h','--hmmtable', help='HMM table created by make_marker_table.py', required=True)
+parser.add_argument('-s','--hmmtable', help='HMM table created by make_marker_table.py', required=True)
 parser.add_argument('-d', '--dbscantable', help='Table(s) containing DBSCAN clusters', nargs='+', required=True)
 parser.add_argument('-o', '--output', help='Output table path', required=True)
 parser.add_argument('-c', '--column', help='bin column name', default = 'db.cluster')
