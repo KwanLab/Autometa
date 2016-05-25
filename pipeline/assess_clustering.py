@@ -53,7 +53,7 @@ for dbscan_table_path in dbscan_table_paths:
 
 	bin_column_index = None
 	number_found = 0
-	first_line_list = bin_table_rows[0].split('\t')
+	first_line_list = dbscan_table_rows[0].split('\t')
 	for i,value in enumerate(first_line_list):
 		if value == dbscan_column_heading:
 			bin_column_index = i
