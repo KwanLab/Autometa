@@ -86,7 +86,7 @@ for dbscan_table_path in dbscan_table_paths:
 				bin_markers[cluster] = {}
 
 			if contig in contig_markers:
-				for pfam in contig_markers:
+				for pfam in contig_markers[contig]:
 					if pfam in bin_markers[cluster]:
 						bin_markers[cluster][pfam] += contig_markers[contig][pfam]
 					else:
