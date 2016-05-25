@@ -78,8 +78,9 @@ for dbscan_table_path in dbscan_table_paths:
 
 	for i, line in enumerate(dbscan_table_rows):
 		if i > 0:
-			contig = line[contig_column_index]
-			cluster = line[bin_column_index]
+			line_list = line.split('\t')
+			contig = line_list[contig_column_index]
+			cluster = line_list[bin_column_index]
 
 			if cluster not in bin_markers:
 				bin_markers[cluster] = {}
