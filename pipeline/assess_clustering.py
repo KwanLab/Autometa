@@ -15,11 +15,6 @@ dbscan_table_paths = args['dbscantable']
 output_table_path = args['output']
 dbscan_column_heading = args['column']
 
-if len(sys.argv) < 5:
-	dbscan_column_heading = 'db.cluster'
-else:
-	dbscan_column_heading = sys.argv[4]
-
 # First parse hmm_contig_table_path
 
 hmm_contig_table_rows = None
