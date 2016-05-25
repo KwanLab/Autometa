@@ -6,6 +6,7 @@ import subprocess
 
 
 #argument parser
+# Note: you need to check out the 'GoogleImport' branch of prodigal for this program to work
 parser = argparse.ArgumentParser(description='Script tabulate single copy markers \
 	from a metagenome assembly. Dependencies: prodigal v2.6.2, hhmscan (hmmer 3.1b2)')
 parser.add_argument('-a','--assembly', help='Input assembly file', required=True)
