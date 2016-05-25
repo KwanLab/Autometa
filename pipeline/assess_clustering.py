@@ -110,7 +110,7 @@ for dbscan_table_path in dbscan_table_paths:
 		number_of_markers.append(len(bin_markers[cluster]))
 
 	average_markers = sum(number_of_markers) / len(number_of_markers)
-	table_contamination_averages[dbscan_table_path] = average_markers
+	table_completeness_averages[dbscan_table_path] = average_markers
 
 pdb.set_trace()
 
