@@ -121,4 +121,4 @@ output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
 for table_path in table_completeness_averages:
 	completeness = table_contamination_averages[table_path]
 	duplicated = table_contamination_averages[table_path]
-	output_table.write(table_path + '\t' + completeness + '\t' + duplicated + '\n')
+	output_table.write(table_path + '\t' + str(completeness) + '\t' + str(duplicated) + '\n')
