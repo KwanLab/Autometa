@@ -44,7 +44,7 @@ for i,line in enumerate(hmm_contig_table_rows):
 table_binned_unique_marker_counter = {} # Keeps a total of unique markers in each bin, as long as the bin contains more than 20% of the total
 # In Bacteria, the total is 139, in Archaea, the total is 162
 table_numbers_of_clusters = {}
-
+table_median_completeness = {}
 
 for dbscan_table_path in dbscan_table_paths:
 	print ('Considering ' + dbscan_table_path)
@@ -101,6 +101,7 @@ for dbscan_table_path in dbscan_table_paths:
 	#duplicated = [] # Just a list of counts for duplicated markers in each cluster
 	table_unique_markers_counter = 0
 	number_of_clusters_over_threshold = 0
+	unique_marker_counter_list = []
 	for cluster in bin_markers:
 		not_duplicated_counter = 0
 		for pfam in bin_markers[cluster]:
@@ -115,9 +116,13 @@ for dbscan_table_path in dbscan_table_paths:
 		if not_duplicated_counter > threshold:
 			table_unique_markers_counter += not_duplicated_counter
 			number_of_clusters_over_threshold += 1
+			unique_marker_counter_list.append(not_duplicated_counter)
+
+	median_completeness = numpy.median(unique_marker_counter_list)
 
 	table_binned_unique_marker_counter[dbscan_table_path] = table_unique_markers_counter
 	table_numbers_of_clusters[dbscan_table_path] = number_of_clusters_over_threshold
+	table_median_completeness[dbscan_table_path] = median_completeness
 
 	#average_duplicated = sum(duplicated) / len(duplicated)
 	#table_contamination_averages[dbscan_table_path] = average_duplicated
@@ -143,4 +148,5 @@ output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over
 for table_path in table_binned_unique_marker_counter:
 	number_unique_markers = table_binned_unique_marker_counter[table_path]
 	number_of_clusters = table_numbers_of_clusters[table_path]
-	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + '\n')
+	median_completeness = table_median_completeness[table_path]
+	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + 't' + median_completeness + '\n')
