@@ -6,12 +6,12 @@ import subprocess
 
 
 #argument parser
-parser = argparse.ArgumentParser(description='Script tabulate single copy markers \
+parser = argparse.ArgumentParser(description='Script to tabulate single copy markers \
 	from a metagenome assembly. Dependencies: prodigal v2.6.2, hhmscan (hmmer 3.1b2)')
 parser.add_argument('-a','--assembly', help='Input assembly file', required=True)
-parser.add_argument('-c','--cutoffs', help='Bacterial single copy hmm cutoffs as defined by Rinke et al.', default="~/Bacteria_single_copy_cutoffs.txt")
-parser.add_argument('-m','--hmm', help='Bacteria_single_copy_cutoffs.hmm', default="~/Bacteria_single_copy.hmm")
-parser.add_argument('-o','--out', help='outfile.tab for normal mixute modeling in R', required=True)
+parser.add_argument('-c','--cutoffs', help='Bacterial single copy hmm cutoffs as defined by Rinke et al. Default path is home directory.', default="~/Bacteria_single_copy_cutoffs.txt")
+parser.add_argument('-m','--hmm', help='Bacteria_single_copy_cutoffs.hmm. Default path is home directory.', default="~/Bacteria_single_copy.hmm")
+parser.add_argument('-o','--out', help='outfile.tab, three column table with contig, single copy PFAMS, and # of markers', required=False)
 args = vars(parser.parse_args())
 
 assembly = args['assembly']
@@ -61,7 +61,11 @@ for index,PFAM_cutoffs_id in enumerate(cutoffs_table[0]):
 #contig length, contig GC, contig len, passecd PFAM domains
 #write out tab-delimited table
 
-with open(args['out'], 'w') as outfile:
+if args['out'] != None:
+	outfile_handle = args['out']
+else:
+	outfile_handle = assembly.split(".")[0] + "_marker.tab" 
+with open(outfile_handle, 'w') as outfile:
 	outfile.write("contig_name" + '\t'+ "single_copy_PFAMs" + '\t' + "num_single_copies" + '\n')
 	contig_dictionary = {}
 	for count,contig in enumerate(get_contig_list(assembly)):
