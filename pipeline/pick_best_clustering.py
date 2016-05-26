@@ -2,7 +2,6 @@
 
 import sys
 import argparse 
-import pdb
 
 parser = argparse.ArgumentParser(description='Script to pick the best dbscan table using a table made by assess_clustering.py')
 parser.add_argument('-i','--inputtable', help='HMM table created by make_marker_table.py', required=True)
@@ -37,5 +36,3 @@ for i,table in enumerate(sorted_tables):
 sorted_selected_tables = sorted(selected_unique_markers, key=selected_unique_markers.get, reverse=True)
 
 print (sorted_selected_tables[0])
-
-pdb.set_trace()
