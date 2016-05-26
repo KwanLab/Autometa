@@ -3,6 +3,7 @@
 import sys
 import argparse 
 import pdb
+import numpy
 
 parser = argparse.ArgumentParser(description='Script to assess the metagenome deconvolution using single-copy marker genes')
 parser.add_argument('-s','--hmmtable', help='HMM table created by make_marker_table.py', required=True)
@@ -42,6 +43,8 @@ for i,line in enumerate(hmm_contig_table_rows):
 #table_contamination_averages = {}
 table_binned_unique_marker_counter = {} # Keeps a total of unique markers in each bin, as long as the bin contains more than 20% of the total
 # In Bacteria, the total is 139, in Archaea, the total is 162
+table_numbers_of_clusters = {}
+
 
 for dbscan_table_path in dbscan_table_paths:
 	print ('Considering ' + dbscan_table_path)
@@ -97,6 +100,7 @@ for dbscan_table_path in dbscan_table_paths:
 	# Now work out the number duplicated for each cluster
 	#duplicated = [] # Just a list of counts for duplicated markers in each cluster
 	table_unique_markers_counter = 0
+	number_of_clusters_over_threshold = 0
 	for cluster in bin_markers:
 		not_duplicated_counter = 0
 		for pfam in bin_markers[cluster]:
@@ -110,8 +114,10 @@ for dbscan_table_path in dbscan_table_paths:
 			threshold = 32
 		if not_duplicated_counter > threshold:
 			table_unique_markers_counter += not_duplicated_counter
+			number_of_clusters_over_threshold += 1
 
 	table_binned_unique_marker_counter[dbscan_table_path] = table_unique_markers_counter
+	table_numbers_of_clusters[dbscan_table_path] = number_of_clusters_over_threshold
 
 	#average_duplicated = sum(duplicated) / len(duplicated)
 	#table_contamination_averages[dbscan_table_path] = average_duplicated
@@ -128,7 +134,7 @@ for dbscan_table_path in dbscan_table_paths:
 # Print output table
 output_table = open(output_table_path, 'w')
 #output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
-output_table.write('table\tnumber_binned_unique_markers\n')
+output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over_threshold\n')
 
 #for table_path in table_completeness_averages:
 	#completeness = table_completeness_averages[table_path]
@@ -136,4 +142,5 @@ output_table.write('table\tnumber_binned_unique_markers\n')
 	#output_table.write(table_path + '\t' + str(completeness) + '\t' + str(duplicated) + '\n')
 for table_path in table_binned_unique_marker_counter:
 	number_unique_markers = table_binned_unique_marker_counter[table_path]
-	output_table.write(table_path + '\t' + str(number_unique_markers) + '\n')
+	number_of_clusters = table_numbers_of_clusters[table_path]
+	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + '\n')
