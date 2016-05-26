@@ -37,3 +37,5 @@ for i,table in enumerate(sorted_tables):
 sorted_selected_tables = sorted(selected_unique_markers, key=selected_unique_markers.get, reverse=True)
 
 print (sorted_selected_tables[0])
+
+pdb.set_trace()
