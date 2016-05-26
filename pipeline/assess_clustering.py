@@ -39,8 +39,6 @@ for i,line in enumerate(hmm_contig_table_rows):
 				contig_markers[contig][pfam] = 1
 
 # Now we go through the dbscan tables
-#table_completeness_averages = {}
-#table_contamination_averages = {}
 table_binned_unique_marker_counter = {} # Keeps a total of unique markers in each bin, as long as the bin contains more than 20% of the total
 # In Bacteria, the total is 139, in Archaea, the total is 162
 table_numbers_of_clusters = {}
@@ -124,29 +122,14 @@ for dbscan_table_path in dbscan_table_paths:
 	table_numbers_of_clusters[dbscan_table_path] = number_of_clusters_over_threshold
 	table_median_completeness[dbscan_table_path] = median_completeness
 
-	#average_duplicated = sum(duplicated) / len(duplicated)
-	#table_contamination_averages[dbscan_table_path] = average_duplicated
-
-	# Now work out the number of markers each cluster has
-	#number_of_markers = [] # Just a list of counts of unique markers in each cluster
-	#for cluster in bin_markers:
-	#	number_of_markers.append(len(bin_markers[cluster]))
-
-	#average_markers = sum(number_of_markers) / len(number_of_markers)
-	#table_completeness_averages[dbscan_table_path] = average_markers
-
-
 # Print output table
 output_table = open(output_table_path, 'w')
 #output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
-output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over_threshold\tmedian_completeness\n')
+output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over_threshold\tmedian_completeness\tcluster_completeness_product\n')
 
-#for table_path in table_completeness_averages:
-	#completeness = table_completeness_averages[table_path]
-	#duplicated = table_contamination_averages[table_path]
-	#output_table.write(table_path + '\t' + str(completeness) + '\t' + str(duplicated) + '\n')
 for table_path in table_binned_unique_marker_counter:
 	number_unique_markers = table_binned_unique_marker_counter[table_path]
 	number_of_clusters = table_numbers_of_clusters[table_path]
 	median_completeness = table_median_completeness[table_path]
-	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + '\t' + str(median_completeness) + '\n')
+	product = number_of_clusters * median_completeness
+	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + '\t' + str(median_completeness) + '\t' + str(product) + '\n')
