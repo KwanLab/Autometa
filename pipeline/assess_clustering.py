@@ -110,9 +110,9 @@ for dbscan_table_path in dbscan_table_paths:
 		#duplicated.append(duplicated_counter)
 		threshold = None
 		if kingdom == 'bacteria':
-			threshold = 28
+			threshold = 70
 		elif kingdom == 'archaea':
-			threshold = 32
+			threshold = 81
 		if not_duplicated_counter > threshold:
 			table_unique_markers_counter += not_duplicated_counter
 			number_of_clusters_over_threshold += 1
