@@ -254,6 +254,14 @@ chimera_table.close
 clustering_quotients = {} # Keyed by bin_classification_table_path
 bin_accuracy_averages = {}
 genome_recovery_averages = {}
+# Total_bin_genome_recovery - this is a measure of the effectiveness of the deconvolution process
+# Algorithm
+# For each table
+#     For each genome
+#         Determine which bin contains the highest percentage of this genome, as long as it is not claimed
+#         Add this percentage to a total, mark the bin as claimed
+# The total is stored in total_bin_genome_recovery, under the table path
+total_bin_genome_recovery = {} 
 
 ##### Here we iterate over all entries in bin_classifications_table_paths
 for bin_classifications_table_path in bin_classifications_table_paths:
@@ -369,6 +377,8 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 	print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning recovery table ' + bin_recovery_table_path + '...'
 	bin_recovery_table = open(bin_recovery_table_path, 'w')
 	bin_recovery_table.write('genome\tbin\treads\tpercent\n')
+	genome_recovery_total = 0
+	claimed_bins = {}
 	for species in genome_reads_in_bins:
 		# Percents are calculated based on the previously calculated number of unique reads per reference genome
 		# because - not all the genome might end up in bins/assembled
@@ -382,9 +392,19 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		recovery_values_list.sort(reverse=True)
 		genome_recovery_values.append(recovery_values_list[0])
 
+		# Add to the genome recovery total
+		sorted_bins = sorted(percents, key=percents.get, reverse=True)
+		for bin_name in sorted_bins:
+			if bin_name not in claimed_bins:
+				genome_recovery_total += percents[bin_name]
+				claimed_bins[bin_name] = 1
+				break
+
 		for bin_name in genome_reads_in_bins[species]:
 			bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
 	bin_recovery_table.close
+
+	total_bin_genome_recovery[bin_classifications_table_path] = genome_recovery_total
 
 	# Work out clustering quotient
 
@@ -404,8 +424,8 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 # Print out table of cluster quotients
 clustering_table_path = output_prefix + '_clustering_quotients'
 clustering_table = open(clustering_table_path, 'w')
-clustering_table.write('table\tbin_accuracy\tgenome_recovery\tclustering_quotient\n')
+clustering_table.write('table\tav_bin_accuracy\tav_genome_recovery\trecovery_total\n')
 for table in clustering_quotients:
-	clustering_table.write(table + '\t' + str(bin_accuracy_averages[table]) + '\t' + str(genome_recovery_averages[table]) + '\t' + str(clustering_quotients[table]) + '\n')
+	clustering_table.write(table + '\t' + str(bin_accuracy_averages[table]) + '\t' + str(genome_recovery_averages[table]) + '\t' + str(total_bin_genome_recovery[table]) + '\n')
 
 clustering_table.close
