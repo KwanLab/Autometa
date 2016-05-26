@@ -139,7 +139,7 @@ for dbscan_table_path in dbscan_table_paths:
 # Print output table
 output_table = open(output_table_path, 'w')
 #output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
-output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over_threshold\n')
+output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters\tmedian_completeness\n')
 
 #for table_path in table_completeness_averages:
 	#completeness = table_completeness_averages[table_path]
