@@ -130,9 +130,10 @@ output_table = open(output_table_path, 'w')
 #output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
 output_table.write('table\tnumber_binned_unique_markers\n')
 
-for table_path in table_completeness_averages:
+#for table_path in table_completeness_averages:
 	#completeness = table_completeness_averages[table_path]
 	#duplicated = table_contamination_averages[table_path]
 	#output_table.write(table_path + '\t' + str(completeness) + '\t' + str(duplicated) + '\n')
+for table_path in table_binned_unique_marker_counter:
 	number_unique_markers = table_binned_unique_marker_counter[table_path]
 	output_table.write(table_path + '\t' + str(number_unique_markers) + '\n')
