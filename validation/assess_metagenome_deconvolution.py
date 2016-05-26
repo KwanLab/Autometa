@@ -86,7 +86,7 @@ bin_column = args['column']
 
 if not os.path.exists(ref_sam_path):
 	print 'Error, could not find ' + ref_sam_path
-	sys.exti(2)
+	sys.exit(2)
 print 'Reference SAM: ' + ref_sam_path
 if not os.path.exists(ref_species_table_path):
 	print 'Error, could not find ' + ref_species_table_path
