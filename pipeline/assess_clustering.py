@@ -39,8 +39,6 @@ for i,line in enumerate(hmm_contig_table_rows):
 table_completeness_averages = {}
 table_contamination_averages = {}
 
-pdb.set_trace()
-
 for dbscan_table_path in dbscan_table_paths:
 	print ('Considering ' + dbscan_table_path)
 
@@ -112,7 +110,6 @@ for dbscan_table_path in dbscan_table_paths:
 	average_markers = sum(number_of_markers) / len(number_of_markers)
 	table_completeness_averages[dbscan_table_path] = average_markers
 
-pdb.set_trace()
 
 # Print output table
 output_table = open(output_table_path, 'w')
