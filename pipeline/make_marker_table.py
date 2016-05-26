@@ -7,7 +7,7 @@ import subprocess
 
 #argument parser
 parser = argparse.ArgumentParser(description='Script tabulate single copy markers \
-	from a metagenome assembly. Dependencies: prodigal v2.6.2, hhmscan (hmmer 3.1b2)')
+	from a metagenome assembly. Dependencies: prodigal v2.6.2 (from "GoogleImport" branch), hhmscan (hmmer 3.1b2)')
 parser.add_argument('-a','--assembly', help='Input assembly file', required=True)
 parser.add_argument('-c','--cutoffs', help='Bacterial single copy hmm cutoffs as defined by Rinke et al. Default path is home directory.', default="~/Bacteria_single_copy_cutoffs.txt")
 parser.add_argument('-m','--hmm', help='Bacteria_single_copy_cutoffs.hmm. Default path is home directory.', default="~/Bacteria_single_copy.hmm")
