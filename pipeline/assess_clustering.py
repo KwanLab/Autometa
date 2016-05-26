@@ -108,15 +108,15 @@ for dbscan_table_path in dbscan_table_paths:
 			if bin_markers[cluster][pfam] == 1:
 				not_duplicated_counter += 1
 		#duplicated.append(duplicated_counter)
-		#threshold = None
-		#if kingdom == 'bacteria':
-		#	threshold = 28
-		#elif kingdom == 'archaea':
-		#	threshold = 32
-		#if not_duplicated_counter > threshold:
-		table_unique_markers_counter += not_duplicated_counter
-		number_of_clusters_over_threshold += 1
-		unique_marker_counter_list.append(not_duplicated_counter)
+		threshold = None
+		if kingdom == 'bacteria':
+			threshold = 28
+		elif kingdom == 'archaea':
+			threshold = 32
+		if not_duplicated_counter > threshold:
+			table_unique_markers_counter += not_duplicated_counter
+			number_of_clusters_over_threshold += 1
+			unique_marker_counter_list.append(not_duplicated_counter)
 
 	median_completeness = numpy.median(unique_marker_counter_list)
 
@@ -139,7 +139,7 @@ for dbscan_table_path in dbscan_table_paths:
 # Print output table
 output_table = open(output_table_path, 'w')
 #output_table.write('table\tav_number_of_markers\tav_duplicated_markers\n')
-output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters\tmedian_completeness\n')
+output_table.write('table\tnumber_binned_unique_markers\tnumber_of_clusters_over_threshold\tmedian_completeness\n')
 
 #for table_path in table_completeness_averages:
 	#completeness = table_completeness_averages[table_path]
