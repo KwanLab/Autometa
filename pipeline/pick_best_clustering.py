@@ -19,8 +19,8 @@ unique_markers = {}
 for i,line in enumerate(input_table_rows):
 	if i > 0:
 		line_list = line.split('\t')
-		table_products[line_list[0]] = line_list[4]
-		unique_markers[line_list[0]] = line_list[1]
+		table_products[line_list[0]] = float(line_list[4])
+		unique_markers[line_list[0]] = int(line_list[1])
 
 # Sort tables in descending order of product
 sorted_tables = sorted(table_products, key=table_products.get, reverse=True)
