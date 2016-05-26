@@ -149,4 +149,4 @@ for table_path in table_binned_unique_marker_counter:
 	number_unique_markers = table_binned_unique_marker_counter[table_path]
 	number_of_clusters = table_numbers_of_clusters[table_path]
 	median_completeness = table_median_completeness[table_path]
-	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + 't' + str(median_completeness) + '\n')
+	output_table.write(table_path + '\t' + str(number_unique_markers) + '\t' + str(number_of_clusters) + '\t' + str(median_completeness) + '\n')
