@@ -19,6 +19,10 @@ output_table_path = args['output']
 dbscan_column_heading = args['column']
 kingdom = args['kingdom']
 
+if kingdom != 'bacteria' and kingdom != 'archaea':
+	print 'Error, kingdom must either be "bacteria" or "archaea"'
+	sys.exit(2)
+
 # First parse hmm_contig_table_path
 
 hmm_contig_table_rows = None
