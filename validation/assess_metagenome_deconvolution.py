@@ -250,6 +250,39 @@ for contig in tqdm(contig_classifications, total=number_of_contigs):
 		chimera_table.write(contig + '\t' + species + '\t' + str(contig_classifications[contig][species]) + '\t' + str(percents[species]) + '\n')
 chimera_table.close
 
+# 5a. Make a table that determines the yield of genome reads that align to contigs (i.e. judge the quality of the assembly)
+aligned_unique_reads = {} # Dictionary that will store totals of aligned reads for each species
+reads_in_pure_contigs = {} # Dictionary that will store totals of aligned reads in 'pure' > 90% contigs
+reads_in_chimeric_contigs = {} # Dictionary that will store totals of aligned reads in 'impure' < 90% contigs
+# Note, according to the above scheme, the same contig can be considered pure and impure from the point of view of different genomes
+# i.e. - a contigs that is 95% E. coli and 5% S. aureus would be a pure E. coli contig and an impure S. aureus contig
+
+asm_recovery_table_path = output_prefix + '_asm_recovery_table'
+print strftime("%Y-%m-%d %H:%M:%S") + ' Writing assembly recovery table ' + asm_recovery_table_path + '...'
+for contig in contig_classifications:
+	percents = get_species_percents(contig_classifications[contig])
+	for species in percents:
+		if species not in aligned_unique_reads:
+			aligned_unique_reads[species] = 0
+		if species not in reads_in_pure_contigs:
+			reads_in_pure_contigs[species] = 0
+		if species not in reads_in_chimeric_contigs:
+			reads_in_chimeric_contigs[species] = 0
+
+		aligned_unique_reads += contig_classifications[contig][species]
+
+		if percents[species] >= 90:
+			reads_in_pure_contigs += contig_classifications[contig][species]
+		else:
+			reads_in_chimeric_contigs += contig_classifications[contig][species]
+
+# Write out table
+asm_recovery_table = open(asm_recovery_table_path, 'w')
+asm_recovery_table.write('species\taligned_unique_reads\treads_in_pure_contigs\treads_in_chimeric_contigs\n')
+for species in aligned_unique_reads:
+	asm_recovery_table.write(species + '\t' + str(aligned_unique_reads[species]) + '\t' + str(reads_in_pure_contigs[species]) + '\t' + str(reads_in_chimeric_contigs[species]) + '\n')
+asm_recovery_table.close
+
 # As we iterate through the supplied tables, we will claculate the 'clustering quotient' for each one, and hold it in a data structure
 clustering_quotients = {} # Keyed by bin_classification_table_path
 bin_accuracy_averages = {}
@@ -376,24 +409,27 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 	bin_recovery_table_path = current_output_prefix + '_bin_recovery_table'
 	print strftime("%Y-%m-%d %H:%M:%S") + ' Writing binning recovery table ' + bin_recovery_table_path + '...'
 	bin_recovery_table = open(bin_recovery_table_path, 'w')
-	bin_recovery_table.write('genome\tbin\treads\tpercent\n')
+	bin_recovery_table.write('genome\tbin\treads\tpercent_of_input\tpercent_of_aligned_to_asm\n')
 	genome_recovery_total = 0
 	claimed_bins = {}
 	for species in genome_reads_in_bins:
 		# Percents are calculated based on the previously calculated number of unique reads per reference genome
 		# because - not all the genome might end up in bins/assembled
-		percents = {}
+		percents_unique_input = {} # Percent expressed as a fraction of the unique reads aligned to reference genomes
+		percents_aligned_to_contigs = {} # Percent expressed as a fraction of the unique reads aligned to the assembly
 		for bin_name in genome_reads_in_bins[species]:
 			number_of_reads = genome_reads_in_bins[species][bin_name]
-			percent = (float(number_of_reads) / float(number_of_unique_reads[species]))*50 # Here we assume paired reads
-			percents[bin_name] = percent
+			percent_unique_input = (float(number_of_reads) / float(number_of_unique_reads[species]))*50 # Here we assume paired reads
+			percent_aligned_to_contigs = (float(number_of_reads) / float(aligned_unique_reads[species]))*50
+			percents_unique_input[bin_name] = percent_unique_input
+			percents_aligned_to_contigs[bin_name] = percent_aligned_to_contigs
 
-		recovery_values_list = percents.values()
+		recovery_values_list = percents_aligned_to_contigs.values()
 		recovery_values_list.sort(reverse=True)
 		genome_recovery_values.append(recovery_values_list[0])
 
 		# Add to the genome recovery total
-		sorted_bins = sorted(percents, key=percents.get, reverse=True)
+		sorted_bins = sorted(percents_aligned_to_contigs, key=percents_aligned_to_contigs.get, reverse=True)
 		for bin_name in sorted_bins:
 			if bin_name not in claimed_bins:
 				genome_recovery_total += percents[bin_name]
@@ -401,7 +437,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 				break
 
 		for bin_name in genome_reads_in_bins[species]:
-			bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents[bin_name]) + '\n')
+			bin_recovery_table.write(species + '\t' + bin_name + '\t' + str(genome_reads_in_bins[species][bin_name]) + '\t' + str(percents_unique_input[bin_name]) + '\t' + str(percents_aligned_to_contigs[bin_name]) + '\n')
 	bin_recovery_table.close
 
 	total_bin_genome_recovery[bin_classifications_table_path] = genome_recovery_total
