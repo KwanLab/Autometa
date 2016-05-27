@@ -269,7 +269,7 @@ for contig in contig_classifications:
 		if species not in reads_in_chimeric_contigs:
 			reads_in_chimeric_contigs[species] = 0
 
-		aligned_unique_reads += contig_classifications[contig][species]
+		aligned_unique_reads[species] += contig_classifications[contig][species]
 
 		if percents[species] >= 90:
 			reads_in_pure_contigs += contig_classifications[contig][species]
