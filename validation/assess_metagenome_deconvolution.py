@@ -272,9 +272,9 @@ for contig in contig_classifications:
 		aligned_unique_reads[species] += contig_classifications[contig][species]
 
 		if percents[species] >= 90:
-			reads_in_pure_contigs += contig_classifications[contig][species]
+			reads_in_pure_contigs[species] += contig_classifications[contig][species]
 		else:
-			reads_in_chimeric_contigs += contig_classifications[contig][species]
+			reads_in_chimeric_contigs[species] += contig_classifications[contig][species]
 
 # Write out table
 asm_recovery_table = open(asm_recovery_table_path, 'w')
