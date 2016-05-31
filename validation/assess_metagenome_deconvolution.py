@@ -432,7 +432,7 @@ for bin_classifications_table_path in bin_classifications_table_paths:
 		sorted_bins = sorted(percents_aligned_to_contigs, key=percents_aligned_to_contigs.get, reverse=True)
 		for bin_name in sorted_bins:
 			if bin_name not in claimed_bins:
-				genome_recovery_total += percents[bin_name]
+				genome_recovery_total += percents_aligned_to_contigs[bin_name]
 				claimed_bins[bin_name] = 1
 				break
 
