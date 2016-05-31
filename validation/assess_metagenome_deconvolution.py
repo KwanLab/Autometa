@@ -300,13 +300,13 @@ total_bin_genome_recovery = {}
 for bin_classifications_table_path in bin_classifications_table_paths:
 	print 'Considering ' + bin_classifications_table_path
 	pathList = bin_classifications_table_path.split('/')
-	filename = None
-	if '.' in pathList[-1]:
-		filenameList = pathList[-1].split('.')
-		filenameList.pop()
-		filename = ('.').join(filenameList)
-	else: 
-		filename = pathList[-1]
+	#filename = None
+	#if '.' in pathList[-1]:
+	#	filenameList = pathList[-1].split('.')
+	#	filenameList.pop()
+	#	filename = ('.').join(filenameList)
+	#else: 
+	filename = pathList[-1]
 
 	current_output_prefix = output_prefix + '_' + filename
 
