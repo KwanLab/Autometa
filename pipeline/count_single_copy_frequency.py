@@ -44,5 +44,4 @@ if args['out'] != None:
 	with open(str(args['out']), 'w') as outfile:
 		outfile.write("PFAM" + '\t' + "Occurrences" + '\n')
 		for PFAM,items in PFAM_dict.items():
-			average_contig_len = (sum_contig_len/len(PFAM_dict[PFAM]['contig_lengths']))	
 			outfile.write(str(PFAM) + '\t' + str(PFAM_dict[PFAM]['occurence']) + '\n')
