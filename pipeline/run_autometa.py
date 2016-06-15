@@ -27,15 +27,14 @@ processors = args['processors']
 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
-	outfile_name = str(args['assembly'].split('.')[0]) + "_over{0}k.fasta".format(int(args['length_cutoff']/1000))
+	outfile_name = str(args['assembly'].split('.')[0]) + "_filtered.fasta"
 	subprocess.call("{}fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
 def make_contig_table(fasta):
 	#looks like this script is assuming contigs from a spades assembly
-	infile_name = str(args['assembly'].split('.')[0]) + "_over{0}k.fasta".format(int(args['length_cutoff']/1000))
 	output_table_name = str(fasta).split('.')[0] + ".tab"
-	subprocess.call("{}make_contig_table.py {} {}".format(pipeline_path,infile_name, output_table_name), shell = True)
+	subprocess.call("{}make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
 	return output_table_name
 
 def make_marker_table(fasta):
@@ -57,13 +56,12 @@ def run_VizBin(fasta):
 	tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 	return tmp_path
 
-def process_and_clean_VizBin(tmp_path):
+def process_and_clean_VizBin(tmp_path,output_table_name):
 	subprocess.call("{}vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
 	subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
-	contig_tab = str(args['assembly'].split('.')[0]) + "_over{0}k.tab".format(int(args['length_cutoff']/1000))
-	subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(contig_tab), shell=True)
+	subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
 	subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-	subprocess.call("head -n 1 {} > contig_header.txt".format(contig_tab), shell=True)
+	subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
 	subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
 	subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
 	 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True)
@@ -83,6 +81,8 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 5".format(pipeline_path, vizbin_output_path), shell = True)
 	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True)
 	print("The best cluster is:")
+	subprocess.call("mkdir -p eps_test_dir", shell = True)
+	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	return best_cluster_tab.rstrip("\n")
@@ -123,7 +123,7 @@ vizbin_output_path = "contig_vizbin.tab"
 
 #install_VizBin_executable(autometa_path,home)
 
-process_and_clean_VizBin(run_VizBin(filtered_assembly))
+process_and_clean_VizBin(run_VizBin(filtered_assembly,contig_table))
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
 extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path),marker_tab_path)
 
