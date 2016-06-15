@@ -5,6 +5,7 @@ import os.path
 import subprocess 
 import getpass
 import time 
+import multiprocessing
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
@@ -46,7 +47,7 @@ def make_marker_table(fasta):
 		print "{} file already exists!".format(output_marker_table)
 		exit()
 	subprocess.call("{}hmmpress -f Bacteria_single_copy.hmm".format(hmm_marker_path), shell=True)
-	subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table), shell = True)
+	subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,str(args['assembly'].split('.')[0]put_marker_table,args['processors']), shell = True)
 	return output_marker_table
 
 def run_VizBin(fasta):
@@ -93,6 +94,9 @@ def extract_best_clusters(fasta,best_cluster_tab):
 	#use cluster_completeness.py instead
 	subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
+
+#Check user CPUs
+user_CPU_number = multiprocessing.cpu_count()
 
 start_time = time.time()
 username = getpass.getuser()
