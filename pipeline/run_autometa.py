@@ -101,10 +101,6 @@ autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).r
 pipeline_path = autometa_path + "/pipeline/"
 #Alternatively, the user could set this as an env variable
 
-args = {}
-args['assembly'] = "scaffolds_over3k.fasta"
-args['length_cutoff'] = 10000
-
 #run length trim and store output name
 filtered_assembly = length_trim(args['assembly'],args['length_cutoff'])
 contig_table = make_contig_table(filtered_assembly)
