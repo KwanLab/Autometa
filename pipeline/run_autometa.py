@@ -46,7 +46,7 @@ def make_marker_table(fasta):
 	if os.path.isfile(output_marker_table):
 		print "{} file already exists!".format(output_marker_table)
 		exit()
-	subprocess.call("{}hmmpress -f Bacteria_single_copy.hmm".format(hmm_marker_path), shell=True)
+	subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True)
 	subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), shell = True)
 	return output_marker_table
 
