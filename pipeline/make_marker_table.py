@@ -9,6 +9,7 @@ import subprocess
 parser = argparse.ArgumentParser(description='Script tabulate single copy markers \
 	from a metagenome assembly. Dependencies: prodigal v2.6.2 (from "GoogleImport" branch), hhmscan (hmmer 3.1b2)')
 parser.add_argument('-a','--assembly', help='Input assembly file', required=True)
+parser.add_argument('-p','--processors', help='Number of processors to use for hmmscan', default=1)
 parser.add_argument('-c','--cutoffs', help='Bacterial single copy hmm cutoffs as defined by Rinke et al. Default path is home directory.', default="~/Bacteria_single_copy_cutoffs.txt")
 parser.add_argument('-m','--hmm', help='Bacteria_single_copy_cutoffs.hmm. Default path is home directory.', default="~/Bacteria_single_copy.hmm")
 parser.add_argument('-o','--out', help='outfile.tab, three column table with contig, single copy PFAMS, and # of markers', required=False)
@@ -33,7 +34,7 @@ def run_prodigal(path_to_assembly):
 	 '.orfs.faa','-p meta' '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
 
 def run_hhmscan(path_to_prodigal_output,hmmdb):
-	subprocess.call("hmmscan --tblout {} {} {}".format(path_to_prodigal_output.split(".")[0] + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
+	subprocess.call("hmmscan --cpu {} --tblout {} {} {}".format(args['processors'],path_to_prodigal_output.split(".")[0] + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
 
 run_prodigal(assembly)
 run_hhmscan(assembly.split(".")[0] + '.orfs.faa',args['hmm'])
