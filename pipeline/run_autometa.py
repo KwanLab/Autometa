@@ -102,6 +102,9 @@ start_time = time.time()
 #check if fasta in path
 if not os.path.isfile(args['assembly']):
 	print "Could not find {}...".format(args['assembly'])
+	exit()
+#else:
+	#check if fasta
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
