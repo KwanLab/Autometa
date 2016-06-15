@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-from os.path import expanduser
+import os.path
 import subprocess 
 import getpass
 import time 
@@ -46,6 +46,9 @@ def make_marker_table(fasta):
 	hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
+	if os.path.isfile(output_marker_table):
+		print "{} file already exists!".format(output_marker_table)
+		exit()
 	subprocess.call("{}hmmpress -f Bacteria_single_copy.hmm".format(hmm_marker_path), shell=True)
 	subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table), shell = True)
 	return output_marker_table
@@ -95,8 +98,9 @@ def extract_best_clusters(fasta,best_cluster_tab):
 	subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
 
+start_time = time.time()
 username = getpass.getuser()
-home = expanduser("~") + "/"
+home = os.path.expanduser("~") + "/"
 autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).rstrip("\n")
 pipeline_path = autometa_path + "/pipeline/"
 #Alternatively, the user could set this as an env variable
@@ -113,5 +117,7 @@ process_and_clean_VizBin(run_VizBin(filtered_assembly))
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
 extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path))
 
-print format_time(time)
+elapsed_time = (time.time() - start)
+
+print "Elapsed time is {} seconds".format(round(elapsed_time,2))
 
