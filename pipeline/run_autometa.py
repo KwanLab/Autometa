@@ -94,7 +94,7 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
 		#use cluster_completeness.py instead
-	subprocess.call("{}cluster_completeness.py -f {} -d {} -c 'db.cluster' -o best_cluster_output_dir -m {}\
+	subprocess.call("{}cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {}\
 		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path), shell = True)
 
 start_time = time.time()
