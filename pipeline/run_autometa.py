@@ -27,7 +27,7 @@ processors = args['processors']
 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
-	outfile_name = str(args['assembly'].split('.')[0]) + "_filtered.fasta"
+	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
 	subprocess.call("{}fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
@@ -81,10 +81,11 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 5".format(pipeline_path, vizbin_output_path), shell = True)
 	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True)
 	print("The best cluster is:")
-	subprocess.call("mkdir -p eps_test_dir", shell = True)
-	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
+	subprocess.call("mkdir -p eps_test_dir", shell = True)
+	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
+
 	return best_cluster_tab.rstrip("\n")
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
