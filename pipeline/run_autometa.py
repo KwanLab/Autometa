@@ -45,7 +45,7 @@ def make_marker_table(fasta):
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
 		print "{} file already exists!".format(output_marker_table)
-		exit()
+		return
 	subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True)
 	subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), shell = True)
 	return output_marker_table
@@ -87,18 +87,21 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	return best_cluster_tab.rstrip("\n")
 
-def extract_best_clusters(fasta,best_cluster_tab):
-	hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
-	hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
+	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
+	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
 	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
-	#use cluster_completeness.py instead
-	subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
-		".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
+	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
+		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
+		#use cluster_completeness.py instead
+	subprocess.call("{}cluster_completeness.py -f {} -d {} -c 'db.cluster' -o best_cluster_output_dir -m {}\
+		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path), shell = True)
+
+start_time = time.time()
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
 
-start_time = time.time()
 username = getpass.getuser()
 home = os.path.expanduser("~") + "/"
 autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).rstrip("\n")
