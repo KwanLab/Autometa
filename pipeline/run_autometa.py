@@ -24,10 +24,6 @@ processors = args['processors']
 #def process_assembly_name(fasta):
 #check for output - so as not to run again
 
-def format_time(time):
-	return str(round(time.clock(), 2)) + " seconds "
-	print str(round(time.clock(), 2)) + " seconds "
-
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split('.')[0]) + "_over{0}k.fasta".format(int(args['length_cutoff']/1000))
