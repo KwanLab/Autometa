@@ -123,7 +123,7 @@ vizbin_output_path = "contig_vizbin.tab"
 
 #install_VizBin_executable(autometa_path,home)
 
-process_and_clean_VizBin(run_VizBin(filtered_assembly,contig_table))
+process_and_clean_VizBin(run_VizBin(filtered_assembly),contig_table)
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
 extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path),marker_tab_path)
 
