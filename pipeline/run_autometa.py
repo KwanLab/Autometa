@@ -99,6 +99,10 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 
 start_time = time.time()
 
+#check if fasta in path
+if not os.path.isfile(args['assembly']):
+	print "Could not find {}...".format(args['assembly'])
+
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
 
@@ -118,7 +122,7 @@ vizbin_output_path = "contig_vizbin.tab"
 
 process_and_clean_VizBin(run_VizBin(filtered_assembly))
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
-extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path))
+extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path),marker_tab_path)
 
 elapsed_time = (time.time() - start_time)
 
