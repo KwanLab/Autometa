@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description="Script to run the autometa pipelin
 parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
 parser.add_argument('-p','--processors', help='assembly.fasta', default=1)
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
- Default is 10,000 bp.', default=10000)
+ Default is 10,000 bp.', default=10000, type = int)
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
