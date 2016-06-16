@@ -141,6 +141,7 @@ extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 
 elapsed_time = (time.time() - start_time)
 
+print "Done!"
 print "Elapsed time is {} seconds".format(round(elapsed_time,2))
 FNULL.close()
 
