@@ -103,17 +103,19 @@ for i,line in enumerate(dbscan_table_rows):
 	if i > 0:
 		line_list = line.split('\t')
 		contig = line_list[contig_index]
-		pdb.set_trace()
+		
 		cluster = line_list[cluster_index]
 		cluster_contigs[contig] = cluster
 		if cluster not in markers_in_cluster:
 			markers_in_cluster[cluster] = {}
 
-		for pfam in contig_markers[contig]:
-			if pfam in markers_in_cluster[cluster]:
-				markers_in_cluster[cluster][pfam] += contig_markers[contig][pfam]
-			else:
-				markers_in_cluster[cluster][pfam] = contig_markers[contig][pfam]
+		#pdb.set_trace()
+		if contig != "contig":
+			for pfam in contig_markers[contig]:
+				if pfam in markers_in_cluster[cluster]:
+					markers_in_cluster[cluster][pfam] += contig_markers[contig][pfam]
+				else:
+					markers_in_cluster[cluster][pfam] = contig_markers[contig][pfam]
 
 # Load fasta file using biopython
 # Split into clusters
@@ -157,5 +159,6 @@ for cluster in cluster_sequences:
 	# Now output the fasta file
 	fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
 	SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
+
 
 
