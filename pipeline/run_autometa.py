@@ -93,13 +93,11 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	subprocess.call("mkdir -p eps_test_dir", shell = True)
 	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
-
 	return best_cluster_tab.rstrip("\n")
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
 	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
-	pdb.set_trace()
 	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
@@ -125,6 +123,7 @@ autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).r
 pipeline_path = autometa_path + "/pipeline/"
 #Alternatively, the user could set this as an env variable
 
+
 #run length trim and store output name
 filtered_assembly = length_trim(args['assembly'],args['length_cutoff'])
 contig_table = make_contig_table(filtered_assembly)
@@ -135,7 +134,8 @@ vizbin_output_path = "contig_vizbin.tab"
 
 process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
-extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path),marker_tab_path)
+best_cluster_tab = bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path)
+extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 
 elapsed_time = (time.time() - start_time)
 
