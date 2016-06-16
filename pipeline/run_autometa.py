@@ -48,7 +48,10 @@ def make_marker_table(fasta):
 		print "Continuing to next step..."
 	else:
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True)
-		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), shell = True)
+		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
+			shell = True,shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 	return output_marker_table
 
 def run_VizBin(fasta,marker_table):
