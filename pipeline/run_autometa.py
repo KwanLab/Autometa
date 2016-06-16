@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
+import os
 import subprocess 
 import getpass
 import time 
@@ -72,7 +72,7 @@ def process_and_clean_VizBin(tmp_path,output_table_name):
 		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
 		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
 		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
-		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True)
+		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		#Delete most recent /tmp/map* directory if it's the same user 
 		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
 		#need more elegant way to clean up
@@ -86,8 +86,9 @@ def install_VizBin_executable(autometa_path,home_dir):
 
 def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
-	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 5".format(pipeline_path, vizbin_output_path), shell = True)
-	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True)
+	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+	print "Running dbscan..."
+	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	print("The best cluster is:")
 	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
@@ -106,6 +107,7 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path), shell = True)
 
 start_time = time.time()
+FNULL = open(os.devnull, 'w')
 
 #check if fasta in path
 if not os.path.isfile(args['assembly']):
@@ -140,4 +142,5 @@ extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 elapsed_time = (time.time() - start_time)
 
 print "Elapsed time is {} seconds".format(round(elapsed_time,2))
+FNULL.close()
 
