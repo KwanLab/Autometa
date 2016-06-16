@@ -6,6 +6,7 @@ import subprocess
 import getpass
 import time 
 import multiprocessing
+import pdb
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
@@ -51,25 +52,31 @@ def make_marker_table(fasta):
 	return output_marker_table
 
 def run_VizBin(fasta):
-	subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
+	if os.path.isfile("contig_vizbin.tab"):
+		print "VizBin output already exists!".format(output_marker_table)
+		print "Continuing to next step..."
+		return None
+	else:
+		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
 		fasta), shell = True)
-	#process
-	tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-	return tmp_path
+		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
+		return tmp_path
+
 
 def process_and_clean_VizBin(tmp_path,output_table_name):
-	subprocess.call("{}vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
-	subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
-	subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
-	subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-	subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
-	subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
-	subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
-	 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True)
-	#Delete most recent /tmp/map* directory if it's the same user 
-	subprocess.call("rm -rf {}".format(tmp_path), shell = True)
-	#need more elegant way to clean up
-	subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
+	if tmp_path != None:
+		subprocess.call("{}vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
+		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
+		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
+		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
+		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
+		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
+		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
+		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True)
+		#Delete most recent /tmp/map* directory if it's the same user 
+		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
+		#need more elegant way to clean up
+		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
 
 def install_VizBin_executable(autometa_path,home_dir):
 	#install config into home directory 
@@ -92,6 +99,7 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
 	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+	pdf.set_trace()
 	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
