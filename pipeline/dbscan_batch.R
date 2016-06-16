@@ -23,7 +23,7 @@ for (i in eps_values) {
 	# First determine what the output file will be called
 	output_filename = paste(args[["input_contig_table"]], "eps", toString(i), sep="_")
 	d <- data.frame(data$vizbin_x, data$vizbin_y)
-	db <- dbscan(d, eps=i, minPts=3)
+	db <- dbscan(data.matrix(data), eps=i, minPts=3)
 	output_table <- data.frame(data, db.cluster=db$cluster)
 	write.table(output_table, file=output_filename, sep="\t", quote=FALSE, row.names=FALSE)
 }
