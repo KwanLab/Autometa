@@ -48,7 +48,7 @@ def make_marker_table(fasta):
 		print "Continuing to next step..."
 	else:
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
-		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True)
+		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
 			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
@@ -60,8 +60,9 @@ def run_VizBin(fasta,marker_table):
 		print "Continuing to next step..."
 		return None
 	else:
+		print "Running k-mer based binning..."
 		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
-		fasta), shell = True)
+		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return tmp_path
 
