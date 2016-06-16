@@ -51,9 +51,9 @@ def make_marker_table(fasta):
 		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), shell = True)
 	return output_marker_table
 
-def run_VizBin(fasta):
+def run_VizBin(fasta,marker_table):
 	if os.path.isfile("contig_vizbin.tab"):
-		print "VizBin output already exists!".format(output_marker_table)
+		print "VizBin output already exists!".format(marker_table)
 		print "Continuing to next step..."
 		return None
 	else:
@@ -133,7 +133,7 @@ vizbin_output_path = "contig_vizbin.tab"
 
 #install_VizBin_executable(autometa_path,home)
 
-process_and_clean_VizBin(run_VizBin(filtered_assembly),contig_table)
+process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
 extract_best_clusters(filtered_assembly,bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path),marker_tab_path)
 
