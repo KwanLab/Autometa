@@ -5,6 +5,7 @@
 import sys
 import argparse 
 from Bio import SeqIO
+import pdb
 
 def assess_assembly(seq_record_list):
 	assembly_size = sum(len(seq) for seq in seq_record_list)
@@ -102,6 +103,7 @@ for i,line in enumerate(dbscan_table_rows):
 	if i > 0:
 		line_list = line.split('\t')
 		contig = line_list[contig_index]
+		pdb.set_trace()
 		cluster = line_list[cluster_index]
 		cluster_contigs[contig] = cluster
 		if cluster not in markers_in_cluster:
