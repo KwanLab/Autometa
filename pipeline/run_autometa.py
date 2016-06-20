@@ -10,7 +10,13 @@ import pdb
 import logging
 
 #logger
-logging.basicConfig(filname='autometa.log', level='logging.DEBUG')
+logger = logging.getLogger('run_autometa.py')
+hdlr = logging.FileHandler('run_autometa.log')
+formatter = logging.Formatter('%(asctimes)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
+#logging.basicConfig(filname='autometa.log', level=logging.DEBUG,filemode='w')
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
