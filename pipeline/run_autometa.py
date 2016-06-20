@@ -32,7 +32,7 @@ fasta_assembly = args['assembly']
 processors = args['processors']
 #kmer = args['kmer']
 #what input variables were and when you ran it
-logger.info('Input: -a {} -p {} -l {}'.format(fasta_assembly, processors, length_cutoff)
+logger.info('Input: -a {} -p {} -l {}'.format(fasta_assembly, processors, length_cutoff))
 
 #def is_fasta(fasta):
 #def process_assembly_name(fasta):
