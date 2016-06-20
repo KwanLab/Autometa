@@ -7,6 +7,10 @@ import getpass
 import time 
 import multiprocessing
 import pdb
+import logging
+
+#logger
+logging.basicConfig(filname='autometa.log', level='logging.DEBUG')
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
@@ -44,10 +48,10 @@ def make_marker_table(fasta):
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
-		print "{} file already exists!".format(output_marker_table)
-		print "Continuing to next step..."
+		logging.info('{} file alrea dy exists!'.format(output_marker_table))
+		logging.info('Continuing to next step...')
 	else:
-		print "Making the marker table with prodigal and hmmscan. This could take a while..."
+		logging.info('Making the marker table with prodigal and hmmscan. This could take a while...')
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
@@ -56,11 +60,11 @@ def make_marker_table(fasta):
 
 def run_VizBin(fasta,marker_table):
 	if os.path.isfile("contig_vizbin.tab"):
-		print "VizBin output already exists!".format(marker_table)
-		print "Continuing to next step..."
+		logging.info('VizBin output already exists!'.format(marker_table))
+		logging.info('Continuing to next step...')
 		return None
 	else:
-		print "Running k-mer based binning..."
+		logging.info('Running k-mer based binning...')
 		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
 		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
@@ -91,9 +95,9 @@ def install_VizBin_executable(autometa_path,home_dir):
 def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
 	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	print "Running dbscan..."
+	logging.info('Running dbscan...')
 	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	print("The best cluster is:")
+	logging.info('The best cluster is:')
 	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	subprocess.call("mkdir -p eps_test_dir", shell = True)
@@ -115,7 +119,7 @@ FNULL = open(os.devnull, 'w')
 
 #check if fasta in path
 if not os.path.isfile(args['assembly']):
-	print "Could not find {}...".format(args['assembly'])
+	logging.debug('Could not find {}...'.format(args['assembly']))
 	exit()
 #else:
 	#check if fasta
@@ -145,7 +149,7 @@ extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 
 elapsed_time = (time.time() - start_time)
 
-print "Done!"
-print "Elapsed time is {} seconds".format(round(elapsed_time,2))
+logging.info('Done!')
+logging.info('Elapsed time is {} seconds'.format(round(elapsed_time,2)))
 FNULL.close()
 
