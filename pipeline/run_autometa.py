@@ -12,7 +12,7 @@ import logging
 #logger
 logger = logging.getLogger('run_autometa.py')
 hdlr = logging.FileHandler('run_autometa.log')
-formatter = logging.Formatter('%(asctimes)s %(levelname)s %(message)s')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
