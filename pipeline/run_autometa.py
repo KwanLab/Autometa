@@ -48,7 +48,7 @@ def make_marker_table(fasta):
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
-		logging.info('{} file alrea dy exists!'.format(output_marker_table))
+		logging.info('{} file already exists!'.format(output_marker_table))
 		logging.info('Continuing to next step...')
 	else:
 		logging.info('Making the marker table with prodigal and hmmscan. This could take a while...')
