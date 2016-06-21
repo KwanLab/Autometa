@@ -108,7 +108,7 @@ def install_VizBin_executable(autometa_path,home_dir):
 
 def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
-	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True),stdout=FNULL, stderr=subprocess.STDOUT)
+	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	print "Running dbscan..."
 	logger.info('Running dbscan...')
 	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
