@@ -28,6 +28,7 @@ parser.add_argument('-m','--markertable', help='marker table created with make_m
 parser.add_argument('-f','--fasta', help='contig fasta file', required=True)
 parser.add_argument('-o','--output', help='output directory for summary table and cluster fasta files', required=True)
 parser.add_argument('-k','--kingdom', help='kingdom (bacteria|archaea)', default = 'bacteria')
+parser.add_argument('-cc','--cluster_completeness', help='fasta files outputed determined by cluster_completeness', default = 20)
 args = vars(parser.parse_args())
 
 dbscan_table_path = args['dbscantable']
@@ -36,6 +37,7 @@ marker_table_path = args['markertable']
 fasta_file_path = args['fasta']
 output_prefix = args['output']
 kingdom = args['kingdom']
+cluster_completeness = args['cluster_completeness']
 
 # Input varification *TO DO*
 # Check paths exist
@@ -153,12 +155,13 @@ for cluster in cluster_sequences:
 	completeness = (float(number_of_markers_found)/total_markers) * 100
 	purity = (float(number_unique_markers)/number_of_markers_found) * 100
 
-	# Add line to summary table
-	summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t' + str(completeness) + '\t' + str(purity) + '\n')
-
-	# Now output the fasta file
-	fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
-	SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
+	if completeness >= cluster_completeness:
+		# Add line to summary table
+		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t' + str(completeness) + '\t' + str(purity) + '\n')
+	
+		# Now output the fasta file
+		fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
+		SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
 
 
 

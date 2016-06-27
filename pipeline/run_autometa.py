@@ -22,17 +22,19 @@ logger.setLevel(logging.DEBUG)
 parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
 	The script expects autometa repo to be somewhere in the user's home directory.")
 parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p','--processors', help='assembly.fasta', default=1)
+parser.add_argument('-p','--processors', help='Number of processors used', default=1)
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
+parser.add_argument('c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
 fasta_assembly = args['assembly']
 processors = args['processors']
+cluster_completeness = args['cluster_completeness_output']
 #kmer = args['kmer']
 #what input variables were and when you ran it
-logger.info('Input: -a {} -p {} -l {}'.format(fasta_assembly, processors, length_cutoff))
+logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, length_cutoff, cluster_completeness))
 
 #def is_fasta(fasta):
 #def process_assembly_name(fasta):
@@ -127,8 +129,8 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
 		#use cluster_completeness.py instead
-	subprocess.call("{}cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {}\
-		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path), shell = True)
+	subprocess.call("{}cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
+		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
@@ -171,4 +173,5 @@ print "Elapsed time is {} seconds".format(round(elapsed_time,2))
 logger.info('Done!')
 logger.info('Elapsed time is {} seconds'.format(round(elapsed_time,2)))
 FNULL.close()
+
 
