@@ -39,7 +39,7 @@ def run_diamond(diamond_path, prodigal_output, diamond_database_path, num_proces
 
 def run_blast2lca(input_file):
 	output = input_file.rstrip(".tab") + ".lca"
-	subprocess.call("blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/ijmiller/taxdump/nodes.dmp -names /home/ijmiller/taxdump/names.dmp {} > {}"\
+	subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
 		.format(input_file, output), shell = True) 
 	return output
 
@@ -64,13 +64,12 @@ if not os.path.isfile(prodigal_output + ".faa"):
 
 
 if not os.path.isfile(prodigal_output + ".tab"):
-	print "Running diamond... "
+	print "Running diamond blast... "
 	#diamond_output = 
 	diamond_output = run_diamond(diamond_path, prodigal_output, diamond_database_path, num_processors, prodigal_daa)
 else:
 	diamond_output = prodigal_output + ".tab"
 
-print "Blasting... "
 blast2lca_output = run_blast2lca(diamond_output)
 print "Running add_contig_taxonomy.py... "
 run_taxonomy(add_contig_path, diamond_output, blast2lca_output, taxdump_dir_path)
