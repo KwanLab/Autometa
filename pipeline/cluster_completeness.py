@@ -6,6 +6,8 @@ import sys
 import argparse 
 from Bio import SeqIO
 import pdb
+import pandas as pd
+import numpy as np
 
 def assess_assembly(seq_record_list):
 	assembly_size = sum(len(seq) for seq in seq_record_list)
@@ -37,8 +39,7 @@ marker_table_path = args['markertable']
 fasta_file_path = args['fasta']
 output_prefix = args['output']
 kingdom = args['kingdom']
-cluster_completeness = args['cluster_completeness']
-
+cluster_completeness = float(args['cluster_completeness'])
 # Input varification *TO DO*
 # Check paths exist
 # Check that kingdom is either 'bacteria' or 'archaea'
@@ -72,6 +73,9 @@ dbscan_header_line = dbscan_table_rows[0]
 dbscan_header_list = dbscan_header_line.split('\t')
 cluster_index = None
 contig_index = None
+#New
+cov_index = None
+gc_index = None
 cluster_column_found = 0
 contig_column_found = 0
 for i, heading in enumerate(dbscan_header_list):
@@ -81,6 +85,11 @@ for i, heading in enumerate(dbscan_header_list):
 	if heading == 'contig':
 		contig_index = i
 		contig_column_found += 1
+	#New
+	if heading == 'gc':
+		gc_index = i
+	if heading == 'cov':
+		cov_index = i
 
 if cluster_index is None:
 	print 'Error, could not find column ' + cluster_column_heading + ' in dbscan table ' + dbscan_table_path
@@ -99,17 +108,42 @@ if contig_column_found > 1:
 	sys.exit(2)
 
 cluster_contigs = {} # Keyed by contig, stores the cluster of each contig
-markers_in_cluster = {} # Keyed by cluster, holds totals of each marker found
+markers_in_cluster = {} # Keyed by cluster, holds total of each marker found
+#New
+gc_in_cluster = {} # Keyed by cluster, holds total gc
+cov_in_cluster = {}  # keyed by cluster, holds total cov
+count = {}
+stdev_gc = {}
+stdev_cov = {}
 
 for i,line in enumerate(dbscan_table_rows):
 	if i > 0:
 		line_list = line.split('\t')
 		contig = line_list[contig_index]
-		
+		gc = float(line_list[gc_index])
+		cov = float(line_list[cov_index])
 		cluster = line_list[cluster_index]
+		#New
+		if cluster not in gc_in_cluster:
+			gc_in_cluster[cluster] = 0
+		if cluster not in cov_in_cluster:
+			cov_in_cluster[cluster] = 0
+		if cluster not in stdev_cov:
+			stdev_cov[cluster] = []
+		if cluster not in stdev_gc:
+			stdev_gc[cluster] = []
+
+		gc_in_cluster[cluster] += gc  
+		cov_in_cluster[cluster] += cov
+		stdev_cov[cluster].append(cov)
+		stdev_gc[cluster].append(gc)
 		cluster_contigs[contig] = cluster
+
 		if cluster not in markers_in_cluster:
 			markers_in_cluster[cluster] = {}
+		if cluster not in count:
+			count[cluster] = 0
+		count[cluster] += 1
 
 		#pdb.set_trace()
 		if contig != "contig":
@@ -137,7 +171,7 @@ for seq_record in SeqIO.parse(fasta_file_path, 'fasta'):
 # Now go through cluster and output table
 summary_table_path = output_prefix + '/summary_table'
 summary_table = open(summary_table_path, 'w')
-summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\n')
+summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tcov\tstdev_cov\tgc_percent\tstdev_gc\n')
 
 for cluster in cluster_sequences:
 	attributes = assess_assembly(cluster_sequences[cluster])
@@ -152,16 +186,18 @@ for cluster in cluster_sequences:
 		if markers_in_cluster[cluster][pfam] == 1:
 			number_unique_markers += 1
 
+	average_gc = float(gc_in_cluster[cluster]/count[cluster])
+	average_cov = float(cov_in_cluster[cluster]/count[cluster])
+	std_gc = np.std(stdev_gc[cluster], ddof=1)
+	std_cov = np.std(stdev_cov[cluster], ddof=1)
 	completeness = (float(number_of_markers_found)/total_markers) * 100
 	purity = (float(number_unique_markers)/number_of_markers_found) * 100
-
-	if completeness >= cluster_completeness:
-		# Add line to summary table
-		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t' + str(completeness) + '\t' + str(purity) + '\n')
 	
+	if completeness >= cluster_completeness:
+		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t{0:.6f}'.format(completeness) + 
+			'\t{0:.6f}\t'.format(purity) + str(average_cov) + '\t' + str(std_cov) + '\t' + str(average_gc) + '\t' + str(std_gc) + '\n')
 		# Now output the fasta file
 		fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
 		SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
-
 
 
