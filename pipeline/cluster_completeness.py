@@ -46,6 +46,7 @@ cluster_completeness = float(args['cluster_completeness'])
 
 # First go through marker table
 contig_markers = {}
+contig = {}
 marker_table = open(marker_table_path, 'r')
 marker_table_rows = marker_table.read().splitlines()
 marker_table.close
@@ -54,15 +55,17 @@ for i,line in enumerate(marker_table_rows):
 	if i > 0:
 		line_list = line.split('\t')
 		pfam_list = line_list[1].split(',')
-		contig = line_list[0]
-		if contig not in contig_markers:
-			contig_markers[contig] = {}
+		contig_name = line_list[0]
+		num_single_copies = line_list[2]
+		contig{contig_name} = num_single_copies
+		if contig_name not in contig_markers:
+			contig_markers[contig_name] = {}
 
 		for pfam in pfam_list:
-			if pfam in contig_markers[contig]:
-				contig_markers[contig][pfam] += 1
+			if pfam in contig_markers[contig_name]:
+				contig_markers[contig_name][pfam] += 1
 			else:
-				contig_markers[contig][pfam] = 1
+				contig_markers[contig_name][pfam] = 1
 
 # Now go through dbscan table
 dbscan_table = open(dbscan_table_path, 'r')
@@ -127,7 +130,7 @@ for i,line in enumerate(dbscan_table_rows):
 		if cluster not in gc_in_cluster:
 			gc_in_cluster[cluster] = 0
 		if cluster not in cov_in_cluster:
-			cov_in_cluster[cluster] = 0
+			cov_in_cluster[cluster] = 0 
 		if cluster not in stdev_cov:
 			stdev_cov[cluster] = []
 		if cluster not in stdev_gc:
@@ -171,7 +174,7 @@ for seq_record in SeqIO.parse(fasta_file_path, 'fasta'):
 # Now go through cluster and output table
 summary_table_path = output_prefix + '/summary_table'
 summary_table = open(summary_table_path, 'w')
-summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tcov\tstdev_cov\tgc_percent\tstdev_gc\n')
+summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tcov\tstdev_cov\tgc_percent\tstdev_gc\tcompleteness_over_{}\n'.format(cluster_completeness))
 
 for cluster in cluster_sequences:
 	attributes = assess_assembly(cluster_sequences[cluster])
@@ -195,9 +198,11 @@ for cluster in cluster_sequences:
 	
 	if completeness >= cluster_completeness:
 		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t{0:.6f}'.format(completeness) + 
-			'\t{0:.6f}\t'.format(purity) + str(average_cov) + '\t' + str(std_cov) + '\t' + str(average_gc) + '\t' + str(std_gc) + '\n')
-		# Now output the fasta file
-		fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
-		SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
+		'\t{0:.6f}\t'.format(purity) + str(average_cov) + '\t' + str(std_cov) + '\t' + str(average_gc) + '\t' + str(std_gc) + '\t' + 'True'  + '\n')
+                # Now output the fasta file
+                fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
+                SeqIO.write(cluster_sequences[cluster], fasta_output_path, 'fasta')
 
-
+	else:
+		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) +
+		'\t{0:.6f}'.format(completeness) + '\t{0:.6f}\t'.format(purity) + str(average_cov) + '\t' + str(std_cov) + '\t' + str(average_gc) + '\t' + str(std_gc) + '\t' + 'False'  + '\n')
