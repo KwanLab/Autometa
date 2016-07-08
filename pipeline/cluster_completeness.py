@@ -89,7 +89,11 @@ for i,line in enumerate(marker_table_rows):
 		pfam_list = line_list[1].split(',')
 		contig_name = line_list[0]
 		num_single_copies = line_list[2]
+<<<<<<< HEAD
 		markers_in_contig[contig_name] = num_single_copies
+=======
+		contig[contig_name] = num_single_copies
+>>>>>>> 9d4a1a1a883ddfbd8b2234b9ba1ad3024ac58d96
 		if contig_name not in contig_markers:
 			contig_markers[contig_name] = {}
 
@@ -205,12 +209,31 @@ for seq_record in SeqIO.parse(fasta_file_path, 'fasta'):
 	if cluster not in cluster_sequences:
 		cluster_sequences[cluster] = []
 	cluster_sequences[cluster].append(seq_record)
+<<<<<<< HEAD
+=======
+
+# Need to total up markers in the 'unclaimed' bin
+if 'unclaimed' in cluster_sequences:
+	for seq_record in cluster_sequences['unclaimed']:
+		if 'unclaimed' not in markers_in_cluster:
+			markers_in_cluster['unclaimed'] = {}
+		contig = seq_record.id
+		for pfam in contig_markers[contig]:
+			if pfam in markers_in_cluster['unclaimed']:
+				markers_in_cluster['unclaimed'][pfam] += contig_markers[contig][pfam]
+			else:
+				markers_in_cluster['unclaimed'][pfam] = contig_markers[contig][pfam]
+
+>>>>>>> 9d4a1a1a883ddfbd8b2234b9ba1ad3024ac58d96
 # Now go through cluster and output table
 summary_table_path = output_prefix + '/summary_table'
 summary_table = open(summary_table_path, 'w')
 summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tcov\tstdev_cov\tgc_percent\tstdev_gc\tcompleteness_over_{}\n'.format(cluster_completeness))
 
 for cluster in cluster_sequences:
+	if cluster == 'unclaimed':
+		continue
+		
 	attributes = assess_assembly(cluster_sequences[cluster])
 	if kingdom == 'bacteria':
 		total_markers = 139
