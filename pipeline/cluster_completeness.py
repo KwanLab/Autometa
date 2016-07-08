@@ -128,10 +128,22 @@ for seq_record in SeqIO.parse(fasta_file_path, 'fasta'):
 		cluster_sequences[cluster] = []
 	cluster_sequences[cluster].append(seq_record)
 
+# Need to total up markers in the 'unclaimed' bin
+if 'unclaimed' in cluster_sequences:
+	for seq_record in cluster_sequences['unclaimed']:
+		if 'unclaimed' not in markers_in_cluster:
+			markers_in_cluster['unclaimed'] = {}
+		contig = seq_record.id
+		for pfam in contig_markers[contig]:
+			if pfam in markers_in_cluster['unclaimed']:
+				markers_in_cluster['unclaimed'][pfam] += contig_markers[contig][pfam]
+			else:
+				markers_in_cluster['unclaimed'][pfam] = contig_markers[contig][pfam]
+
 # Now go through cluster and output table
 summary_table_path = output_prefix + '/summary_table'
 summary_table = open(summary_table_path, 'w')
-summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\n')
+summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tmarkers_found\tcompleteness\tunique_markers\tpurity\n')
 
 for cluster in cluster_sequences:
 	attributes = assess_assembly(cluster_sequences[cluster])
@@ -150,7 +162,7 @@ for cluster in cluster_sequences:
 	purity = (float(number_unique_markers)/number_of_markers_found) * 100
 
 	# Add line to summary table
-	summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t' + str(completeness) + '\t' + str(purity) + '\n')
+	summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t' + str(number_of_markers_found) + '\t' + str(completeness) + '\t' + str(number_unique_markers) + '\t' + str(purity) + '\n')
 
 	# Now output the fasta file
 	fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'
