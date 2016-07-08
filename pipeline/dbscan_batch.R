@@ -1,8 +1,8 @@
 # Program to run dbscan over a range of eps values
 # USAGE: Rscript dbscan_batch.r <input contig table> <start eps> <end eps> [<eps step> (default = 0.1)]
 
-library(dbscan)
-library(docopt)
+library('dbscan')
+library('docopt')
 
 # args is a named list
 args <- docopt('USAGE: dbscan_batch.R <input_contig_table> <start_eps> <end_eps> [eps_step]')
