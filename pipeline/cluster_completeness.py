@@ -57,7 +57,7 @@ for i,line in enumerate(marker_table_rows):
 		pfam_list = line_list[1].split(',')
 		contig_name = line_list[0]
 		num_single_copies = line_list[2]
-		contig{contig_name} = num_single_copies
+		contig[contig_name] = num_single_copies
 		if contig_name not in contig_markers:
 			contig_markers[contig_name] = {}
 
