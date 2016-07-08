@@ -189,6 +189,9 @@ summary_table = open(summary_table_path, 'w')
 summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tcov\tstdev_cov\tgc_percent\tstdev_gc\tcompleteness_over_{}\n'.format(cluster_completeness))
 
 for cluster in cluster_sequences:
+	if cluster == 'unclaimed':
+		continue
+		
 	attributes = assess_assembly(cluster_sequences[cluster])
 	if kingdom == 'bacteria':
 		total_markers = 139
