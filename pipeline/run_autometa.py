@@ -25,7 +25,7 @@ parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
 parser.add_argument('-p','--processors', help='Number of processors used', default=1)
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument('c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
@@ -118,6 +118,7 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	logger.info('The best cluster is:')
 	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
 	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
+	logger.info(best_cluster_tab)
 	subprocess.call("mkdir -p eps_test_dir", shell = True)
 	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	return best_cluster_tab.rstrip("\n")
