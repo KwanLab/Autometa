@@ -44,13 +44,13 @@ logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
-	subprocess.call("{}fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
+	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
 def make_contig_table(fasta):
 	#looks like this script is assuming contigs from a spades assembly
 	output_table_name = str(fasta).split('.')[0] + ".tab"
-	subprocess.call("{}make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
+	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
 	return output_table_name
 
 def make_marker_table(fasta):
@@ -67,7 +67,7 @@ def make_marker_table(fasta):
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
+		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
 			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_marker_table
@@ -82,7 +82,7 @@ def run_VizBin(fasta,marker_table):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
+		subprocess.call("java -jar {}/VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
 		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return tmp_path
@@ -123,7 +123,7 @@ def bin_assess_and_pick_cluster(pipeline_path,marker_tab, vizbin_output_path, fi
 	#subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	#return best_cluster_tab.rstrip("\n")
 
-	subprocess.call("{}recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
+	subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
@@ -132,7 +132,7 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
 		#use cluster_completeness.py instead
-	subprocess.call("{}cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
+	subprocess.call("{}/cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
 		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
 
 start_time = time.time()
@@ -149,8 +149,8 @@ if not os.path.isfile(args['assembly']):
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
 
-#username = getpass.getuser()
-#home = os.path.expanduser("~") + "/"
+username = getpass.getuser()
+home = os.path.expanduser("~") + "/"
 
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
