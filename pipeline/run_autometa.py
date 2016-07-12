@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 import subprocess 
 import getpass
 import time 
@@ -148,10 +149,13 @@ if not os.path.isfile(args['assembly']):
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
 
-username = getpass.getuser()
-home = os.path.expanduser("~") + "/"
-autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).rstrip("\n")
-pipeline_path = autometa_path + "/pipeline/"
+#username = getpass.getuser()
+#home = os.path.expanduser("~") + "/"
+
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
 #Alternatively, the user could set this as an env variable
 
 
