@@ -44,7 +44,6 @@ logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
-	print("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name))
 	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
