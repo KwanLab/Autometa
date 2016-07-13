@@ -23,7 +23,7 @@ fasta_assembly = args['assembly']
 def length_trim(fasta,length_cutoff):
 	#Trim the length of fasta file
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
-	subprocess.call("{}fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff, outfile_name), shell = True)
+	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff, outfile_name), shell = True)
 	return outfile_name
 
 def run_prodigal(path_to_assembly):
@@ -35,7 +35,7 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 	view_output = prodigal_output + ".tab"
 	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}"\
 		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
-	subprocess.call("{} view -a {} -f tab -o {}".format(diamond_path,prodigal_daa, view_output), shell = True)
+	subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
 	return view_output
 	#return  view_output
 	#might want to change name of outputfile
@@ -46,8 +46,8 @@ def run_blast2lca(input_file):
 		.format(input_file, output), shell = True) 
 	return output
 
-def run_taxonomy(add_contig_path, contig_table_path, tax_table_path, taxdump_dir_path): #Have to update this
-	subprocess.call("{} {} {} {} taxonomy.tab".format(add_contig_path, contig_table_path,tax_table_path, taxdump_dir_path), shell = True)
+def run_taxonomy(pipeline_path, contig_table_path, tax_table_path, taxdump_dir_path): #Have to update this
+	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, contig_table_path,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
 	return 'taxonomy.tab'
 
@@ -60,7 +60,7 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-add_contig_path = pipeline_path
+#add_contig_path = pipeline_path
 
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
@@ -78,7 +78,7 @@ else:
 
 blast2lca_output = run_blast2lca(diamond_output)
 print "Running add_contig_taxonomy.py... "
-taxonomy_table = run_taxonomy(add_contig_path, diamond_output, blast2lca_output, taxdump_dir_path)
+taxonomy_table = run_taxonomy(pipeline_path, diamond_output, blast2lca_output, taxdump_dir_path)
 
 # Split the original contigs into sets for each kingdom
 taxonomy_pd = DataFrame.from_csv(taxonomy_table, sep='\t')
