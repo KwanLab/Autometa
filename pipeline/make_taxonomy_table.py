@@ -28,8 +28,15 @@ def length_trim(fasta,length_cutoff):
 
 def run_prodigal(path_to_assembly):
 	#When "shell = True", need to give one string, not a list
-	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
-	 '.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
+	prodigal_output = path_to_assembly.split('.')[0] + '.orfs.faa'
+	if os.path.isfile(prodigal_output):
+		print "{} file already exists!".format(prodigal_output)
+		print "Continuing to next step..."
+		logger.info('{} file already exists!'.format(prodigal_output))
+		logger .info('Continuing to next step...')
+	else:
+		subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
+	 	'.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
 
 def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
@@ -53,13 +60,14 @@ def run_taxonomy(pipeline_path, contig_table_path, tax_table_path, taxdump_dir_p
 
 #diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
 taxdump_dir_path = '/home/jkwan/blast2lca_taxdb'
-prodigal_output = args['assembly'].rstrip(".fasta") + "_filtered.orfs"
+prodigal_output = args['assembly'].split('.')[0] + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
-diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
+#diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
+diamond_database_path = '/mnt/not_backed_up/nr_diamond/nr'
 #add_contig_path = pipeline_path
 
 if not os.path.isfile(prodigal_output + ".faa"):
