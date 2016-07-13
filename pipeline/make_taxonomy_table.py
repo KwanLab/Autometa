@@ -30,10 +30,10 @@ def run_prodigal(path_to_assembly):
 	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
 	 '.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
 
-def run_diamond(diamond_path, prodigal_output, diamond_database_path, num_processors, prodigal_daa):
+def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
-	subprocess.call("{} blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}"\
-		.format(diamond_path,prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
+	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}"\
+		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
 	subprocess.call("{} view -a {} -f tab -o {}".format(diamond_path,prodigal_daa, view_output), shell = True)
 	return view_output
 	#return  view_output
@@ -50,7 +50,7 @@ def run_taxonomy(add_contig_path, contig_table_path, tax_table_path, taxdump_dir
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
 	return 'taxonomy.tab'
 
-diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n")
+#diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
 taxdump_dir_path = '/home/jkwan/blast2lca_taxdb'
 prodigal_output = args['assembly'].rstrip(".fasta") + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
@@ -69,7 +69,7 @@ if not os.path.isfile(prodigal_output + ".faa"):
 if not os.path.isfile(prodigal_output + ".tab"):
 	print "Running diamond blast... "
 	#diamond_output = 
-	diamond_output = run_diamond(diamond_path, prodigal_output, diamond_database_path, num_processors, prodigal_daa)
+	diamond_output = run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa)
 else:
 	diamond_output = prodigal_output + ".tab"
 
