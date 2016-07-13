@@ -5,6 +5,7 @@ import argparse
 import os
 import pandas as pd
 from Bio import SeqIO
+import sys
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.")
@@ -54,8 +55,10 @@ def run_taxonomy(add_contig_path, contig_table_path, tax_table_path, taxdump_dir
 taxdump_dir_path = '/home/jkwan/blast2lca_taxdb'
 prodigal_output = args['assembly'].rstrip(".fasta") + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
-autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).rstrip("\n")
-pipeline_path = autometa_path + "/pipeline/"
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
 diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
 add_contig_path = subprocess.check_output('find ~ -name "add_contig_taxonomy.py"', shell=True).rstrip("\n")
 
