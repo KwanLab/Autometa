@@ -60,7 +60,7 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-add_contig_path = subprocess.check_output('find ~ -name "add_contig_taxonomy.py"', shell=True).rstrip("\n")
+add_contig_path = pipeline_path
 
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
