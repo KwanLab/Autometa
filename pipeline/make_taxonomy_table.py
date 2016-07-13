@@ -3,6 +3,8 @@
 import subprocess
 import argparse
 import os
+import pandas as pd
+from Bio import SeqIO
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.")
@@ -26,7 +28,7 @@ def length_trim(fasta,length_cutoff):
 def run_prodigal(path_to_assembly):
 	#When "shell = True", need to give one string, not a list
 	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
-	 '.orfs.faa','-p meta' '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
+	 '.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
 
 def run_diamond(diamond_path, prodigal_output, diamond_database_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
@@ -46,6 +48,7 @@ def run_blast2lca(input_file):
 def run_taxonomy(add_contig_path, contig_table_path, tax_table_path, taxdump_dir_path): #Have to update this
 	subprocess.call("{} {} {} {} taxonomy.tab".format(add_contig_path, contig_table_path,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
+	return 'taxonomy.tab'
 
 diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n")
 taxdump_dir_path = '/home/jkwan/blast2lca_taxdb'
@@ -72,5 +75,29 @@ else:
 
 blast2lca_output = run_blast2lca(diamond_output)
 print "Running add_contig_taxonomy.py... "
-run_taxonomy(add_contig_path, diamond_output, blast2lca_output, taxdump_dir_path)
+taxonomy_table = run_taxonomy(add_contig_path, diamond_output, blast2lca_output, taxdump_dir_path)
+
+# Split the original contigs into sets for each kingdom
+taxonomy_pd = DataFrame.from_csv(taxonomy_table, sep='\t')
+categorized_seq_objects = {}
+all_seq_records = {}
+
+# Load fasta file
+for seq_record in SeqIO.parse(filtered_assembly):
+	all_seq_records[seq_record.id] = seq_record
+
+for i, row in taxonomy_pd.iterrows():
+	kingdom = row['kingdom']
+	contig = row['contig']
+	if kingdom in categorized_seq_objects:
+		categorized_seq_objects[kingdom].append(all_seq_records[contig])
+	else:
+		categorized_seq_objects[kingdom] = [ all_seq_records[contig] ]
+
+# Now we write the component fasta files
+for kingdom in categorized_seq_objects:
+	seq_list = categorized_seq_objects[kingdom]
+	output_path = kingdom + '.fasta'
+	SeqIO.write(seq_list, output_path, 'fasta')
+
 print "Done!"
