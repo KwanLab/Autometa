@@ -40,8 +40,9 @@ def run_prodigal(path_to_assembly):
 
 def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
-	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}"\
-		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
+	current_dir = os.getcwd()
+	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}/tmp"\
+		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, current_dir), shell = True)
 	subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
 	return view_output
 	#return  view_output
