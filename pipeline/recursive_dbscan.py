@@ -217,6 +217,8 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
 	best_eps_value = sorted_eps_values[0]
 
+	pdb.set_trace()
+
 	# For impure clusters, output vizbin table
 	# First, find pure clusters
 	best_db_table = table_dictionary[best_eps_value]
