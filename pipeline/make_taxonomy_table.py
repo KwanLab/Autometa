@@ -41,8 +41,11 @@ def run_prodigal(path_to_assembly):
 def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
 	current_dir = os.getcwd()
-	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}/tmp"\
-		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, current_dir), shell = True)
+	tmp_dir_path = current_dir + '/tmp'
+	if not os.path.isdir(tmp_dir_path):
+		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
+	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}"\
+		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, tmp_dir_path), shell = True)
 	subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
 	return view_output
 	#return  view_output
@@ -90,7 +93,7 @@ print "Running add_contig_taxonomy.py... "
 taxonomy_table = run_taxonomy(pipeline_path, diamond_output, blast2lca_output, taxdump_dir_path)
 
 # Split the original contigs into sets for each kingdom
-taxonomy_pd = DataFrame.from_csv(taxonomy_table, sep='\t')
+taxonomy_pd = pandas.read_table(taxonomy_table)
 categorized_seq_objects = {}
 all_seq_records = {}
 
