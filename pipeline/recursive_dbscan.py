@@ -91,7 +91,7 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 			if marker_totals[cluster][marker] == 1:
 				total_unique += 1
 		completeness = (float(total_markers) / expected_number) * 100
-		purity = (float(total_unique) / expected_number) * 100
+		purity = (float(total_unique) / total_markers) * 100
 		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
 
 	return cluster_details
@@ -190,7 +190,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	cluster_info = {} # Dictionary that is keyed by eps, will hold details of each cluster in each table
 	for eps in table_dictionary:
 		current_table = table_dictionary[eps]
-		current_cluster_info = getClusterInfo(current_table, contig_markers, domain)
+		current_cluster_info = getClusterInfo(current_table, hmm_dictionary, domain)
 		cluster_info[eps] = current_cluster_info
 
 	number_complete_and_pure_clusters = {}
