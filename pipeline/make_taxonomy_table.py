@@ -57,8 +57,10 @@ def run_blast2lca(input_file):
 		.format(input_file, output), shell = True) 
 	return output
 
-def run_taxonomy(pipeline_path, contig_table_path, tax_table_path, taxdump_dir_path): #Have to update this
-	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, contig_table_path,tax_table_path, taxdump_dir_path), shell = True)
+def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
+	initial_table_path = assembly_path + '.tab'
+	subprocess.call("{}/make_contig_table.py {} {}".format(assembly_path, initial_table_path))
+	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path ,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
 	return 'taxonomy.tab'
 
@@ -90,7 +92,7 @@ else:
 
 blast2lca_output = run_blast2lca(diamond_output)
 print "Running add_contig_taxonomy.py... "
-taxonomy_table = run_taxonomy(pipeline_path, diamond_output, blast2lca_output, taxdump_dir_path)
+taxonomy_table = run_taxonomy(pipeline_path, filtered_assembly, blast2lca_output, taxdump_dir_path)
 
 # Split the original contigs into sets for each kingdom
 taxonomy_pd = pandas.read_table(taxonomy_table)
