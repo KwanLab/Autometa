@@ -91,7 +91,11 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 			if marker_totals[cluster][marker] == 1:
 				total_unique += 1
 		completeness = (float(total_markers) / expected_number) * 100
-		purity = (float(total_unique) / total_markers) * 100
+		# Protect from divide by zero
+		if total_markers == 0:
+			purity = 0
+		else:
+			purity = (float(total_unique) / total_markers) * 100
 		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
 
 	return cluster_details
@@ -217,7 +221,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	#sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
 	best_eps_value = sorted_eps_values[0]
 
-	pdb.set_trace()
+	#pdb.set_trace()
 
 	# For impure clusters, output vizbin table
 	# First, find pure clusters
