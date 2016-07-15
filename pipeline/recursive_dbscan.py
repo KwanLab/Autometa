@@ -316,7 +316,8 @@ master_table = pandas2ri.ri2py(vizbin_r)
 # For the first few rounds, we are going to use completeness_cutoff = 90 and purity_cutoff = 90
 global_cluster_info = {}
 global_cluster_contigs = {}
-completeness_cutoff = 90
+#completeness_cutoff = 90
+comppleteness_cutoff = 20
 purity_cutoff = 90
 round_counter = 0
 current_r_table = vizbin_r
@@ -338,26 +339,26 @@ while True:
 		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 		global_cluster_contigs[contig] = new_cluster_name
 
-# Next few rounds, we are going to use completeness_cutoff = 20 and purity_cutoff = 90
-completeness_cutoff = 20
-purity_cutoff = 90
-while True:
-	round_counter += 1
-	db_tables = runDBSCANs(current_r_table)
-	cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-	current_r_table = unclustered_r_table
-
-	if not cluster_information:
-		break
-
-	# Populate the global data structures
-	for cluster in cluster_information:
-		new_cluster_name = 'round' + str(round_counter) + '_' + str(cluster)
-		global_cluster_info[new_cluster_name] = cluster_information[cluster]
-
-	for contig in contig_cluster_dictionary:
-		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-		global_cluster_contigs[contig] = new_cluster_name
+## Next few rounds, we are going to use completeness_cutoff = 20 and purity_cutoff = 90
+#completeness_cutoff = 20
+#purity_cutoff = 90
+#while True:
+#	round_counter += 1
+#	db_tables = runDBSCANs(current_r_table)
+#	cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+#	current_r_table = unclustered_r_table
+#
+#	if not cluster_information:
+#		break
+#
+#	# Populate the global data structures
+#	for cluster in cluster_information:
+#		new_cluster_name = 'round' + str(round_counter) + '_' + str(cluster)
+#		global_cluster_info[new_cluster_name] = cluster_information[cluster]
+#
+#	for contig in contig_cluster_dictionary:
+#		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+#		global_cluster_contigs[contig] = new_cluster_name
 
 # Then, we lower standards a bit more with comleteness_cutoff = 20 and purity_cutoff = 80
 purity_cutoff = 80
