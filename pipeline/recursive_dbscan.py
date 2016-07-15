@@ -325,7 +325,7 @@ global_cluster_info = {}
 global_cluster_contigs = {}
 #completeness_cutoff = 90
 completeness_cutoff = 20
-purity_cutoff = 75
+purity_cutoff = 90
 round_counter = 0
 current_r_table = vizbin_r
 while True:
