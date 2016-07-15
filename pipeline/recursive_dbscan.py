@@ -224,14 +224,15 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 			median_completeness[eps] = 0
 			mean_completeness[eps] = 0
 
-		completeness_product[eps] = number_complete_and_pure_clusters * mean_completeness[eps]
+		completeness_product[eps] = number_complete_and_pure_clusters[eps] * mean_completeness[eps]
 
 	# Get eps value with highest number of complete clusters
 	#sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
-	sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
+	#sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
+	sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
 	best_eps_value = sorted_eps_values[0]
 
-	pdb.set_trace()
+	#pdb.set_trace()
 
 	# For impure clusters, output vizbin table
 	# First, find pure clusters
