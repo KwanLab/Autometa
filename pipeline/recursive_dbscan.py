@@ -210,7 +210,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 				pure_clusters += 1
 		number_complete_and_pure_clusters[eps] = complete_clusters
 		number_pure_clusters[eps] = pure_clusters
-		median_completeness[eps] = numpy.median(median_completeness)
+		median_completeness[eps] = numpy.median(median_completeness[eps])
 
 	# Get eps value with highest number of complete clusters
 	#sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
