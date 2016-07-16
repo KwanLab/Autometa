@@ -110,7 +110,7 @@ def install_VizBin_executable(autometa_path,home_dir):
 		#change config path
 	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
 
-def bin_assess_and_pick_cluster(pipeline_path,marker_tab, vizbin_output_path, filtered_assembly):
+def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
 	#subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	#print "Running dbscan..."
@@ -124,7 +124,8 @@ def bin_assess_and_pick_cluster(pipeline_path,marker_tab, vizbin_output_path, fi
 	#subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	#return best_cluster_tab.rstrip("\n")
 
-	subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
+	#subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
+	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,filtered_assembly), shell=True)
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
@@ -168,11 +169,11 @@ vizbin_output_path = "contig_vizbin.tab"
 
 #install_VizBin_executable(autometa_path,home)
 
-process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
+#process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
 #best_cluster_tab = bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path)
 #extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
-bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, vizbin_output_path, filtered_assembly)
+bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, filtered_assembly)
 
 elapsed_time = (time.time() - start_time)
 

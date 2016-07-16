@@ -282,12 +282,41 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	return output_cluster_info, output_contig_cluster, unclustered_r
 
+def run_VizBin(fasta, output_filename):
+	if os.path.isfile(output_filename):
+		print "VizBin output already exists!"
+		print "Continuing to next step..."
+		logger.info('VizBin output already exists!')
+		logger.info('Continuing to next step...')
+		return None
+	else:
+		print "Runnign k-mer based binning..."
+		logger.info('Running k-mer based binning...')
+		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
+		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
+		return tmp_path
+
+def process_and_clean_VizBin(tmp_path,output_table_name):
+	if tmp_path != None:
+		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
+		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
+		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
+		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
+		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
+		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
+		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
+		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
+		#Delete most recent /tmp/map* directory if it's the same user 
+		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
+		#need more elegant way to clean up
+		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of vizbin coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
-parser.add_argument('-v','--vizbin_tab', help='Table containing vizbin coordinates', required=True)
+#parser.add_argument('-v','--vizbin_tab', help='Table containing vizbin coordinates', required=True)
 parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
-parser.add_argument('-f','--fasta', help='Assembly FASTA file') # Optional, if present, will output cluster and nonclustered contigs
+parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True) 
 parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
 #parser.add_argument('-p','--purity_cutoff', help='Cutoff (%) used to count number of pure clusters', default=90)
 #parser.add_argument('-c','--completeness_cutoff', help='Cutoff (%) used to count number of complete clusters', default=90)
@@ -324,11 +353,8 @@ for i, line in enumerate(hmm_table_lines):
 			else:
 				contig_markers[contig] = { pfam: 1 }
 
-abs_vizbin_path = os.path.abspath(vizbin_table_path)
-vizbin_r = get_table(abs_vizbin_path)
-
 # Make a master table that will be updated as clustering is done
-master_table = pandas2ri.ri2py(vizbin_r)
+
 
 
 
@@ -342,65 +368,68 @@ global_cluster_contigs = {}
 completeness_cutoff = 20
 purity_cutoff = 90
 round_counter = 0
-current_r_table = vizbin_r
-while True:
-	round_counter += 1
-	db_tables = runDBSCANs(current_r_table)
-	cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-	current_r_table = unclustered_r_table
+current_fasta = fasta_path
+vizbin_counter = 0
+master_table = None
 
-	if not cluster_information:
+# Load fasta sequences
+assembly_seqs = {}
+	for seq_record in SeqIO.parse(fasta_path, 'fasta'):
+		assembly_seqs[seq_record.id] = seq_record
+
+while True:
+	# Run vizbin
+	vizbin_counter += 1
+	current_vizbin_output = 'vizbin' + str(vizbin_counter) + '.tab'
+	# Carry out first vizbin run
+	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),current_vizbin_output)
+
+	abs_vizbin_path = os.path.abspath(current_vizbin_output)
+	vizbin_r = get_table(abs_vizbin_path)
+
+	if vizbin_counter == 1:
+		master_table = pandas2ri.ri2py(vizbin_r)
+
+	# Output current vizbin table
+	vizbin_output_path = 'vizbin' + str(vizbin_counter) + '.tab'
+	vizbin_pd = pandas2ri.ri2py(vizbin_r)
+	vizbin_pd.to_csv(path_or_buf=vizbin_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+
+	local_vizbin_round = 0
+	while True:
+		round_counter += 1
+		local_vizbin_round += 1
+		db_tables = runDBSCANs(current_r_table)
+		cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		current_r_table = unclustered_r_table
+
+		if not cluster_information:
+			break
+
+		# Populate the global data structures
+		for	cluster in cluster_information:
+			new_cluster_name = 'vizbin' + str(vizbin_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+			global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+		for contig in contig_cluster_dictionary:
+			new_cluster_name = 'vizbin' + str(vizbin_counter+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+			global_cluster_contigs[contig] = new_cluster_name
+
+	if local_vizbin_round == 1:
+		# This means that after the last vizbin run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
 		break
 
-	# Populate the global data structures
-	for cluster in cluster_information:
-		new_cluster_name = 'round' + str(round_counter) + '_' + str(cluster)
-		global_cluster_info[new_cluster_name] = cluster_information[cluster]
+	# If we are not done, write a new fasta for the next vizbin run
+	# First convert the r table to a pandas table
+	unclustered_pd = pandas2ri.ri2py(current_r_table)
+	unclustered_seqrecords = []
+	for i, row in unclustered_pd.iterrows():
+		contig = row['contig']
+		unclustered_seqrecords.append(assembly_seqs[contig])
 
-	for contig in contig_cluster_dictionary:
-		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-		global_cluster_contigs[contig] = new_cluster_name
+	current_fasta = 'unclustered_for_vizbin' + str(vizbin_counter + 1) + '.fasta'
+	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
 
-## Next few rounds, we are going to use completeness_cutoff = 20 and purity_cutoff = 90
-#completeness_cutoff = 20
-#purity_cutoff = 90
-#while True:
-#	round_counter += 1
-#	db_tables = runDBSCANs(current_r_table)
-#	cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-#	current_r_table = unclustered_r_table
-#
-#	if not cluster_information:
-#		break
-#
-#	# Populate the global data structures
-#	for cluster in cluster_information:
-#		new_cluster_name = 'round' + str(round_counter) + '_' + str(cluster)
-#		global_cluster_info[new_cluster_name] = cluster_information[cluster]
-#
-#	for contig in contig_cluster_dictionary:
-#		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-#		global_cluster_contigs[contig] = new_cluster_name
-
-## Then, we lower standards a bit more with comleteness_cutoff = 20 and purity_cutoff = 80
-#purity_cutoff = 80
-#while True:
-#	round_counter += 1
-#	db_tables = runDBSCANs(current_r_table)
-#	cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-#	current_r_table = unclustered_r_table
-#
-#	if not cluster_information:
-#		break
-#
-#	# Populate the global data structures
-#	for cluster in cluster_information:
-#		new_cluster_name = 'round' + str(round_counter) + '_' + str(cluster)
-#		global_cluster_info[new_cluster_name] = cluster_information[cluster]
-#
-#	for contig in contig_cluster_dictionary:
-#		new_cluster_name = 'round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-#		global_cluster_contigs[contig] = new_cluster_name
 
 # Add cluster to master data frame
 clusters = []
@@ -445,31 +474,26 @@ summary_table.close()
 
 # Now for each 'complete' cluster, we output a separate fasta file.  We collect all contigs from the 'failed' and 'noise' clusters and 
 # output them to one fasta (unclustered.fasta)
-# Note: we only do this is the user specified an assembly fasta file
-if fasta_path:
-	assembly_seqs = {}
-	for seq_record in SeqIO.parse(fasta_path, 'fasta'):
-		assembly_seqs[seq_record.id] = seq_record
 
-	# Initialize output fasta lists
-	output_fastas = {} # Keyed by cluster
+# Initialize output fasta lists
+output_fastas = {} # Keyed by cluster
 
-	for i, row in master_table.iterrows():
-		contig = row['contig']
-		cluster = row['cluster']
-		seq_record = assembly_seqs[contig]
-		if cluster in output_fastas:
-			output_fastas[cluster].append(seq_record)
-		else: 
-			output_fastas[cluster] = [ seq_record ]
+for i, row in master_table.iterrows():
+	contig = row['contig']
+	cluster = row['cluster']
+	seq_record = assembly_seqs[contig]
+	if cluster in output_fastas:
+		output_fastas[cluster].append(seq_record)
+	else: 
+		output_fastas[cluster] = [ seq_record ]
 
-	# Now write fasta files
-	for cluster in output_fastas:
-		if cluster == 'unclustered':
-			fasta_output_path = outdir + '/' + str(cluster) + '.fasta'
-		else:
-			fasta_output_path = outdir + '/cluster_' + str(cluster) + '.fasta'
-		SeqIO.write(output_fastas[cluster], fasta_output_path, 'fasta')
+# Now write fasta files
+for cluster in output_fastas:
+	if cluster == 'unclustered':
+		fasta_output_path = outdir + '/' + str(cluster) + '.fasta'
+	else:
+		fasta_output_path = outdir + '/cluster_' + str(cluster) + '.fasta'
+	SeqIO.write(output_fastas[cluster], fasta_output_path, 'fasta')
 
 
 
