@@ -15,6 +15,7 @@ import argparse
 import copy
 import numpy
 from Bio import SeqIO
+import logging
 import pprint
 import pdb
 
