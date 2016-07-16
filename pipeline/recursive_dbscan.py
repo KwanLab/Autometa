@@ -16,6 +16,7 @@ import copy
 import numpy
 from Bio import SeqIO
 import logging
+import subprocess
 import pprint
 import pdb
 
