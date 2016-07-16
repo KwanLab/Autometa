@@ -338,6 +338,7 @@ def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):
 	subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
 	subprocess.call("head -n 1 {} > contig_header.txt".format(contig_table), shell=True)
 	subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
+	print ("{{cat joined_header.txt; join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' }} > {}".format(output_table_name))
 	subprocess.call("{{cat joined_header.txt; join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' }} > {}".format(output_table_name))
 		#subprocess.call("touch {}; cat joined_header.txt >> {}; join contig_table_sort.txt vizbin_table_sort.txt | cat >> {}; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		#Delete most recent /tmp/map* directory if it's the same user 
