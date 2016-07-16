@@ -19,6 +19,14 @@ import logging
 import pprint
 import pdb
 
+#logger
+logger = logging.getLogger('recursive_dbscan.py')
+hdlr = logging.FileHandler('recursive_dbscan.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
+
 pandas2ri.activate()
 pp = pprint.PrettyPrinter(indent=4)
 
