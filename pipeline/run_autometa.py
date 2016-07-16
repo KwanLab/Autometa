@@ -125,7 +125,7 @@ def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, con
 	#return best_cluster_tab.rstrip("\n")
 
 	#subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
-	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table), shell=True)
+	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors), shell=True)
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
