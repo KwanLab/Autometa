@@ -17,6 +17,9 @@ import numpy
 from Bio import SeqIO
 import logging
 import subprocess
+import getpass
+import time 
+import multiprocessing
 import pprint
 import pdb
 
