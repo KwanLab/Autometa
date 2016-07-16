@@ -342,6 +342,7 @@ pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
+username = getpass.getuser()
 
 hmm_table_path = args['marker_tab']
 #vizbin_table_path = args['vizbin_tab']
