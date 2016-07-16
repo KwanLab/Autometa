@@ -414,7 +414,7 @@ while True:
 			global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
 		for contig in contig_cluster_dictionary:
-			new_cluster_name = 'vizbin' + str(vizbin_counter+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+			new_cluster_name = 'vizbin' + str(vizbin_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 			global_cluster_contigs[contig] = new_cluster_name
 
 	if local_vizbin_round == 1:
