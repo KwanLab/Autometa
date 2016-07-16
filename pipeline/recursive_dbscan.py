@@ -305,14 +305,13 @@ def run_VizBin(fasta, output_filename):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		current_dir = os.getcwd()
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o {}/points.txt".format(autometa_path + "/VizBin/dist/", fasta, current_dir), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+		subprocess.call("java -jar {}VizBin-dist.jar -i {}".format(autometa_path + "/VizBin/dist/", fasta), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return tmp_path
 
 def process_and_clean_VizBin(tmp_path,output_table_name):
 	if tmp_path != None:
-		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
+		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa {}/points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
 		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
 		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
 		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
