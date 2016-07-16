@@ -305,8 +305,8 @@ def run_VizBin(fasta, output_filename):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		print("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/", fasta))
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/", fasta), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+		current_dir = os.getcwd()
+		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o {}/points.txt".format(autometa_path + "/VizBin/dist/", fasta, current_dir), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return tmp_path
 
