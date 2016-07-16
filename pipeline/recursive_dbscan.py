@@ -306,21 +306,21 @@ def run_VizBin(fasta, output_filename):
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
 		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points".format(autometa_path + "/VizBin/dist/", fasta), shell = True, stderr=subprocess.STDOUT)
-		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-		return tmp_path
+		#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
+		return fasta
 
-def process_and_clean_VizBin(tmp_path,output_table_name):
+def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):
 	if tmp_path != None:
-		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa {}/points.txt > vizbin_table.txt".format(pipeline_path,tmp_path,tmp_path), shell=True)
+		subprocess.call("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(input_fasta), shell=True) # Note: we assume here that the cutoff is above 100 bp
 		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
 		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
 		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
+		subprocess.call("head -n 1 {} > contig_header.txt".format(contig_table), shell=True)
 		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
-		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
-		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
+		subprocess.call("{{cat joined_header.txt; join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' }} > {}".format(output_table_name))
+		#subprocess.call("touch {}; cat joined_header.txt >> {}; join contig_table_sort.txt vizbin_table_sort.txt | cat >> {}; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		#Delete most recent /tmp/map* directory if it's the same user 
-		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
+		#subprocess.call("rm -rf {}".format(tmp_path), shell = True)
 		#need more elegant way to clean up
 		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
 
@@ -330,6 +330,7 @@ parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', 
 parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
 parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True) 
 parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
+parser.add_argument('-c','--contigtable', help='Output of make_contig_table.py', required=True)
 #parser.add_argument('-p','--purity_cutoff', help='Cutoff (%) used to count number of pure clusters', default=90)
 #parser.add_argument('-c','--completeness_cutoff', help='Cutoff (%) used to count number of complete clusters', default=90)
 args = vars(parser.parse_args())
@@ -348,6 +349,7 @@ hmm_table_path = args['marker_tab']
 domain = args['domain']
 fasta_path = args['fasta']
 outdir = os.path.abspath(args['outdir'])
+contig_table = args['contigtable']
 #purity_cutoff = int(args['purity_cutoff'])
 #completeness_cutoff = int(args['completeness_cutoff'])
 
@@ -404,7 +406,7 @@ while True:
 	logger.info('Running VizBin round ' + str(vizbin_counter))
 	current_vizbin_output = 'vizbin' + str(vizbin_counter) + '.tab'
 	# Carry out first vizbin run
-	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),current_vizbin_output)
+	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),contig_table, current_vizbin_output)
 
 	abs_vizbin_path = os.path.abspath(current_vizbin_output)
 	vizbin_r = get_table(abs_vizbin_path)
