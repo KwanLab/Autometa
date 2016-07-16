@@ -335,6 +335,9 @@ parser.add_argument('-o','--outdir', help='Path of directory for output', requir
 #parser.add_argument('-c','--completeness_cutoff', help='Cutoff (%) used to count number of complete clusters', default=90)
 args = vars(parser.parse_args())
 
+start_time = time.time()
+FNULL = open(os.devnull, 'w')
+
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
 pathList.pop()
