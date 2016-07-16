@@ -327,7 +327,7 @@ def run_VizBin(fasta, output_filename):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {}".format(autometa_path + "/VizBin/dist/", fasta, processors), shell = True, stderr=subprocess.STDOUT)
+		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {}".format(autometa_path + "/VizBin/dist/", fasta, processors), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 		#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return fasta
 
@@ -409,7 +409,7 @@ for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 while True:
 	# Run vizbin
 	vizbin_counter += 1
-	logger.info('Running VizBin round ' + str(vizbin_counter))
+	print('Running VizBin round ' + str(vizbin_counter))
 	current_vizbin_output = 'vizbin' + str(vizbin_counter) + '.tab'
 	# Carry out first vizbin run
 	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),contig_table, current_vizbin_output)
@@ -431,7 +431,7 @@ while True:
 	while True:
 		round_counter += 1
 		local_vizbin_round += 1
-		logger.info('Running DBSCAN round ' + str(round_counter))
+		print('Running DBSCAN round ' + str(round_counter))
 		db_tables = runDBSCANs(current_r_table)
 		cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 		current_r_table = unclustered_r_table
