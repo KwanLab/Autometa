@@ -374,8 +374,8 @@ master_table = None
 
 # Load fasta sequences
 assembly_seqs = {}
-	for seq_record in SeqIO.parse(fasta_path, 'fasta'):
-		assembly_seqs[seq_record.id] = seq_record
+for seq_record in SeqIO.parse(fasta_path, 'fasta'):
+	assembly_seqs[seq_record.id] = seq_record
 
 while True:
 	# Run vizbin
