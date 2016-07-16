@@ -27,12 +27,14 @@ parser.add_argument('-p','--processors', help='Number of processors used', defau
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
 parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-y','--perplexity', help='Perplexity setting for Vizbin (default 30.0)')
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
 fasta_assembly = args['assembly']
 processors = args['processors']
 cluster_completeness = args['cluster_completeness_output']
+perplexity = float(args['perplexity'])
 #kmer = args['kmer']
 #what input variables were and when you ran it
 logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, length_cutoff, cluster_completeness))
@@ -82,7 +84,10 @@ def run_VizBin(fasta,marker_table):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
+		if perplexity:
+			subprocess.call("java -jar {}Vizbin-dist.jar -i {} -o points.txt -p {}".format(autometa_path + "/VizBin/dist/", fasta, perplexity), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+		else:
+			subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
 		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		return tmp_path
