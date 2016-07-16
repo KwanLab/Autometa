@@ -332,6 +332,11 @@ parser.add_argument('-o','--outdir', help='Path of directory for output', requir
 #parser.add_argument('-c','--completeness_cutoff', help='Cutoff (%) used to count number of complete clusters', default=90)
 args = vars(parser.parse_args())
 
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
+
 hmm_table_path = args['marker_tab']
 #vizbin_table_path = args['vizbin_tab']
 domain = args['domain']
