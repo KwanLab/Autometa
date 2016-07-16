@@ -311,7 +311,7 @@ def run_VizBin(fasta, output_filename):
 
 def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):
 	if tmp_path != None:
-		subprocess.call("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(input_fasta), shell=True) # Note: we assume here that the cutoff is above 100 bp
+		subprocess.call("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(pipeline_path, input_fasta), shell=True) # Note: we assume here that the cutoff is above 100 bp
 		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
 		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
 		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
