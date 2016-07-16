@@ -323,7 +323,7 @@ parser.add_argument('-o','--outdir', help='Path of directory for output', requir
 args = vars(parser.parse_args())
 
 hmm_table_path = args['marker_tab']
-vizbin_table_path = args['vizbin_tab']
+#vizbin_table_path = args['vizbin_tab']
 domain = args['domain']
 fasta_path = args['fasta']
 outdir = os.path.abspath(args['outdir'])
