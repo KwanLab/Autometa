@@ -380,6 +380,7 @@ assembly_seqs = {}
 while True:
 	# Run vizbin
 	vizbin_counter += 1
+	logger.info('Running VizBin round ' + str(vizbin_counter))
 	current_vizbin_output = 'vizbin' + str(vizbin_counter) + '.tab'
 	# Carry out first vizbin run
 	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),current_vizbin_output)
@@ -399,6 +400,7 @@ while True:
 	while True:
 		round_counter += 1
 		local_vizbin_round += 1
+		logger.info('Running DBSCAN round ' + str(round_counter))
 		db_tables = runDBSCANs(current_r_table)
 		cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 		current_r_table = unclustered_r_table
