@@ -425,6 +425,8 @@ while True:
 	vizbin_pd = pandas2ri.ri2py(vizbin_r)
 	vizbin_pd.to_csv(path_or_buf=vizbin_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
+	current_r_table = vizbin_r
+
 	local_vizbin_round = 0
 	while True:
 		round_counter += 1
