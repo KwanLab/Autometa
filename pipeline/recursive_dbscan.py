@@ -327,12 +327,12 @@ def run_VizBin(fasta, output_filename):
 	else:
 		print "Runnign k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {}".format(autometa_path + "/VizBin/dist/", fasta, processors), shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {}".format(autometa_path + "/VizBin/dist/", fasta, processors), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 		#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 		# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
 		if not os.path.isfile('points.txt'):
 			for i in range(25, 5, -5):
-				subprocess.call("java -jar {}Vizbin-dist.jar -i {} -o points.txt -t {} -p {}".format(autometa_path + "/VizBin/dist/", fasta, processors, i), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+				subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {}".format(autometa_path + "/VizBin/dist/", fasta, processors, i), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 				if os.path.isfile('points.txt'):
 					break
 		return fasta
