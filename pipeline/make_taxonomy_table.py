@@ -93,7 +93,7 @@ filtered_assembly = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filte
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
 	#Check for file and if it doesn't exist run make_marker_table
-	filtered_assembly = length_trim(fasta_assembly, length_cutoff)
+	length_trim(fasta_assembly, length_cutoff)
 	run_prodigal(filtered_assembly)
 
 
