@@ -112,7 +112,7 @@ categorized_seq_objects = {}
 all_seq_records = {}
 
 # Load fasta file
-for seq_record in SeqIO.parse(filtered_assembly):
+for seq_record in SeqIO.parse(filtered_assembly, 'fasta'):
 	all_seq_records[seq_record.id] = seq_record
 
 for i, row in taxonomy_pd.iterrows():
