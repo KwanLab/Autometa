@@ -33,7 +33,7 @@ def run_prodigal(path_to_assembly):
 		print "{} file already exists!".format(prodigal_output)
 		print "Continuing to next step..."
 		logger.info('{} file already exists!'.format(prodigal_output))
-		logger .info('Continuing to next step...')
+		logger.info('Continuing to next step...')
 	else:
 		subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
 	 	'.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
@@ -44,9 +44,22 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 	tmp_dir_path = current_dir + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}"\
-		.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, tmp_dir_path), shell = True)
-	subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
+	if os.path.isfile(prodigal_daa):
+		print "{} file already exists!".format(prodigal_daa)
+		print 'Continuing to next step...'
+		logger.info('{} file already exists!'.format(prodigal_daa))
+		logger.info('Continuing to next step...')
+	else:
+		subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}"\
+			.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, tmp_dir_path), shell = True)
+
+	if os.path.isfile(view_output):
+		print "{} file already exists!".format(view_output)
+		print "Continuing to next setp..."
+		logger.info('{} file already exists!'.format(view_output))
+		logger.info('Continuing to next step...')
+	else:
+		subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
 	return view_output
 	#return  view_output
 	#might want to change name of outputfile
@@ -59,7 +72,7 @@ def run_blast2lca(input_file):
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
 	initial_table_path = assembly_path + '.tab'
-	subprocess.call("{}/make_contig_table.py {} {}".format(assembly_path, initial_table_path))
+	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path))
 	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path ,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
 	return 'taxonomy.tab'
