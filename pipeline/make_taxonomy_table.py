@@ -70,7 +70,6 @@ def run_blast2lca(input_file):
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
 	initial_table_path = assembly_path + '.tab'
-	print ("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path))
 	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
 	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path ,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
