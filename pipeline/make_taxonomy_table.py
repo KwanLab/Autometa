@@ -107,7 +107,7 @@ print "Running add_contig_taxonomy.py... "
 taxonomy_table = run_taxonomy(pipeline_path, filtered_assembly, blast2lca_output, taxdump_dir_path)
 
 # Split the original contigs into sets for each kingdom
-taxonomy_pd = pandas.read_table(taxonomy_table)
+taxonomy_pd = pd.read_table(taxonomy_table)
 categorized_seq_objects = {}
 all_seq_records = {}
 
