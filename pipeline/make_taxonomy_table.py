@@ -32,8 +32,6 @@ def run_prodigal(path_to_assembly):
 	if os.path.isfile(prodigal_output):
 		print "{} file already exists!".format(prodigal_output)
 		print "Continuing to next step..."
-		logger.info('{} file already exists!'.format(prodigal_output))
-		logger.info('Continuing to next step...')
 	else:
 		subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
 	 	'.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
@@ -47,8 +45,6 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 	if os.path.isfile(prodigal_daa):
 		print "{} file already exists!".format(prodigal_daa)
 		print 'Continuing to next step...'
-		logger.info('{} file already exists!'.format(prodigal_daa))
-		logger.info('Continuing to next step...')
 	else:
 		subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}"\
 			.format(prodigal_output, diamond_database_path, num_processors, prodigal_daa, tmp_dir_path), shell = True)
@@ -56,8 +52,6 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 	if os.path.isfile(view_output):
 		print "{} file already exists!".format(view_output)
 		print "Continuing to next setp..."
-		logger.info('{} file already exists!'.format(view_output))
-		logger.info('Continuing to next step...')
 	else:
 		subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
 	return view_output
@@ -69,8 +63,6 @@ def run_blast2lca(input_file):
 	if os.path.isfile(output):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
-		logger.info('{} file already exists!'.format(output) )
-		logger.info('Continuing to next step...')
 	else:
 		subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
 			.format(input_file, output), shell = True) 
