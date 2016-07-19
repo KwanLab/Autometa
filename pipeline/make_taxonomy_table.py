@@ -66,12 +66,19 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 
 def run_blast2lca(input_file):
 	output = input_file.rstrip(".tab") + ".lca"
-	subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
-		.format(input_file, output), shell = True) 
+	if os.path.isfile(output):
+		print "{} file already exists!".format(output)
+		print "Continuing to next step..."
+		logger.info('{} file already exists!'.format(output) )
+		logger.info('Continuing to next step...')
+	else:
+		subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
+			.format(input_file, output), shell = True) 
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
 	initial_table_path = assembly_path + '.tab'
+	print ("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path))
 	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path))
 	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path ,tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
