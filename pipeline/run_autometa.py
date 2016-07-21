@@ -37,7 +37,7 @@ cluster_completeness = args['cluster_completeness_output']
 kingdom = args['kingdom'].lower()
 
 # Error check that kingdom is valid
-if not kingdom == 'bacteria' or kingdom == 'archaea':
+if not (kingdom == 'bacteria' or kingdom == 'archaea'):
 	print ('Error, kingdom must either be "archaea" or "bacteria"')
 	sys.exit(2)
 
@@ -68,7 +68,7 @@ def make_marker_table(fasta):
 	elif kingdom == 'archaea':
 		hmm_marker_path = autometa_path + '/single-copy_markers/Archaea_single_copy.hmm'
 		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
-		
+
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
