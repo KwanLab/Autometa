@@ -327,14 +327,32 @@ def run_VizBin(fasta, output_filename):
 	else:
 		print "Running k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {}".format(autometa_path + "/VizBin/dist/", fasta, processors), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-		#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-		# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
-		if not os.path.isfile('points.txt'):
-			for i in range(25, 5, -5):
-				subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {}".format(autometa_path + "/VizBin/dist/", fasta, processors, i), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-				if os.path.isfile('points.txt'):
-					break
+		not_done = 1
+		current_pca = 50
+		current_perplexity = 30
+		while (not_done):
+			vizbin_stdout = subprocess.Popen("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/VizBin/dist/", fasta, processors, current_perplexity, current_pca), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
+			# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
+			pca_too_high = 0
+			perplexity_too_high = 0
+			for line in vizbin_stdout.stdout:
+				stripped_line = line.rstrip()
+				length = len(stripped_line)
+				if length >= 60 and stripped_line[-60:] == 'More data needed to compute the desired number of components':
+					pca_too_high = 1
+				if length >= 57 and stripped_line[-57:] == 'TSNE: Perplexity too large for the number of data points!':
+					perplexity_too_high = 1
+
+			if pca_too_high:
+				current_pca -= 5
+			if perplexity_too_high:
+				current_perplexity -= 5
+
+			if current_pca <= 0 or current_perplexity <= 0:
+				print 'Error, could not run Vizbin - data too small'
+				sys.exit(2)
+
 		return fasta
 
 def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):	
