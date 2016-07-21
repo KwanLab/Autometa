@@ -27,12 +27,19 @@ parser.add_argument('-p','--processors', help='Number of processors used', defau
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
 parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
 fasta_assembly = args['assembly']
 processors = args['processors']
 cluster_completeness = args['cluster_completeness_output']
+kingdom = args['kingdom'].lower()
+
+# Error check that kingdom is valid
+if not kingdom == 'bacteria' or kingdom == 'archaea':
+	print ('Error, kingdom must either be "archaea" or "bacteria"')
+	sys.exit(2)
 
 #kmer = args['kmer']
 #what input variables were and when you ran it
@@ -55,8 +62,13 @@ def make_contig_table(fasta):
 	return output_table_name
 
 def make_marker_table(fasta):
-	hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
-	hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+	if kingdom == 'bacteria':
+		hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
+		hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+	elif kingdom == 'archaea':
+		hmm_marker_path = autometa_path + '/single-copy_markers/Archaea_single_copy.hmm'
+		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
+		
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
