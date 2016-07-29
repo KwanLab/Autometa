@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 import subprocess 
 import getpass
 import time 
@@ -26,12 +27,20 @@ parser.add_argument('-p','--processors', help='Number of processors used', defau
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
 parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
 fasta_assembly = args['assembly']
 processors = args['processors']
 cluster_completeness = args['cluster_completeness_output']
+kingdom = args['kingdom'].lower()
+
+# Error check that kingdom is valid
+if not (kingdom == 'bacteria' or kingdom == 'archaea'):
+	print ('Error, kingdom must either be "archaea" or "bacteria"')
+	sys.exit(2)
+
 #kmer = args['kmer']
 #what input variables were and when you ran it
 logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, length_cutoff, cluster_completeness))
@@ -43,18 +52,23 @@ logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
-	subprocess.call("{}fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
+	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
 def make_contig_table(fasta):
 	#looks like this script is assuming contigs from a spades assembly
 	output_table_name = str(fasta).split('.')[0] + ".tab"
-	subprocess.call("{}make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
+	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
 	return output_table_name
 
 def make_marker_table(fasta):
-	hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
-	hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+	if kingdom == 'bacteria':
+		hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
+		hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+	elif kingdom == 'archaea':
+		hmm_marker_path = autometa_path + '/single-copy_markers/Archaea_single_copy.hmm'
+		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
+
 	#need to add processors to this script
 	output_marker_table = fasta.split('.')[0] + "_marker.tab"
 	if os.path.isfile(output_marker_table):
@@ -66,7 +80,7 @@ def make_marker_table(fasta):
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-		subprocess.call("{}make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
+		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
 			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_marker_table
@@ -89,7 +103,7 @@ def run_VizBin(fasta,marker_table):
 
 def process_and_clean_VizBin(tmp_path,output_table_name):
 	if tmp_path != None:
-		subprocess.call("{}vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
+		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
 		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
 		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
 		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
@@ -108,7 +122,7 @@ def install_VizBin_executable(autometa_path,home_dir):
 		#change config path
 	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
 
-def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
+def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
 	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	print "Running dbscan..."
@@ -122,6 +136,20 @@ def bin_assess_and_pick_cluster(marker_tab, vizbin_output_path):
 	subprocess.call("mkdir -p eps_test_dir", shell = True)
 	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
 	return best_cluster_tab.rstrip("\n")
+	#subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+	#print "Running dbscan..."
+	#logger.info('Running dbscan...')
+	#subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+	#print "The best cluster is:"
+	#logger.info('The best cluster is:')
+	#subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
+	#best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
+	#subprocess.call("mkdir -p eps_test_dir", shell = True)
+	#subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
+	#return best_cluster_tab.rstrip("\n")
+
+	#subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
+	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors), shell=True)
 
 def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
@@ -130,7 +158,7 @@ def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
 	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
 		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
 		#use cluster_completeness.py instead
-	subprocess.call("{}cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
+	subprocess.call("{}/cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
 		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
 
 start_time = time.time()
@@ -149,8 +177,11 @@ user_CPU_number = multiprocessing.cpu_count()
 
 username = getpass.getuser()
 home = os.path.expanduser("~") + "/"
-autometa_path = subprocess.check_output('find ~ -name "autometa"', shell=True).rstrip("\n")
-pipeline_path = autometa_path + "/pipeline/"
+
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
 #Alternatively, the user could set this as an env variable
 
 
@@ -162,10 +193,11 @@ vizbin_output_path = "contig_vizbin.tab"
 
 #install_VizBin_executable(autometa_path,home)
 
-process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
+#process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
 #extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
-best_cluster_tab = bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path)
-extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
+#best_cluster_tab = bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path)
+#extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
+bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, filtered_assembly, contig_table)
 
 elapsed_time = (time.time() - start_time)
 

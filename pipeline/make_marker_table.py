@@ -31,7 +31,7 @@ def get_contig_list(path_to_assembly):
 def run_prodigal(path_to_assembly):
 	#When "shell = True", need to give one string, not a list
 	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
-	 '.orfs.faa','-p meta' '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
+	 '.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
 
 def run_hhmscan(path_to_prodigal_output,hmmdb):
 	subprocess.call("hmmscan --cpu {} --tblout {} {} {}".format(args['processors'],path_to_prodigal_output.split(".")[0] + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
