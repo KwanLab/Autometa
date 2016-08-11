@@ -350,6 +350,10 @@ def run_VizBin(fasta, output_filename):
 			if perplexity_too_high:
 				current_perplexity -= 5
 
+			# We need to break out of this eternal loop!
+			if pca_too_high == 0 and perplexity_too_high == 0:
+				not_done = 0
+
 			if current_pca <= 0 or current_perplexity <= 0:
 				print 'Error, could not run Vizbin - data too small'
 				sys.exit(2)
