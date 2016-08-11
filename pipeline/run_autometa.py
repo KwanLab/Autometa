@@ -124,18 +124,6 @@ def install_VizBin_executable(autometa_path,home_dir):
 
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
 	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
-	subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	print "Running dbscan..."
-	logger.info('Running dbscan...')
-	subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	print "The best cluster is:"
-	logger.info('The best cluster is:')
-	subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
-	best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
-	logger.info(best_cluster_tab)
-	subprocess.call("mkdir -p eps_test_dir", shell = True)
-	subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
-	return best_cluster_tab.rstrip("\n")
 	#subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	#print "Running dbscan..."
 	#logger.info('Running dbscan...')
