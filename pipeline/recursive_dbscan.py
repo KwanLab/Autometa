@@ -331,6 +331,7 @@ def run_VizBin(fasta, output_filename):
 		current_pca = 50
 		current_perplexity = 30
 		while (not_done):
+			logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/VizBin/dist/", fasta, processors, current_perplexity, current_pca))
 			vizbin_stdout = subprocess.Popen("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/VizBin/dist/", fasta, processors, current_perplexity, current_pca), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 			# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
@@ -355,19 +356,28 @@ def run_VizBin(fasta, output_filename):
 
 		return fasta
 
-def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):	
+def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):
+	logger.info("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(pipeline_path, input_fasta))	
 	subprocess.call("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(pipeline_path, input_fasta), shell=True) # Note: we assume here that the cutoff is above 100 bp
+	logger.info("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt")
 	subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
+	logger.info("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(contig_table))
 	subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(contig_table), shell=True)
+	logger.info("head -n 1 vizbin_table.txt > vizbin_header.txt")
 	subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
+	logger.info("head -n 1 {} > contig_header.txt".format(contig_table))
 	subprocess.call("head -n 1 {} > contig_header.txt".format(contig_table), shell=True)
+	logger.info("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt")
 	subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
+	logger.info("cat joined_header.txt > {}".format(output_table_name))
 	subprocess.call("cat joined_header.txt > {}".format(output_table_name), shell=True)
+	logger.info("join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' >> {}".format(output_table_name))
 	subprocess.call("join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' >> {}".format(output_table_name), shell=True)
 		#subprocess.call("touch {}; cat joined_header.txt >> {}; join contig_table_sort.txt vizbin_table_sort.txt | cat >> {}; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		#Delete most recent /tmp/map* directory if it's the same user 
 		#subprocess.call("rm -rf {}".format(tmp_path), shell = True)
 		#need more elegant way to clean up
+	logger.info("rm *.txt")
 	subprocess.call("rm *.txt", shell = True)
 
 

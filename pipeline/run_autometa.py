@@ -52,12 +52,14 @@ logger.info('Input: -a {} -p {} -l {} -c {}'.format(fasta_assembly, processors, 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
+	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name))
 	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,outfile_name), shell = True)
 	return outfile_name
 
 def make_contig_table(fasta):
 	#looks like this script is assuming contigs from a spades assembly
 	output_table_name = str(fasta).split('.')[0] + ".tab"
+	logger.info("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name))
 	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_table_name), shell = True)
 	return output_table_name
 
@@ -79,75 +81,66 @@ def make_marker_table(fasta):
 	else:
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
+		logger.info("hmmpress -f {}".format(hmm_marker_path))
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
+		logger.info("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']))
 		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
 			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_marker_table
 
-def run_VizBin(fasta,marker_table):
-	if os.path.isfile("contig_vizbin.tab"):
-		print "VizBin output already exists!".format(marker_table)
-		print "Continuing to next step..."
-		logger.info('VizBin output already exists!'.format(marker_table))
-		logger.info('Continuing to next step...')
-		return None
-	else:
-		print "Runnign k-mer based binning..."
-		logger.info('Running k-mer based binning...')
-		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
-		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-		return tmp_path
+#def run_VizBin(fasta,marker_table):
+#	if os.path.isfile("contig_vizbin.tab"):
+#		print "VizBin output already exists!".format(marker_table)
+#		print "Continuing to next step..."
+#		logger.info('VizBin output already exists!'.format(marker_table))
+#		logger.info('Continuing to next step...')
+#		return None
+#	else:
+#		print "Runnign k-mer based binning..."
+#		logger.info('Running k-mer based binning...')
+#		logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/", fasta))
+#		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
+#		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+#		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
+#		return tmp_path
 
 
-def process_and_clean_VizBin(tmp_path,output_table_name):
-	if tmp_path != None:
-		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
-		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
-		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
-		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
-		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
-		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
-		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-		#Delete most recent /tmp/map* directory if it's the same user 
-		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
-		#need more elegant way to clean up
-		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
+#def process_and_clean_VizBin(tmp_path,output_table_name):
+#	if tmp_path != None:
+#		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
+#		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
+#		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
+#		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
+#		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
+#		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
+#		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
+#		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
+#		#Delete most recent /tmp/map* directory if it's the same user 
+#		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
+#		#need more elegant way to clean up
+#		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
 
-def install_VizBin_executable(autometa_path,home_dir):
-	#install config into home directory 
-	subprocess.call("cp -R {} {}".format(autometa_path + "/VizBin/.vizbin", home_dir), shell = True)
-		#change config path
-	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
+#def install_VizBin_executable(autometa_path,home_dir):
+#	#install config into home directory 
+#	subprocess.call("cp -R {} {}".format(autometa_path + "/VizBin/.vizbin", home_dir), shell = True)
+#		#change config path
+#	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
 
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
-	#Need to check for and install "dbscan" and "docopt" dependency from the command line (with CRAN mirror 27 [USA: MI])
-	#subprocess.call("Rscript {}dbscan_batch.R {} 0.3 1.5".format(pipeline_path, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	#print "Running dbscan..."
-	#logger.info('Running dbscan...')
-	#subprocess.call("{}assess_clustering.py -s {} -d *.tab_eps* -o assess_clustering_output".format(pipeline_path,marker_tab, vizbin_output_path), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-	#print "The best cluster is:"
-	#logger.info('The best cluster is:')
-	#subprocess.call("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
-	#best_cluster_tab = subprocess.check_output("{}pick_best_clustering.py -i assess_clustering_output".format(pipeline_path), shell = True)
-	#subprocess.call("mkdir -p eps_test_dir", shell = True)
-	#subprocess.call("mv *.tab_eps* eps_test_dir", shell = True)
-	#return best_cluster_tab.rstrip("\n")
-
-	#subprocess.call("{}/recursive_dbscan.py -m {} -v {} -d bacteria -f {} -o ./".format(pipeline_path,marker_tab,vizbin_output_path,filtered_assembly), shell=True)
+	logger.info("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors))
 	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors), shell=True)
 
-def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
-	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
-	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
-	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
-	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
-		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
-		#use cluster_completeness.py instead
-	subprocess.call("{}/cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
-		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
+#def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
+#	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
+#	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
+#	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
+#	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
+#		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
+#		#use cluster_completeness.py instead
+#	subprocess.call("{}/cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
+#		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
