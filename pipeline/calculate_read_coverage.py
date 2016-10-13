@@ -9,8 +9,8 @@ import subprocess
 
 #See: /home/ijmiller/slurm_scripts/2016/October/7-Oct-16_Bpac5Tips_coverage_calculation.sh
 #Dependencies: bowtie2 (2.2.5), samtools (0.1.18), \
-    Bedtools (genomeCoverageBed: v2.17.0), contig_coverage_from_bedtools.pl,\
-    fasta_length_table.pl, python modules: suprocess, argparse
+    #Bedtools (genomeCoverageBed: v2.17.0), contig_coverage_from_bedtools.pl,\
+    #fasta_length_table.pl, python modules: suprocess, argparse
 
 #1. Align the reads to your assembly with bowtie2.
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
