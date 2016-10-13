@@ -48,7 +48,7 @@ def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=
 assembly_file = args['assembly']
 
 sam_file = run_bowtie2(args['assembly'],args['forward_reads'],\
-    args['path_to_R_reads'],args['processors'])
+    args['reverse_reads'],args['processors'])
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
 sorted_bam_file = assembly_file.split(".")[0] + ".sort"
