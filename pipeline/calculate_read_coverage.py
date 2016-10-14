@@ -27,7 +27,8 @@ parser.add_argument('-a','--assembly', help='Input assembly file', required=True
 parser.add_argument('-p','--processors', help='Number of processors', default=1)
 parser.add_argument('-F','--forward_reads', help='Paired (*.fastq) forward reads', required=True)
 parser.add_argument('-R','--reverse_reads', help='Paired (*.fastq) reverse reads', required=True)
-parser.add_argument('-s','--sam', help='outfile.sam', default="bowtie2_alignment.sam")
+parser.add_argument('-o','--out', help='Tab delimited table for contig and average\
+    read coverage', default="outfile.tab")
 args = vars(parser.parse_args())
 
 def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=1):
@@ -68,7 +69,7 @@ subprocess.call(" ".join(['genomeCoverageBed ', '-ibam ', sorted_bam_file, \
     '-g ' + contig_length_tab_file, '> ' + genome_bed_file]), shell = True)
 
 #Build final table
-outfile = args['sam']
+outfile = args['out']
 subprocess.call(" ".join(['contig_coverage_from_bedtools.pl ', genome_bed_file, \
     '> ' + outfile]), shell = True)
 
