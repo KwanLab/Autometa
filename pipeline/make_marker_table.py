@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import pandas as pd 
+import pandas as pd
 import argparse
 import subprocess
 
@@ -47,14 +47,14 @@ cutoffs_table = pd.read_csv(args['cutoffs'], sep = '\s', engine = 'python', head
 #for loop to search for PFAM domains in hmm table column 1:
 contig_ORFs_that_pass_cutoffs = {}
 for index,PFAM_cutoffs_id in enumerate(cutoffs_table[0]):
-	for count,PFAM_hmm_scan_id in enumerate(hmm_table[1]):	
+	for count,PFAM_hmm_scan_id in enumerate(hmm_table[1]):
 		#If the PFAMs domain match (cutoffs ID names format are PFAMXXXXX, not PFAMXXXXX.1)
 		if str(PFAM_cutoffs_id) in str(PFAM_hmm_scan_id):
-			#and hmm score value > cutoff value, 
+			#and hmm score value > cutoff value,
 			if float(hmm_table[5][count]) > float(cutoffs_table[1][index]):
 				#make dictionary of lists for PFAMs, where PFAM is key and contigs populate the list
 				if PFAM_hmm_scan_id not in contig_ORFs_that_pass_cutoffs:
-					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id] = [] 
+					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id] = []
 				else:
 					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id].append(hmm_table[2][count])
 
@@ -65,9 +65,9 @@ for index,PFAM_cutoffs_id in enumerate(cutoffs_table[0]):
 if args['out'] != None:
 	outfile_handle = args['out']
 else:
-	outfile_handle = assembly.split(".")[0] + "_marker.tab" 
+	outfile_handle = assembly.split(".")[0] + "_marker.tab"
 with open(outfile_handle, 'w') as outfile:
-	outfile.write("contig_name" + '\t'+ "single_copy_PFAMs" + '\t' + "num_single_copies" + '\n')
+	outfile.write("contig" + '\t'+ "single_copy_PFAMs" + '\t' + "num_single_copies" + '\n')
 	contig_dictionary = {}
 	for count,contig in enumerate(get_contig_list(assembly)):
 		contig_dictionary[contig] = {}
@@ -84,6 +84,6 @@ with open(outfile_handle, 'w') as outfile:
 		 	  str(contig_dictionary[contig]['num_single_copies']) + '\n')
 		else:
 			outfile.write(str(contig) + '\t' + "NA" + '\t' + \
-		 	  str(contig_dictionary[contig]['num_single_copies']) + '\n')			
+		 	  str(contig_dictionary[contig]['num_single_copies']) + '\n')
 
 print("\nDone!")
