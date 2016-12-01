@@ -4,9 +4,9 @@ import pandas as pd
 from Bio import SeqIO
 import argparse
 
-parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of vizbin coordinates based on DBSCAN and cluster purity")
+parser = argparse.ArgumentParser(description="Script to pull out fasta files from a contig table column")
 parser.add_argument('-t','--contig_tab', help='Contig table', required=True)
-parser.add_argument('-c','--cluster_column', help='Name of column for cluster', default='bacteria')
+parser.add_argument('-c','--cluster_column', help='Name of column for cluster', default='cluster')
 parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True)
 parser.add_argument('-o','--outdir', help='Path of directory for output', default='./')
 args = vars(parser.parse_args())
