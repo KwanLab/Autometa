@@ -6,23 +6,22 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn import tree,metrics,preprocessing
 from sklearn.cross_validation import train_test_split
-from sklearn.metrics import accuracy_score
 import collections
 import argparse
 
-parser = argparse.ArgumentParser(description="Recruit unclustered or non-marker\
+parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
     as training data. Features to train with include sequence coverage,\
     composition, and homology. Confidence is calculated using jackknife\
-    cross-validation by randomly subsetting the data X number of times.")
-parser.add_argument('-t','--contig_tab', help='Contig table', required=True)
+    cross-validation by randomly subsetting the training data n number of times.")
+parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
 parser.add_argument('-c','--cluster_column', help='Name of column for cluster', \
     default='cluster')
 parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
     to use to keep ML-based predictions.', default=95)
 parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
-parser.add_argument('-X','--num_iterations', help='Number of iterations for \
+parser.add_argument('-n','--num_iterations', help='Number of iterations for \
     jackknife cross-validation.', default=100)
 parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
@@ -51,9 +50,8 @@ species_dummy_martix = pd.get_dummies(contig_table['species'])
 # clusters into "labels" for classifier using appropriate data structure
 print("Loading other features and labels...")
 features = []
-short_features = [] #Short classifier features
 labels = []
-length_weight = []
+#length_weight = []
 for count,contig in enumerate(contig_table['contig']):
     #Only train with marker contigs from known genome bins
     known_genome =  contig_table['known_genome'][count]
@@ -106,23 +104,22 @@ def calculate_bootstap_replicates(feature_array,iterations = 100):
     confidence = top_prediction_set[0][1]
     confidence_percent = round(confidence/iterations*100,3)
     #To see frequency of all prediction: print counter
-    #print top_prediction,confidence_percent
     return top_prediction,confidence_percent
 
 ML_predictions_dict = {}
 ML_recruitment_list = []
 prediction_accuracy_list = []
-#Recruit unclustered seqquences
+#Recruit unclustered sequences
 print("Recruiting unclustered sequences. This could take a while...")
 for count,contig in enumerate(contig_table['contig']):
     taxonomy = taxonomy_matrix_dict[contig]
-    vizbin_x_x = contig_table.iloc[count]['vizbin_x_x']
-    vizbin_y_x = contig_table.iloc[count]['vizbin_y_x']
-    cov_x = contig_table.iloc[count]['cov_x']
+    vizbin_x_x = contig_table.iloc[count]['vizbin_x']
+    vizbin_y_x = contig_table.iloc[count]['vizbin_y']
+    cov_x = contig_table.iloc[count]['cov']
     composition_feature_list = [vizbin_x_x,vizbin_y_x,cov_x]
     #Concatenate composition and taxonomy features into single list
     single_np_array = np.array([composition_feature_list + taxonomy])
-    contig_length = contig_table.iloc[count]['length_x']
+    contig_length = contig_table.iloc[count]['length']
     cluster = contig_table.iloc[count][cluster_column_name]
     #If contig is unclustered, make ML prediction
     if cluster == unclustered_name:
@@ -133,11 +130,6 @@ for count,contig in enumerate(contig_table['contig']):
         if confidence >= confidence_cutoff:
             #Add prediction to ML_recruitment_list
             ML_recruitment_list.append(ML_prediction)
-            #For synthetic,pre-defined community (e.g., "MIX_51")
-            if ML_prediction == contig_table['known_genome'][count]:
-                prediction_accuracy_list.append(1)
-            else:
-                prediction_accuracy_list.append(0)
         else:
             ML_recruitment_list.append(unclustered_name)
     else:
@@ -148,4 +140,4 @@ num_confident_predictions = len(prediction_accuracy_list)
 print("{} of {} predictions were {}% confident".format(num_confident_predictions,num_predictions,confidence_cutoff))
 
 contig_table['ML_expanded_clustering'] = ML_recruitment_list
-contig_table.to_csv("1-Dec-16_MIX_51_sk_learn_jackknife.tab",sep="\t",index=False)
+contig_table.to_csv(args['out'],sep="\t",index=False)
