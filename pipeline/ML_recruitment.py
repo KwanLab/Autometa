@@ -3,9 +3,8 @@
 from __future__ import division
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from sklearn import tree,metrics,preprocessing
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 import collections
 import argparse
 
@@ -36,7 +35,7 @@ taxonomy_matrix_dict = {}
 
 #1. Load table with cluster info, taxonomy as binary matrices with pandas
 print("Loading contig table..")
-contig_table = pd.read_csv("../MIX_51_master_w_taxonomy.tab",sep="\t")
+contig_table = pd.read_csv(args['contig_tab'],sep="\t")
 
 print("Loading taxonomy info as dummy matrices..")
 phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
@@ -53,7 +52,6 @@ features = []
 labels = []
 #length_weight = []
 for count,contig in enumerate(contig_table['contig']):
-    #Only train with marker contigs from known genome bins
     known_genome =  contig_table['known_genome'][count]
     tax_phylum = list(phylum_dummy_matrix.iloc[count])
     tax_class = list(class_dummy_matrix.iloc[count])
@@ -62,24 +60,17 @@ for count,contig in enumerate(contig_table['contig']):
     tax_genus = list(genus_dummy_matrix.iloc[count])
     tax_species = list(species_dummy_martix.iloc[count])
     taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-    #contig_table['taxonomy_matrix'][count] = taxonomy #",".join(taxonomy)
     taxonomy_matrix_dict[contig] = taxonomy
     if contig_table['num_single_copies'][count] > 0:
-        vizbin_x = contig_table['vizbin_x_x'][count]
-        vizbin_y = contig_table['vizbin_y_x'][count]
-        length = contig_table['length_x'][count]
-        cov = contig_table['cov_x'][count]
-        gc = contig_table['gc_x'][count]
-        coding_density = contig_table['coding_density'][count]
-        #Binary list
+        vizbin_x = contig_table['vizbin_x'][count]
+        vizbin_y = contig_table['vizbin_y'][count]
+        length = contig_table['length'][count]
+        cov = contig_table['cov'][count]
+        gc = contig_table['gc'][count]
         label = known_genome
-        #features.append([vizbin_x,vizbin_y,cov,coding_density])
         features.append([vizbin_x,vizbin_y,cov] + taxonomy)
-        short_features.append([gc,cov]) #Short classifier
         labels.append(label)
-        length_weight.append(length)
-        #Reassign "unclustered" to known genome assignment
-        #contig_table['ML_expanded_clustering'][count] = known_genome
+
 
 def jackknife_training(features,labels):
     #Function to randomly subsample data into halves (hence 0.5), train
