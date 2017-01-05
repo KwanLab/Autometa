@@ -21,7 +21,7 @@ parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
 parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
 parser.add_argument('-n','--num_iterations', help='Number of iterations for \
-    jackknife cross-validation.', default=100)
+    jackknife cross-validation.', default=10)
 parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
 args = vars(parser.parse_args())
@@ -52,6 +52,7 @@ features = []
 labels = []
 #length_weight = []
 for count,contig in enumerate(contig_table['contig']):
+    #Actually the label here should be the bin name
     known_genome =  contig_table['known_genome'][count]
     tax_phylum = list(phylum_dummy_matrix.iloc[count])
     tax_class = list(class_dummy_matrix.iloc[count])
@@ -67,6 +68,7 @@ for count,contig in enumerate(contig_table['contig']):
         length = contig_table['length'][count]
         cov = contig_table['cov'][count]
         gc = contig_table['gc'][count]
+        #Actually the label here should be the bin name
         label = known_genome
         features.append([vizbin_x,vizbin_y,cov] + taxonomy)
         labels.append(label)
@@ -82,7 +84,7 @@ def jackknife_training(features,labels):
     predictions = my_classifier.predict(test_features)
     return my_classifier
 
-def calculate_bootstap_replicates(feature_array,iterations = 100):
+def calculate_bootstap_replicates(feature_array,iterations = 10):
     prediction_list = []
     for i in range(iterations):
         #Here features and labels are global variables
