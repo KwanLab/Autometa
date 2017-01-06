@@ -26,11 +26,12 @@ for count,contig in enumerate(contig_tab['contig']):
         cluster_dict[cluster] = [contig]
 
 #Make a list of seq records for each cluster and write out the fasta files
+outdirectory_path = args['outdir']
 for cluster in cluster_dict:
     if cluster == 'unclustered':
-        fasta_output_path = str(cluster) + '.fasta'
+        fasta_output_path = outdirectory_path + str(cluster) + '.fasta'
     else:
-        fasta_output_path = 'cluster_' + str(cluster) + '.fasta'
+        fasta_output_path = outdirectory_path + 'cluster_' + str(cluster) + '.fasta'
     cluster_seq_record_list = cluster_dict[cluster]
     #Turn list of contig names into seq records
     seq_record_list = [fasta_record_dict[seq] for seq in cluster_seq_record_list]
