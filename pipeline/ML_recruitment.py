@@ -27,8 +27,8 @@ parser.add_argument('-o','--out_table', help='Output table with new column\
 args = vars(parser.parse_args())
 
 #Set load paramters - convert to argparse
-bootstrap_iterations = args['num_iterations']
-confidence_cutoff = args['Confidence_cutoff']
+bootstrap_iterations = int(args['num_iterations'])
+confidence_cutoff = float(args['Confidence_cutoff'])
 cluster_column_name = args['cluster_column']
 unclustered_name = args['unclustered_name']
 taxonomy_matrix_dict = {}
@@ -53,7 +53,8 @@ labels = []
 #length_weight = []
 for count,contig in enumerate(contig_table['contig']):
     #Actually the label here should be the bin name
-    known_genome =  contig_table['known_genome'][count]
+    #known_genome =  contig_table['known_genome'][count]
+    cluster = contig_table[cluster_column_name][count]
     tax_phylum = list(phylum_dummy_matrix.iloc[count])
     tax_class = list(class_dummy_matrix.iloc[count])
     tax_order = list(order_dummy_matrix.iloc[count])
@@ -62,14 +63,15 @@ for count,contig in enumerate(contig_table['contig']):
     tax_species = list(species_dummy_martix.iloc[count])
     taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
     taxonomy_matrix_dict[contig] = taxonomy
-    if contig_table['num_single_copies'][count] > 0:
+    if contig_table['num_single_copies'][count] > 0 and cluster != unclustered_name:
         vizbin_x = contig_table['vizbin_x'][count]
         vizbin_y = contig_table['vizbin_y'][count]
         length = contig_table['length'][count]
         cov = contig_table['cov'][count]
         gc = contig_table['gc'][count]
         #Actually the label here should be the bin name
-        label = known_genome
+        #label = known_genome
+        label = cluster
         features.append([vizbin_x,vizbin_y,cov] + taxonomy)
         labels.append(label)
 
@@ -118,11 +120,12 @@ for count,contig in enumerate(contig_table['contig']):
     if cluster == unclustered_name:
         ML_prediction,confidence = calculate_bootstap_replicates(single_np_array,bootstrap_iterations)
         ML_predictions_dict[contig] = ML_prediction,confidence
-        #print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
+        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
         #If it the prediction passes confidence cutoff
         if confidence >= confidence_cutoff:
             #Add prediction to ML_recruitment_list
             ML_recruitment_list.append(ML_prediction)
+            prediction_accuracy_list.append(ML_prediction)
         else:
             ML_recruitment_list.append(unclustered_name)
     else:
@@ -133,4 +136,4 @@ num_confident_predictions = len(prediction_accuracy_list)
 print("{} of {} predictions were {}% confident".format(num_confident_predictions,num_predictions,confidence_cutoff))
 
 contig_table['ML_expanded_clustering'] = ML_recruitment_list
-contig_table.to_csv(args['out'],sep="\t",index=False)
+contig_table.to_csv(args['out_table'],sep="\t",index=False)
