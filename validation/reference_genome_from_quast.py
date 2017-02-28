@@ -21,6 +21,7 @@ args = vars(parser.parse_args())
 coords_table = args['coordinate_table']
 path_to_asm = args['assembly']
 filter_boolean = args['filtered']
+output_name = args['out_table']
 
 def parse_filtered_nucmer_table(coords_table,filtered=True):
     #1. Load table into pandas df
@@ -52,7 +53,8 @@ with open(path_to_asm, "r") as asm_file:
 
 #4. Report number of contigs that don't have an alignment
 unaligned_contigs = []
-with open("out.tab", "w") as outfile:
+with open(output_name, "w") as outfile:
+    outfile.write("contig\tnucmer_reference\n")
     for contig in contig_list:
         reference_genome = "NA"
         if contig in alignment_dict:
