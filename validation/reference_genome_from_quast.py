@@ -20,8 +20,8 @@ args = vars(parser.parse_args())
 
 coords_table = args['coordinate_table']
 path_to_asm = args['assembly']
-#coords_table = "MIX_51_scaffolds.coords.filtered"
-#coords_table = "MIX_51_scaffolds.coords"
+filter_boolean = args['filtered']
+
 def parse_filtered_nucmer_table(coords_table,filtered=True):
     #1. Load table into pandas df
     filtered_coordinate_table = pd.read_csv(coords_table, header=None,skiprows=2,sep="|")
@@ -41,11 +41,9 @@ def parse_filtered_nucmer_table(coords_table,filtered=True):
         alignment_dict[contig] = reference_genome
     return alignment_dict
 
-#alignment_dict = parse_filtered_nucmer_table(coords_table,True)
-alignment_dict = parse_filtered_nucmer_table(coords_table,False)
+alignment_dict = parse_filtered_nucmer_table(coords_table,filter_boolean)
 
 #3. Order output based on names in assembly file (make list of contig names)
-#path_to_asm = "../../../../../MIX_51_scaffolds.fasta"
 contig_list = []
 with open(path_to_asm, "r") as asm_file:
     for line in asm_file:
