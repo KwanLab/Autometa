@@ -2,6 +2,7 @@
 
 import argparse
 import subprocess
+import os
 #import multiprocessing
 
 #Input: fastq (or fastq.gz?) reads, metagenomic assembly contigs as fasta file
@@ -31,6 +32,8 @@ parser.add_argument('-o','--out', help='Tab delimited table for contig and avera
     read coverage', default="outfile.tab")
 args = vars(parser.parse_args())
 
+#os.path.splitext(de_novo_assembly)[0] + ".blastn"
+
 def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=1):
 	#When "shell = True", need to give one string, not a list
     #Build bowtie2 database
@@ -47,24 +50,25 @@ def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=
 
 #1. Align the comparison dataset reads to your assembly with bowtie2.
 assembly_file = args['assembly']
+assembly_file_prefix = os.path.splitext(assembly_file)[0]
 
-sam_file = run_bowtie2(args['assembly'],args['forward_reads'],\
+sam_file = run_bowtie2(assembly_file,args['forward_reads'],\
     args['reverse_reads'],args['processors'])
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
-sorted_bam_file = assembly_file.split(".")[0] + ".sort"
+sorted_bam_file = assembly_file_prefix + ".sort"
 subprocess.call(" ".join(['samtools view ','-bS ' + sam_file, ' | ', \
     'samtools sort ', '-o ', sorted_bam_file]), shell = True)
 
 #3. Tabulate the average coverage of each contig.
 
 #Run fasta_length_table.pl
-contig_length_tab_file = assembly_file.split(".")[0] + ".tab"
+contig_length_tab_file = assembly_file_prefix + ".tab"
 subprocess.call(" ".join(['fasta_length_table.pl ', assembly_file, '> ',\
     contig_length_tab_file]), shell = True)
 
 #Run genomeCoverageBed
-genome_bed_file = assembly_file.split(".")[0] + ".txt"
+genome_bed_file = assembly_file_prefix + ".txt"
 subprocess.call(" ".join(['genomeCoverageBed ', '-ibam ', sorted_bam_file, \
     '-g ' + contig_length_tab_file, '> ' + genome_bed_file]), shell = True)
 
