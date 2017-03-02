@@ -32,12 +32,10 @@ parser.add_argument('-o','--out', help='Tab delimited table for contig and avera
     read coverage', default="outfile.tab")
 args = vars(parser.parse_args())
 
-#os.path.splitext(de_novo_assembly)[0] + ".blastn"
-
 def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=1):
 	#When "shell = True", need to give one string, not a list
     #Build bowtie2 database
-    bowtie2_db = os.path.splitext(path_to_assembly)[0]
+    bowtie2_db = os.path.splitext(os.path.basename(path_to_assembly))[0]
     subprocess.call(" ".join(['bowtie2-build ',path_to_assembly, bowtie2_db]), shell = True)
     #Run bowtie2 alignment
     sam_file_name = bowtie2_db + '.sam'
@@ -50,7 +48,7 @@ def run_bowtie2(path_to_assembly,path_to_F_reads,path_to_R_reads,num_processors=
 
 #1. Align the comparison dataset reads to your assembly with bowtie2.
 assembly_file = args['assembly']
-assembly_file_prefix = os.path.splitext(assembly_file)[0]
+assembly_file_prefix = os.path.splitext(os.path.basename(assembly_file))[0]
 
 sam_file = run_bowtie2(assembly_file,args['forward_reads'],\
     args['reverse_reads'],args['processors'])
