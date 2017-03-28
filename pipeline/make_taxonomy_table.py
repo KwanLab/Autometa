@@ -17,7 +17,7 @@ args = vars(parser.parse_args())
 
 num_processors = args['processors']
 length_cutoff = args['length_cutoff']
-fasta_assembly = args['assembly']
+fasta_assembly = os.path.basename(args['assembly'])
 
 
 def length_trim(fasta,length_cutoff):
@@ -65,7 +65,7 @@ def run_blast2lca(input_file):
 		print "Continuing to next step..."
 	else:
 		subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
-			.format(input_file, output), shell = True) 
+			.format(input_file, output), shell = True)
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
@@ -97,7 +97,7 @@ if not os.path.isfile(prodigal_output + ".faa"):
 
 if not os.path.isfile(prodigal_output + ".tab"):
 	print "Running diamond blast... "
-	#diamond_output = 
+	#diamond_output =
 	diamond_output = run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa)
 else:
 	diamond_output = prodigal_output + ".tab"

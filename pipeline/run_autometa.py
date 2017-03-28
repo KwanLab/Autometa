@@ -3,9 +3,9 @@
 import argparse
 import os
 import sys
-import subprocess 
+import subprocess
 import getpass
-import time 
+import time
 import multiprocessing
 import pdb
 import logging
@@ -31,7 +31,7 @@ parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteri
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
-fasta_assembly = args['assembly']
+fasta_assembly = os.path.basename(args['assembly'])
 processors = args['processors']
 cluster_completeness = args['cluster_completeness_output']
 kingdom = args['kingdom'].lower()
@@ -117,13 +117,13 @@ def make_marker_table(fasta):
 #		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
 #		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
 #		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-#		#Delete most recent /tmp/map* directory if it's the same user 
+#		#Delete most recent /tmp/map* directory if it's the same user
 #		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
 #		#need more elegant way to clean up
 #		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
 
 #def install_VizBin_executable(autometa_path,home_dir):
-#	#install config into home directory 
+#	#install config into home directory
 #	subprocess.call("cp -R {} {}".format(autometa_path + "/VizBin/.vizbin", home_dir), shell = True)
 #		#change config path
 #	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
@@ -187,5 +187,3 @@ print "Elapsed time is {} seconds".format(round(elapsed_time,2))
 logger.info('Done!')
 logger.info('Elapsed time is {} seconds'.format(round(elapsed_time,2)))
 FNULL.close()
-
-
