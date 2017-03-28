@@ -186,7 +186,7 @@ subprocess.call('find /tmp -cmin -60 -user {} -name "*map*[0-9]" -type d -exec r
 elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
 
 print "Done!"
-print "Elapsed time is {} seconds".format(elapsed_time)
+print "Elapsed time is {} (HH:MM:SS)".format(elapsed_time)
 logger.info('Done!')
-logger.info('Elapsed time is {} seconds'.format(elapsed_time))
+logger.info('Elapsed time is {} (HH:MM:SS)'.format(elapsed_time))
 FNULL.close()
