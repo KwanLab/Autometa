@@ -185,5 +185,5 @@ elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_
 print "Done!"
 print "Elapsed time is {} seconds".format(elapsed_time)
 logger.info('Done!')
-logger.info('Elapsed time is {} seconds'.format(elapsed_time)
+logger.info('Elapsed time is {} seconds'.format(elapsed_time))
 FNULL.close()
