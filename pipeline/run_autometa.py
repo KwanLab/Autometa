@@ -180,6 +180,9 @@ vizbin_output_path = "contig_vizbin.tab"
 #extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, filtered_assembly, contig_table)
 
+#Clean up tmp folder based on: username, type=directory,creation time < 60min, pathname="*map*[0-9]"
+subprocess.call('find /tmp -cmin -60 -user {} -name "*map*[0-9]" -type d -exec rm -rf {} +'.format(username,'{}'), shell=True)
+
 elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
 
 print "Done!"
