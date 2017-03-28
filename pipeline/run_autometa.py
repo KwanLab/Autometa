@@ -180,10 +180,10 @@ vizbin_output_path = "contig_vizbin.tab"
 #extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, filtered_assembly, contig_table)
 
-elapsed_time = (time.time() - start_time)
+elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
 
 print "Done!"
-print "Elapsed time is {} seconds".format(round(elapsed_time,2))
+print "Elapsed time is {} seconds".format(elapsed_time)
 logger.info('Done!')
-logger.info('Elapsed time is {} seconds'.format(round(elapsed_time,2)))
+logger.info('Elapsed time is {} seconds'.format(elapsed_time)
 FNULL.close()
