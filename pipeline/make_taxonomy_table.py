@@ -84,7 +84,7 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 #diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-diamond_database_path = '/mnt/not_backed_up/nr_diamond/nr'
+diamond_database_path = '/media/box2/nr_old/nr'
 #add_contig_path = pipeline_path
 filtered_assembly = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
 
