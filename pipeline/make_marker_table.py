@@ -55,6 +55,7 @@ for index,PFAM_cutoffs_id in enumerate(cutoffs_table[0]):
 				#make dictionary of lists for PFAMs, where PFAM is key and contigs populate the list
 				if PFAM_hmm_scan_id not in contig_ORFs_that_pass_cutoffs:
 					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id] = []
+					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id].append(hmm_table[2][count])
 				else:
 					contig_ORFs_that_pass_cutoffs[PFAM_hmm_scan_id].append(hmm_table[2][count])
 
