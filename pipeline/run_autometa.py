@@ -77,7 +77,7 @@ def make_marker_table(fasta):
 		print "{} file already exists!".format(output_marker_table)
 		print "Continuing to next step..."
 		logger.info('{} file already exists!'.format(output_marker_table))
-		logger .info('Continuing to next step...')
+		logger.info('Continuing to next step...')
 	else:
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
