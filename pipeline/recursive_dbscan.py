@@ -4,6 +4,7 @@
 # When you run vizbin this way, Davies-Bouldin index seems to fail because the groups are quite diffuse, although DBSCAN seems to do
 # fine with the correct eps value.  Here we judge DBSCAN results based on the number of pure clusters (sum of total purity)
 
+import readline
 import rpy2.robjects as robjects # Bridge to R code
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
@@ -331,8 +332,8 @@ def run_VizBin(fasta, output_filename):
 		current_pca = 50
 		current_perplexity = 30
 		while (not_done):
-			logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/VizBin/dist/", fasta, processors, current_perplexity, current_pca))
-			vizbin_stdout = subprocess.Popen("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/VizBin/dist/", fasta, processors, current_perplexity, current_pca), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/third_party/VizBin/dist/", fasta, processors, current_perplexity, current_pca))
+			vizbin_stdout = subprocess.Popen("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/third_party/VizBin/dist/", fasta, processors, current_perplexity, current_pca), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
 			# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
 			pca_too_high = 0
