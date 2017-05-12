@@ -52,8 +52,8 @@ def make_marker_table(fasta):
 	return output_marker_table
 
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
-	logger.info("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors))
-	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors), shell=True)
+	logger.info("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors))
+	subprocess.call("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors), shell=True)
 
 #logger
 logger = logging.getLogger('run_autometa.py')

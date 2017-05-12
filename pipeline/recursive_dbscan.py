@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Program to carry out secondary dbscan clustering on a re-run of vizbin on unclustered contigs (using low "perplexity" setting)
-# When you run vizbin this way, Davies-Bouldin index seems to fail because the groups are quite diffuse, although DBSCAN seems to do
+# Program to carry out secondary dbscan clustering on a re-run of BH_tSNE on unclustered contigs (using low "perplexity" setting)
+# When you run BH_tSNE this way, Davies-Bouldin index seems to fail because the groups are quite diffuse, although DBSCAN seems to do
 # fine with the correct eps value.  Here we judge DBSCAN results based on the number of pure clusters (sum of total purity)
 
 import readline
@@ -16,6 +16,12 @@ import argparse
 import copy
 import numpy
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.Alphabet import IUPAC
+from scipy import stats
+import math
+from tsne import bh_sne
+import numpy as np
 import logging
 import subprocess
 import getpass
@@ -52,7 +58,7 @@ robjects.r('''
 			input_data_frame$db_cluster <- NULL
 		}
 
-		d <- data.frame(input_data_frame$vizbin_x, input_data_frame$vizbin_y)
+		d <- data.frame(input_data_frame$BH_tSNE_x, input_data_frame$BH_tSNE_y)
 
 		db <- dbscan(d, eps=eps, minPts=3)
 		output_table <- data.frame(input_data_frame, db_cluster = db$cluster )
@@ -63,28 +69,6 @@ robjects.r('''
 
 dbscan_simple = robjects.r['dbscan_simple']
 get_table = robjects.r['get_table']
-
-parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of vizbin coordinates based on DBSCAN and cluster purity")
-parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
-#parser.add_argument('-v','--vizbin_tab', help='Table containing vizbin coordinates', required=True)
-parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
-parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True) 
-parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
-parser.add_argument('-c','--contigtable', help='Output of make_contig_table.py', required=True)
-parser.add_argument('-p','--processors', help='Number of processors used', default=1)
-#parser.add_argument('-p','--purity_cutoff', help='Cutoff (%) used to count number of pure clusters', default=90)
-#parser.add_argument('-c','--completeness_cutoff', help='Cutoff (%) used to count number of complete clusters', default=90)
-args = vars(parser.parse_args())
-
-hmm_table_path = args['marker_tab']
-#vizbin_table_path = args['vizbin_tab']
-domain = args['domain']
-fasta_path = args['fasta']
-outdir = os.path.abspath(args['outdir'])
-contig_table = args['contigtable']
-processors = args['processors']
-#purity_cutoff = int(args['purity_cutoff'])
-#completeness_cutoff = int(args['completeness_cutoff'])
 
 def countClusters(pandas_table):
 	clusters = {}
@@ -270,7 +254,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	#pdb.set_trace()
 
-	# For impure clusters, output vizbin table
+	# For impure clusters, output BH_tSNE table
 	# First, find pure clusters
 	best_db_table = table_dictionary[best_eps_value]
 
@@ -318,74 +302,175 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	return output_cluster_info, output_contig_cluster, unclustered_r
 
-def run_VizBin(fasta, output_filename):
+def revcomp( string ):
+	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
+	complement_list = list()
+
+	for i in range(0, len(string) ):
+		if string[i] in trans_dict:
+			complement_list.append(trans_dict[string[i]])
+		else:
+			return -1
+
+	return ''.join(reversed(complement_list))
+
+def run_BH_tSNE(fasta, output_filename,contig_table):
+	k_mer_size = 5
+	pca_dimensions = 50
+	perplexity = 30.0
+
 	if os.path.isfile(output_filename):
-		print "VizBin output already exists!"
+		print "BH_tSNE output already exists!"
 		print "Continuing to next step..."
-		logger.info('VizBin output already exists!')
+		logger.info('BH_tSNE output already exists!')
 		logger.info('Continuing to next step...')
 		return None
 	else:
 		print "Running k-mer based binning..."
 		logger.info('Running k-mer based binning...')
-		not_done = 1
-		current_pca = 50
-		current_perplexity = 30
-		while (not_done):
-			logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/third_party/VizBin/dist/", fasta, processors, current_perplexity, current_pca))
-			vizbin_stdout = subprocess.Popen("java -jar {}VizBin-dist.jar -i {} -o points.txt -t {} -p {} -a {}".format(autometa_path + "/third_party/VizBin/dist/", fasta, processors, current_perplexity, current_pca), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			#tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-			# After run, check that points.txt exists.  If it doesn't, this could be because of the error "TSNE: Perplexity too large for the number of data points!"
-			pca_too_high = 0
-			perplexity_too_high = 0
-			for line in vizbin_stdout.stdout:
-				stripped_line = line.rstrip()
-				length = len(stripped_line)
-				if length >= 60 and stripped_line[-60:] == 'More data needed to compute the desired number of components':
-					pca_too_high = 1
-				if length >= 57 and stripped_line[-57:] == 'TSNE: Perplexity too large for the number of data points!':
-					perplexity_too_high = 1
+		# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
 
-			if pca_too_high:
-				current_pca -= 5
-			if perplexity_too_high:
-				current_perplexity -= 5
+		# 1. Load fasta
+		sequences = list()
+		for seq_record in SeqIO.parse(fasta, 'fasta'):
+			sequences.append(seq_record)
 
-			# We need to break out of this eternal loop!
-			if pca_too_high == 0 and perplexity_too_high == 0:
-				not_done = 0
+		# 2. Count k-mers
+		# First we make a dictionary of all the possible k-mers (discounting revcomps)
+		# Under each key is an index to be used in the subsequent lists
+		# The order of the indices depends on the order k-mers were encountered while making the dictionary
+		print('Counting k-mers')
+		count = 0
+		unique_k_mers = dict()
 
-			if current_pca <= 0 or current_perplexity <= 0:
-				print 'Error, could not run Vizbin - data too small'
-				sys.exit(2)
+		DNA_letters = ['A', 'T', 'C', 'G']
+		all_k_mers = list(DNA_letters)
+		for i in range(1, k_mer_size):
+			new_list = list()
+			for current_seq in all_k_mers:
+				for char in DNA_letters:
+					new_list.append(current_seq + char)
+			all_k_mers = new_list
 
-		return fasta
+		# Now we trim k-mers and put them in the dictionary
+		for k_mer in all_k_mers:
+			k_mer_reverse = revcomp(k_mer)
+			if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
+				unique_k_mers[k_mer] = count
+				count += 1
 
-def process_and_clean_VizBin(input_fasta,contig_table,output_table_name):
-	logger.info("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(pipeline_path, input_fasta))	
-	subprocess.call("{}/vizbin_process.pl {} points.txt > vizbin_table.txt".format(pipeline_path, input_fasta), shell=True) # Note: we assume here that the cutoff is above 100 bp
-	logger.info("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt")
-	subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
-	logger.info("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(contig_table))
-	subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(contig_table), shell=True)
-	logger.info("head -n 1 vizbin_table.txt > vizbin_header.txt")
-	subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-	logger.info("head -n 1 {} > contig_header.txt".format(contig_table))
-	subprocess.call("head -n 1 {} > contig_header.txt".format(contig_table), shell=True)
-	logger.info("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt")
-	subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
-	logger.info("cat joined_header.txt > {}".format(output_table_name))
-	subprocess.call("cat joined_header.txt > {}".format(output_table_name), shell=True)
-	logger.info("join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' >> {}".format(output_table_name))
-	subprocess.call("join contig_table_sort.txt vizbin_table_sort.txt | sed $'s/ /\t/g' >> {}".format(output_table_name), shell=True)
-		#subprocess.call("touch {}; cat joined_header.txt >> {}; join contig_table_sort.txt vizbin_table_sort.txt | cat >> {}; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-		#Delete most recent /tmp/map* directory if it's the same user 
-		#subprocess.call("rm -rf {}".format(tmp_path), shell = True)
-		#need more elegant way to clean up
-	logger.info("rm *.txt")
-	subprocess.call("rm *.txt", shell = True)
+		contig_k_mer_counts = list()
+
+		for i in range(0, len(sequences)):
+			contig_name = str(sequences[i].id)
+			contig_seq = str(sequences[i].seq)
+			# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
+			list_size = len(unique_k_mers.keys())
+			current_contig_k_mer_counts = [1 for k in range(0, list_size)]
+
+			for j in range(0, (len(contig_seq) - k_mer_size)):
+				k_mer = contig_seq[j:j + k_mer_size]
+				k_mer_reverse = revcomp(k_mer)
+
+				# Find appropriate index
+				# Note - this part naturally ignores any k_mers with weird characters
+				if k_mer in unique_k_mers:
+					index = unique_k_mers[k_mer]
+					current_contig_k_mer_counts[index] += 1
+				elif k_mer_reverse in unique_k_mers:
+					index = unique_k_mers[k_mer_reverse]
+					current_contig_k_mer_counts[index] += 1
+
+			contig_k_mer_counts.append(current_contig_k_mer_counts)
+
+		# We now remove all the k-mers where all counts are '1'
+		print ('Trimming k-mers')
+		columns_to_delete = dict()
+		for i in range(0, len(unique_k_mers.keys())):
+			non_zero_counts = 0
+			for j in range(0, len(contig_k_mer_counts)):
+				if contig_k_mer_counts[j][i] > 1:
+					non_zero_counts += 1
+
+			if non_zero_counts == 0:
+				columns_to_delete[i] = 1
 
 
+		filtered_contig_k_mer_counts = list()
+		for i in range(0, len(contig_k_mer_counts)):
+			new_row = list()
+			for j in range(0, len(unique_k_mers.keys())):
+				if j not in columns_to_delete:
+					new_row.append(contig_k_mer_counts[i][j])
+			filtered_contig_k_mer_counts.append(new_row)
+		filtered_contig_k_mer_counts = contig_k_mer_counts
+
+		# 3. Normalization
+		print('Normalizing counts')
+
+		k_mer_frequency_matrix = list()
+
+		for count_list in filtered_contig_k_mer_counts:
+			total_count = 0
+			for count in count_list:
+				total_count += count
+
+			normalized_list = list()
+			for count in count_list:
+				normalized_list.append(float(count)/total_count)
+
+			# Now we calculate the Centered log-ratio (CLR) transformation
+			# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and 
+			# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+			geometric_mean = stats.mstats.gmean(normalized_list)
+			clr_list = list()
+
+			for item in normalized_list:
+				intermediate_value = item / geometric_mean
+				clr_list.append(math.log(intermediate_value))
+
+			k_mer_frequency_matrix.append(clr_list)
+
+		# 4. PCA
+		print('Principal component analysis')
+
+		pca = decomposition.PCA(n_components=pca_dimensions)
+		pca_matrix = pca.fit_transform(k_mer_frequency_matrix)
+
+		# 5. BH-tSNE
+		print('BH-tSNE')
+
+		X = np.array(pca_matrix)
+		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
+
+		print('Outputting file')
+		output = open(contig_table, 'w')
+		output.write('contig\tbh_tsne_x\tbh_tsne_y\n')
+
+		for i in range(0, len(filtered_sequences)):
+			contig_name = str(filtered_sequences[i].id)
+			bh_tsne_x = str(bh_tsne_matrix[i][0])
+			bh_tsne_y = str(bh_tsne_matrix[i][1])
+
+			output.write(contig_name + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
+
+		output.close()
+
+parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
+parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
+parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
+parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True) 
+parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
+parser.add_argument('-c','--contigtable', help='Output of make_contig_table.py', required=True)
+parser.add_argument('-p','--processors', help='Number of processors used', default=1)
+args = vars(parser.parse_args())
+
+hmm_table_path = args['marker_tab']
+domain = args['domain']
+fasta_path = args['fasta']
+outdir = os.path.abspath(args['outdir'])
+contig_table = args['contigtable']
+processors = args['processors']
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
@@ -394,7 +479,6 @@ pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
-username = getpass.getuser()
 
 
 
@@ -421,23 +505,16 @@ for i, line in enumerate(hmm_table_lines):
 			else:
 				contig_markers[contig] = { pfam: 1 }
 
+
 # Make a master table that will be updated as clustering is done
 
-
-
-
-#pp.pprint(db_tables)
-#pdb.set_trace()
-
-# For the first few rounds, we are going to use completeness_cutoff = 90 and purity_cutoff = 90
 global_cluster_info = {}
 global_cluster_contigs = {}
-#completeness_cutoff = 90
 completeness_cutoff = 20
 purity_cutoff = 90
 round_counter = 0
 current_fasta = fasta_path
-vizbin_counter = 0
+BH_tSNE_counter = 0
 master_table = None
 
 # Load fasta sequences
@@ -446,30 +523,30 @@ for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 	assembly_seqs[seq_record.id] = seq_record
 
 while True:
-	# Run vizbin
-	vizbin_counter += 1
-	print('Running VizBin round ' + str(vizbin_counter))
-	current_vizbin_output = 'vizbin' + str(vizbin_counter) + '.tab'
-	# Carry out first vizbin run
-	process_and_clean_VizBin(run_VizBin(current_fasta,current_vizbin_output),contig_table, current_vizbin_output)
+	# Run BH_tSNE
+	BH_tSNE_counter += 1
+	print('Running BH-tSNE round ' + str(BH_tSNE_counter))
+	current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
+	# Carry out first BH_tSNE run
+	run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
 
-	abs_vizbin_path = os.path.abspath(current_vizbin_output)
-	vizbin_r = get_table(abs_vizbin_path)
+	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
+	BH_tSNE_r = get_table(abs_BH_tSNE_path)
 
-	if vizbin_counter == 1:
-		master_table = pandas2ri.ri2py(vizbin_r)
+	if BH_tSNE_counter == 1:
+		master_table = pandas2ri.ri2py(BH_tSNE_r)
 
-	# Output current vizbin table
-	vizbin_output_path = 'vizbin' + str(vizbin_counter) + '.tab'
-	vizbin_pd = pandas2ri.ri2py(vizbin_r)
-	vizbin_pd.to_csv(path_or_buf=vizbin_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+	# Output current BH_tSNE table
+	BH_tSNE_output_path = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
+	BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
+	BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
-	current_r_table = vizbin_r
+	current_r_table = BH_tSNE_r
 
-	local_vizbin_round = 0
+	local_BH_tSNE_round = 0
 	while True:
 		round_counter += 1
-		local_vizbin_round += 1
+		local_BH_tSNE_round += 1
 		print('Running DBSCAN round ' + str(round_counter))
 		db_tables = runDBSCANs(current_r_table)
 		cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
@@ -480,18 +557,18 @@ while True:
 
 		# Populate the global data structures
 		for	cluster in cluster_information:
-			new_cluster_name = 'vizbin' + str(vizbin_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
 			global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
 		for contig in contig_cluster_dictionary:
-			new_cluster_name = 'vizbin' + str(vizbin_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 			global_cluster_contigs[contig] = new_cluster_name
 
-	if local_vizbin_round == 1:
-		# This means that after the last vizbin run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
+	if local_BH_tSNE_round == 1:
+		# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
 		break
 
-	# If we are not done, write a new fasta for the next vizbin run
+	# If we are not done, write a new fasta for the next BH_tSNE run
 	# First convert the r table to a pandas table
 	unclustered_pd = pandas2ri.ri2py(current_r_table)
 	unclustered_seqrecords = []
@@ -499,7 +576,7 @@ while True:
 		contig = row['contig']
 		unclustered_seqrecords.append(assembly_seqs[contig])
 
-	current_fasta = 'unclustered_for_vizbin' + str(vizbin_counter + 1) + '.fasta'
+	current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
 	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
 
 
