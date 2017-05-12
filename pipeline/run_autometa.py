@@ -10,45 +10,6 @@ import multiprocessing
 import pdb
 import logging
 
-#logger
-logger = logging.getLogger('run_autometa.py')
-hdlr = logging.FileHandler('run_autometa.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
-#logging.basicConfig(filname='autometa.log', level=logging.DEBUG,filemode='w')
-
-#argument parser
-parser = argparse.ArgumentParser(description="Script to run the autometa pipeline. \
-	The script expects autometa repo to be somewhere in the user's home directory.")
-parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p','--processors', help='Number of processors used', default=1)
-parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
- Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
-parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
-args = vars(parser.parse_args())
-
-length_cutoff = args['length_cutoff']
-fasta_assembly = os.path.basename(args['assembly'])
-processors = args['processors']
-cluster_completeness = args['cluster_completeness_output']
-kingdom = args['kingdom'].lower()
-
-# Error check that kingdom is valid
-if not (kingdom == 'bacteria' or kingdom == 'archaea'):
-	print ('Error, kingdom must either be "archaea" or "bacteria"')
-	sys.exit(2)
-
-#kmer = args['kmer']
-#what input variables were and when you ran it (report fill path based on argparse)
-logger.info('Input: -a {} -p {} -l {} -c {}'.format(args['assembly'], processors, length_cutoff, cluster_completeness))
-
-#def is_fasta(fasta):
-#def process_assembly_name(fasta):
-#check for output - so as not to run again
-
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = str(args['assembly'].split("/")[-1].split(".")[0]) + "_filtered.fasta"
@@ -90,81 +51,58 @@ def make_marker_table(fasta):
 			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_marker_table
 
-#def run_VizBin(fasta,marker_table):
-#	if os.path.isfile("contig_vizbin.tab"):
-#		print "VizBin output already exists!".format(marker_table)
-#		print "Continuing to next step..."
-#		logger.info('VizBin output already exists!'.format(marker_table))
-#		logger.info('Continuing to next step...')
-#		return None
-#	else:
-#		print "Runnign k-mer based binning..."
-#		logger.info('Running k-mer based binning...')
-#		logger.info("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/", fasta))
-#		subprocess.call("java -jar {}VizBin-dist.jar -i {} -o points.txt".format(autometa_path + "/VizBin/dist/",\
-#		fasta), shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
-#		tmp_path = subprocess.check_output("ls /tmp/map* -dlt | grep {} | head -n1".format(username), shell=True).rstrip("\n").split()[-1]
-#		return tmp_path
-
-
-#def process_and_clean_VizBin(tmp_path,output_table_name):
-#	if tmp_path != None:
-#		subprocess.call("{}/vizbin_process.pl {}/filteredSequences.fa points.txt > vizbin_table.txt".format(pipeline_path,tmp_path), shell=True)
-#		subprocess.call("tail -n +2 vizbin_table.txt | sort -k 1,1 > vizbin_table_sort.txt", shell=True)
-#		subprocess.call("tail -n +2 {} | sort -k 1,1 > contig_table_sort.txt".format(output_table_name), shell=True)
-#		subprocess.call("head -n 1 vizbin_table.txt > vizbin_header.txt", shell=True)
-#		subprocess.call("head -n 1 {} > contig_header.txt".format(output_table_name), shell=True)
-#		subprocess.call("join contig_header.txt vizbin_header.txt | sed $'s/ /\t/g' > joined_header.txt", shell=True)
-#		subprocess.call("touch contig_vizbin.tab; cat joined_header.txt >> contig_vizbin.tab; join contig_table_sort.txt vizbin_table_sort.txt |\
-#		 cat >> contig_vizbin.tab; sed $'s/ /\t/g' contig_vizbin.tab", shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
-#		#Delete most recent /tmp/map* directory if it's the same user
-#		subprocess.call("rm -rf {}".format(tmp_path), shell = True)
-#		#need more elegant way to clean up
-#		subprocess.call("ls -t *txt | head -n 7 | xargs -L1 rm".format(tmp_path), shell = True)
-
-#def install_VizBin_executable(autometa_path,home_dir):
-#	#install config into home directory
-#	subprocess.call("cp -R {} {}".format(autometa_path + "/VizBin/.vizbin", home_dir), shell = True)
-#		#change config path
-#	subprocess.call("sed -i {}.vizbin/config 's?/home/user/'{}'?g'".format(home_dir,home_dir), shell = True)
-
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
 	logger.info("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors))
 	subprocess.call("{}/recursive_dbscan.py -m {} -d bacteria -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,filtered_assembly, contig_table, processors), shell=True)
 
-#def extract_best_clusters(fasta,best_cluster_tab,marker_tab_path):
-#	#hmm_marker_path = autometa_path + "/single-copy_markers/Bacteria_single_copy.hmm"
-#	#hmm_cutoffs_path = autometa_path + "/single-copy_markers/Bacteria_single_copy_cutoffs.txt"
-#	subprocess.call("mkdir -p best_cluster_output_dir", shell = True)
-#	#subprocess.call("{}cluster_separate_and_analyze.pl --fasta {} --table {} --outputdir best_cluster_output_dir --hmmdb {} --cutoffs {}\
-#		#".format(pipeline_path,fasta,best_cluster_tab,hmm_marker_path,hmm_cutoffs_path), shell = True)
-#		#use cluster_completeness.py instead
-#	subprocess.call("{}/cluster_completeness.py -f {} -d eps_test_dir/{} -c 'db.cluster' -o best_cluster_output_dir -m {} -cc {}\
-#		".format(pipeline_path,fasta,best_cluster_tab,marker_tab_path,cluster_completeness), shell = True)
+#logger
+logger = logging.getLogger('run_autometa.py')
+hdlr = logging.FileHandler('run_autometa.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
 
-start_time = time.time()
-FNULL = open(os.devnull, 'w')
+#argument parser
+parser = argparse.ArgumentParser(description="Script to run the autometa pipeline.")
+parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
+parser.add_argument('-p','--processors', help='Number of processors used', default=1)
+parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
+ Default is 10,000 bp.', default=10000, type = int)
+parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
+args = vars(parser.parse_args())
+
+length_cutoff = args['length_cutoff']
+fasta_assembly = os.path.basename(args['assembly'])
+processors = args['processors']
+cluster_completeness = args['cluster_completeness_output']
+kingdom = args['kingdom'].lower()
+
+# Error check that kingdom is valid
+if not (kingdom == 'bacteria' or kingdom == 'archaea'):
+	print ('Error, kingdom must either be "archaea" or "bacteria"')
+	sys.exit(2)
 
 #check if fasta in path
 if not os.path.isfile(args['assembly']):
 	print "Could not find {}...".format(args['assembly'])
 	logger.debug('Could not find {}...'.format(args['assembly']))
 	exit()
-#else:
-	#check if fasta
+
+#what input variables were and when you ran it (report fill path based on argparse)
+logger.info('Input: -a {} -p {} -l {} -c {}'.format(args['assembly'], processors, length_cutoff, cluster_completeness))
+
+start_time = time.time()
+FNULL = open(os.devnull, 'w')
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
-
-username = getpass.getuser()
-home = os.path.expanduser("~") + "/"
 
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
-#Alternatively, the user could set this as an env variable
-
 
 #run length trim and store output name
 filtered_assembly = length_trim(args['assembly'],args['length_cutoff'])
@@ -172,18 +110,8 @@ contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 vizbin_output_path = "contig_vizbin.tab"
 
-#install_VizBin_executable(autometa_path,home)
-
-#process_and_clean_VizBin(run_VizBin(filtered_assembly,marker_tab_path),contig_table)
-#extract_best_clusters("scaffolds_over3k_over10k.fasta",bin_assess_and_pick_cluster("scaffolds_over3k_marker.tab", "contig_vizbin.tab"))
-#best_cluster_tab = bin_assess_and_pick_cluster(marker_tab_path, vizbin_output_path)
-#extract_best_clusters(filtered_assembly,best_cluster_tab,marker_tab_path)
 bin_assess_and_pick_cluster(pipeline_path, marker_tab_path, filtered_assembly, contig_table)
 
-#Clean up tmp folder based on: username, type=directory,creation time < 60min, pathname="*map*[0-9]"
-# --> Causes problems if multiple runs are going at the same time...
-#subprocess.call('find /tmp -cmin -60 -user {} -name "*map*[0-9]" -type d -exec rm -rf {} +'.format(username,'{}'), shell=True)
-#logger.info('find /tmp -cmin -60 -user {} -name "*map*[0-9]" -type d -exec rm -rf {} +'.format(username,'{}'))
 elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
 
 print "Done!"
