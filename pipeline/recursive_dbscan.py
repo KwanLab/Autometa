@@ -466,8 +466,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 				bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
 				bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
 				output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
-				pdb.set_trace()
-
+				
 		output.close()
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
