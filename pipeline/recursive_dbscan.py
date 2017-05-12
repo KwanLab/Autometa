@@ -18,6 +18,7 @@ import numpy
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
+from sklearn import decomposition
 from scipy import stats
 import math
 from tsne import bh_sne
