@@ -59,7 +59,7 @@ robjects.r('''
 			input_data_frame$db_cluster <- NULL
 		}
 
-		d <- data.frame(input_data_frame$BH_tSNE_x, input_data_frame$BH_tSNE_y)
+		d <- data.frame(input_data_frame$bh_tsne_x, input_data_frame$bh_tsne_y)
 
 		db <- dbscan(d, eps=eps, minPts=3)
 		output_table <- data.frame(input_data_frame, db_cluster = db$cluster )
@@ -550,7 +550,7 @@ while True:
 		master_table = pandas2ri.ri2py(BH_tSNE_r)
 
 	# Output current BH_tSNE table
-	BH_tSNE_output_path = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
+	#BH_tSNE_output_path = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
 	BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
 	BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
