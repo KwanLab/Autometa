@@ -457,7 +457,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 
 		for i, line in enumerate(contig_table_lines):
 			if i == 0:
-				new_header = line + 'bh_tsne_x\tbh_tsne_y\n'
+				new_header = line + '\tbh_tsne_x\tbh_tsne_y\n'
 				output.write(new_header)
 			else:
 				line_list = line.split('\t')
@@ -466,6 +466,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 				bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
 				bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
 				output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
+				pdb.set_trace()
 
 		output.close()
 
