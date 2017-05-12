@@ -452,7 +452,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		print('Outputting file')
 		output = open(output_filename, 'w')
 		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
-		contig_table_path = open(contig_table_path, 'r')
+		contig_table = open(contig_table_path, 'r')
 		contig_table_lines = contig_table.read().splitlines()
 
 		for i, line in enumerate(contig_table_lines):
