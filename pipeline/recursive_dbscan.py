@@ -552,7 +552,7 @@ while True:
 	# Output current BH_tSNE table
 	#BH_tSNE_output_path = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
 	BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
-	BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+	#BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
 	current_r_table = BH_tSNE_r
 
