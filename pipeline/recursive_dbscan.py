@@ -314,7 +314,7 @@ def revcomp( string ):
 
 	return ''.join(reversed(complement_list))
 
-def run_BH_tSNE(fasta, output_filename,contig_table):
+def run_BH_tSNE(fasta, output_filename,contig_table_path):
 	k_mer_size = 5
 	pca_dimensions = 50
 	perplexity = 30.0
@@ -332,8 +332,13 @@ def run_BH_tSNE(fasta, output_filename,contig_table):
 
 		# 1. Load fasta
 		sequences = list()
+		sequence_names = dict()
+		seq_counter = 0
 		for seq_record in SeqIO.parse(fasta, 'fasta'):
 			sequences.append(seq_record)
+			seq_name = str(seq_record.id)
+			sequence_names[seq_name] = seq_counter
+			seq_counter += 1
 
 		# 2. Count k-mers
 		# First we make a dictionary of all the possible k-mers (discounting revcomps)
@@ -444,15 +449,22 @@ def run_BH_tSNE(fasta, output_filename,contig_table):
 		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
 
 		print('Outputting file')
-		output = open(contig_table, 'w')
-		output.write('contig\tbh_tsne_x\tbh_tsne_y\n')
+		output = open(output_filename, 'w')
+		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
+		contig_table_path = open(contig_table_path, 'r')
+		contig_table_lines = contig_table.read().splitlines()
 
-		for i in range(0, len(filtered_sequences)):
-			contig_name = str(filtered_sequences[i].id)
-			bh_tsne_x = str(bh_tsne_matrix[i][0])
-			bh_tsne_y = str(bh_tsne_matrix[i][1])
-
-			output.write(contig_name + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
+		for i, line in enumerate(contig_table_lines):
+			if i == 0:
+				new_header = line + 'bh_tsne_x\tbh_tsne_y\n'
+				output.write(new_header)
+			else:
+				line_list = line.split('\t')
+				current_contig = line_list[0]
+				contig_index = sequence_names[current_contig]
+				bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
+				bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
+				output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
 
 		output.close()
 
