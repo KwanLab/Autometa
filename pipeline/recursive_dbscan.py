@@ -5,9 +5,9 @@
 # fine with the correct eps value.  Here we judge DBSCAN results based on the number of pure clusters (sum of total purity)
 
 import readline
-import rpy2.robjects as robjects # Bridge to R code
-from rpy2.robjects.packages import importr
-from rpy2.robjects import pandas2ri
+#import rpy2.robjects as robjects # Bridge to R code
+#from rpy2.robjects.packages import importr
+#from rpy2.robjects import pandas2ri
 import sys
 import os
 import pandas as pd
@@ -19,6 +19,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 from sklearn import decomposition
+from sklearn.cluster import DBSCAN
 from scipy import stats
 import math
 from tsne import bh_sne
@@ -39,37 +40,21 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
-pandas2ri.activate()
 pp = pprint.PrettyPrinter(indent=4)
 
-# Load R libaries
-rbase = importr('base')
-dbscan = importr('dbscan')
+def dbscan_simple(table, eps):
+	table_copy = copy.deepcopy(table)
+	# Delete db_cluster column
+	table_copy.drop('db_cluster')
 
-# Define R functions
-robjects.r('''
-	get_table <- function(path) {
-		input_data <- read.table(path, header=TRUE)
-		return (input_data)
-	}
-	dbscan_simple <- function(input_data_frame, eps) {
-		# Funny things happen if there is already a 'db_cluster' column, let's delete it!
-		if ("db_cluster" %in% colnames(input_data_frame))
-		{
-			input_data_frame$db_cluster <- NULL
-		}
+	# Make a matrix
+	X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
+	db = DBSCAN(eps=eps, min_samples=3).fit(X)
 
-		d <- data.frame(input_data_frame$bh_tsne_x, input_data_frame$bh_tsne_y)
+	# Add dbscan labels to pandas table
+	table_copy.db_cluster = db.labels_
 
-		db <- dbscan(d, eps=eps, minPts=3)
-		output_table <- data.frame(input_data_frame, db_cluster = db$cluster )
-
-		return(output_table)
-	}
-''')
-
-dbscan_simple = robjects.r['dbscan_simple']
-get_table = robjects.r['get_table']
+	return table_copy
 
 def countClusters(pandas_table):
 	clusters = {}
@@ -192,15 +177,15 @@ def getClusterSummaryInfo(pandas_table):
 
 	return output_dictionary
 
-def runDBSCANs(r_table):
+def runDBSCANs(table):
 	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
 	current_eps = 0.3
 	db_tables = {} # Will be keyed by eps
 	number_of_clusters = float('inf')
 	while(number_of_clusters > 1):
-		#print ('current eps: ' + str(current_eps))
-		dbscan_output_r = dbscan_simple(r_table, current_eps)
-		dbscan_output_pd = pandas2ri.ri2py(dbscan_output_r)
+		#dbscan_output_r = dbscan_simple(r_table, current_eps)
+		#dbscan_output_pd = pandas2ri.ri2py(dbscan_output_r)
+		dbscan_output_pd = dbscan_simple(table, current_eps)
 		new_pd_copy = copy.deepcopy(dbscan_output_pd)
 		db_tables[current_eps] = new_pd_copy
 		current_eps = current_eps + 0.1
@@ -282,7 +267,8 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	# We now make an r table from subset_other_db_table, with the db_cluster column stripped
 	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
-	unclustered_r = pandas2ri.py2ri(subset_other_db_table)
+	#unclustered_r = pandas2ri.py2ri(subset_other_db_table)
+	unclustered = subset_other_db_table
 
 	#subset_complete_db_table = best_db_table
 	#for cluster in other_clusters:
@@ -301,7 +287,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		if cluster in complete_and_pure_clusters:
 			output_contig_cluster[contig] = cluster
 
-	return output_cluster_info, output_contig_cluster, unclustered_r
+	return output_cluster_info, output_contig_cluster, unclustered
 
 def revcomp( string ):
 	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
@@ -557,26 +543,28 @@ while True:
 	run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
 
 	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
-	BH_tSNE_r = get_table(abs_BH_tSNE_path)
+	#BH_tSNE_r = get_table(abs_BH_tSNE_path)
 
 	if BH_tSNE_counter == 1:
-		master_table = pandas2ri.ri2py(BH_tSNE_r)
+		#master_table = pandas2ri.ri2py(BH_tSNE_r)
+		master_table = pandas.read_table(abs_BH_tSNE_path)
 
 	# Output current BH_tSNE table
-	#BH_tSNE_output_path = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
-	BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
+	#BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
 	#BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
-	current_r_table = BH_tSNE_r
+	#current_r_table = BH_tSNE_r
+	current_table = pandas.read_table(abs_BH_tSNE_path)
 
 	local_BH_tSNE_round = 0
 	while True:
 		round_counter += 1
 		local_BH_tSNE_round += 1
 		print('Running DBSCAN round ' + str(round_counter))
-		db_tables = runDBSCANs(current_r_table)
-		cluster_information, contig_cluster_dictionary, unclustered_r_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-		current_r_table = unclustered_r_table
+		#db_tables = runDBSCANs(current_r_table)
+		db_tables = runDBSCANs(current_table)
+		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		current_table = unclustered_table
 
 		if not cluster_information:
 			break
@@ -596,9 +584,9 @@ while True:
 
 	# If we are not done, write a new fasta for the next BH_tSNE run
 	# First convert the r table to a pandas table
-	unclustered_pd = pandas2ri.ri2py(current_r_table)
+	#unclustered_pd = pandas2ri.ri2py(current_r_table)
 	unclustered_seqrecords = []
-	for i, row in unclustered_pd.iterrows():
+	for i, row in unclustered_table.iterrows():
 		contig = row['contig']
 		unclustered_seqrecords.append(assembly_seqs[contig])
 
