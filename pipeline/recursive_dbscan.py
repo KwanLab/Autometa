@@ -440,11 +440,19 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		# 4. PCA
 		print('Principal component analysis')
 
+		# Adjust PCA dimensions
+		if len(k_mer_frequency_matrix[0]) < pca_dimensions:
+			pca_dimensions = len(k_mer_frequency_matrix[0])
+
 		pca = decomposition.PCA(n_components=pca_dimensions)
 		pca_matrix = pca.fit_transform(k_mer_frequency_matrix)
 
 		# 5. BH-tSNE
 		print('BH-tSNE')
+
+		# Adjust perplexity according to the number of data points
+		if (len(k_mer_frequency_matrix) - 1) < perplexity:
+			perplexity = float(len(k_mer_frequency_matrix) - 1)
 
 		X = np.array(pca_matrix)
 		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
@@ -466,7 +474,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 				bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
 				bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
 				output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
-				
+
 		output.close()
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
