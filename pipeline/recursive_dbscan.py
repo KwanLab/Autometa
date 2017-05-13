@@ -474,10 +474,11 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 			else:
 				line_list = line.split('\t')
 				current_contig = line_list[0]
-				contig_index = sequence_names[current_contig]
-				bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
-				bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
-				output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
+				if current_contig in sequence_names:
+					contig_index = sequence_names[current_contig]
+					bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
+					bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
+					output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
 
 		output.close()
 
