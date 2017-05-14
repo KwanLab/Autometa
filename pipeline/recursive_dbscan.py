@@ -251,7 +251,8 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		purity = cluster_info[best_eps_value][cluster]['purity']
 
 		# Explicitly remove the noise cluster (0)
-		if cluster == 0:
+		# Note: in the R DBSCAN implementation, the noise cluster is 0, in the sklearn implementation, the noise cluster is -1
+		if cluster == -1:
 			other_clusters[cluster] = 1
 			continue
 
