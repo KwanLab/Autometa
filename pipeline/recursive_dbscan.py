@@ -55,7 +55,9 @@ def dbscan_simple(table, eps):
 	# Add dbscan labels to pandas table
 	table_copy.db_cluster = db.labels_
 
-	pp.pprint(table_copy)
+	pp.pprint(db.labels_)
+
+	#pp.pprint(table_copy)
 	exit()
 
 	return table_copy
