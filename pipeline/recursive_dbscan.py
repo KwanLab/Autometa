@@ -45,7 +45,8 @@ pp = pprint.PrettyPrinter(indent=4)
 def dbscan_simple(table, eps):
 	table_copy = copy.deepcopy(table)
 	# Delete db_cluster column
-	table_copy.drop('db_cluster')
+	if 'db_cluster' in table_copy:
+		table_copy.drop('db_cluster')
 
 	# Make a matrix
 	X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
