@@ -57,8 +57,8 @@ def dbscan_simple(table, eps):
 	for label in np.nditer(db.labels_):
 		labels.append(label)
 
-	table_copy['db_cluster'] = labels
-	#pp.pprint(db.labels_)
+	#table_copy['db_cluster'] = labels
+	table_copy['db_cluster'] = db.labels_
 
 	pp.pprint(table_copy)
 	exit()
