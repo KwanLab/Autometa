@@ -547,14 +547,14 @@ while True:
 
 	if BH_tSNE_counter == 1:
 		#master_table = pandas2ri.ri2py(BH_tSNE_r)
-		master_table = pandas.read_table(abs_BH_tSNE_path)
+		master_table = pd.read_table(abs_BH_tSNE_path)
 
 	# Output current BH_tSNE table
 	#BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
 	#BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
 
 	#current_r_table = BH_tSNE_r
-	current_table = pandas.read_table(abs_BH_tSNE_path)
+	current_table = pd.read_table(abs_BH_tSNE_path)
 
 	local_BH_tSNE_round = 0
 	while True:
