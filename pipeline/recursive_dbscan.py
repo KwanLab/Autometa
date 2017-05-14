@@ -53,9 +53,11 @@ def dbscan_simple(table, eps):
 	db = DBSCAN(eps=eps, min_samples=3).fit(X)
 
 	# Add dbscan labels to pandas table
-	table_copy.db_cluster = db.labels_
+	#table_copy.db_cluster = db.labels_
+	for i, label in enumerate(db.labels_[0]):
+		print(str(label))
 
-	pp.pprint(db.labels_)
+	#pp.pprint(db.labels_)
 
 	#pp.pprint(table_copy)
 	exit()
