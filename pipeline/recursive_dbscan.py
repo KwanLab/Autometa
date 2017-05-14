@@ -52,16 +52,7 @@ def dbscan_simple(table, eps):
 	X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
 	db = DBSCAN(eps=eps, min_samples=3).fit(X)
 
-	# Add dbscan labels to pandas table
-	labels = list()
-	for label in np.nditer(db.labels_):
-		labels.append(label)
-
-	#table_copy['db_cluster'] = labels
 	table_copy['db_cluster'] = db.labels_
-
-	pp.pprint(table_copy)
-	exit()
 
 	return table_copy
 
