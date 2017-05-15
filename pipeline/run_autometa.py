@@ -104,6 +104,15 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 
+# Output current branch and commit
+branch_command = "git -C " + autometa_path + " branch | grep \* | sed 's/^..//'"
+branch = subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
+
+commit_command = 'git -C ' + autometa_path + ' rev-parse HEAD'
+commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
+
+logger.info('Currently running branch ' + branch + ', commit ' + commit)
+
 #run length trim and store output name
 filtered_assembly = length_trim(args['assembly'],args['length_cutoff'])
 contig_table = make_contig_table(filtered_assembly)

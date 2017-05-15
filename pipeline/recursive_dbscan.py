@@ -314,8 +314,8 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		logger.info('Continuing to next step...')
 		return None
 	else:
-		print "Running k-mer based binning..."
-		logger.info('Running k-mer based binning...')
+		print "run_BH_tSNE: Running k-mer based binning..."
+		logger.info('run_BH_tSNE: Running k-mer based binning...')
 		# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
 
 		# 1. Load fasta
@@ -332,7 +332,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		# First we make a dictionary of all the possible k-mers (discounting revcomps)
 		# Under each key is an index to be used in the subsequent lists
 		# The order of the indices depends on the order k-mers were encountered while making the dictionary
-		print('Counting k-mers')
+		logger.info('run_BH_tSNE: Counting k-mers')
 		count = 0
 		unique_k_mers = dict()
 
@@ -377,7 +377,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 			contig_k_mer_counts.append(current_contig_k_mer_counts)
 
 		# We now remove all the k-mers where all counts are '1'
-		print ('Trimming k-mers')
+		logger.info('run_BH_tSNE: Trimming k-mers')
 		columns_to_delete = dict()
 		for i in range(0, len(unique_k_mers.keys())):
 			non_zero_counts = 0
@@ -399,7 +399,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		filtered_contig_k_mer_counts = contig_k_mer_counts
 
 		# 3. Normalization
-		print('Normalizing counts')
+		logger.info('run_BH_tSNE: Normalizing counts')
 
 		k_mer_frequency_matrix = list()
 
@@ -425,7 +425,7 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 			k_mer_frequency_matrix.append(clr_list)
 
 		# 4. PCA
-		print('Principal component analysis')
+		logger.info('run_BH_tSNE: Principal component analysis')
 
 		# Adjust PCA dimensions
 		if len(k_mer_frequency_matrix[0]) < pca_dimensions:
@@ -435,20 +435,20 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		pca_matrix = pca.fit_transform(k_mer_frequency_matrix)
 
 		# 5. BH-tSNE
-		print('BH-tSNE')
+		logger.info('run_BH_tSNE: BH-tSNE')
 
 		# Adjust perplexity according to the number of data points
 		# Took logic from tsne source code
 		if (len(k_mer_frequency_matrix) - 1) < (3 * perplexity)  :
 			perplexity = (float(len(k_mer_frequency_matrix) - 1) / 3) - 1
 
-		print (str(len(k_mer_frequency_matrix)) + ' data points')
-		print (str(len(k_mer_frequency_matrix[0])) + ' dimensions')
+		#print (str(len(k_mer_frequency_matrix)) + ' data points')
+		#print (str(len(k_mer_frequency_matrix[0])) + ' dimensions')
 
 		X = np.array(pca_matrix)
 		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
 
-		print('Outputting file')
+		logger.info('run_BH_tSNE: Outputting file ' + output_filename)
 		output = open(output_filename, 'w')
 		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
 		contig_table = open(contig_table_path, 'r')
@@ -538,7 +538,7 @@ for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 while True:
 	# Run BH_tSNE
 	BH_tSNE_counter += 1
-	print('Running BH-tSNE round ' + str(BH_tSNE_counter))
+	logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
 	current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
 	# Carry out first BH_tSNE run
 	run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
@@ -561,7 +561,7 @@ while True:
 	while True:
 		round_counter += 1
 		local_BH_tSNE_round += 1
-		print('Running DBSCAN round ' + str(round_counter))
+		logger.info('Running DBSCAN round ' + str(round_counter))
 		#db_tables = runDBSCANs(current_r_table)
 		db_tables = runDBSCANs(current_table)
 		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
