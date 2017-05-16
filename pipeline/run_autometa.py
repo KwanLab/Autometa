@@ -108,7 +108,7 @@ autometa_path = '/'.join(pathList)
 branch_command = "git -C " + autometa_path + " branch | grep \* | sed 's/^..//'"
 branch = subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
 
-commit_command = 'git -C ' + autometa_path + ' rev-parse HEAD'
+commit_command = 'git -C ' + autometa_path + ' rev-parse --short HEAD'
 commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
 
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
