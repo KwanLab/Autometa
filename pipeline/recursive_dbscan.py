@@ -271,7 +271,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	output_db_table = copy.deepcopy(best_db_table)
 	for index, row in output_db_table.iterrows():
 		if row['db_cluster'] in other_clusters:
-			db_cluster.set_value(index, 'db_cluster', -1)
+			output_db_table.set_value(index, 'db_cluster', -1)
 
 	output_filename = 'BH_tSNE' + str(BH_tSNE_counter) + '_DBSCAN' + str(round_counter) + '_eps' + str(best_eps_value) + '.tab'
 	output_db_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=None)
