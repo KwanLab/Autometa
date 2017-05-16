@@ -451,8 +451,8 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path, do_pca=True):
 		if (len(k_mer_frequency_matrix) - 1) < (3 * perplexity)  :
 			perplexity = (float(len(k_mer_frequency_matrix) - 1) / 3) - 1
 
-		#print (str(len(k_mer_frequency_matrix)) + ' data points')
-		#print (str(len(k_mer_frequency_matrix[0])) + ' dimensions')
+		logger.info(str(len(k_mer_frequency_matrix)) + ' data points')
+		logger.info(str(len(k_mer_frequency_matrix[0])) + ' dimensions')
 
 		if (len(k_mer_frequency_matrix[0]) > pca_dimensions) and (do_pca == True):
 			X = np.array(pca_matrix)
