@@ -250,7 +250,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		completeness = cluster_info[best_eps_value][cluster]['completeness']
 		purity = cluster_info[best_eps_value][cluster]['purity']
 
-		# Explicitly remove the noise cluster (0)
+		# Explicitly remove the noise cluster (-1)
 		# Note: in the R DBSCAN implementation, the noise cluster is 0, in the sklearn implementation, the noise cluster is -1
 		if cluster == -1:
 			other_clusters[cluster] = 1
@@ -262,9 +262,19 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 			other_clusters[cluster] = 1
 
 	# Subset the data frame
-	subset_other_db_table = best_db_table
+	subset_other_db_table = copy.deepcopy(best_db_table)
+	
 	for cluster in complete_and_pure_clusters:
 		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
+
+	# Output a table with the classifications, mainly for debug/investigation purposes
+	output_db_table = copy.deepcopy(best_db_table)
+	for index, row in output_db_table.iterrows():
+		if row['db_cluster'] in other_clusters:
+			db_cluster.set_value(index, 'db_cluster', -1)
+
+	output_filename = 'BH_tSNE' + str(BH_tSNE_counter) + '_DBSCAN' + str(round_counter) + '_eps' + str(best_eps_value) + '.tab'
+	output_db_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=None)
 
 	# We now make an r table from subset_other_db_table, with the db_cluster column stripped
 	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
