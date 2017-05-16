@@ -302,7 +302,7 @@ def revcomp( string ):
 
 	return ''.join(reversed(complement_list))
 
-def run_BH_tSNE(fasta, output_filename,contig_table_path):
+def run_BH_tSNE(fasta, output_filename,contig_table_path, do_pca=True):
 	k_mer_size = 5
 	pca_dimensions = 50
 	perplexity = 30.0
@@ -425,14 +425,13 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 			k_mer_frequency_matrix.append(clr_list)
 
 		# 4. PCA
-		logger.info('run_BH_tSNE: Principal component analysis')
 
-		# Adjust PCA dimensions
-		if len(k_mer_frequency_matrix[0]) < pca_dimensions:
-			pca_dimensions = len(k_mer_frequency_matrix[0])
-
-		pca = decomposition.PCA(n_components=pca_dimensions)
-		pca_matrix = pca.fit_transform(k_mer_frequency_matrix)
+		if (len(k_mer_frequency_matrix[0]) > pca_dimensions) and (do_pca == True):
+			logger.info('run_BH_tSNE: Principal component analysis')
+			pca = decomposition.PCA(n_components=pca_dimensions)
+			pca_matrix = pca.fit_transform(k_mer_frequency_matrix)
+		else:
+			logger.info('run_BH_tSNE: Principle component analysis step skipped')
 
 		# 5. BH-tSNE
 		logger.info('run_BH_tSNE: BH-tSNE')
@@ -445,7 +444,10 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path):
 		#print (str(len(k_mer_frequency_matrix)) + ' data points')
 		#print (str(len(k_mer_frequency_matrix[0])) + ' dimensions')
 
-		X = np.array(pca_matrix)
+		if (len(k_mer_frequency_matrix[0]) > pca_dimensions) and (do_pca == True):
+			X = np.array(pca_matrix)
+		else:
+			X = np.array(k_mer_frequency_matrix)
 		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
 
 		logger.info('run_BH_tSNE: Outputting file ' + output_filename)
