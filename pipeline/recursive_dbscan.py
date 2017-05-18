@@ -233,6 +233,111 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		completeness_product[eps] = number_complete_and_pure_clusters[eps] * mean_completeness[eps]
 
 	# Get eps value with highest number of complete clusters
+	sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
+	#sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
+	#sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
+	best_eps_value = sorted_eps_values[0]
+
+	#pdb.set_trace()
+
+	# For impure clusters, output BH_tSNE table
+	# First, find pure clusters
+	best_db_table = table_dictionary[best_eps_value]
+
+	complete_and_pure_clusters = {}
+	other_clusters = {}
+	for cluster in cluster_info[best_eps_value]:
+		completeness = cluster_info[best_eps_value][cluster]['completeness']
+		purity = cluster_info[best_eps_value][cluster]['purity']
+
+		# Explicitly remove the noise cluster (-1)
+		# Note: in the R DBSCAN implementation, the noise cluster is 0, in the sklearn implementation, the noise cluster is -1
+		if cluster == -1:
+			other_clusters[cluster] = 1
+			continue
+
+		if completeness > completeness_cutoff and purity > purity_cutoff:
+			complete_and_pure_clusters[cluster] = 1
+		else:
+			other_clusters[cluster] = 1
+
+	# Subset the data frame
+	subset_other_db_table = copy.deepcopy(best_db_table)
+	
+	for cluster in complete_and_pure_clusters:
+		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
+
+	# Output a table with the classifications, mainly for debug/investigation purposes
+	output_db_table = copy.deepcopy(best_db_table)
+	for index, row in output_db_table.iterrows():
+		if row['db_cluster'] in other_clusters:
+			output_db_table.set_value(index, 'db_cluster', -1)
+
+	output_filename = 'BH_tSNE' + str(BH_tSNE_counter) + '_DBSCAN' + str(round_counter) + '_eps' + str(best_eps_value) + '.tab'
+	output_db_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=None)
+
+	# We now make an r table from subset_other_db_table, with the db_cluster column stripped
+	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
+	#unclustered_r = pandas2ri.py2ri(subset_other_db_table)
+	unclustered = subset_other_db_table
+
+	#subset_complete_db_table = best_db_table
+	#for cluster in other_clusters:
+	#	subset_complete_db_table = subset_complete_db_table[subset_complete_db_table['db_cluster'] != cluster]
+
+	# We now make a data structure containing cluster information for complete clusters only 
+	output_cluster_info = {}
+	output_contig_cluster = {}
+	for cluster in complete_and_pure_clusters:
+		output_cluster_info[cluster] = {'completeness': cluster_info[best_eps_value][cluster]['completeness'], 'purity': cluster_info[best_eps_value][cluster]['purity']}
+
+	# Now we grab contig names from the best db table
+	for i, row in best_db_table.iterrows():
+		contig = row['contig']
+		cluster = row['db_cluster']
+		if cluster in complete_and_pure_clusters:
+			output_contig_cluster[contig] = cluster
+
+	return output_cluster_info, output_contig_cluster, unclustered
+
+def assessMixedDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
+	# Assess clusters of each DBSCAN table
+	cluster_info = {} # Dictionary that is keyed by eps, will hold details of each cluster in each table
+	for eps in table_dictionary:
+		current_table = table_dictionary[eps]
+		current_cluster_info = getClusterInfo(current_table, hmm_dictionary, domain)
+		cluster_info[eps] = current_cluster_info
+
+	number_complete_and_pure_clusters = {}
+	number_pure_clusters = {}
+	median_completeness = {}
+	mean_completeness = {}
+	completeness_product = {}
+	for eps in cluster_info:
+		complete_clusters = 0
+		pure_clusters = 0
+		completenessList = []
+		for cluster in cluster_info[eps]:
+			completeness = cluster_info[eps][cluster]['completeness']
+			purity = cluster_info[eps][cluster]['purity']
+			if completeness > completeness_cutoff and purity > purity_cutoff:
+				complete_clusters += 1
+				completenessList.append(completeness)
+			if purity > purity_cutoff:
+				pure_clusters += 1
+		number_complete_and_pure_clusters[eps] = complete_clusters
+		number_pure_clusters[eps] = pure_clusters
+		# Protect against warning if list is empty
+		if completenessList:
+			median_completeness[eps] = numpy.median(completenessList)
+			mean_completeness[eps] = numpy.mean(completenessList)
+		else:
+			median_completeness[eps] = 0
+			mean_completeness[eps] = 0
+
+		completeness_product[eps] = number_complete_and_pure_clusters[eps] * mean_completeness[eps]
+
+	# Get eps value with highest number of complete clusters
 	#sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
 	#sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
 	sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
@@ -594,6 +699,35 @@ while True:
 	if local_BH_tSNE_round == 1:
 		# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
 		break
+
+	## Now we determine if there are any impure but "complete" clusters within the unclustered table
+	## These will have close to a whole multiple of the number of markers present in the bin
+	## If taxonomy information available, will use that to further deconvolute.
+	#local_BH_tSNE_round = 0
+	#while True:
+	#	round_counter += 1
+	#	local_BH_tSNE_round += 1
+	#	logger.info('Running extra DBSCAN round ' + str(round_counter))
+	#	#db_tables = runDBSCANs(current_r_table)
+	#	db_tables = runDBSCANs(current_table)
+	#	cluster_information, contig_cluster_dictionary, unclustered_table = assessMixedDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+	#	current_table = unclustered_table
+	#
+	#	if not cluster_information:
+	#		break
+	#
+	#	# Populate the global data structures
+	#	for	cluster in cluster_information:
+	#		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+	#		global_cluster_info[new_cluster_name] = cluster_information[cluster]
+	#
+	#	for contig in contig_cluster_dictionary:
+	#		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+	#		global_cluster_contigs[contig] = new_cluster_name
+	#
+	#if local_BH_tSNE_round == 1:
+	#	# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
+	#	break
 
 	# If we are not done, write a new fasta for the next BH_tSNE run
 	# First convert the r table to a pandas table
