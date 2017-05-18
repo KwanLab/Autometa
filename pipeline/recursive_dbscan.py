@@ -50,7 +50,7 @@ def dbscan_simple(table, eps):
 
 	# Make a matrix
 	X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
-	db = DBSCAN(eps=eps, min_samples=3).fit(X)
+	db = DBSCAN(eps=eps, min_samples=1).fit(X)
 
 	table_copy['db_cluster'] = db.labels_
 
