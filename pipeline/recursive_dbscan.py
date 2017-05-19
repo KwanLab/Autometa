@@ -102,7 +102,9 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 			purity = 0
 		else:
 			purity = (float(total_unique) / total_markers) * 100
-		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
+
+		cluster_multiple = float(total_markers) / total_unique
+		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity, 'multiple': cluster_multiple }
 
 	return cluster_details
 
@@ -301,7 +303,9 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	return output_cluster_info, output_contig_cluster, unclustered
 
 def assessMixedDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
-	# Assess clusters of each DBSCAN table
+	# This function is run after all complete clusters are removed
+	# It assumes that there are no pure clusters left and outputs clusters that 
+	# are whole multiples (i.e. mixed )
 	cluster_info = {} # Dictionary that is keyed by eps, will hold details of each cluster in each table
 	for eps in table_dictionary:
 		current_table = table_dictionary[eps]
@@ -593,6 +597,7 @@ parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True)
 parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
 parser.add_argument('-c','--contigtable', help='Output of make_contig_table.py', required=True)
 parser.add_argument('-p','--processors', help='Number of processors used', default=1)
+parser.add_argument('-t','--taxonomy_tab', help='Output of make_taxonomy_table.py')
 args = vars(parser.parse_args())
 
 hmm_table_path = args['marker_tab']
@@ -601,6 +606,7 @@ fasta_path = args['fasta']
 outdir = os.path.abspath(args['outdir'])
 contig_table = args['contigtable']
 processors = args['processors']
+taxonomy_table_path = args['taxonomy_tab']
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
@@ -635,6 +641,12 @@ for i, line in enumerate(hmm_table_lines):
 			else:
 				contig_markers[contig] = { pfam: 1 }
 
+# 2. If taxonomy data is available, load the information
+taxonomy_info = dict()
+if taxonomy_table_path:
+	taxonomy_table = pd.read_table(taxonomy_table_path)
+	for i,row in taxonomy_table.iterrows():
+		taxonomy_info[row['contig']] = { 'phylum': row['phylum'], 'class': row['class'], 'order': row['order'], 'family': row['family'], 'genus': row['genus'], 'species': row['species']}
 
 # Make a master table that will be updated as clustering is done
 
@@ -700,34 +712,56 @@ while True:
 		# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
 		break
 
-	## Now we determine if there are any impure but "complete" clusters within the unclustered table
-	## These will have close to a whole multiple of the number of markers present in the bin
-	## If taxonomy information available, will use that to further deconvolute.
-	#local_BH_tSNE_round = 0
-	#while True:
-	#	round_counter += 1
-	#	local_BH_tSNE_round += 1
-	#	logger.info('Running extra DBSCAN round ' + str(round_counter))
-	#	#db_tables = runDBSCANs(current_r_table)
-	#	db_tables = runDBSCANs(current_table)
-	#	cluster_information, contig_cluster_dictionary, unclustered_table = assessMixedDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-	#	current_table = unclustered_table
-	#
-	#	if not cluster_information:
-	#		break
-	#
-	#	# Populate the global data structures
-	#	for	cluster in cluster_information:
-	#		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-	#		global_cluster_info[new_cluster_name] = cluster_information[cluster]
-	#
-	#	for contig in contig_cluster_dictionary:
-	#		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-	#		global_cluster_contigs[contig] = new_cluster_name
-	#
-	#if local_BH_tSNE_round == 1:
-	#	# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
-	#	break
+	# Now if we have taxonomy data we do another round of clustering
+	if taxonomy_info:
+		local_BH_tSNE_round = 0
+		taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
+		logger.info('Further splitting according to taxonomic classifications')
+		for taxonomic_level in taxonomic_levels:
+			logger.info('Taxonomic level: ' + taxonomic_level)
+			combined_unclustered_table = pd.DataFrame()
+
+			# Make subtables for each type of classification at the current level
+			classification_list = current_table[taxonomic_level].to_list()
+
+			# Skip iteration if the current taxonomic level is empty
+			if not classification_list:
+				continue
+
+			classification_dict = dict()
+			for classification in classification_list:
+				classification_dict[classification] = 1
+
+			for classification in classification_dict.keys():
+				logger.info('Examining ' + classification)
+				# Get subset table
+				subset_table = current_table[taxonomic_level == classification]
+
+				while True:
+					round_counter += 1
+					local_BH_tSNE_round += 1
+					logger.info('Running DBSCAN round ' + str(round_counter))
+					db_tables = runDBSCANs(subset_table)
+					cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+
+					subset_table = unclustered_table
+
+					if not cluster_information:
+						break
+
+					# Populate the global data structures
+					for	cluster in cluster_information:
+						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+						global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+					for contig in contig_cluster_dictionary:
+						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+						global_cluster_contigs[contig] = new_cluster_name
+
+				# Add unclustered_table to combined unclustered dataframe
+				combined_unclustered_table = combined_unclustered_table.append(unclustered_table)
+
+			current_table = copy.deepcopy(combined_unclustered_table)
 
 	# If we are not done, write a new fasta for the next BH_tSNE run
 	# First convert the r table to a pandas table
