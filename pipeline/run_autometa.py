@@ -52,8 +52,12 @@ def make_marker_table(fasta):
 	return output_marker_table
 
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
-	logger.info("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors))
-	subprocess.call("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors), shell=True)
+	if taxonomy_table_path:
+		logger.info("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {} -t {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors, taxonomy_table_path))
+		subprocess.call("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {} -t {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors, taxonomy_table_path), shell=True)
+	else:
+		logger.info("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors))
+		subprocess.call("{}/recursive_dbscan.py -m {} -d {} -f {} -o ./ -c {} -p {}".format(pipeline_path,marker_tab,kingdom,filtered_assembly, contig_table, processors), shell=True)
 
 #logger
 logger = logging.getLogger('run_autometa.py')
@@ -71,6 +75,7 @@ parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consid
  Default is 10,000 bp.', default=10000, type = int)
 parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
 parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
+parser.add_argument('-t','--taxonomy', help='Output of make_taxonomy_table.py')
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
@@ -78,6 +83,7 @@ fasta_assembly = os.path.basename(args['assembly'])
 processors = args['processors']
 cluster_completeness = args['cluster_completeness_output']
 kingdom = args['kingdom'].lower()
+taxonomy_table_path = args['taxonomy_tab']
 
 # Error check that kingdom is valid
 if not (kingdom == 'bacteria' or kingdom == 'archaea'):
