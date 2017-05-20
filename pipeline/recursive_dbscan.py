@@ -573,115 +573,115 @@ assembly_seqs = {}
 for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 	assembly_seqs[seq_record.id] = seq_record
 
+
+# Run BH_tSNE
+BH_tSNE_counter += 1
+logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
+current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
+# Carry out first BH_tSNE run
+run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
+
+abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
+#BH_tSNE_r = get_table(abs_BH_tSNE_path)
+
+if BH_tSNE_counter == 1:
+	#master_table = pandas2ri.ri2py(BH_tSNE_r)
+	master_table = pd.read_table(abs_BH_tSNE_path)
+
+# Output current BH_tSNE table
+#BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
+#BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+
+#current_r_table = BH_tSNE_r
+current_table = pd.read_table(abs_BH_tSNE_path)
+
+local_BH_tSNE_round = 0
 while True:
-	# Run BH_tSNE
-	BH_tSNE_counter += 1
-	logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
-	current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
-	# Carry out first BH_tSNE run
-	run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
+	round_counter += 1
+	local_BH_tSNE_round += 1
+	logger.info('Running DBSCAN round ' + str(round_counter))
+	#db_tables = runDBSCANs(current_r_table)
+	db_tables = runDBSCANs(current_table)
+	cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+	current_table = unclustered_table
 
-	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
-	#BH_tSNE_r = get_table(abs_BH_tSNE_path)
-
-	if BH_tSNE_counter == 1:
-		#master_table = pandas2ri.ri2py(BH_tSNE_r)
-		master_table = pd.read_table(abs_BH_tSNE_path)
-
-	# Output current BH_tSNE table
-	#BH_tSNE_pd = pandas2ri.ri2py(BH_tSNE_r)
-	#BH_tSNE_pd.to_csv(path_or_buf=BH_tSNE_output_path, sep="\t", index=False, quoting=csv.QUOTE_NONE)
-
-	#current_r_table = BH_tSNE_r
-	current_table = pd.read_table(abs_BH_tSNE_path)
-
-	local_BH_tSNE_round = 0
-	while True:
-		round_counter += 1
-		local_BH_tSNE_round += 1
-		logger.info('Running DBSCAN round ' + str(round_counter))
-		#db_tables = runDBSCANs(current_r_table)
-		db_tables = runDBSCANs(current_table)
-		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-		current_table = unclustered_table
-
-		if not cluster_information:
-			break
-
-		# Populate the global data structures
-		for	cluster in cluster_information:
-			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-			global_cluster_info[new_cluster_name] = cluster_information[cluster]
-
-		for contig in contig_cluster_dictionary:
-			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-			global_cluster_contigs[contig] = new_cluster_name
-
-	if local_BH_tSNE_round == 1:
-		# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
+	if not cluster_information:
 		break
 
-	# Now if we have taxonomy data we do another round of clustering
-	if taxonomy_info:
-		local_BH_tSNE_round = 0
-		taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
-		logger.info('Further splitting according to taxonomic classifications')
-		for taxonomic_level in taxonomic_levels:
-			logger.info('Taxonomic level: ' + taxonomic_level)
-			combined_unclustered_table = pd.DataFrame()
+	# Populate the global data structures
+	for	cluster in cluster_information:
+		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+		global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
-			# Make subtables for each type of classification at the current level
-			classification_dict = dict()
-			for i,row in current_table.iterrows():
-				classification_dict[row[taxonomic_level]] = 1
+	for contig in contig_cluster_dictionary:
+		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+		global_cluster_contigs[contig] = new_cluster_name
 
-			# Skip iteration if the current taxonomic level is empty
-			if not classification_dict:
-				continue
+#if local_BH_tSNE_round == 1:
+#	# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
+#	break
 
-			for classification in classification_dict.keys():
-				logger.info('Examining ' + classification)
-				# Get subset table
-				subset_table = current_table.loc[current_table[taxonomic_level] == classification]
+# Now if we have taxonomy data we do another round of clustering
+if taxonomy_info:
+	local_BH_tSNE_round = 0
+	taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
+	logger.info('Further splitting according to taxonomic classifications')
+	for taxonomic_level in taxonomic_levels:
+		logger.info('Taxonomic level: ' + taxonomic_level)
+		combined_unclustered_table = pd.DataFrame()
 
-				while True:
-					if len(subset_table.index) < 1:
-						break
-					round_counter += 1
-					local_BH_tSNE_round += 1
-					logger.info('Running DBSCAN round ' + str(round_counter))
-					db_tables = runDBSCANs(subset_table)
-					cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		# Make subtables for each type of classification at the current level
+		classification_dict = dict()
+		for i,row in current_table.iterrows():
+			classification_dict[row[taxonomic_level]] = 1
 
-					subset_table = unclustered_table
+		# Skip iteration if the current taxonomic level is empty
+		if not classification_dict:
+			continue
 
-					if not cluster_information:
-						break
+		for classification in classification_dict.keys():
+			logger.info('Examining ' + classification)
+			# Get subset table
+			subset_table = current_table.loc[current_table[taxonomic_level] == classification]
 
-					# Populate the global data structures
-					for	cluster in cluster_information:
-						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-						global_cluster_info[new_cluster_name] = cluster_information[cluster]
+			while True:
+				if len(subset_table.index) < 1:
+					break
+				round_counter += 1
+				local_BH_tSNE_round += 1
+				logger.info('Running DBSCAN round ' + str(round_counter))
+				db_tables = runDBSCANs(subset_table)
+				cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
-					for contig in contig_cluster_dictionary:
-						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-						global_cluster_contigs[contig] = new_cluster_name
+				subset_table = unclustered_table
 
-				# Add unclustered_table to combined unclustered dataframe
-				combined_unclustered_table = combined_unclustered_table.append(unclustered_table)
+				if not cluster_information:
+					break
 
-			current_table = copy.deepcopy(combined_unclustered_table)
+				# Populate the global data structures
+				for	cluster in cluster_information:
+					new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+					global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
-	# If we are not done, write a new fasta for the next BH_tSNE run
-	# First convert the r table to a pandas table
-	#unclustered_pd = pandas2ri.ri2py(current_r_table)
-	unclustered_seqrecords = []
-	for i, row in unclustered_table.iterrows():
-		contig = row['contig']
-		unclustered_seqrecords.append(assembly_seqs[contig])
+				for contig in contig_cluster_dictionary:
+					new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+					global_cluster_contigs[contig] = new_cluster_name
 
-	current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
-	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
+			# Add unclustered_table to combined unclustered dataframe
+			combined_unclustered_table = combined_unclustered_table.append(unclustered_table)
+
+		current_table = copy.deepcopy(combined_unclustered_table)
+
+# If we are not done, write a new fasta for the next BH_tSNE run
+# First convert the r table to a pandas table
+#unclustered_pd = pandas2ri.ri2py(current_r_table)
+unclustered_seqrecords = []
+for i, row in unclustered_table.iterrows():
+	contig = row['contig']
+	unclustered_seqrecords.append(assembly_seqs[contig])
+
+current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
+SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
 
 
 # Add cluster to master data frame
