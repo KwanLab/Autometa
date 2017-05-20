@@ -92,8 +92,10 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 
 	for cluster in marker_totals:
 		total_markers = len(marker_totals[cluster])
+		total_marker_count = 0
 		total_unique = 0
 		for marker in marker_totals[cluster]:
+			total_marker_count += marker_totals[cluster][marker]
 			if marker_totals[cluster][marker] == 1:
 				total_unique += 1
 		completeness = (float(total_markers) / expected_number) * 100
@@ -103,7 +105,7 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 		else:
 			purity = (float(total_unique) / total_markers) * 100
 
-		cluster_multiple = float(total_markers) / total_unique
+		cluster_multiple = float(total_marker_count) / total_markers
 		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity, 'multiple': cluster_multiple }
 
 	return cluster_details
