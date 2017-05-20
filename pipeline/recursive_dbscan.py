@@ -595,35 +595,12 @@ if BH_tSNE_counter == 1:
 #current_r_table = BH_tSNE_r
 current_table = pd.read_table(abs_BH_tSNE_path)
 
-local_BH_tSNE_round = 0
-while True:
-	round_counter += 1
-	local_BH_tSNE_round += 1
-	logger.info('Running DBSCAN round ' + str(round_counter))
-	#db_tables = runDBSCANs(current_r_table)
-	db_tables = runDBSCANs(current_table)
-	cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-	current_table = unclustered_table
 
-	if not cluster_information:
-		break
-
-	# Populate the global data structures
-	for	cluster in cluster_information:
-		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-		global_cluster_info[new_cluster_name] = cluster_information[cluster]
-
-	for contig in contig_cluster_dictionary:
-		new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-		global_cluster_contigs[contig] = new_cluster_name
-
-#if local_BH_tSNE_round == 1:
-#	# This means that after the last BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
-#	break
 
 # Now if we have taxonomy data we do another round of clustering
 if taxonomy_info:
 	local_BH_tSNE_round = 0
+
 	taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
 	logger.info('Further splitting according to taxonomic classifications')
 	for taxonomic_level in taxonomic_levels:
@@ -671,6 +648,28 @@ if taxonomy_info:
 			combined_unclustered_table = combined_unclustered_table.append(unclustered_table)
 
 		current_table = copy.deepcopy(combined_unclustered_table)
+else:
+	local_BH_tSNE_round = 0
+	while True:
+		round_counter += 1
+		local_BH_tSNE_round += 1
+		logger.info('Running DBSCAN round ' + str(round_counter))
+	#db_tables = runDBSCANs(current_r_table)
+		db_tables = runDBSCANs(current_table)
+		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		current_table = unclustered_table
+
+		if not cluster_information:
+			break
+
+		# Populate the global data structures
+		for	cluster in cluster_information:
+			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
+			global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+		for contig in contig_cluster_dictionary:
+			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+			global_cluster_contigs[contig] = new_cluster_name
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
