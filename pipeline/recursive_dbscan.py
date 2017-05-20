@@ -631,15 +631,22 @@ while True:
 			combined_unclustered_table = pd.DataFrame()
 
 			# Make subtables for each type of classification at the current level
-			classification_list = current_table[taxonomic_level].to_list()
+			classification_dict = dict()
+			with open(current_table) as table:
+				for i,line in enumerate(table):
+					line_list = line.rstrip().split('\t')
+					if i == 0:
+						for j in range(0, len(line_list)):
+							if line_list == taxonomic_level:
+								tax_index = j
+								break
+					else:
+						classification = line_list[tax_index]
+						classification_dict[classification] = 1
 
 			# Skip iteration if the current taxonomic level is empty
 			if not classification_list:
 				continue
-
-			classification_dict = dict()
-			for classification in classification_list:
-				classification_dict[classification] = 1
 
 			for classification in classification_dict.keys():
 				logger.info('Examining ' + classification)
