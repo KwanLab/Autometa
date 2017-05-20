@@ -642,7 +642,7 @@ while True:
 			for classification in classification_dict.keys():
 				logger.info('Examining ' + classification)
 				# Get subset table
-				subset_table = current_table[taxonomic_level == classification]
+				subset_table = current_table.query(taxonomic_level == classification)
 
 				while True:
 					round_counter += 1
