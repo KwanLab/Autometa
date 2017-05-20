@@ -75,7 +75,7 @@ parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consid
  Default is 10,000 bp.', default=10000, type = int)
 parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
 parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
-parser.add_argument('-t','--taxonomy', help='Output of make_taxonomy_table.py')
+parser.add_argument('-t','--taxonomy_tab', help='Output of make_taxonomy_table.py')
 args = vars(parser.parse_args())
 
 length_cutoff = args['length_cutoff']
