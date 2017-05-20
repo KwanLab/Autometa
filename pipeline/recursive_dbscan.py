@@ -636,7 +636,7 @@ while True:
 				classification_dict[row[taxonomic_level]] = 1
 
 			# Skip iteration if the current taxonomic level is empty
-			if not classification_list:
+			if not classification_dict:
 				continue
 
 			for classification in classification_dict.keys():
