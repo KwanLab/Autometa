@@ -551,7 +551,7 @@ if taxonomy_table_path:
 			if i == 0:
 				new_contig_table.write(line.rstrip() + '\tphylum\tclass\torder\tfamily\tgenus\tspecies\n')
 			else:
-				line_list = line.rstrip().split'\t'
+				line_list = line.rstrip().split('\t')
 				contig = line_list[0]
 				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\n')
 	new_contig_table.close()
