@@ -562,7 +562,7 @@ if taxonomy_table_path:
 global_cluster_info = {}
 global_cluster_contigs = {}
 completeness_cutoff = 20
-purity_cutoff = 90
+purity_cutoff = 98
 round_counter = 0
 current_fasta = fasta_path
 BH_tSNE_counter = 0
