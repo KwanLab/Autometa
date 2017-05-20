@@ -645,6 +645,8 @@ while True:
 				subset_table = current_table.loc[current_table[taxonomic_level] == classification]
 
 				while True:
+					if len(subset_table.index) < 1:
+						break
 					round_counter += 1
 					local_BH_tSNE_round += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
