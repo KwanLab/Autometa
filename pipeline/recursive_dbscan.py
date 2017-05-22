@@ -595,7 +595,8 @@ else:
 	for contig in k_mer_dict:
 		line_list = k_mer_dict[contig]
 		output_list = [contig] + line_list
-		pdb.set_trace()
+		for i, item in enumerate(output_list):
+			output_list[i] = str(item)
 		output_line = '\t'.join(output_list)
 		matrix.write(output_line + '\n')
 	matrix.close()
