@@ -563,8 +563,6 @@ else:
 			unique_k_mers[k_mer] = count
 			count += 1
 
-	contig_k_mer_counts = dict()
-
 	for contig_name in assembly_seqs:
 		contig_seq = str(assembly_seqs[contig_name].seq)
 		# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
@@ -584,7 +582,7 @@ else:
 				index = unique_k_mers[k_mer_reverse]
 				current_contig_k_mer_counts[index] += 1
 
-		contig_k_mer_counts[contig_name] = current_contig_k_mer_counts
+		k_mer_dict[contig_name] = current_contig_k_mer_counts
 
 	# Write the file in case we have to do this again
 	matrix = open(matrix_file, 'w')
@@ -594,8 +592,8 @@ else:
 	header_line = '\t'.join(header_line_list)
 	matrix.write(header_line + '\n')
 
-	for contig in contig_k_mer_counts:
-		line_list = contig_k_mer_counts[contig]
+	for contig in k_mer_dict:
+		line_list = k_mer_dict[contig]
 		output_list = [contig] + line_list
 		output_line = '\t'.join(output_list)
 		matrix.write(output_line + '\n')
