@@ -605,7 +605,7 @@ if taxonomy_info:
 	logger.info('Further splitting according to taxonomic classifications')
 	for taxonomic_level in taxonomic_levels:
 		logger.info('Taxonomic level: ' + taxonomic_level)
-		combined_unclustered_table = pd.DataFrame()
+		unclustered_table = pd.DataFrame()
 
 		# Make subtables for each type of classification at the current level
 		classification_dict = dict()
@@ -628,9 +628,9 @@ if taxonomy_info:
 				local_BH_tSNE_round += 1
 				logger.info('Running DBSCAN round ' + str(round_counter))
 				db_tables = runDBSCANs(subset_table)
-				cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+				cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
-				subset_table = unclustered_table
+				subset_table = local_unclustered_table
 
 				if not cluster_information:
 					break
@@ -645,9 +645,9 @@ if taxonomy_info:
 					global_cluster_contigs[contig] = new_cluster_name
 
 			# Add unclustered_table to combined unclustered dataframe
-			combined_unclustered_table = combined_unclustered_table.append(unclustered_table)
+			unclustered_table = unclustered_table.append(local_unclustered_table)
 
-		current_table = copy.deepcopy(combined_unclustered_table)
+		current_table = copy.deepcopy(unclustered_table)
 else:
 	local_BH_tSNE_round = 0
 	while True:
