@@ -525,7 +525,7 @@ for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 k_mer_size = 5
 matrix_file = 'k-mer_matrix'
 k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
-if os.path.isfile(matrix_file)
+if os.path.isfile(matrix_file):
 	print "K-mer matrix already exists!"
 	print "Continuing to next step..."
 	logger.info('K-mer matrix already exists!')
