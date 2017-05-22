@@ -14,12 +14,15 @@ import pandas as pd
 import csv
 import argparse
 import copy
-import numpy
+import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 from sklearn import decomposition
 from sklearn.cluster import DBSCAN
+from sklearn import tree,metrics,preprocessing
+from sklearn.model_selection import train_test_split
+import collections
 from scipy import stats
 import math
 from tsne import bh_sne
@@ -228,8 +231,8 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		number_pure_clusters[eps] = pure_clusters
 		# Protect against warning if list is empty
 		if completenessList:
-			median_completeness[eps] = numpy.median(completenessList)
-			mean_completeness[eps] = numpy.mean(completenessList)
+			median_completeness[eps] = np.median(completenessList)
+			mean_completeness[eps] = np.mean(completenessList)
 		else:
 			median_completeness[eps] = 0
 			mean_completeness[eps] = 0
@@ -316,6 +319,57 @@ def revcomp( string ):
 
 	return ''.join(reversed(complement_list))
 
+def normalizeKmers(count_matrix): # list of lists, not a np matrix
+	# We now remove all the k-mers where all counts are '1'
+	logger.info('Trimming k-mers')
+	columns_to_delete = dict()
+	for i in range(0, len(unique_k_mers.keys())):
+		non_zero_counts = 0
+		for j in range(0, len(count_matrix)):
+			if count_matrix[j][i] > 1:
+				non_zero_counts += 1
+
+		if non_zero_counts == 0:
+			columns_to_delete[i] = 1
+
+
+	filtered_contig_k_mer_counts = list()
+	for i in range(0, len(contig_k_mer_counts)):
+		new_row = list()
+		for j in range(0, len(unique_k_mers.keys())):
+			if j not in columns_to_delete:
+				new_row.append(contig_k_mer_counts[i][j])
+		filtered_contig_k_mer_counts.append(new_row)
+
+	# 3. Normalization
+	logger.info('Normalizing counts')
+
+	k_mer_frequency_matrix = list()
+
+	for count_list in filtered_contig_k_mer_counts:
+		total_count = 0
+		for count in count_list:
+			total_count += count
+
+		normalized_list = list()
+		for count in count_list:
+			normalized_list.append(float(count)/total_count)
+
+		# Now we calculate the Centered log-ratio (CLR) transformation
+		# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and 
+		# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+		geometric_mean = stats.mstats.gmean(normalized_list)
+		clr_list = list()
+
+		for item in normalized_list:
+			intermediate_value = item / geometric_mean
+			clr_list.append(math.log(intermediate_value))
+
+		k_mer_frequency_matrix.append(clr_list)
+
+	return k_mer_frequency_matrix
+
+
 def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 	
 	pca_dimensions = 50
@@ -341,55 +395,9 @@ def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 			sequence_names[contig] = i
 			contig_k_mer_counts.append(k_mer_dict[contig])
 
-		# We now remove all the k-mers where all counts are '1'
-		logger.info('run_BH_tSNE: Trimming k-mers')
-		columns_to_delete = dict()
-		for i in range(0, len(unique_k_mers.keys())):
-			non_zero_counts = 0
-			for j in range(0, len(contig_k_mer_counts)):
-				if contig_k_mer_counts[j][i] > 1:
-					non_zero_counts += 1
+		k_mer_frequency_matrix = normalizeKmers(contig_k_mer_counts)
 
-			if non_zero_counts == 0:
-				columns_to_delete[i] = 1
-
-
-		filtered_contig_k_mer_counts = list()
-		for i in range(0, len(contig_k_mer_counts)):
-			new_row = list()
-			for j in range(0, len(unique_k_mers.keys())):
-				if j not in columns_to_delete:
-					new_row.append(contig_k_mer_counts[i][j])
-			filtered_contig_k_mer_counts.append(new_row)
-		filtered_contig_k_mer_counts = contig_k_mer_counts
-
-		# 3. Normalization
-		logger.info('run_BH_tSNE: Normalizing counts')
-
-		k_mer_frequency_matrix = list()
-
-		for count_list in filtered_contig_k_mer_counts:
-			total_count = 0
-			for count in count_list:
-				total_count += count
-
-			normalized_list = list()
-			for count in count_list:
-				normalized_list.append(float(count)/total_count)
-
-			# Now we calculate the Centered log-ratio (CLR) transformation
-			# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and 
-			# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
-			geometric_mean = stats.mstats.gmean(normalized_list)
-			clr_list = list()
-
-			for item in normalized_list:
-				intermediate_value = item / geometric_mean
-				clr_list.append(math.log(intermediate_value))
-
-			k_mer_frequency_matrix.append(clr_list)
-
-		# 4. PCA
+		# PCA
 
 		if (len(k_mer_frequency_matrix[0]) > pca_dimensions) and (do_pca == True):
 			logger.info('run_BH_tSNE: Principal component analysis')
@@ -398,7 +406,7 @@ def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 		else:
 			logger.info('run_BH_tSNE: Principle component analysis step skipped')
 
-		# 5. BH-tSNE
+		# BH-tSNE
 		logger.info('run_BH_tSNE: BH-tSNE')
 
 		# Adjust perplexity according to the number of data points
@@ -432,6 +440,121 @@ def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 		contig_table['bh_tsne_y'] = bh_tsne_y
 
 		contig_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)		
+
+def jackknife_training(features,labels):
+    #Function to randomly subsample data into halves (hence 0.5), train
+    #ML-classifier and make prediction. Used iteratively in
+    #calculate_bootstap_replicates() function (see below)
+    train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
+    my_classifier = tree.DecisionTreeClassifier()
+    my_classifier = my_classifier.fit(train_features,train_labels)
+    predictions = my_classifier.predict(test_features)
+    return my_classifier
+
+def calculate_bootstap_replicates(feature_array,iterations = 10, features, lables):
+    prediction_list = []
+    for i in range(iterations):
+        #Here features and labels are global variables
+        jackknifed_classifier = jackknife_training(features,labels)
+        ML_prediction = jackknifed_classifier.predict(feature_array)[0]
+        prediction_list.append(ML_prediction)
+    counter = collections.Counter(prediction_list)
+    top_prediction_set = counter.most_common(1)
+    top_prediction = top_prediction_set[0][0]
+    confidence = top_prediction_set[0][1]
+    confidence_percent = round(confidence/iterations*100,3)
+    #To see frequency of all prediction: print counter
+    return top_prediction,confidence_percent
+
+def assessClusters(table):
+	# Function to assess the "quality" of clusters
+	# Quality is judged by the fraction of contigs that are classified to the parent cluster when removed from the training set.
+
+	subset_table = table.loc[table['cluster'] != 'unclustered']
+
+	cluster_counts = dict() # Keyed by cluster, holds totals for 'congruent' classification or 'different' classification
+
+	# Make dummy taxonomy dict, if taxonomy is known
+	taxonomy_matrix = list()
+
+	if taxonomy_table_path:
+		phylum_dummy_matrix = pd.get_dummies(subset_table['phylum'])
+		class_dummy_matrix = pd.get_dummies(subset_table['class'])
+		order_dummy_matrix = pd.get_dummies(subset_table['order'])
+		family_dummy_matrix = pd.get_dummies(subset_table['family'])
+		genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
+		species_dummy_martix = pd.get_dummies(subset_table['species'])
+
+		for i,row in subset_table.iterrows():
+			contig = row['contig']
+			tax_phylum = list(phylum_dummy_matrix.iloc[i])
+			tax_class = list(class_dummy_matrix.iloc[i])
+			tax_order = list(order_dummy_matrix.iloc[i])
+			tax_family = list(family_dummy_matrix.iloc[i])
+			tax_genus = list(genus_dummy_matrix.iloc[i])
+			tax_species = list(species_dummy_martix.iloc[i])
+			taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+			taxonomy_dict.append(taxonomy)
+
+	cluster_list = subset_table['cluster'].to_list()
+
+	# Make normalized k-mer matrix
+	k_mer_counts = list()
+	for i,row in subset_table.iterrows():
+		contig = row['contig']
+		k_mer_counts.append(k_mer_dict[contig])
+	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+
+	for i,row in subset_table.iterrows():
+		contig = row['contig']
+		cluster = row['cluster']
+
+		if cluster not in cluster_counts:
+			cluster_counts[cluster] = { 'congruent': 0, 'different': 0 }
+
+		# Make feature and label lists
+		features = list()
+		labels = list()
+		if taxonomy_table_path:
+			for j in range(0, i):
+				features.append(taxonomy_matrix[j] + normalized_k_mer_matrix[j])
+			for j in range(i+1, len(subset_table.index)):
+				features.append(taxonomy_matrix[j] + normalized_k_mer_matrix[j])
+		else:
+			for j in range(0, i):
+				features.append(normalized_k_mer_matrix[j])
+			for j in range(i+1, len(subset_table.index)):
+				features.append(normalized_k_mer_matrix[j])
+
+		for j in range(0, i):
+			labels.append(cluster_list[j])
+		for j in range(i+1, len(subset_table.index)):
+			labels.append(cluster_list[j])
+
+		# Now we assembly a np array for the contig to be classified
+		if taxonomy_table_path:
+			contig_features = taxonomy_matrix[i] + normalized_k_mer_matrix[i]
+		else:
+			contig_features = normalized_k_mer_matrix[i]
+
+		single_np_array = np.array([contig_features])
+
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, 10, features, labels)
+
+		# Add result to data structure
+		if ML_prediction == cluster:
+			cluster_counts[cluster]['congruent'] += 1
+		else:
+			cluster_counts[cluster]['different'] += 1
+
+	# Determine congruent fractions
+	cluster_results = dict()
+	for cluster in cluster_counts:
+		total_count = cluster_counts[cluster]['congruent'] + cluster_counts[cluster]['different']
+		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
+
+	return cluster_results
+
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -709,8 +832,11 @@ for contig in master_table['contig']:
 master_table['cluster'] = clusters
 
 # Now we refine the clustering using supervised ML
-### To be filled in later
-
+all_good_clusters = False
+while all_good_clusters == False:
+	cluster_scores = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
+	pp.pprint(cluster_scores)
+	sys.exit()
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
