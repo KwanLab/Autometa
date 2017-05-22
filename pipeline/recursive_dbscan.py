@@ -316,8 +316,8 @@ def revcomp( string ):
 
 	return ''.join(reversed(complement_list))
 
-def run_BH_tSNE(fasta, output_filename,contig_table_path, do_pca=True):
-	k_mer_size = 5
+def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
+	
 	pca_dimensions = 50
 	perplexity = 30.0
 
@@ -332,63 +332,14 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path, do_pca=True):
 		logger.info('run_BH_tSNE: Running k-mer based binning...')
 		# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
 
-		# 1. Load fasta
-		sequences = list()
-		sequence_names = dict()
-		seq_counter = 0
-		for seq_record in SeqIO.parse(fasta, 'fasta'):
-			sequences.append(seq_record)
-			seq_name = str(seq_record.id)
-			sequence_names[seq_name] = seq_counter
-			seq_counter += 1
-
-		# 2. Count k-mers
-		# First we make a dictionary of all the possible k-mers (discounting revcomps)
-		# Under each key is an index to be used in the subsequent lists
-		# The order of the indices depends on the order k-mers were encountered while making the dictionary
-		logger.info('run_BH_tSNE: Counting k-mers')
-		count = 0
-		unique_k_mers = dict()
-
-		DNA_letters = ['A', 'T', 'C', 'G']
-		all_k_mers = list(DNA_letters)
-		for i in range(1, k_mer_size):
-			new_list = list()
-			for current_seq in all_k_mers:
-				for char in DNA_letters:
-					new_list.append(current_seq + char)
-			all_k_mers = new_list
-
-		# Now we trim k-mers and put them in the dictionary
-		for k_mer in all_k_mers:
-			k_mer_reverse = revcomp(k_mer)
-			if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
-				unique_k_mers[k_mer] = count
-				count += 1
-
+		# We make a submatrix, consisting of the contigs in the table 
+		contig_table = pd.read_table(contig_table_path)
+		sequence_names = dict() # Holds the index of sequence names in the matrix
 		contig_k_mer_counts = list()
-
-		for i in range(0, len(sequences)):
-			contig_name = str(sequences[i].id)
-			contig_seq = str(sequences[i].seq)
-			# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
-			list_size = len(unique_k_mers.keys())
-			current_contig_k_mer_counts = [1 for k in range(0, list_size)]
-
-			for j in range(0, (len(contig_seq) - k_mer_size)):
-				k_mer = contig_seq[j:j + k_mer_size]
-				k_mer_reverse = revcomp(k_mer)
-
-				# Find appropriate index
-				# Note - this part naturally ignores any k_mers with weird characters
-				if k_mer in unique_k_mers:
-					index = unique_k_mers[k_mer]
-					current_contig_k_mer_counts[index] += 1
-				elif k_mer_reverse in unique_k_mers:
-					index = unique_k_mers[k_mer_reverse]
-					current_contig_k_mer_counts[index] += 1
-
-			contig_k_mer_counts.append(current_contig_k_mer_counts)
+		for i,row in contig_table.iterrows():
+			contig = row['contig']
+			sequence_names[contig] = i
+			contig_k_mer_counts.append(k_mer_dict[contig])
 
 		# We now remove all the k-mers where all counts are '1'
 		logger.info('run_BH_tSNE: Trimming k-mers')
@@ -465,25 +416,22 @@ def run_BH_tSNE(fasta, output_filename,contig_table_path, do_pca=True):
 		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
 
 		logger.info('run_BH_tSNE: Outputting file ' + output_filename)
-		output = open(output_filename, 'w')
+
 		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
-		contig_table = open(contig_table_path, 'r')
-		contig_table_lines = contig_table.read().splitlines()
+		
+		bh_tsne_x = list()
+		bh_tsne_y = list()
 
-		for i, line in enumerate(contig_table_lines):
-			if i == 0:
-				new_header = line + '\tbh_tsne_x\tbh_tsne_y\n'
-				output.write(new_header)
-			else:
-				line_list = line.split('\t')
-				current_contig = line_list[0]
-				if current_contig in sequence_names:
-					contig_index = sequence_names[current_contig]
-					bh_tsne_x = str(bh_tsne_matrix[contig_index][0])
-					bh_tsne_y = str(bh_tsne_matrix[contig_index][1])
-					output.write(line + '\t' + bh_tsne_x + '\t' + bh_tsne_y + '\n')
+		for i,row in contig_table.iterrows():
+			contig = row['contig']
+			contig_index = sequence_names[contig]
+			bh_tsne_x.append(bh_tsne_matrix[contig_index][0])
+			bh_tsne_y.append(bh_tsne_matrix[contig_index][1])
 
-		output.close()
+		contig_table['bh_tsne_x'] = bh_tsne_x
+		contig_table['bh_tsne_y'] = bh_tsne_y
+
+		contig_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)		
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -573,13 +521,92 @@ assembly_seqs = {}
 for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 	assembly_seqs[seq_record.id] = seq_record
 
+# Count K-mer frequencies
+k_mer_size = 5
+matrix_file = 'k-mer_matrix'
+k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
+if os.path.isfile(matrix_file)
+	print "K-mer matrix already exists!"
+	print "Continuing to next step..."
+	logger.info('K-mer matrix already exists!')
+	logger.info('Continuing to next step...')
+
+	# Now we load the k-mer matrix
+	with open(matrix_file) as matrix:
+		for i,line in enumerate(matrix):
+			if i > 0:
+				line_list = line.rstrip().split('\t')
+				contig = line_list.pop(0)
+				k_mer_dict[contig] = line_list
+else:
+	# Count k-mers
+	# First we make a dictionary of all the possible k-mers (discounting revcomps)
+	# Under each key is an index to be used in the subsequent lists
+	# The order of the indices depends on the order k-mers were encountered while making the dictionary
+	logger.info('Counting k-mers')
+	count = 0
+	unique_k_mers = dict()
+
+	DNA_letters = ['A', 'T', 'C', 'G']
+	all_k_mers = list(DNA_letters)
+	for i in range(1, k_mer_size):
+		new_list = list()
+		for current_seq in all_k_mers:
+			for char in DNA_letters:
+				new_list.append(current_seq + char)
+		all_k_mers = new_list
+
+	# Now we trim k-mers and put them in the dictionary
+	for k_mer in all_k_mers:
+		k_mer_reverse = revcomp(k_mer)
+		if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
+			unique_k_mers[k_mer] = count
+			count += 1
+
+	contig_k_mer_counts = dict()
+
+	for contig_name in assembly_seqs:
+		contig_seq = str(assembly_seqs[contig_name].seq)
+		# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
+		list_size = len(unique_k_mers.keys())
+		current_contig_k_mer_counts = [1 for k in range(0, list_size)]
+
+		for j in range(0, (len(contig_seq) - k_mer_size)):
+			k_mer = contig_seq[j:j + k_mer_size]
+			k_mer_reverse = revcomp(k_mer)
+
+			# Find appropriate index
+			# Note - this part naturally ignores any k_mers with weird characters
+			if k_mer in unique_k_mers:
+				index = unique_k_mers[k_mer]
+				current_contig_k_mer_counts[index] += 1
+			elif k_mer_reverse in unique_k_mers:
+				index = unique_k_mers[k_mer_reverse]
+				current_contig_k_mer_counts[index] += 1
+
+		contig_k_mer_counts[contig_name] = current_contig_k_mer_counts
+
+	# Write the file in case we have to do this again
+	matrix = open(matrix_file, 'w')
+
+	# The first line consists of the k-mer headings (left corner is blank because the contig names are listed under it)
+	header_line_list = [''] + sorted(unique_k_mers, key=unique_k_mers.__getitem__)
+	header_line = '\t'.join(header_line_list)
+	matrix.write(header_line + '\n')
+
+	for contig in contig_k_mer_counts:
+		line_list = contig_k_mer_counts[contig]
+		output_list = [contig] + line_list
+		output_line = '\t'.join(output_list)
+		matrix.write(output_line + '\n')
+	matrix.close()
 
 # Run BH_tSNE
 BH_tSNE_counter += 1
 logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
 current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
 # Carry out first BH_tSNE run
-run_BH_tSNE(current_fasta,current_BH_tSNE_output,contig_table)
+run_BH_tSNE(current_BH_tSNE_output,contig_table)
 
 abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
 #BH_tSNE_r = get_table(abs_BH_tSNE_path)
@@ -671,6 +698,20 @@ else:
 			new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 			global_cluster_contigs[contig] = new_cluster_name
 
+# Add cluster to master data frame
+clusters = []
+for contig in master_table['contig']:
+	if contig in global_cluster_contigs:
+		clusters.append(global_cluster_contigs[contig])
+	else:
+		clusters.append('unclustered')
+
+master_table['cluster'] = clusters
+
+# Now we refine the clustering using supervised ML
+### To be filled in later
+
+
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
 #unclustered_pd = pandas2ri.ri2py(current_r_table)
@@ -681,17 +722,6 @@ for i, row in unclustered_table.iterrows():
 
 current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
 SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
-
-
-# Add cluster to master data frame
-clusters = []
-for contig in master_table['contig']:
-	if contig in global_cluster_contigs:
-		clusters.append(global_cluster_contigs[contig])
-	else:
-		clusters.append('unclustered')
-
-master_table['cluster'] = clusters
 
 # Output master_table
 master_table_path = outdir + '/full_table'
