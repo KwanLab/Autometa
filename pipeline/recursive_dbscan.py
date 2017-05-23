@@ -494,7 +494,7 @@ def assessClusters(table):
 			tax_genus = list(genus_dummy_matrix.iloc[i])
 			tax_species = list(species_dummy_martix.iloc[i])
 			taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-			taxonomy_dict.append(taxonomy)
+			taxonomy_matrix.append(taxonomy)
 
 	cluster_list = subset_table['cluster'].to_list()
 
