@@ -454,10 +454,11 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
     prediction_list = []
     for i in range(0, iterations):
         #Here features and labels are global variables
+        print('calculate_bootstrap_replicates: ' + str(i))
         jackknifed_classifier = jackknife_training(features,labels)
         ML_prediction = jackknifed_classifier.predict(feature_array)[0]
         prediction_list.append(ML_prediction)
-    pp.pprint(ML_prediction)
+    
     counter = collections.Counter(prediction_list)
     top_prediction_set = counter.most_common(1)
     top_prediction = top_prediction_set[0][0]
@@ -486,7 +487,7 @@ def assessClusters(table):
 		species_dummy_martix = pd.get_dummies(subset_table['species'])
 
 		length = len(subset_table.index)
-		print ('length: ' + str(length))
+		#print ('length: ' + str(length))
 		for i,contig in enumerate(subset_table['contig']):
 			tax_phylum = list(phylum_dummy_matrix.iloc[i])
 			tax_class = list(class_dummy_matrix.iloc[i])
