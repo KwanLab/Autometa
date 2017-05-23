@@ -502,7 +502,7 @@ def assessClusters(table):
 
 	# Make normalized k-mer matrix
 	k_mer_counts = list()
-	for i,contig in contig_list:
+	for i,contig in enumerate(contig_list):
 		k_mer_counts.append(k_mer_dict[contig])
 
 	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
