@@ -497,8 +497,8 @@ def assessClusters(table):
 			taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
 			taxonomy_matrix.append(taxonomy)
 
-	cluster_list = subset_table['cluster'].to_list()
-	contig_list = subset_table['contig'].to_list()
+	cluster_list = subset_table['cluster'].tolist()
+	contig_list = subset_table['contig'].tolist()
 
 	# Make normalized k-mer matrix
 	k_mer_counts = list()
