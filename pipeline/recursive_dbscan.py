@@ -369,7 +369,6 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 
 	return k_mer_frequency_matrix
 
-
 def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 	
 	pca_dimensions = 50
@@ -451,13 +450,14 @@ def jackknife_training(features,labels):
     predictions = my_classifier.predict(test_features)
     return my_classifier
 
-def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10, ):
+def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
     prediction_list = []
     for i in range(iterations):
         #Here features and labels are global variables
         jackknifed_classifier = jackknife_training(features,labels)
         ML_prediction = jackknifed_classifier.predict(feature_array)[0]
         prediction_list.append(ML_prediction)
+    pp.pprint(ML_prediction)
     counter = collections.Counter(prediction_list)
     top_prediction_set = counter.most_common(1)
     top_prediction = top_prediction_set[0][0]
@@ -553,6 +553,7 @@ def assessClusters(table):
 	for cluster in cluster_counts:
 		total_count = cluster_counts[cluster]['congruent'] + cluster_counts[cluster]['different']
 		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
+	pdb.set_trace()
 
 	return cluster_results
 
