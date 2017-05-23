@@ -507,7 +507,7 @@ def assessClusters(table):
 
 	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
-	for i,contig in contig_list:
+	for i,contig in enumerate(contig_list):
 		cluster = cluster_list[i]
 
 		if cluster not in cluster_counts:
