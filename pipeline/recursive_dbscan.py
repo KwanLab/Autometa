@@ -349,7 +349,7 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 	for count_list in filtered_contig_k_mer_counts:
 		total_count = 0
 		for count in count_list:
-			total_count += int(count)
+			total_count += count
 
 		normalized_list = list()
 		for count in count_list:
@@ -451,7 +451,7 @@ def jackknife_training(features,labels):
     predictions = my_classifier.predict(test_features)
     return my_classifier
 
-def calculate_bootstap_replicates(feature_array, features, lables, iterations = 10, ):
+def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10, ):
     prediction_list = []
     for i in range(iterations):
         #Here features and labels are global variables
@@ -681,6 +681,7 @@ if os.path.isfile(matrix_file):
 			if i > 0:
 				line_list = line.rstrip().split('\t')
 				contig = line_list.pop(0)
+				line_list = [ int(x) for x in line_list ]
 				k_mer_dict[contig] = line_list
 else:
 	# Count k-mers
