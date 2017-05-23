@@ -334,11 +334,11 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 
 
 	filtered_contig_k_mer_counts = list()
-	for i in range(0, len(contig_k_mer_counts)):
+	for i in range(0, len(count_matrix)):
 		new_row = list()
 		for j in range(0, len(unique_k_mers.keys())):
 			if j not in columns_to_delete:
-				new_row.append(contig_k_mer_counts[i][j])
+				new_row.append(count_matrix[i][j])
 		filtered_contig_k_mer_counts.append(new_row)
 
 	# 3. Normalization
