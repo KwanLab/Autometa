@@ -485,9 +485,11 @@ def assessClusters(table):
 		genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
 		species_dummy_martix = pd.get_dummies(subset_table['species'])
 
+		length = len(subset_table.index)
+		print ('length: ' + str(length))
 		for i,row in subset_table.iterrows():
 			contig = row['contig']
-			pdb.set_trace()
+			print(str(i))
 			tax_phylum = list(phylum_dummy_matrix.iloc[i])
 			tax_class = list(class_dummy_matrix.iloc[i])
 			tax_order = list(order_dummy_matrix.iloc[i])
