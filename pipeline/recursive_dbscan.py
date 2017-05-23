@@ -649,6 +649,26 @@ for seq_record in SeqIO.parse(fasta_path, 'fasta'):
 k_mer_size = 5
 matrix_file = 'k-mer_matrix'
 k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
+
+count = 0
+unique_k_mers = dict()
+
+DNA_letters = ['A', 'T', 'C', 'G']
+all_k_mers = list(DNA_letters)
+for i in range(1, k_mer_size):
+	new_list = list()
+	for current_seq in all_k_mers:
+		for char in DNA_letters:
+			new_list.append(current_seq + char)
+	all_k_mers = new_list
+
+# Now we trim k-mers and put them in the dictionary
+for k_mer in all_k_mers:
+	k_mer_reverse = revcomp(k_mer)
+	if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
+		unique_k_mers[k_mer] = count
+		count += 1
+
 if os.path.isfile(matrix_file):
 	print "K-mer matrix already exists!"
 	print "Continuing to next step..."
@@ -668,24 +688,6 @@ else:
 	# Under each key is an index to be used in the subsequent lists
 	# The order of the indices depends on the order k-mers were encountered while making the dictionary
 	logger.info('Counting k-mers')
-	count = 0
-	unique_k_mers = dict()
-
-	DNA_letters = ['A', 'T', 'C', 'G']
-	all_k_mers = list(DNA_letters)
-	for i in range(1, k_mer_size):
-		new_list = list()
-		for current_seq in all_k_mers:
-			for char in DNA_letters:
-				new_list.append(current_seq + char)
-		all_k_mers = new_list
-
-	# Now we trim k-mers and put them in the dictionary
-	for k_mer in all_k_mers:
-		k_mer_reverse = revcomp(k_mer)
-		if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
-			unique_k_mers[k_mer] = count
-			count += 1
 
 	for contig_name in assembly_seqs:
 		contig_seq = str(assembly_seqs[contig_name].seq)
