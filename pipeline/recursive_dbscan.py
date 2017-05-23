@@ -509,7 +509,7 @@ def assessClusters(table):
 
 	for i,contig in enumerate(contig_list):
 		cluster = cluster_list[i]
-
+		pdb.set_trace()
 		if cluster not in cluster_counts:
 			cluster_counts[cluster] = { 'congruent': 0, 'different': 0 }
 
