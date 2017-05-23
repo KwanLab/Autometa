@@ -509,7 +509,7 @@ def assessClusters(table):
 
 	for i,contig in enumerate(contig_list):
 		cluster = cluster_list[i]
-		pdb.set_trace()
+		
 		if cluster not in cluster_counts:
 			cluster_counts[cluster] = { 'congruent': 0, 'different': 0 }
 
@@ -541,7 +541,7 @@ def assessClusters(table):
 		single_np_array = np.array([contig_features])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels)
-
+		pdb.set_trace()
 		# Add result to data structure
 		if ML_prediction == cluster:
 			cluster_counts[cluster]['congruent'] += 1
