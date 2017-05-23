@@ -349,8 +349,7 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 	for count_list in filtered_contig_k_mer_counts:
 		total_count = 0
 		for count in count_list:
-			pdb.set_trace()
-			total_count += count
+			total_count += int(count)
 
 		normalized_list = list()
 		for count in count_list:
