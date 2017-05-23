@@ -462,7 +462,7 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
     top_prediction_set = counter.most_common(1)
     top_prediction = top_prediction_set[0][0]
     confidence = top_prediction_set[0][1]
-    confidence_percent = round(confidence/iterations*100,3)
+    confidence_percent = round(float(confidence)/iterations*100,3)
     #To see frequency of all prediction: print counter
     return top_prediction,confidence_percent
 
@@ -553,7 +553,7 @@ def assessClusters(table):
 	for cluster in cluster_counts:
 		total_count = cluster_counts[cluster]['congruent'] + cluster_counts[cluster]['different']
 		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
-	pdb.set_trace()
+		cluster_results[cluster] = percentage
 
 	return cluster_results
 
