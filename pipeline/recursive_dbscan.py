@@ -466,6 +466,39 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
     #To see frequency of all prediction: print counter
     return top_prediction,confidence_percent
 
+def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,cluster_column_name):
+    #Function to check for redundancy of single copy gene markers in ML
+    #predictions. The way it's written now,
+    #Get a list of PFAM markers from current cluster
+    cluster_df = pandas_table.loc[pandas_table[cluster_column_name] == predicted_cluster]
+    cluster_PFAMs = []
+    for count,contig in enumerate(cluster_df['contig']):
+        #If it's a marker contig
+        if cluster_df['num_single_copies'].iloc[count] > 0:
+            contig_PFAMs = cluster_df['single_copy_PFAMs'].iloc[count].split(",")
+            cluster_PFAMs += contig_PFAMs
+    contig_index = list(pandas_table['contig']).index(contig_name)
+    #contig_df = pandas_table.loc[(pandas_table.contig == contig_name)]
+    redundancy = False
+    #if len(contig_PFAMs) > 0:
+    #Avoid non-marker contigs in this calculation, for some reason evaluating to floats..
+    if not isinstance(pandas_table.iloc[contig_index]['single_copy_PFAMs'],float):
+        contig_PFAMs = pandas_table['single_copy_PFAMs'][contig_index].split(",")
+        for PFAM in contig_PFAMs:
+            if PFAM in cluster_PFAMs:
+                redundancy = True
+                print("-->This prediction adds marker redundancy...skipping...")
+                return redundancy
+            else:
+                pass
+    else:
+        #If no markers, can't add contamination...
+        redundancy = False
+        return redundancy
+    #Maybe this update should happen after function return?
+    #pandas_table[cluster_column_name][contig_index] = predicted_cluster
+    return redundancy
+
 def assessClusters(table):
 	# Function to assess the "quality" of clusters
 	# Quality is judged by the fraction of contigs that are classified to the parent cluster when removed from the training set.
@@ -540,8 +573,7 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
-		print('cluster: ' + cluster + ', ML_prediction: ' + ML_prediction + ', ' + str(confidence))
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
 
 		# Add result to data structure
 		if ML_prediction == cluster:
@@ -558,6 +590,119 @@ def assessClusters(table):
 
 	return cluster_results
 
+def reassignCluster(table, cluster, keep):
+	subset_table = table.loc[table['cluster'] != 'unclustered']
+
+	# Set up data structures for training/classification
+	taxonomy_matrix = list()
+
+	if taxonomy_table_path:
+		phylum_dummy_matrix = pd.get_dummies(subset_table['phylum'])
+		class_dummy_matrix = pd.get_dummies(subset_table['class'])
+		order_dummy_matrix = pd.get_dummies(subset_table['order'])
+		family_dummy_matrix = pd.get_dummies(subset_table['family'])
+		genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
+		species_dummy_martix = pd.get_dummies(subset_table['species'])
+
+		length = len(subset_table.index)
+		#print ('length: ' + str(length))
+		for i,contig in enumerate(subset_table['contig']):
+			tax_phylum = list(phylum_dummy_matrix.iloc[i])
+			tax_class = list(class_dummy_matrix.iloc[i])
+			tax_order = list(order_dummy_matrix.iloc[i])
+			tax_family = list(family_dummy_matrix.iloc[i])
+			tax_genus = list(genus_dummy_matrix.iloc[i])
+			tax_species = list(species_dummy_martix.iloc[i])
+			taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+			taxonomy_matrix.append(taxonomy)
+
+	cluster_list = subset_table['cluster'].tolist()
+	contig_list = subset_table['contig'].tolist()
+
+	# Make normalized k-mer matrix
+	k_mer_counts = list()
+	for i,contig in enumerate(contig_list):
+		k_mer_counts.append(k_mer_dict[contig])
+
+	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+
+	cluster_table = table.loc[table['cluster'] == cluster]
+	if keep == True:
+		# We go through the table, contig by contig.
+		# Each time a contig is assigned to a new group or unclustered we have to 
+		# make the training set again
+		for i, contig in enumerate(cluster_table['contig']):
+			# Make training set
+			features = list()
+			labels = list()
+			contig_index = contig_list.index(contig)
+
+			for j, current_cluster in enumerate(subset_table['cluster']):
+				if current_cluster == 'unclustered' or j == contig_index:
+					continue
+				else:
+					if taxonomy_table_path:
+						contig_features = taxonomy_matrix[j] + normalized_k_mer_matrix[j]
+					else:
+						contig_features = normalized_k_mer_matrix[j]
+					features.append(contig_features)
+					labels.append(current_cluster)
+
+			# Now we assembly a np array for the contig to be classified
+			if taxonomy_table_path:
+				contig_features = taxonomy_matrix[contig_index] + normalized_k_mer_matrix[contig_index]
+			else:
+				contig_features = normalized_k_mer_matrix[contig_index]
+
+			single_np_array = np.array([contig_features])
+
+			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+			redundant = redundant_marker_prediction(contig, ML_prediction, master_table, 'cluster')
+
+			index = master_table[master_table['contig'] == contig].index
+			if confidence >= 95 and not redundant:
+				# Change the assignment of the contig to the new cluster
+				master_table.set_value(index, 'cluster', ML_prediction)
+			else:
+				# Set assignment of contig to 'unclustered'
+				master_table.set_value(index, 'cluster', 'unclustered')
+	else:
+	
+		for i, contig in enumerate(cluster_table['contig']):
+			# Make training set
+			features = list()
+			labels = list()
+			contig_index = contig_list.index(contig)
+
+			for j,current_cluster in enumerate(subset_table['cluster']):
+				if current_cluster == cluster:
+					continue
+				else:
+					if taxonomy_table_path:
+						contig_features = taxonomy_matrix[j] + normalized_k_mer_matrix[j]
+					else:
+						contig_features = normalized_k_mer_matrix[j]
+					features.append(contig_features)
+					labels.append(current_cluster)
+
+			# Now we assembly a np array for the contig to be classified
+			if taxonomy_table_path:
+				contig_features = taxonomy_matrix[contig_index] + normalized_k_mer_matrix[contig_index]
+			else:
+				contig_features = normalized_k_mer_matrix[contig_index]
+
+			single_np_array = np.array([contig_features])
+
+			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+			redundant = redundant_marker_prediction(contig, ML_prediction, master_table, 'cluster')
+
+			index = master_table[master_table['contig'] == contig].index
+			if confidence >= 95 and not redundant:
+				# Change the assignment of the contig to the new cluster
+				master_table.set_value(index, 'cluster', ML_prediction)
+			else:
+				# Set assignment of contig to 'unclustered'
+				master_table.set_value(index, 'cluster', 'unclustered')
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -751,8 +896,6 @@ if BH_tSNE_counter == 1:
 #current_r_table = BH_tSNE_r
 current_table = pd.read_table(abs_BH_tSNE_path)
 
-
-
 # Now if we have taxonomy data we do another round of clustering
 if taxonomy_info:
 	local_BH_tSNE_round = 0
@@ -839,10 +982,32 @@ master_table['cluster'] = clusters
 
 # Now we refine the clustering using supervised ML
 all_good_clusters = False
+iteration = 0
 while all_good_clusters == False:
 	cluster_scores = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
+	print('iteration: ' + str(iteration))
 	pp.pprint(cluster_scores)
-	sys.exit()
+	iteration += 1
+
+	# If all clusters are 100% re-clustering, then all are 'good'
+	number_bad_clusters = 0
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] < 100:
+			number_bad_clusters += 1
+
+	if number_bad_clusters == 0:
+		break
+
+	# Sort clusters into ascending order of score
+	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
+	lowest_score_cluster = sorted_clusters[0]
+	# If the cluster has a score of zero, we completely dissolve the cluster and reassign all the 
+	# contigs.
+	# If the cluster has a score of >zero, we reassign the contigs, keeping the cluster.
+	if cluster_scores[lowest_score_cluster] > 0:
+		reassignCluster(master_table, lowest_score_cluster, True)
+	else:
+		reassignCluster(master_table, lowest_score_cluster, False)
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
