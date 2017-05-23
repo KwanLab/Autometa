@@ -541,7 +541,8 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+		print('ML_prediction: ' + ML_prediction + ', ' + str(confidence))
 
 		# Add result to data structure
 		if ML_prediction == cluster:
