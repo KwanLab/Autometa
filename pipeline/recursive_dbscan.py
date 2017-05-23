@@ -487,7 +487,7 @@ def assessClusters(table):
 
 		length = len(subset_table.index)
 		print ('length: ' + str(length))
-		for i,row in phylum_dummy_matrix.iterrows():
+		for i,contig in enumerate(subset_table['contig']):
 			tax_phylum = list(phylum_dummy_matrix.iloc[i])
 			tax_class = list(class_dummy_matrix.iloc[i])
 			tax_order = list(order_dummy_matrix.iloc[i])
