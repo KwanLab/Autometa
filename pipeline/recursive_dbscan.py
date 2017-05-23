@@ -451,7 +451,7 @@ def jackknife_training(features,labels):
     predictions = my_classifier.predict(test_features)
     return my_classifier
 
-def calculate_bootstap_replicates(feature_array,iterations = 10, features, lables):
+def calculate_bootstap_replicates(feature_array, features, lables, iterations = 10, ):
     prediction_list = []
     for i in range(iterations):
         #Here features and labels are global variables
@@ -539,7 +539,7 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, 10, features, labels)
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels)
 
 		# Add result to data structure
 		if ML_prediction == cluster:
