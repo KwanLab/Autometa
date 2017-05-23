@@ -487,7 +487,7 @@ def assessClusters(table):
 
 		length = len(subset_table.index)
 		print ('length: ' + str(length))
-		for i,row in subset_table.iterrows():
+		for i,row in phylum_dummy_matrix.iterrows():
 			contig = row['contig']
 			print(str(i))
 			tax_phylum = list(phylum_dummy_matrix.iloc[i])
@@ -500,17 +500,17 @@ def assessClusters(table):
 			taxonomy_matrix.append(taxonomy)
 
 	cluster_list = subset_table['cluster'].to_list()
+	contig_list = subset_table['contig'].to_list()
 
 	# Make normalized k-mer matrix
 	k_mer_counts = list()
-	for i,row in subset_table.iterrows():
-		contig = row['contig']
+	for i,contig in contig_list:
 		k_mer_counts.append(k_mer_dict[contig])
+
 	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
-	for i,row in subset_table.iterrows():
-		contig = row['contig']
-		cluster = row['cluster']
+	for i,contig in contig_list:
+		cluster = cluster_list[i]
 
 		if cluster not in cluster_counts:
 			cluster_counts[cluster] = { 'congruent': 0, 'different': 0 }
