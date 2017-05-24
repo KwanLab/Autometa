@@ -604,6 +604,7 @@ def assessClusters(table):
 
 def reassignCluster(table, cluster, keep):
 	subset_table = table.loc[table['cluster'] != 'unclustered']
+	logger.debug('reassignCluster, keep = ' + str(keep))
 
 	# Set up data structures for training/classification
 	taxonomy_matrix = list()
@@ -648,6 +649,8 @@ def reassignCluster(table, cluster, keep):
 			features = list()
 			labels = list()
 			contig_index = contig_list.index(contig)
+			contig_cluster = cluster_table.iloc[i]['cluster']
+			logger.debug('Considering contig ' + contig + ', current cluster: ' + contig_cluster)
 
 			for j, current_cluster in enumerate(subset_table['cluster']):
 				if current_cluster == 'unclustered' or j == contig_index:
@@ -675,9 +678,11 @@ def reassignCluster(table, cluster, keep):
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
 				table.ix[index, 'cluster'] = ML_prediction
+				logger.debug('Reclassifying contig to ' + ML_prediction)
 			else:
 				# Set assignment of contig to 'unclustered'
 				table.ix[index, 'cluster'] = 'unclustered'
+				logger.debug('Reclassifying contig to unclassified bin')
 	else:
 	
 		for i, contig in enumerate(cluster_table['contig']):
@@ -685,6 +690,8 @@ def reassignCluster(table, cluster, keep):
 			features = list()
 			labels = list()
 			contig_index = contig_list.index(contig)
+			contig_cluster = cluster_table.iloc[i]['cluster']
+			logger.debug('Considering contig ' + contig + ', current cluster: ' + contig_cluster)
 
 			for j,current_cluster in enumerate(subset_table['cluster']):
 				if current_cluster == cluster:
@@ -712,9 +719,11 @@ def reassignCluster(table, cluster, keep):
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
 				table.ix[index, 'cluster'] = ML_prediction
+				logger.debug('Reclassifying contig to ' + ML_prediction)
 			else:
 				# Set assignment of contig to 'unclustered'
 				table.ix[index, 'cluster'] = 'unclustered'
+				logger.debug('Reclassifying contig to unclassified bin')
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -1034,6 +1043,8 @@ while True:
 	# Sort clusters into ascending order of score
 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
 	lowest_score_cluster = sorted_clusters[0]
+	logger.debug('Lowest scoring cluster: ' + lowest_score_cluster + ', score: ' + str(cluster_scores[lowest_score_cluster]))
+
 	# If the cluster has a score of zero, we completely dissolve the cluster and reassign all the 
 	# contigs.
 	# If the cluster has a score of >zero, we reassign the contigs, keeping the cluster.
