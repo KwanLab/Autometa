@@ -573,7 +573,7 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
 
 		# Add result to data structure
 		if ML_prediction == cluster:
@@ -1002,7 +1002,7 @@ master_table['cluster'] = clusters
 # Now we refine the clustering using supervised ML
 all_good_clusters = False
 iteration = 0
-while all_good_clusters == False:
+while True:
 	cluster_scores = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
 	print('iteration: ' + str(iteration))
 	pp.pprint(cluster_scores)
