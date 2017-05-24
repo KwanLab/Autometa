@@ -1008,6 +1008,7 @@ while all_good_clusters == False:
 	pp.pprint(cluster_scores)
 	iteration += 1
 
+	pdb.set_trace()
 	# If all clusters are 100% re-clustering, then all are 'good'
 	number_bad_clusters = 0
 	for cluster in cluster_scores:
