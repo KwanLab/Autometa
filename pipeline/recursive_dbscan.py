@@ -1003,9 +1003,11 @@ master_table['cluster'] = clusters
 all_good_clusters = False
 iteration = 0
 while True:
+	print('Cluster assessment iteration: ' + str(iteration))
+	logger.info('Cluster assessment iteration: ' + str(iteration))
 	cluster_scores = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
-	print('iteration: ' + str(iteration))
-	pp.pprint(cluster_scores)
+
+	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
 
 	# If all clusters are 100% re-clustering, then all are 'good'
