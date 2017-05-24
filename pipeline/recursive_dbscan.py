@@ -442,37 +442,37 @@ def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 		contig_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)		
 
 def jackknife_training(features,labels):
-    #Function to randomly subsample data into halves (hence 0.5), train
-    #ML-classifier and make prediction. Used iteratively in
-    #calculate_bootstap_replicates() function (see below)
-    train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
-    my_classifier = tree.DecisionTreeClassifier()
-    my_classifier = my_classifier.fit(train_features,train_labels)
-    predictions = my_classifier.predict(test_features)
-    return my_classifier
+	#Function to randomly subsample data into halves (hence 0.5), train
+	#ML-classifier and make prediction. Used iteratively in
+	#calculate_bootstap_replicates() function (see below)
+	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
+	my_classifier = tree.DecisionTreeClassifier()
+	my_classifier = my_classifier.fit(train_features,train_labels)
+	predictions = my_classifier.predict(test_features)
+	return my_classifier
 
 def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
 
 	def ML_parallel(iteration):
 		jackknifed_classifier = jackknife_training(features,labels)
-    	ML_prediction = jackknifed_classifier.predict(feature_array)[0]
-    	return ML_prediction
+		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
+		return ML_prediction
 
-    # Determine number of jobs
-    if iterations > processors:
-    	num_jobs = processors
-    else:
-    	num_jobs = iterations
+	# Determine number of jobs
+	if iterations > processors:
+		num_jobs = processors
+	else:
+		num_jobs = iterations
 
-    prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(i) for i in range(0, iterations))
-        
-    counter = collections.Counter(prediction_list)
-    top_prediction_set = counter.most_common(1)
-    top_prediction = top_prediction_set[0][0]
-    confidence = top_prediction_set[0][1]
-    confidence_percent = round(float(confidence)/iterations*100,3)
-    #To see frequency of all prediction: print counter
-    return top_prediction,confidence_percent
+	prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(i) for i in range(0, iterations))
+
+	counter = collections.Counter(prediction_list)
+	top_prediction_set = counter.most_common(1)
+	top_prediction = top_prediction_set[0][0]
+	confidence = top_prediction_set[0][1]
+	confidence_percent = round(float(confidence)/iterations*100,3)
+	#To see frequency of all prediction: print counter
+	return top_prediction,confidence_percent
 
 def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,cluster_column_name):
     #Function to check for redundancy of single copy gene markers in ML
