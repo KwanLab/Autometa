@@ -669,15 +669,15 @@ def reassignCluster(table, cluster, keep):
 			single_np_array = np.array([contig_features])
 
 			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
-			redundant = redundant_marker_prediction(contig, ML_prediction, master_table, 'cluster')
+			redundant = redundant_marker_prediction(contig, ML_prediction, table, 'cluster')
 
-			index = master_table[master_table['contig'] == contig].index
+			index = table[table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
-				master_table.ix[index, 'cluster'] = ML_prediction
+				table.ix[index, 'cluster'] = ML_prediction
 			else:
 				# Set assignment of contig to 'unclustered'
-				master_table.ix[index, 'cluster'] = 'unclustered'
+				table.ix[index, 'cluster'] = 'unclustered'
 	else:
 	
 		for i, contig in enumerate(cluster_table['contig']):
@@ -706,15 +706,15 @@ def reassignCluster(table, cluster, keep):
 			single_np_array = np.array([contig_features])
 
 			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
-			redundant = redundant_marker_prediction(contig, ML_prediction, master_table, 'cluster')
+			redundant = redundant_marker_prediction(contig, ML_prediction, table, 'cluster')
 
-			index = master_table[master_table['contig'] == contig].index
+			index = table[table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
-				master_table.ix[index, 'cluster'] = ML_prediction
+				table.ix[index, 'cluster'] = ML_prediction
 			else:
 				# Set assignment of contig to 'unclustered'
-				master_table.ix[index, 'cluster'] = 'unclustered'
+				table.ix[index, 'cluster'] = 'unclustered'
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
