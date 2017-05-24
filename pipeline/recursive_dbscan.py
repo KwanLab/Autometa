@@ -475,7 +475,7 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     for count,contig in enumerate(cluster_df['contig']):
         #If it's a marker contig
         if cluster_df['num_single_copies'].iloc[count] > 0:
-            contig_PFAMs = cluster_df['single_copy_PFAMs'].iloc[count].split(",")
+            contig_PFAMs = cluster_df['single_copy_PFAMS'].iloc[count].split(",")
             cluster_PFAMs += contig_PFAMs
     contig_index = list(pandas_table['contig']).index(contig_name)
     #contig_df = pandas_table.loc[(pandas_table.contig == contig_name)]
@@ -1008,7 +1008,6 @@ while all_good_clusters == False:
 	pp.pprint(cluster_scores)
 	iteration += 1
 
-	pdb.set_trace()
 	# If all clusters are 100% re-clustering, then all are 'good'
 	number_bad_clusters = 0
 	for cluster in cluster_scores:
