@@ -31,7 +31,8 @@ import logging
 import subprocess
 import getpass
 import time 
-import multiprocessing
+#import multiprocessing
+from joblib import Parallel, delayed
 import pprint
 import pdb
 
@@ -451,13 +452,20 @@ def jackknife_training(features,labels):
     return my_classifier
 
 def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
-    prediction_list = []
-    for i in range(0, iterations):
-        #Here features and labels are global variables
-        jackknifed_classifier = jackknife_training(features,labels)
-        ML_prediction = jackknifed_classifier.predict(feature_array)[0]
-        prediction_list.append(ML_prediction)
-    
+
+	def ML_parallel(iteration):
+		jackknifed_classifier = jackknife_training(features,labels)
+    	ML_prediction = jackknifed_classifier.predict(feature_array)[0]
+    	return ML_prediction
+
+    # Determine number of jobs
+    if iterations > processors:
+    	num_jobs = processors
+    else:
+    	num_jobs = iterations
+
+    prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(i) for i in range(0, iterations))
+        
     counter = collections.Counter(prediction_list)
     top_prediction_set = counter.most_common(1)
     top_prediction = top_prediction_set[0][0]
