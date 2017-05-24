@@ -585,7 +585,7 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
 
 		# Add result to data structure
 		if ML_prediction == cluster:
@@ -668,7 +668,7 @@ def reassignCluster(table, cluster, keep):
 
 			single_np_array = np.array([contig_features])
 
-			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
 			redundant = redundant_marker_prediction(contig, ML_prediction, master_table, 'cluster')
 
 			index = master_table[master_table['contig'] == contig].index
