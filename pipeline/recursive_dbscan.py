@@ -791,7 +791,7 @@ new_contig_table = open(new_contig_table_path, 'w')
 with open(contig_table, 'r') as old_contig_table:
 	for i,line in enumerate(old_contig_table):
 		if i == 0:
-			new_contig_table.write(line.rstrip() + '\tsingle_copy_PFAMS\tnum_single_copies\n')
+			new_contig_table.write(line.rstrip() + '\tsingle_copy_PFAMs\tnum_single_copies\n')
 		else:
 			line_list = line.rstrip().split('\t')
 			contig = line_list[0]
