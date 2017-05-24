@@ -451,12 +451,12 @@ def jackknife_training(features,labels):
 	predictions = my_classifier.predict(test_features)
 	return my_classifier
 
-def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
-
-	def ML_parallel(iteration):
+def ML_parallel(feature_array, features, labels, iteration):
 		jackknifed_classifier = jackknife_training(features,labels)
 		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
 		return ML_prediction
+
+def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
 
 	# Determine number of jobs
 	if iterations > processors:
@@ -464,7 +464,7 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 	else:
 		num_jobs = iterations
 
-	prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(i) for i in range(0, iterations))
+	prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in range(0, iterations))
 
 	counter = collections.Counter(prediction_list)
 	top_prediction_set = counter.most_common(1)
