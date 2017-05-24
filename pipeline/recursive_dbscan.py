@@ -458,13 +458,17 @@ def ML_parallel(feature_array, features, labels, iteration):
 
 def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
 
-	# Determine number of jobs
-	if iterations > processors:
-		num_jobs = processors
-	else:
-		num_jobs = iterations
+	if iterations > 1:
+		# Determine number of jobs
+		if iterations > processors:
+			num_jobs = processors
+		else:
+			num_jobs = iterations
 
-	prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in range(0, iterations))
+		prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in range(0, iterations))
+	else:
+		ML_prediction = ML_parallel(feature_array, features, labels, 1)
+		prediction_list = [ ML_prediction ]
 
 	counter = collections.Counter(prediction_list)
 	top_prediction_set = counter.most_common(1)
