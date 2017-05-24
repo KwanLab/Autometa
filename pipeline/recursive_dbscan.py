@@ -483,7 +483,7 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     for count,contig in enumerate(cluster_df['contig']):
         #If it's a marker contig
         if cluster_df['num_single_copies'].iloc[count] > 0:
-            contig_PFAMs = cluster_df['single_copy_PFAMS'].iloc[count].split(",")
+            contig_PFAMs = cluster_df['single_copy_PFAMs'].iloc[count].split(",")
             cluster_PFAMs += contig_PFAMs
     contig_index = list(pandas_table['contig']).index(contig_name)
     #contig_df = pandas_table.loc[(pandas_table.contig == contig_name)]
