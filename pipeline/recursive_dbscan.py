@@ -674,10 +674,10 @@ def reassignCluster(table, cluster, keep):
 			index = master_table[master_table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
-				master_table.set_value(index, 'cluster', ML_prediction)
+				master_table.ix[index, 'cluster'] = ML_prediction
 			else:
 				# Set assignment of contig to 'unclustered'
-				master_table.set_value(index, 'cluster', 'unclustered')
+				master_table.ix[index, 'cluster'] = 'unclustered'
 	else:
 	
 		for i, contig in enumerate(cluster_table['contig']):
@@ -711,10 +711,10 @@ def reassignCluster(table, cluster, keep):
 			index = master_table[master_table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
 				# Change the assignment of the contig to the new cluster
-				master_table.set_value(index, 'cluster', ML_prediction)
+				master_table.ix[index, 'cluster'] = ML_prediction
 			else:
 				# Set assignment of contig to 'unclustered'
-				master_table.set_value(index, 'cluster', 'unclustered')
+				master_table.ix[index, 'cluster'] = 'unclustered'
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
