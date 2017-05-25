@@ -455,7 +455,7 @@ def jackknife_training(features,labels,random_number):
 	return my_classifier
 
 def ML_parallel(feature_array, features, labels, random_number):
-		jackknifed_classifier = jackknife_training(features,labels,random_state)
+		jackknifed_classifier = jackknife_training(features,labels,random_number)
 		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
 		return ML_prediction
 
@@ -468,12 +468,12 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		r_numbers = list()
+		random_numbers = list()
 		for i in range(0, iterations):
 			number = random.randint(0, 65535)
-			r_numbers.append(number)
+			random_numbers.append(number)
 		
-		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in r_numbers)
+		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in random_numbers)
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
