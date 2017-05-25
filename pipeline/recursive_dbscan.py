@@ -443,18 +443,18 @@ def run_BH_tSNE(output_filename,contig_table_path, do_pca=True):
 
 		contig_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)		
 
-def jackknife_training(features,labels):
+def jackknife_training(features,labels,random_number):
 	#Function to randomly subsample data into halves (hence 0.5), train
 	#ML-classifier and make prediction. Used iteratively in
 	#calculate_bootstap_replicates() function (see below)
-	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
+	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50, random_state=random_number)
 	my_classifier = tree.DecisionTreeClassifier()
 	my_classifier = my_classifier.fit(train_features,train_labels)
 	predictions = my_classifier.predict(test_features)
 	return my_classifier
 
-def ML_parallel(feature_array, features, labels, iteration):
-		jackknifed_classifier = jackknife_training(features,labels)
+def ML_parallel(feature_array, features, labels, random_number):
+		jackknifed_classifier = jackknife_training(features,labels,random_state)
 		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
 		return ML_prediction
 
@@ -467,11 +467,12 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		prediction_list = list()
-		#prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in range(0, iterations))
+		random_numbers = list()
 		for i in range(0, iterations):
-			ML_prediction = ML_parallel(feature_array, features, labels, i)
-			prediction_list.append(ML_prediction)
+			number = random.randint(0, 65535)
+			random_numbers.append(number)
+		
+		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in random_numbers)
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
