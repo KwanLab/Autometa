@@ -758,7 +758,7 @@ domain = args['domain']
 fasta_path = args['fasta']
 outdir = os.path.abspath(args['outdir'])
 contig_table = args['contigtable']
-processors = args['processors']
+processors = int(args['processors'])
 taxonomy_table_path = args['taxonomy_tab']
 
 # Set up multiprocessing
