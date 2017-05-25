@@ -569,14 +569,14 @@ def assessClusters(table):
 
 		if taxonomy_table_path:
 			for j in range(0, i):
-				features.append(taxonomy_matrix[j] + pca_matrix[j])
+				features.append(taxonomy_matrix[j] + pca_matrix[j].tolist())
 			for j in range(i+1, len(subset_table.index)):
-				features.append(taxonomy_matrix[j] + pca_matrix[j])
+				features.append(taxonomy_matrix[j] + pca_matrix[j].tolist())
 		else:
 			for j in range(0, i):
-				features.append(pca_matrix[j])
+				features.append(pca_matrix[j].tolist())
 			for j in range(i+1, len(subset_table.index)):
-				features.append(pca_matrix[j])
+				features.append(pca_matrix[j].tolist())
 
 		for j in range(0, i):
 			labels.append(cluster_list[j])
@@ -585,9 +585,9 @@ def assessClusters(table):
 
 		# Now we assembly a np array for the contig to be classified
 		if taxonomy_table_path:
-			contig_features = taxonomy_matrix[i] + pca_matrix[i]
+			contig_features = taxonomy_matrix[i] + pca_matrix[i].tolist()
 		else:
-			contig_features = pca_matrix[i]
+			contig_features = pca_matrix[i].tolist()
 
 		single_np_array = np.array([contig_features])
 
@@ -667,17 +667,17 @@ def reassignCluster(table, cluster, keep):
 					continue
 				else:
 					if taxonomy_table_path:
-						contig_features = taxonomy_matrix[j] + pca_matrix[j]
+						contig_features = taxonomy_matrix[j] + pca_matrix[j].tolist()
 					else:
-						contig_features = pca_matrix[j]
+						contig_features = pca_matrix[j].tolist()
 					features.append(contig_features)
 					labels.append(current_cluster)
 
 			# Now we assembly a np array for the contig to be classified
 			if taxonomy_table_path:
-				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index]
+				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index].tolist()
 			else:
-				contig_features = pca_matrix[contig_index]
+				contig_features = pca_matrix[contig_index].tolist()
 
 			single_np_array = np.array([contig_features])
 
@@ -710,17 +710,17 @@ def reassignCluster(table, cluster, keep):
 					continue
 				else:
 					if taxonomy_table_path:
-						contig_features = taxonomy_matrix[j] + pca_matrix[j]
+						contig_features = taxonomy_matrix[j] + pca_matrix[j].tolist()
 					else:
-						contig_features = pca_matrix[j]
+						contig_features = pca_matrix[j].tolist()
 					features.append(contig_features)
 					labels.append(current_cluster)
 
 			# Now we assembly a np array for the contig to be classified
 			if taxonomy_table_path:
-				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index]
+				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index].tolist()
 			else:
-				contig_features = pca_matrix[contig_index]
+				contig_features = pca_matrix[contig_index].tolist()
 
 			single_np_array = np.array([contig_features])
 
