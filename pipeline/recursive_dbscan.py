@@ -909,28 +909,49 @@ master_table['cluster'] = clusters
 # Now we refine the clustering using supervised ML
 all_good_clusters = False
 iteration = 0
-while True:
+
+# Do initial iteration, where we generate the first scores
+print('Cluster assessment iteration: ' + str(iteration))
+logger.info('Cluster assessment iteration: ' + str(iteration))
+cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
+
+logger.debug(pprint.pformat(cluster_scores))
+iteration += 1
+
+# We sort the clusters in descending order of cluster score
+sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
+clusters_to_examine = list()
+
+for cluster in sorted_clusters:
+	if cluster_scores[cluster] < 100:
+		clusters_to_examine.append(cluster)
+
+# Now we go through the clusters_to_examine list, and reassign the contigs
+# NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
+for cluster in clusters_to_examine:
+	# Reassign contigs in cluster, according to the previous run of assessClusters
+	contigs_in_cluster = dict()
+	for i, row in master_table.iterrows():
+		current_cluster = row['cluster']
+		current_contig = row['contig']
+		if current_cluster == cluster:
+			contigs_in_cluster[current_contig] = 1
+
+	cluster_reassignments = dict()
+	for contig in contig_reassignments:
+		if contig in contigs_in_cluster:
+			cluster_reassignments[contig] = contig_reassignments[contig]
+
+	reassignClusters(master_table, cluster_reassignments)
+
+	# Carry out assessClusters again for the next round
 	print('Cluster assessment iteration: ' + str(iteration))
 	logger.info('Cluster assessment iteration: ' + str(iteration))
-	cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
 
+	cluster_scores, contig_reassignments = assessClusters(master_table)
 	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
 
-	## Reassign the lowest scoring cluster
-	#ordered_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
-	#cluster_to_reassign = ordered_clusters[0]
-	#final_contig_reassignments = dict()
-	#for i,row in master_table.iterrows():
-	#	current_contig = row['contig']
-	#	current_cluster = row['cluster']
-	#	if current_cluster == cluster_to_reassign:
-	#		final_contig_reassignments = contig_reassignments[current_contig]
-
-	#reassignClusters(master_table, final_contig_reassignments)
-	# Right now this is an endless loop because I want to see if the situation coalesces into a stable situation,
-	# or if it is inherently unstable
-	break
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
