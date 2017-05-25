@@ -552,6 +552,10 @@ def assessClusters(table):
 
 	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
+	# For performance reasons, we reduce the dimensions to 50 with PCA
+	pca = decomposition.PCA(n_components=50)
+	pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+
 	for i,contig in enumerate(contig_list):
 		cluster = cluster_list[i]
 		
@@ -563,14 +567,14 @@ def assessClusters(table):
 		labels = list()
 		if taxonomy_table_path:
 			for j in range(0, i):
-				features.append(taxonomy_matrix[j] + normalized_k_mer_matrix[j])
+				features.append(taxonomy_matrix[j] + pca_matrix[j])
 			for j in range(i+1, len(subset_table.index)):
-				features.append(taxonomy_matrix[j] + normalized_k_mer_matrix[j])
+				features.append(taxonomy_matrix[j] + pca_matrix[j])
 		else:
 			for j in range(0, i):
-				features.append(normalized_k_mer_matrix[j])
+				features.append(pca_matrix[j])
 			for j in range(i+1, len(subset_table.index)):
-				features.append(normalized_k_mer_matrix[j])
+				features.append(pca_matrix[j])
 
 		for j in range(0, i):
 			labels.append(cluster_list[j])
@@ -579,9 +583,9 @@ def assessClusters(table):
 
 		# Now we assembly a np array for the contig to be classified
 		if taxonomy_table_path:
-			contig_features = taxonomy_matrix[i] + normalized_k_mer_matrix[i]
+			contig_features = taxonomy_matrix[i] + pca_matrix[i]
 		else:
-			contig_features = normalized_k_mer_matrix[i]
+			contig_features = pca_matrix[i]
 
 		single_np_array = np.array([contig_features])
 
@@ -639,6 +643,10 @@ def reassignCluster(table, cluster, keep):
 
 	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
+	# For performance reasons we reduce the dimensions to 50 with PCA
+	pca = decomposition.PCA(n_components=50)
+	pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+
 	cluster_table = table.loc[table['cluster'] == cluster]
 	if keep == True:
 		# We go through the table, contig by contig.
@@ -657,22 +665,24 @@ def reassignCluster(table, cluster, keep):
 					continue
 				else:
 					if taxonomy_table_path:
-						contig_features = taxonomy_matrix[j] + normalized_k_mer_matrix[j]
+						contig_features = taxonomy_matrix[j] + pca_matrix[j]
 					else:
-						contig_features = normalized_k_mer_matrix[j]
+						contig_features = pca_matrix[j]
 					features.append(contig_features)
 					labels.append(current_cluster)
 
 			# Now we assembly a np array for the contig to be classified
 			if taxonomy_table_path:
-				contig_features = taxonomy_matrix[contig_index] + normalized_k_mer_matrix[contig_index]
+				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index]
 			else:
-				contig_features = normalized_k_mer_matrix[contig_index]
+				contig_features = pca_matrix[contig_index]
 
 			single_np_array = np.array([contig_features])
 
 			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
 			redundant = redundant_marker_prediction(contig, ML_prediction, table, 'cluster')
+			logger.debug('Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
+			logger.debug('Redundancy = ' + str(redundant))
 
 			index = table[table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
@@ -698,22 +708,24 @@ def reassignCluster(table, cluster, keep):
 					continue
 				else:
 					if taxonomy_table_path:
-						contig_features = taxonomy_matrix[j] + normalized_k_mer_matrix[j]
+						contig_features = taxonomy_matrix[j] + pca_matrix[j]
 					else:
-						contig_features = normalized_k_mer_matrix[j]
+						contig_features = pca_matrix[j]
 					features.append(contig_features)
 					labels.append(current_cluster)
 
 			# Now we assembly a np array for the contig to be classified
 			if taxonomy_table_path:
-				contig_features = taxonomy_matrix[contig_index] + normalized_k_mer_matrix[contig_index]
+				contig_features = taxonomy_matrix[contig_index] + pca_matrix[contig_index]
 			else:
-				contig_features = normalized_k_mer_matrix[contig_index]
+				contig_features = pca_matrix[contig_index]
 
 			single_np_array = np.array([contig_features])
 
 			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
 			redundant = redundant_marker_prediction(contig, ML_prediction, table, 'cluster')
+			logger.debug('Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
+			logger.debug('Redundancy = ' + str(redundant))
 
 			index = table[table['contig'] == contig].index
 			if confidence >= 95 and not redundant:
