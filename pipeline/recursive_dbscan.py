@@ -581,7 +581,7 @@ def assessClusters(table):
 				labels.append(cluster_list[j])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
-		logger.debug('assessClusters: contig ' + current_contig + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
+		#logger.debug('assessClusters: contig ' + current_contig + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
 		if ML_prediction == current_cluster:
 			cluster_counts[current_cluster]['congruent'] += 1
@@ -913,7 +913,17 @@ while True:
 	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
 
-	reassignClusters(master_table, contig_reassignments)
+	# Reassign the lowest scoring cluster
+	ordered_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
+	cluster_to_reassign = ordered_clusters[0]
+	final_contig_reassignments = dict()
+	for i,row in master_table.iterrows():
+		current_contig = row['contig']
+		current_cluster = row['cluster']
+		if current_cluster == cluster_to_reassign:
+			final_contig_reassignments = contig_reassignments[current_contig]
+
+	reassignClusters(master_table, final_contig_reassignments)
 	# Right now this is an endless loop because I want to see if the situation coalesces into a stable situation,
 	# or if it is inherently unstable
 
