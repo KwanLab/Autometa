@@ -517,7 +517,7 @@ def assessClusters(table):
 	cluster_counts = dict() # Keyed by cluster, holds totals for 'congruent' classification or 'different' classification
 	contig_reassignments = dict()
 
-	subset_table = table.loc['cluster' != 'unclustered']
+	subset_table = table.loc[table['cluster'] != 'unclustered']
 
 	# For each contig we make a new training set
 	cluster_list = subset_table['cluster'].tolist()
