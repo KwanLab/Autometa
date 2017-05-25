@@ -570,9 +570,9 @@ def assessClusters(table):
 
 		for j in range(0, len(contig_list)):
 			if taxonomy_table_path:
-				current_features = taxonomy_matrix[j] + pca_matrix[j].tolist()
+				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist())
 			else:
-				current_features = pca_matrix[j].tolist()
+				current_features = pca_matrix[j]
 
 			if j == contig_index:
 				classification_features = np.array([current_features])
@@ -580,7 +580,7 @@ def assessClusters(table):
 				features.append(current_features)
 				labels.append(cluster_list[j])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
+		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 		logger.debug('assessClusters: contig ' + current_contig + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
 		if ML_prediction == current_cluster:
