@@ -468,12 +468,12 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		random_numbers = list()
+		r_numbers = list()
 		for i in range(0, iterations):
 			number = random.randint(0, 65535)
-			random_numbers.append(number)
+			r_numbers.append(number)
 		
-		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in random_numbers)
+		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in r_numbers)
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
