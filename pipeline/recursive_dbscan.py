@@ -33,6 +33,7 @@ import getpass
 import time 
 #import multiprocessing
 from multiprocessing import Pool
+import itertools
 #from joblib import Parallel, delayed
 import pprint
 import pdb
@@ -466,11 +467,7 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		function_input_list = [feature_array, features, labels]
-		input_data_structure = list()
-		for i in range(0, iterations):
-			input_data_structure.append(function_input_list)
-		prediction_list = p.map(ML_parallel, input_data_structure)
+		prediction_list = p.map(ML_parallel, itertools.repeat(feature_array), itertools.repeat(features), itertools.repeat(labels))
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
