@@ -467,7 +467,7 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		prediction_list = p.map(ML_parallel, itertools.repeat(feature_array), itertools.repeat(features), itertools.repeat(labels))
+		prediction_list = p.map(ML_parallel, itertools.izip(itertools.repeat(feature_array), itertools.repeat(features), itertools.repeat(labels)))
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
