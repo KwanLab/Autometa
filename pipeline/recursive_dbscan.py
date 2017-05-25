@@ -565,7 +565,6 @@ def assessClusters(table):
 		# Make feature and label lists
 		features = list()
 		labels = list()
-		pdb.set_trace()
 
 		if taxonomy_table_path:
 			for j in range(0, i):
