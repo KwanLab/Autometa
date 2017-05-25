@@ -917,19 +917,20 @@ while True:
 	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
 
-	# Reassign the lowest scoring cluster
-	ordered_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
-	cluster_to_reassign = ordered_clusters[0]
-	final_contig_reassignments = dict()
-	for i,row in master_table.iterrows():
-		current_contig = row['contig']
-		current_cluster = row['cluster']
-		if current_cluster == cluster_to_reassign:
-			final_contig_reassignments = contig_reassignments[current_contig]
+	## Reassign the lowest scoring cluster
+	#ordered_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__)
+	#cluster_to_reassign = ordered_clusters[0]
+	#final_contig_reassignments = dict()
+	#for i,row in master_table.iterrows():
+	#	current_contig = row['contig']
+	#	current_cluster = row['cluster']
+	#	if current_cluster == cluster_to_reassign:
+	#		final_contig_reassignments = contig_reassignments[current_contig]
 
-	reassignClusters(master_table, final_contig_reassignments)
+	#reassignClusters(master_table, final_contig_reassignments)
 	# Right now this is an endless loop because I want to see if the situation coalesces into a stable situation,
 	# or if it is inherently unstable
+	break
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
