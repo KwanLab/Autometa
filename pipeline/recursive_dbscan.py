@@ -581,7 +581,7 @@ def assessClusters(table):
 				labels.append(cluster_list[j])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
-		#logger.debug('assessClusters: contig ' + current_contig + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
+		logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
 		if ML_prediction == current_cluster:
 			cluster_counts[current_cluster]['congruent'] += 1
