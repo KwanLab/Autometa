@@ -32,7 +32,8 @@ import subprocess
 import getpass
 import time 
 #import multiprocessing
-from joblib import Parallel, delayed
+from multiprocessing import Pool
+#from joblib import Parallel, delayed
 import pprint
 import pdb
 
@@ -451,7 +452,7 @@ def jackknife_training(features,labels):
 	predictions = my_classifier.predict(test_features)
 	return my_classifier
 
-def ML_parallel(feature_array, features, labels, iteration):
+def ML_parallel(feature_array, features, labels):
 		jackknifed_classifier = jackknife_training(features,labels)
 		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
 		return ML_prediction
@@ -465,7 +466,11 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
-		prediction_list = Parallel(n_jobs=num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in range(0, iterations))
+		function_input_list = [feature_array, features, labels]
+		input_data_structure = list()
+		for i in range(0, iterations):
+			input_data_structure.append(function_input_list)
+		prediction_list = p.map(ML_parallel, input_data_structure)
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
 		prediction_list = [ ML_prediction ]
@@ -590,7 +595,7 @@ def assessClusters(table):
 
 		single_np_array = np.array([contig_features])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
+		ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
 
 		# Add result to data structure
 		if ML_prediction == cluster:
@@ -680,7 +685,7 @@ def reassignCluster(table, cluster, keep):
 
 			single_np_array = np.array([contig_features])
 
-			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 1)
+			ML_prediction, confidence = calculate_bootstap_replicates(single_np_array, features, labels, 10)
 			redundant = redundant_marker_prediction(contig, ML_prediction, table, 'cluster')
 			logger.debug('Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
 			logger.debug('Redundancy = ' + str(redundant))
@@ -755,6 +760,9 @@ outdir = os.path.abspath(args['outdir'])
 contig_table = args['contigtable']
 processors = args['processors']
 taxonomy_table_path = args['taxonomy_tab']
+
+# Set up multiprocessing
+p = Pool(processors)
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
