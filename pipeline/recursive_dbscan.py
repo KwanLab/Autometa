@@ -608,15 +608,12 @@ def assessClusters(table):
 
 	return cluster_results, contig_reassignments
 
-def reassignClusters(table, reassignments, dissolve_list):
+def reassignClusters(table, reassignments):
 	# Now we go through the table and make the reassignments
 	for i, row in table.iterrows():
 		current_contig = row['contig']
 		if current_contig in reassignments:
-			# If the new cluster is in the "dissolve list", then we resist reclassifying
-			# The cluster then dies naturally because no contigs will be assigned to it
-			if reassignments[current_contig] not in dissolve_list:
-				table.ix[i, 'cluster'] = reassignments[current_contig]
+			table.ix[i, 'cluster'] = reassignments[current_contig]
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -955,9 +952,15 @@ while bad_clusters:
 		if contig in contigs_in_cluster:
 			cluster_reassignments[contig] = contig_reassignments[contig]
 
+	# Remove all reassignments TO the clusters_to_dissolve
+	filtered_cluster_reassignments = dict()
+	for contig in cluster_reassignments:
+		if cluster_reassignments[contig] not in clusters_to_dissolve:
+			filtered_cluster_reassignments[contig] = cluster_reassignments[contig]
+
 	pdb.set_trace()
 
-	reassignClusters(master_table, cluster_reassignments, clusters_to_dissolve)
+	reassignClusters(master_table, filtered_cluster_reassignments)
 
 	# Carry out assessClusters again for the next round
 	print('Cluster assessment iteration: ' + str(iteration))
