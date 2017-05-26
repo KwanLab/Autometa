@@ -924,8 +924,8 @@ iteration += 1
 
 # Now we go through the clusters_to_examine list, and reassign the contigs
 # NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
-all_good_clusters = False
-while all_good_clusters == False:
+bad_clusters = True
+while bad_clusters:
 	# We sort the clusters in descending order of cluster score
 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
 	clusters_to_examine = list()
@@ -960,13 +960,13 @@ while all_good_clusters == False:
 	iteration += 1
 
 	# Determine if exit condition is met
-	bad_clusters = 0
+	num_bad_clusters = 0
 	for score in cluster_scores:
 		if score < 80:
-			bad_clusters += 1
+			num_bad_clusters += 1
 
-	if bad_clusters == 0:
-		all_good_clusters = True
+	if num_bad_clusters == 0:
+		bad_clusters = False
 
 
 # If we are not done, write a new fasta for the next BH_tSNE run
