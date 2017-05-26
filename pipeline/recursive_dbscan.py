@@ -924,7 +924,8 @@ iteration += 1
 
 # Now we go through the clusters_to_examine list, and reassign the contigs
 # NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
-for i in range(0, 5):
+all_good_clusters = False
+while all_good_clusters == False:
 	# We sort the clusters in descending order of cluster score
 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
 	clusters_to_examine = list()
@@ -933,29 +934,39 @@ for i in range(0, 5):
 		if cluster_scores[cluster] < 100:
 			clusters_to_examine.append(cluster)
 
+	contigs_in_cluster = dict()
 	for cluster in clusters_to_examine:
 		# Reassign contigs in cluster, according to the previous run of assessClusters
-		contigs_in_cluster = dict()
+		
 		for i, row in master_table.iterrows():
 			current_cluster = row['cluster']
 			current_contig = row['contig']
 			if current_cluster == cluster:
 				contigs_in_cluster[current_contig] = 1
 
-		cluster_reassignments = dict()
-		for contig in contig_reassignments:
-			if contig in contigs_in_cluster:
-				cluster_reassignments[contig] = contig_reassignments[contig]
+	cluster_reassignments = dict()
+	for contig in contig_reassignments:
+		if contig in contigs_in_cluster:
+			cluster_reassignments[contig] = contig_reassignments[contig]
 
-		reassignClusters(master_table, cluster_reassignments)
+	reassignClusters(master_table, cluster_reassignments)
 
-		# Carry out assessClusters again for the next round
-		print('Cluster assessment iteration: ' + str(iteration))
-		logger.info('Cluster assessment iteration: ' + str(iteration))
+	# Carry out assessClusters again for the next round
+	print('Cluster assessment iteration: ' + str(iteration))
+	logger.info('Cluster assessment iteration: ' + str(iteration))
 
-		cluster_scores, contig_reassignments = assessClusters(master_table)
-		logger.debug(pprint.pformat(cluster_scores))
-		iteration += 1
+	cluster_scores, contig_reassignments = assessClusters(master_table)
+	logger.debug(pprint.pformat(cluster_scores))
+	iteration += 1
+
+	# Determine if exit condition is met
+	bad_clusters = 0
+	for score in cluster_scores:
+		if score < 80:
+			bad_clusters += 1
+
+	if bad_clusters == 0:
+		all_good_clusters = True
 
 
 # If we are not done, write a new fasta for the next BH_tSNE run
