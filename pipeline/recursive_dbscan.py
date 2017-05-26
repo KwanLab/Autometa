@@ -608,12 +608,15 @@ def assessClusters(table):
 
 	return cluster_results, contig_reassignments
 
-def reassignClusters(table, reassignments):
+def reassignClusters(table, reassignments, dissolve_list):
 	# Now we go through the table and make the reassignments
 	for i, row in table.iterrows():
 		current_contig = row['contig']
 		if current_contig in reassignments:
-			table.ix[i, 'cluster'] = reassignments[current_contig]
+			# If the new cluster is in the "dissolve list", then we resist reclassifying
+			# The cluster then dies naturally because no contigs will be assigned to it
+			if reassignments[current_contig] not in dissolve_list:
+				table.ix[i, 'cluster'] = reassignments[current_contig]
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -929,10 +932,13 @@ while bad_clusters:
 	# We sort the clusters in descending order of cluster score
 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
 	clusters_to_examine = list()
+	clusters_to_dissolve = list()
 
 	for cluster in sorted_clusters:
 		if cluster_scores[cluster] < 100:
 			clusters_to_examine.append(cluster)
+		if cluster_scores[cluster] == 0:
+			clusters_to_dissolve.append(cluster)
 
 	contigs_in_cluster = dict()
 	for cluster in clusters_to_examine:
@@ -949,7 +955,7 @@ while bad_clusters:
 		if contig in contigs_in_cluster:
 			cluster_reassignments[contig] = contig_reassignments[contig]
 
-	reassignClusters(master_table, cluster_reassignments)
+	reassignClusters(master_table, cluster_reassignments, clusters_to_dissolve)
 
 	# Carry out assessClusters again for the next round
 	print('Cluster assessment iteration: ' + str(iteration))
@@ -962,7 +968,7 @@ while bad_clusters:
 	# Determine if exit condition is met
 	num_bad_clusters = 0
 	for cluster in cluster_scores:
-		if cluster_scores[cluster] < 80:
+		if cluster_scores[cluster] < 100:
 			num_bad_clusters += 1
 
 	if num_bad_clusters == 0:
