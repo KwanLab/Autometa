@@ -468,6 +468,8 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		else:
 			num_jobs = iterations
 
+		# If you don't make this list of random numbers, then all the bootstraps will come back
+		# with the same answer, and the confidence score will always be 100.0
 		random_numbers = list()
 		for i in range(0, iterations):
 			number = random.randint(0, 65535)
@@ -920,39 +922,40 @@ cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_sc
 logger.debug(pprint.pformat(cluster_scores))
 iteration += 1
 
-# We sort the clusters in descending order of cluster score
-sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
-clusters_to_examine = list()
-
-for cluster in sorted_clusters:
-	if cluster_scores[cluster] < 100:
-		clusters_to_examine.append(cluster)
-
 # Now we go through the clusters_to_examine list, and reassign the contigs
 # NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
-for cluster in clusters_to_examine:
-	# Reassign contigs in cluster, according to the previous run of assessClusters
-	contigs_in_cluster = dict()
-	for i, row in master_table.iterrows():
-		current_cluster = row['cluster']
-		current_contig = row['contig']
-		if current_cluster == cluster:
-			contigs_in_cluster[current_contig] = 1
+for i in range(0, 5):
+	# We sort the clusters in descending order of cluster score
+	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
+	clusters_to_examine = list()
 
-	cluster_reassignments = dict()
-	for contig in contig_reassignments:
-		if contig in contigs_in_cluster:
-			cluster_reassignments[contig] = contig_reassignments[contig]
+	for cluster in sorted_clusters:
+		if cluster_scores[cluster] < 100:
+			clusters_to_examine.append(cluster)
 
-	reassignClusters(master_table, cluster_reassignments)
+	for cluster in clusters_to_examine:
+		# Reassign contigs in cluster, according to the previous run of assessClusters
+		contigs_in_cluster = dict()
+		for i, row in master_table.iterrows():
+			current_cluster = row['cluster']
+			current_contig = row['contig']
+			if current_cluster == cluster:
+				contigs_in_cluster[current_contig] = 1
 
-	# Carry out assessClusters again for the next round
-	print('Cluster assessment iteration: ' + str(iteration))
-	logger.info('Cluster assessment iteration: ' + str(iteration))
+		cluster_reassignments = dict()
+		for contig in contig_reassignments:
+			if contig in contigs_in_cluster:
+				cluster_reassignments[contig] = contig_reassignments[contig]
 
-	cluster_scores, contig_reassignments = assessClusters(master_table)
-	logger.debug(pprint.pformat(cluster_scores))
-	iteration += 1
+		reassignClusters(master_table, cluster_reassignments)
+
+		# Carry out assessClusters again for the next round
+		print('Cluster assessment iteration: ' + str(iteration))
+		logger.info('Cluster assessment iteration: ' + str(iteration))
+
+		cluster_scores, contig_reassignments = assessClusters(master_table)
+		logger.debug(pprint.pformat(cluster_scores))
+		iteration += 1
 
 
 # If we are not done, write a new fasta for the next BH_tSNE run
