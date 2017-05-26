@@ -961,15 +961,12 @@ while bad_clusters:
 
 	# Determine if exit condition is met
 	num_bad_clusters = 0
-	for score in cluster_scores:
-		if score < 80:
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] < 80:
 			num_bad_clusters += 1
 
 	if num_bad_clusters == 0:
 		bad_clusters = False
-
-	pdb.set_trace()
-
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
