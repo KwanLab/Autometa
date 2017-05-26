@@ -968,6 +968,8 @@ while bad_clusters:
 	if num_bad_clusters == 0:
 		bad_clusters = False
 
+	pdb.set_trace()
+
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
