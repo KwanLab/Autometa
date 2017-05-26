@@ -958,8 +958,6 @@ while bad_clusters:
 		if cluster_reassignments[contig] not in clusters_to_dissolve:
 			filtered_cluster_reassignments[contig] = cluster_reassignments[contig]
 
-	pdb.set_trace()
-
 	reassignClusters(master_table, filtered_cluster_reassignments)
 
 	# Carry out assessClusters again for the next round
