@@ -596,8 +596,8 @@ def assessClusters(table):
 		else:
 			cluster_counts[current_cluster]['different'] += 1
 
-		if confidence >= 90:
-			contig_reassignments[current_contig] = ML_prediction
+		#if confidence >= 90:
+		contig_reassignments[current_contig] = ML_prediction
 
 	# Determine congruent fractions
 	cluster_results = dict()
