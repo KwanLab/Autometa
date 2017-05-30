@@ -595,10 +595,11 @@ def assessClusters(table):
 		else:
 			cluster_counts[current_cluster]['different'] += 1
 			logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
-
-		if confidence >= 50:
-			#contig_reassignments[current_contig] = ML_prediction
 			contig_reassignments[current_contig] = 'unclustered'
+
+		#if confidence >= 50:
+		#	#contig_reassignments[current_contig] = ML_prediction
+
 
 	# Determine congruent fractions
 	cluster_results = dict()
@@ -925,7 +926,7 @@ iteration += 1
 
 reassignClusters(master_table, contig_reassignments)
 
-cluster_scores = assessClusters(master_table)
+cluster_scores, contig_reassignments = assessClusters(master_table)
 logger.debug(pprint.pformat(cluster_scores))
 iteration += 1
 
