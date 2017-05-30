@@ -971,7 +971,7 @@ while bad_clusters:
 	# Determine if exit condition is met
 	num_bad_clusters = 0
 	for cluster in cluster_scores:
-		if cluster_scores[cluster] < 100:
+		if cluster_scores[cluster] < 90:
 			num_bad_clusters += 1
 
 	if num_bad_clusters == 0:
