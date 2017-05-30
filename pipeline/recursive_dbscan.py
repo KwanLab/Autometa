@@ -531,62 +531,62 @@ def assessClusters(table):
 	cluster_list = subset_table['cluster'].tolist()
 	contig_list = subset_table['contig'].tolist()
 
-	taxonomy_matrix = list()
+	# taxonomy_matrix = list()
 
-	if taxonomy_table_path:
-		phylum_dummy_matrix = pd.get_dummies(subset_table['phylum'])
-		class_dummy_matrix = pd.get_dummies(subset_table['class'])
-		order_dummy_matrix = pd.get_dummies(subset_table['order'])
-		family_dummy_matrix = pd.get_dummies(subset_table['family'])
-		genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
-		species_dummy_martix = pd.get_dummies(subset_table['species'])
+	# if taxonomy_table_path:
+	# 	phylum_dummy_matrix = pd.get_dummies(subset_table['phylum'])
+	# 	class_dummy_matrix = pd.get_dummies(subset_table['class'])
+	# 	order_dummy_matrix = pd.get_dummies(subset_table['order'])
+	# 	family_dummy_matrix = pd.get_dummies(subset_table['family'])
+	# 	genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
+	# 	species_dummy_martix = pd.get_dummies(subset_table['species'])
 
-		for j,contig in enumerate(subset_table['contig']):
-			tax_phylum = list(phylum_dummy_matrix.iloc[j])
-			tax_class = list(class_dummy_matrix.iloc[j])
-			tax_order = list(order_dummy_matrix.iloc[j])
-			tax_family = list(family_dummy_matrix.iloc[j])
-			tax_genus = list(genus_dummy_matrix.iloc[j])
-			tax_species = list(species_dummy_martix.iloc[j])
-			taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-			taxonomy_matrix.append(taxonomy)
+	# 	for j,contig in enumerate(subset_table['contig']):
+	# 		tax_phylum = list(phylum_dummy_matrix.iloc[j])
+	# 		tax_class = list(class_dummy_matrix.iloc[j])
+	# 		tax_order = list(order_dummy_matrix.iloc[j])
+	# 		tax_family = list(family_dummy_matrix.iloc[j])
+	# 		tax_genus = list(genus_dummy_matrix.iloc[j])
+	# 		tax_species = list(species_dummy_martix.iloc[j])
+	# 		taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+	# 		taxonomy_matrix.append(taxonomy)
 
-	# Make normalized k-mer matrix
-	k_mer_counts = list()
-	for contig in contig_list:
-		k_mer_counts.append(k_mer_dict[contig])
+	# # Make normalized k-mer matrix
+	# k_mer_counts = list()
+	# for contig in contig_list:
+	# 	k_mer_counts.append(k_mer_dict[contig])
 
-	normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+	# normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
-	# For performance reasons we reduce the dimensions to 50 with PCA
-	pca = decomposition.PCA(n_components=50)
-	pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+	# # For performance reasons we reduce the dimensions to 50 with PCA
+	# pca = decomposition.PCA(n_components=50)
+	# pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
 
 	for i,row in subset_table.iterrows():
-		current_contig = row['contig']
+		#current_contig = row['contig']
 		current_cluster = row['cluster']
 
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
 
 		# Set up data structures for training/classification
-		contig_index = contig_list.index(current_contig)
+		#contig_index = contig_list.index(current_contig)
 		classification_features = None
 
 		features = list()
 		labels = list()
 
-		for j in range(0, len(contig_list)):
+		for j,subrow in subset_table.iterrows():
 			if taxonomy_table_path:
 				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist())
 			else:
 				current_features = pca_matrix[j]
 
-			if j == contig_index:
+			if j == i:
 				classification_features = np.array([current_features])
 			else:
 				features.append(current_features)
-				labels.append(cluster_list[j])
+				labels.append(subrow['cluster'])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 
@@ -911,6 +911,41 @@ for contig in master_table['contig']:
 		clusters.append('unclustered')
 
 master_table['cluster'] = clusters
+
+# We now set up global data structures to be used in supervised machine learning
+contig_list = master_table['contig'].tolist()
+
+taxonomy_matrix = list()
+
+if taxonomy_table_path:
+	phylum_dummy_matrix = pd.get_dummies(master_table['phylum'])
+	class_dummy_matrix = pd.get_dummies(master_table['class'])
+	order_dummy_matrix = pd.get_dummies(master_table['order'])
+	family_dummy_matrix = pd.get_dummies(master_table['family'])
+	genus_dummy_matrix = pd.get_dummies(master_table['genus'])
+	species_dummy_martix = pd.get_dummies(master_table['species'])
+
+	for j,contig in enumerate(master_table['contig']):
+		tax_phylum = list(phylum_dummy_matrix.iloc[j])
+		tax_class = list(class_dummy_matrix.iloc[j])
+		tax_order = list(order_dummy_matrix.iloc[j])
+		tax_family = list(family_dummy_matrix.iloc[j])
+		tax_genus = list(genus_dummy_matrix.iloc[j])
+		tax_species = list(species_dummy_martix.iloc[j])
+		taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+		taxonomy_matrix.append(taxonomy)
+
+# Make normalized k-mer matrix
+k_mer_counts = list()
+for contig in contig_list:
+	k_mer_counts.append(k_mer_dict[contig])
+
+normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+
+# For performance reasons we reduce the dimensions to 50 with PCA
+pca = decomposition.PCA(n_components=50)
+pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+
 
 # Now we refine the clustering using supervised ML
 all_good_clusters = False
