@@ -924,10 +924,10 @@ cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_sc
 logger.debug(pprint.pformat(cluster_scores))
 iteration += 1
 
-reassignClusters(master_table, contig_reassignments)
-
 bad_clusters = True
 while bad_clusters:
+	reassignClusters(master_table, contig_reassignments)
+
 	print('Cluster assessment iteration: ' + str(iteration))
 	logger.info('Cluster assessment iteration: ' + str(iteration))
 
