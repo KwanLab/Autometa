@@ -591,13 +591,13 @@ def assessClusters(table):
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 		logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
-		if ML_prediction == current_cluster:
+		if ML_prediction == current_cluster or confidence < 50:
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
 
-		#if confidence >= 90:
-		contig_reassignments[current_contig] = ML_prediction
+		if confidence >= 50:
+			contig_reassignments[current_contig] = ML_prediction
 
 	# Determine congruent fractions
 	cluster_results = dict()
