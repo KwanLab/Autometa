@@ -926,9 +926,19 @@ iteration += 1
 
 reassignClusters(master_table, contig_reassignments)
 
-cluster_scores, contig_reassignments = assessClusters(master_table)
-logger.debug(pprint.pformat(cluster_scores))
-iteration += 1
+bad_clusters = True
+while bad_clusters:
+	print('Cluster assessment iteration: ' + str(iteration))
+	logger.info('Cluster assessment iteration: ' + str(iteration))
+
+	cluster_scores, contig_reassignments = assessClusters(master_table)
+	logger.debug(pprint.pformat(cluster_scores))
+	iteration += 1
+
+	bad_clusters = False
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] < 90:
+			bad_clusters = True
 
 
 # # Now we go through the clusters_to_examine list, and reassign the contigs
