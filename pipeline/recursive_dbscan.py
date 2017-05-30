@@ -924,9 +924,30 @@ cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_sc
 logger.debug(pprint.pformat(cluster_scores))
 iteration += 1
 
+good_clusters = dict()
 bad_clusters = True
 while bad_clusters:
-	reassignClusters(master_table, contig_reassignments)
+	# Make note of "good" clusters that are >= 90%
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] >= 90:
+			good_clusters[cluster] = 1
+
+	# Now filter out reassignments according to the running list of "good" clusters
+	contig_clusters = dict()
+	for i,row in master_table.iterrows():
+		contig = row['contig']
+		cluster = row['cluster']
+		contig_clusters[contig] = cluster
+
+	filtered_contig_reassignments = dict()
+	for contig in contig_reassignments:
+		current_cluster = contig_clusters[contig]
+		if current_cluster in good_clusters:
+			continue
+		else:
+			filtered_contig_reassignments[contig] = contig_reassignments[contig]
+
+	reassignClusters(master_table, filtered_contig_reassignments)
 
 	print('Cluster assessment iteration: ' + str(iteration))
 	logger.info('Cluster assessment iteration: ' + str(iteration))
@@ -937,7 +958,7 @@ while bad_clusters:
 
 	bad_clusters = False
 	for cluster in cluster_scores:
-		if cluster_scores[cluster] < 90:
+		if cluster_scores[cluster] < 90 and cluster not in good_clusters:
 			bad_clusters = True
 
 
