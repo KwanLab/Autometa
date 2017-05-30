@@ -563,7 +563,7 @@ def assessClusters(table):
 	# pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
 
 	for i,row in subset_table.iterrows():
-		#current_contig = row['contig']
+		current_contig = row['contig']
 		current_cluster = row['cluster']
 
 		if current_cluster not in cluster_counts:
