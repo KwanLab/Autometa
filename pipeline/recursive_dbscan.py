@@ -932,7 +932,7 @@ while bad_clusters:
 	clusters_to_dissolve = list()
 
 	for cluster in sorted_clusters:
-		if cluster_scores[cluster] < 100:
+		if cluster_scores[cluster] < 90:
 			clusters_to_examine.append(cluster)
 		if cluster_scores[cluster] == 0:
 			clusters_to_dissolve.append(cluster)
