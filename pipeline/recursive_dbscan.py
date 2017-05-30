@@ -590,7 +590,7 @@ def assessClusters(table):
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 
-		if ML_prediction == current_cluster or confidence < 50:
+		if ML_prediction == current_cluster and confidence >= 50:
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
