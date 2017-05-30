@@ -589,15 +589,16 @@ def assessClusters(table):
 				labels.append(cluster_list[j])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
-		logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
 		if ML_prediction == current_cluster or confidence < 50:
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
+			logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 
 		if confidence >= 50:
-			contig_reassignments[current_contig] = ML_prediction
+			#contig_reassignments[current_contig] = ML_prediction
+			contig_reassignments[current_contig] = 'unclustered'
 
 	# Determine congruent fractions
 	cluster_results = dict()
@@ -922,60 +923,67 @@ cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_sc
 logger.debug(pprint.pformat(cluster_scores))
 iteration += 1
 
-# Now we go through the clusters_to_examine list, and reassign the contigs
-# NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
-bad_clusters = True
-while bad_clusters:
-	# We sort the clusters in descending order of cluster score
-	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
-	clusters_to_examine = list()
-	clusters_to_dissolve = list()
+reassignClusters(master_table, contig_reassignments)
 
-	for cluster in sorted_clusters:
-		if cluster_scores[cluster] < 90:
-			clusters_to_examine.append(cluster)
-		if cluster_scores[cluster] == 0:
-			clusters_to_dissolve.append(cluster)
+cluster_scores = assessClusters(master_table)
+logger.debug(pprint.pformat(cluster_scores))
+iteration += 1
 
-	contigs_in_cluster = dict()
-	for cluster in clusters_to_examine:
-		# Reassign contigs in cluster, according to the previous run of assessClusters
+
+# # Now we go through the clusters_to_examine list, and reassign the contigs
+# # NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
+# bad_clusters = True
+# while bad_clusters:
+# 	# We sort the clusters in descending order of cluster score
+# 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
+# 	clusters_to_examine = list()
+# 	clusters_to_dissolve = list()
+
+# 	for cluster in sorted_clusters:
+# 		if cluster_scores[cluster] < 90:
+# 			clusters_to_examine.append(cluster)
+# 		if cluster_scores[cluster] == 0:
+# 			clusters_to_dissolve.append(cluster)
+
+# 	contigs_in_cluster = dict()
+# 	for cluster in clusters_to_examine:
+# 		# Reassign contigs in cluster, according to the previous run of assessClusters
 		
-		for i, row in master_table.iterrows():
-			current_cluster = row['cluster']
-			current_contig = row['contig']
-			if current_cluster == cluster:
-				contigs_in_cluster[current_contig] = 1
+# 		for i, row in master_table.iterrows():
+# 			current_cluster = row['cluster']
+# 			current_contig = row['contig']
+# 			if current_cluster == cluster:
+# 				contigs_in_cluster[current_contig] = 1
 
-	cluster_reassignments = dict()
-	for contig in contig_reassignments:
-		if contig in contigs_in_cluster:
-			cluster_reassignments[contig] = contig_reassignments[contig]
+# 	cluster_reassignments = dict()
+# 	for contig in contig_reassignments:
+# 		if contig in contigs_in_cluster:
+# 			cluster_reassignments[contig] = contig_reassignments[contig]
 
-	# Remove all reassignments TO the clusters_to_dissolve
-	filtered_cluster_reassignments = dict()
-	for contig in cluster_reassignments:
-		if cluster_reassignments[contig] not in clusters_to_dissolve:
-			filtered_cluster_reassignments[contig] = cluster_reassignments[contig]
+# 	# Remove all reassignments TO the clusters_to_dissolve
+# 	filtered_cluster_reassignments = dict()
+# 	for contig in cluster_reassignments:
+# 		if cluster_reassignments[contig] not in clusters_to_dissolve:
+# 			filtered_cluster_reassignments[contig] = cluster_reassignments[contig]
 
-	reassignClusters(master_table, filtered_cluster_reassignments)
+# 	reassignClusters(master_table, filtered_cluster_reassignments)
 
-	# Carry out assessClusters again for the next round
-	print('Cluster assessment iteration: ' + str(iteration))
-	logger.info('Cluster assessment iteration: ' + str(iteration))
+# 	# Carry out assessClusters again for the next round
+# 	print('Cluster assessment iteration: ' + str(iteration))
+# 	logger.info('Cluster assessment iteration: ' + str(iteration))
 
-	cluster_scores, contig_reassignments = assessClusters(master_table)
-	logger.debug(pprint.pformat(cluster_scores))
-	iteration += 1
+# 	cluster_scores, contig_reassignments = assessClusters(master_table)
+# 	logger.debug(pprint.pformat(cluster_scores))
+# 	iteration += 1
 
-	# Determine if exit condition is met
-	num_bad_clusters = 0
-	for cluster in cluster_scores:
-		if cluster_scores[cluster] < 90:
-			num_bad_clusters += 1
+# 	# Determine if exit condition is met
+# 	num_bad_clusters = 0
+# 	for cluster in cluster_scores:
+# 		if cluster_scores[cluster] < 90:
+# 			num_bad_clusters += 1
 
-	if num_bad_clusters == 0:
-		bad_clusters = False
+# 	if num_bad_clusters == 0:
+# 		bad_clusters = False
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
