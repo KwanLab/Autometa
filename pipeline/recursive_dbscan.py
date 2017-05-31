@@ -562,7 +562,7 @@ def assessClusters(table):
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
-			logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
+			logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence: ' + str(confidence))
 			contig_reassignments[current_contig] = 'unclustered'
 
 	# Determine congruent fractions
@@ -580,6 +580,50 @@ def reassignClusters(table, reassignments):
 		current_contig = row['contig']
 		if current_contig in reassignments:
 			table.ix[i, 'cluster'] = reassignments[current_contig]
+
+def classifyContigs(table):
+	contig_reassignments = dict()
+
+	training_table = table.loc[table['cluster'] != 'unclustered']
+	sample_table = table.loc[table['cluster'] == 'unclustered']
+
+	# Make training set
+	features = list()
+	labels = list()
+	for i,row in training_table.iterrows():
+		current_cluster = row['cluster']
+
+		if taxonomy_table_path:
+			current_features = np.array(taxonomy_matrix[i] + pca_matrix[i].tolist())
+		else:
+			current_features = pca_matrix[i]
+
+		features.append(current_features)
+		labels.append(current_cluster)
+
+	for i,row in sample_table.iterrows():
+		current_contig = row['contig']
+		if taxonomy_table_path:
+			current_features = np.array(taxonomy_matrix[i] + pca_matrix[i].tolist())
+		else:
+			current_features = pca_matrix[i]
+
+		classification_features = np.array([current_features])
+
+		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
+		redundant = redundant_marker_prediction(current_contig, ML_prediction, table, 'cluster')
+
+		if confidence >= 90 and not redundant:
+			logger.debug('classifyContigs: contig ' + current_contig + ', assigned to: ' + ML_prediction + ', confidence: ' + str(confidence))
+			contig_reassignments[current_contig] = ML_prediction
+		elif confidence >= 90 and redundant:
+			logger.debug('classifyContigs: contig ' + current_contig + ', not reassigned because redundant. Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
+		else:
+			logger.debug('classifyContigs: contig ' + current_contig + ', not reassigned because of low confidence and/or redundancy. Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
+
+	return contig_reassignments
+
+
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -922,8 +966,8 @@ all_good_clusters = False
 iteration = 0
 
 # Do initial iteration, where we generate the first scores
-print('Cluster assessment iteration: ' + str(iteration))
-logger.info('Cluster assessment iteration: ' + str(iteration))
+print('Cluster pruning iteration: ' + str(iteration))
+logger.info('Cluster pruning iteration: ' + str(iteration))
 cluster_scores, contig_reassignments = assessClusters(master_table) # cluster_scores pre-sorted in ascending order
 
 logger.debug(pprint.pformat(cluster_scores))
@@ -954,8 +998,8 @@ while bad_clusters:
 
 	reassignClusters(master_table, filtered_contig_reassignments)
 
-	print('Cluster assessment iteration: ' + str(iteration))
-	logger.info('Cluster assessment iteration: ' + str(iteration))
+	print('Cluster pruning iteration: ' + str(iteration))
+	logger.info('Cluster pruning iteration: ' + str(iteration))
 
 	cluster_scores, contig_reassignments = assessClusters(master_table)
 	logger.debug(pprint.pformat(cluster_scores))
@@ -966,7 +1010,11 @@ while bad_clusters:
 		if cluster_scores[cluster] < 90 and cluster not in good_clusters:
 			bad_clusters = True
 
-
+### Now we classify the unclustered fraction to our refined training set. 
+print('Cluster ML recruitment')
+logger.info('Cluster ML recruitment')
+contig_reassignments = classifyContigs(master_table)
+reassignClusters(master_table, contig_reassignments)
 
 
 # If we are not done, write a new fasta for the next BH_tSNE run
