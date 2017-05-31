@@ -771,6 +771,9 @@ else:
 		matrix.write(output_line + '\n')
 	matrix.close()
 
+### Initial clustering, based on taxonomy (if available) and K-mer frequency analysis
+### Clustering validation is through single-copy marker analysis
+
 # Run BH_tSNE
 BH_tSNE_counter += 1
 logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
@@ -875,6 +878,9 @@ for contig in master_table['contig']:
 		clusters.append('unclustered')
 
 master_table['cluster'] = clusters
+
+### Pruning of clusters through supervised machine learning classification
+### Based on whether each contig re-classifies to the same cluster when it is taken out of the training set
 
 # We now set up global data structures to be used in supervised machine learning
 contig_list = master_table['contig'].tolist()
