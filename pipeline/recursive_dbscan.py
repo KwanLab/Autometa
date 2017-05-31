@@ -964,7 +964,7 @@ bad_clusters = True
 while bad_clusters:
 	# Make note of "good" clusters that are >= 90%
 	for cluster in cluster_scores:
-		if cluster_scores[cluster] >= 90:
+		if cluster_scores[cluster] == 100:
 			good_clusters[cluster] = 1
 
 	# Now filter out reassignments according to the running list of "good" clusters
