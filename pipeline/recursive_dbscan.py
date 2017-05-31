@@ -531,37 +531,6 @@ def assessClusters(table):
 	cluster_list = subset_table['cluster'].tolist()
 	contig_list = subset_table['contig'].tolist()
 
-	# taxonomy_matrix = list()
-
-	# if taxonomy_table_path:
-	# 	phylum_dummy_matrix = pd.get_dummies(subset_table['phylum'])
-	# 	class_dummy_matrix = pd.get_dummies(subset_table['class'])
-	# 	order_dummy_matrix = pd.get_dummies(subset_table['order'])
-	# 	family_dummy_matrix = pd.get_dummies(subset_table['family'])
-	# 	genus_dummy_matrix = pd.get_dummies(subset_table['genus'])
-	# 	species_dummy_martix = pd.get_dummies(subset_table['species'])
-
-	# 	for j,contig in enumerate(subset_table['contig']):
-	# 		tax_phylum = list(phylum_dummy_matrix.iloc[j])
-	# 		tax_class = list(class_dummy_matrix.iloc[j])
-	# 		tax_order = list(order_dummy_matrix.iloc[j])
-	# 		tax_family = list(family_dummy_matrix.iloc[j])
-	# 		tax_genus = list(genus_dummy_matrix.iloc[j])
-	# 		tax_species = list(species_dummy_martix.iloc[j])
-	# 		taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-	# 		taxonomy_matrix.append(taxonomy)
-
-	# # Make normalized k-mer matrix
-	# k_mer_counts = list()
-	# for contig in contig_list:
-	# 	k_mer_counts.append(k_mer_dict[contig])
-
-	# normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
-
-	# # For performance reasons we reduce the dimensions to 50 with PCA
-	# pca = decomposition.PCA(n_components=50)
-	# pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
-
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
 		current_cluster = row['cluster']
@@ -570,7 +539,6 @@ def assessClusters(table):
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
 
 		# Set up data structures for training/classification
-		#contig_index = contig_list.index(current_contig)
 		classification_features = None
 
 		features = list()
@@ -596,10 +564,6 @@ def assessClusters(table):
 			cluster_counts[current_cluster]['different'] += 1
 			logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence ' + str(confidence))
 			contig_reassignments[current_contig] = 'unclustered'
-
-		#if confidence >= 50:
-		#	#contig_reassignments[current_contig] = ML_prediction
-
 
 	# Determine congruent fractions
 	cluster_results = dict()
@@ -997,60 +961,7 @@ while bad_clusters:
 			bad_clusters = True
 
 
-# # Now we go through the clusters_to_examine list, and reassign the contigs
-# # NOTE: right now we are not checking confidence levels or redundancy, just to see what happens
-# bad_clusters = True
-# while bad_clusters:
-# 	# We sort the clusters in descending order of cluster score
-# 	sorted_clusters = sorted(cluster_scores, key=cluster_scores.__getitem__, reverse=True)
-# 	clusters_to_examine = list()
-# 	clusters_to_dissolve = list()
 
-# 	for cluster in sorted_clusters:
-# 		if cluster_scores[cluster] < 90:
-# 			clusters_to_examine.append(cluster)
-# 		if cluster_scores[cluster] == 0:
-# 			clusters_to_dissolve.append(cluster)
-
-# 	contigs_in_cluster = dict()
-# 	for cluster in clusters_to_examine:
-# 		# Reassign contigs in cluster, according to the previous run of assessClusters
-		
-# 		for i, row in master_table.iterrows():
-# 			current_cluster = row['cluster']
-# 			current_contig = row['contig']
-# 			if current_cluster == cluster:
-# 				contigs_in_cluster[current_contig] = 1
-
-# 	cluster_reassignments = dict()
-# 	for contig in contig_reassignments:
-# 		if contig in contigs_in_cluster:
-# 			cluster_reassignments[contig] = contig_reassignments[contig]
-
-# 	# Remove all reassignments TO the clusters_to_dissolve
-# 	filtered_cluster_reassignments = dict()
-# 	for contig in cluster_reassignments:
-# 		if cluster_reassignments[contig] not in clusters_to_dissolve:
-# 			filtered_cluster_reassignments[contig] = cluster_reassignments[contig]
-
-# 	reassignClusters(master_table, filtered_cluster_reassignments)
-
-# 	# Carry out assessClusters again for the next round
-# 	print('Cluster assessment iteration: ' + str(iteration))
-# 	logger.info('Cluster assessment iteration: ' + str(iteration))
-
-# 	cluster_scores, contig_reassignments = assessClusters(master_table)
-# 	logger.debug(pprint.pformat(cluster_scores))
-# 	iteration += 1
-
-# 	# Determine if exit condition is met
-# 	num_bad_clusters = 0
-# 	for cluster in cluster_scores:
-# 		if cluster_scores[cluster] < 90:
-# 			num_bad_clusters += 1
-
-# 	if num_bad_clusters == 0:
-# 		bad_clusters = False
 
 # If we are not done, write a new fasta for the next BH_tSNE run
 # First convert the r table to a pandas table
