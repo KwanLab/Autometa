@@ -613,10 +613,10 @@ def classifyContigs(table):
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 		redundant = redundant_marker_prediction(current_contig, ML_prediction, table, 'cluster')
 
-		if confidence >= 90 and not redundant:
+		if confidence >= 50 and not redundant:
 			logger.debug('classifyContigs: contig ' + current_contig + ', assigned to: ' + ML_prediction + ', confidence: ' + str(confidence))
 			contig_reassignments[current_contig] = ML_prediction
-		elif confidence >= 90 and redundant:
+		elif confidence >= 50 and redundant:
 			logger.debug('classifyContigs: contig ' + current_contig + ', not reassigned because redundant. Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
 		else:
 			logger.debug('classifyContigs: contig ' + current_contig + ', not reassigned because of low confidence and/or redundancy. Prediction: ' + ML_prediction + ', confidence: ' + str(confidence))
