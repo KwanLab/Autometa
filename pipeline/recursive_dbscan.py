@@ -27,11 +27,13 @@ import numpy as np
 import logging
 import subprocess
 import getpass
-import time 
+import time
 from joblib import Parallel, delayed
 import random
 import pprint
 import pdb
+
+pd.options.mode.chained_assignment = None # default='warn'
 
 #logger
 logger = logging.getLogger('recursive_dbscan.py')
@@ -264,7 +266,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	# Subset the data frame
 	subset_other_db_table = copy.deepcopy(best_db_table)
-	
+
 	for cluster in complete_and_pure_clusters:
 		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
 
@@ -281,7 +283,7 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
 	unclustered = subset_other_db_table
 
-	# We now make a data structure containing cluster information for complete clusters only 
+	# We now make a data structure containing cluster information for complete clusters only
 	output_cluster_info = {}
 	output_contig_cluster = {}
 	for cluster in complete_and_pure_clusters:
@@ -345,7 +347,7 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 			normalized_list.append(float(count)/total_count)
 
 		# Now we calculate the Centered log-ratio (CLR) transformation
-		# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and 
+		# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and
 		# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
 		geometric_mean = stats.mstats.gmean(normalized_list)
 		clr_list = list()
@@ -359,7 +361,7 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 	return k_mer_frequency_matrix
 
 def run_BH_tSNE(output_filename,table, do_pca=True):
-	
+
 	pca_dimensions = 50
 	perplexity = 30.0
 
@@ -374,7 +376,7 @@ def run_BH_tSNE(output_filename,table, do_pca=True):
 		logger.info('run_BH_tSNE: Running k-mer based binning...')
 		# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
 
-		# We make a submatrix, consisting of the contigs in the table 
+		# We make a submatrix, consisting of the contigs in the table
 		k_mer_counts_submatrix = list()
 		for i,row in table.iterrows():
 			k_mer_counts_submatrix.append(k_mer_counts[i])
@@ -410,7 +412,7 @@ def run_BH_tSNE(output_filename,table, do_pca=True):
 		logger.info('run_BH_tSNE: Outputting file ' + output_filename)
 
 		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
-		
+
 		bh_tsne_x = list()
 		bh_tsne_y = list()
 
@@ -418,10 +420,10 @@ def run_BH_tSNE(output_filename,table, do_pca=True):
 			bh_tsne_x.append(bh_tsne_matrix[i][0])
 			bh_tsne_y.append(bh_tsne_matrix[i][1])
 
-		table['bh_tsne_x'] = Series(bh_tsne_x, index = table.index)
-		table['bh_tsne_y'] = Series(bh_tsne_y, index = table.index)
+		table['bh_tsne_x'] = pd.Series(bh_tsne_x, index = table.index)
+		table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
 
-		table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)		
+		table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)
 
 def jackknife_training(features,labels,random_number):
 	#Function to randomly subsample data into halves (hence 0.5), train
@@ -453,7 +455,7 @@ def calculate_bootstap_replicates(feature_array, features, labels, iterations = 
 		for i in range(0, iterations):
 			number = random.randint(0, 65535)
 			random_numbers.append(number)
-		
+
 		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in random_numbers)
 	else:
 		ML_prediction = ML_parallel(feature_array, features, labels, 1)
@@ -478,13 +480,13 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
         if cluster_df['num_single_copies'].iloc[count] > 0:
             contig_PFAMs = cluster_df['single_copy_PFAMs'].iloc[count].split(",")
             cluster_PFAMs += contig_PFAMs
-    contig_index = list(pandas_table['contig']).index(contig_name)
+    contig_index = pandas_table[pandas_table['contig'] == contig_name].index.tolist()
     #contig_df = pandas_table.loc[(pandas_table.contig == contig_name)]
     redundancy = False
     #if len(contig_PFAMs) > 0:
     #Avoid non-marker contigs in this calculation, for some reason evaluating to floats..
-    if not isinstance(pandas_table.iloc[contig_index]['single_copy_PFAMs'],float):
-        contig_PFAMs = pandas_table['single_copy_PFAMs'][contig_index].split(",")
+    if not isinstance(pandas_table['single_copy_PFAMs'][contig_index[0]],float):
+        contig_PFAMs = pandas_table['single_copy_PFAMs'][contig_index[0]].split(",")
         for PFAM in contig_PFAMs:
             if PFAM in cluster_PFAMs:
                 redundancy = True
@@ -589,6 +591,7 @@ def classifyContigs(table):
 
 		classification_features = np.array([current_features])
 
+		logger.debug('classifyContigs: considering ' + current_contig)
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 		redundant = redundant_marker_prediction(current_contig, ML_prediction, table, 'cluster')
 
@@ -607,7 +610,7 @@ def classifyContigs(table):
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
 parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
-parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True) 
+parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True)
 parser.add_argument('-o','--outdir', help='Path of directory for output', required=True)
 parser.add_argument('-c','--contigtable', help='Output of make_contig_table.py', required=True)
 parser.add_argument('-p','--processors', help='Number of processors used', default=1)
@@ -685,9 +688,10 @@ with open(contig_table, 'r') as old_contig_table:
 			contig = line_list[0]
 			pfam_total = 0
 			pfam_list = list()
-			for pfam in contig_markers[contig]:
-				pfam_list.append(pfam)
-				pfam_total += contig_markers[contig][pfam]
+			if contig in contig_markers:
+				for pfam in contig_markers[contig]:
+					pfam_list.append(pfam)
+					pfam_total += contig_markers[contig][pfam]
 			pfam_string = ','.join(pfam_list)
 
 			new_contig_table.write(line.rstrip() + '\t' + pfam_string + '\t' + str(pfam_total) + '\n')
@@ -820,11 +824,13 @@ normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 pca = decomposition.PCA(n_components=50)
 pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
 
+# Add empty 'cluster' column to fill up later
+master_table['cluster'] = 'unclustered'
+master_table['bh_tsne_x'] = 0
+master_table['bh_tsne_y'] = 0
+
 # We subset the table to include only contigs with marker genes, and this subset will then be clustered.
 current_table = master_table.loc[master_table['num_single_copies'] != 0]
-
-# Add empty 'cluster' column to fill up later
-current_table['cluster'] = np.nan
 
 ### Initial clustering, based on taxonomy (if available) and K-mer frequency analysis
 ### Clustering validation is through single-copy marker analysis
@@ -840,19 +846,21 @@ BH_tSNE_counter = 0
 # This is the main iteration loop
 # The loop breaks when BH-tSNE no longer can yield any more complete and pure clusters
 while True:
-	iteration_table = current_table
 	# Run BH_tSNE
 	BH_tSNE_counter += 1
 	logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
 	current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
 	# Carry out first BH_tSNE run
-	run_BH_tSNE(current_BH_tSNE_output,current_table)
+	run_BH_tSNE(current_BH_tSNE_output,current_table) # Updates current_table with bh_tsne_x and bh_tsne_y
+	# Update master_table
+	master_table.update(current_table)
 
 	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
 
 	# Now if we have taxonomy data we do another round of clustering
 	if taxonomy_info:
 		local_BH_tSNE_round = 0
+		local_current_table = copy.deepcopy(current_table)
 
 		taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
 		logger.info('Further splitting according to taxonomic classifications')
@@ -862,7 +870,7 @@ while True:
 
 			# Make subtables for each type of classification at the current level
 			classification_dict = dict()
-			for i,row in current_table.iterrows():
+			for i,row in local_current_table.iterrows():
 				classification_dict[row[taxonomic_level]] = 1
 
 			# Skip iteration if the current taxonomic level is empty
@@ -872,7 +880,7 @@ while True:
 			for classification in classification_dict.keys():
 				logger.info('Examining ' + classification)
 				# Get subset table
-				subset_table = current_table.loc[current_table[taxonomic_level] == classification]
+				subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
 
 				while True:
 					if len(subset_table.index) < 1:
@@ -880,6 +888,7 @@ while True:
 					round_counter += 1
 					local_BH_tSNE_round += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
+
 					db_tables = runDBSCANs(subset_table)
 					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
@@ -895,23 +904,27 @@ while True:
 
 					for contig in contig_cluster_dictionary:
 						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-						table_indices = current_table[current_table['contig'] == contig].index.tolist()
-						master_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+						table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
+						local_current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
 
 				# Add unclustered_table to combined unclustered dataframe
 				unclustered_table = unclustered_table.append(local_unclustered_table)
 
-			current_table = copy.deepcopy(unclustered_table)
+			current_table.update(local_current_table)
+
+			#current_table = copy.deepcopy(unclustered_table)
+			local_current_table = unclustered_table
 	else:
+		local_current_table = copy.deepcopy(current_table)
 		local_BH_tSNE_round = 0
 		while True:
 			round_counter += 1
 			local_BH_tSNE_round += 1
 			logger.info('Running DBSCAN round ' + str(round_counter))
 
-			db_tables = runDBSCANs(current_table)
+			db_tables = runDBSCANs(local_current_table)
 			cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-			current_table = unclustered_table
+			local_current_table = unclustered_table
 
 			if not cluster_information:
 				break
@@ -924,12 +937,13 @@ while True:
 			for contig in contig_cluster_dictionary:
 				new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 				table_indices = current_table[current_table['contig'] == contig].index.tolist()
-				master_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+				current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
 
 	if local_BH_tSNE_round == 1:
 		# This means that after the first BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
 		break
 
+	master_table.update(current_table)
 
 	### Pruning of clusters through supervised machine learning classification
 	### Based on whether each contig re-classifies to the same cluster when it is taken out of the training set
@@ -941,7 +955,8 @@ while True:
 	# Do initial iteration, where we generate the first scores
 	print('Cluster pruning iteration: ' + str(iteration))
 	logger.info('Cluster pruning iteration: ' + str(iteration))
-	cluster_scores, contig_reassignments = ML_assessClusters(iteration_table) # cluster_scores pre-sorted in ascending order
+
+	cluster_scores, contig_reassignments = ML_assessClusters(current_table) # cluster_scores pre-sorted in ascending order
 
 	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
@@ -969,12 +984,13 @@ while True:
 			else:
 				filtered_contig_reassignments[contig] = contig_reassignments[contig]
 
-		reassignClusters(iteration_table, filtered_contig_reassignments)
+		reassignClusters(current_table, filtered_contig_reassignments)
+		master_table.update(current_table)
 
 		print('Cluster pruning iteration: ' + str(iteration))
 		logger.info('Cluster pruning iteration: ' + str(iteration))
 
-		cluster_scores, contig_reassignments = ML_assessClusters(iteration_table)
+		cluster_scores, contig_reassignments = ML_assessClusters(current_table)
 		logger.debug(pprint.pformat(cluster_scores))
 		iteration += 1
 
@@ -983,14 +999,15 @@ while True:
 			if cluster_scores[cluster] < 90 and cluster not in good_clusters:
 				bad_clusters = True
 
-	### Now we classify the unclustered fraction to our refined training set. 
+	### Now we classify the unclustered fraction to our refined training set.
 	print('Cluster ML recruitment')
 	logger.info('Cluster ML recruitment')
-	contig_reassignments = classifyContigs(iteration_table)
-	reassignClusters(iteration_table, contig_reassignments)
+	contig_reassignments = classifyContigs(current_table)
+	reassignClusters(current_table, contig_reassignments)
+	master_table.update(current_table)
 
 	### Set up the next iteration
-	current_table = iteration_table.loc[iteration_table['cluster'] == 'unclustered']
+	current_table = current_table.loc[current_table['cluster'] == 'unclustered']
 
 
 # If we are not done, write a new fasta for the next BH_tSNE run
@@ -1035,7 +1052,7 @@ for cluster in summary_info:
 	summary_table.write(outputString)
 summary_table.close()
 
-# Now for each 'complete' cluster, we output a separate fasta file.  We collect all contigs from the 'failed' and 'noise' clusters and 
+# Now for each 'complete' cluster, we output a separate fasta file.  We collect all contigs from the 'failed' and 'noise' clusters and
 # output them to one fasta (unclustered.fasta)
 
 # Initialize output fasta lists
@@ -1047,7 +1064,7 @@ for i, row in master_table.iterrows():
 	seq_record = assembly_seqs[contig]
 	if cluster in output_fastas:
 		output_fastas[cluster].append(seq_record)
-	else: 
+	else:
 		output_fastas[cluster] = [ seq_record ]
 
 # Now write fasta files
