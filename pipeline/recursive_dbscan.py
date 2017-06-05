@@ -857,8 +857,10 @@ while True:
 
 	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
 
+	data_size = len(current_table.index)
+
 	# Now if we have taxonomy data we do another round of clustering
-	if taxonomy_info:
+	if taxonomy_info and data_size > 50:
 		local_BH_tSNE_round = 0
 		local_current_table = copy.deepcopy(current_table)
 
