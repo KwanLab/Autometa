@@ -47,6 +47,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 def dbscan_simple(table, eps):
 	table_copy = copy.deepcopy(table)
+	table_size = len(table.index)
+	logger.debug('dbscan_simple, eps: ' + str(eps) + ', table_size: ' + str(table_size))
 	# Delete db_cluster column
 	if 'db_cluster' in table_copy:
 		table_copy.drop('db_cluster')
@@ -511,10 +513,16 @@ def ML_assessClusters(table):
 	# For each contig we make a new training set
 	cluster_list = subset_table['cluster'].tolist()
 	contig_list = subset_table['contig'].tolist()
+	cluster_contig_counts = dict()
 
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
 		current_cluster = row['cluster']
+
+		if cluster in cluster_contig_counts:
+			cluster_contig_counts[cluster] += 1
+		else:
+			cluster_contig_counts[cluster] = 1
 
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
@@ -553,6 +561,12 @@ def ML_assessClusters(table):
 		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
 		cluster_results[cluster] = percentage
 
+	# For clusters with only one contig, we assign a value of 100
+	# This ensures that genomes assembled to one contig are not misassigned to some other cluster down the line
+	for cluster in cluster_contig_counts:
+		if cluster_contig_counts[cluster] == 1:
+			cluster_results[cluster] = 100.0
+	
 	return cluster_results, contig_reassignments
 
 def reassignClusters(table, reassignments):
@@ -846,6 +860,11 @@ BH_tSNE_counter = 0
 # This is the main iteration loop
 # The loop breaks when BH-tSNE no longer can yield any more complete and pure clusters
 while True:
+	data_size = len(current_table.index)
+	# If there are two few datapoints we get errors in BH-tSNE
+	if data_size <= 10:
+		break
+
 	# Run BH_tSNE
 	BH_tSNE_counter += 1
 	logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
@@ -856,8 +875,6 @@ while True:
 	master_table.update(current_table)
 
 	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
-
-	data_size = len(current_table.index)
 
 	# Now if we have taxonomy data we do another round of clustering
 	if taxonomy_info and data_size > 50:
@@ -1012,16 +1029,17 @@ while True:
 	current_table = current_table.loc[current_table['cluster'] == 'unclustered']
 
 
-# If we are not done, write a new fasta for the next BH_tSNE run
-# First convert the r table to a pandas table
-#unclustered_pd = pandas2ri.ri2py(current_r_table)
-unclustered_seqrecords = []
-for i, row in unclustered_table.iterrows():
-	contig = row['contig']
-	unclustered_seqrecords.append(assembly_seqs[contig])
+	# If we are not done, write a new fasta for the next BH_tSNE run
+	# First convert the r table to a pandas table
+	#unclustered_pd = pandas2ri.ri2py(current_r_table)
+	unclustered_seqrecords = []
+	for i, row in unclustered_table.iterrows():
+		contig = row['contig']
+		unclustered_seqrecords.append(assembly_seqs[contig])
 
-current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
-SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
+	current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
+	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
+
 
 # Output master_table
 master_table_path = outdir + '/full_table'
