@@ -566,7 +566,7 @@ def ML_assessClusters(table):
 	for cluster in cluster_contig_counts:
 		if cluster_contig_counts[cluster] == 1:
 			cluster_results[cluster] = 100.0
-	
+
 	return cluster_results, contig_reassignments
 
 def reassignClusters(table, reassignments):
@@ -1039,6 +1039,11 @@ while True:
 
 	current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
 	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
+
+	# Right now the iteration doesn't happen because it seems to be counter-productive
+	# at least in some situations. The structure is left here so that it can be turned on
+	# to conduct experiments - just delete the break command below
+	break
 
 
 # Output master_table
