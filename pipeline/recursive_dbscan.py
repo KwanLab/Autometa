@@ -48,7 +48,7 @@ pp = pprint.PrettyPrinter(indent=4)
 def dbscan_simple(table, eps):
 	table_copy = copy.deepcopy(table)
 	table_size = len(table.index)
-	logger.debug('dbscan_simple, eps: ' + str(eps) + ', table_size: ' + str(table_size))
+	#logger.debug('dbscan_simple, eps: ' + str(eps) + ', table_size: ' + str(table_size))
 	# Delete db_cluster column
 	if 'db_cluster' in table_copy:
 		table_copy.drop('db_cluster')
@@ -519,10 +519,10 @@ def ML_assessClusters(table):
 		current_contig = row['contig']
 		current_cluster = row['cluster']
 
-		if cluster in cluster_contig_counts:
-			cluster_contig_counts[cluster] += 1
+		if current_cluster in cluster_contig_counts:
+			cluster_contig_counts[current_cluster] += 1
 		else:
-			cluster_contig_counts[cluster] = 1
+			cluster_contig_counts[current_cluster] = 1
 
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
