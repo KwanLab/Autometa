@@ -514,10 +514,13 @@ def ML_assessClusters(table):
 	cluster_list = subset_table['cluster'].tolist()
 	contig_list = subset_table['contig'].tolist()
 	cluster_contig_counts = dict()
+	current_contig_assignments = dict()
 
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
 		current_cluster = row['cluster']
+
+		current_contig_assignments[current_contig] = current_cluster
 
 		if current_cluster in cluster_contig_counts:
 			cluster_contig_counts[current_cluster] += 1
@@ -566,6 +569,12 @@ def ML_assessClusters(table):
 	for cluster in cluster_contig_counts:
 		if cluster_contig_counts[cluster] == 1:
 			cluster_results[cluster] = 100.0
+
+			# Delete reassignments
+			for contig in current_contig_assignments:
+				if current_contig_assignments[contig] == cluster:
+					contig_reassignments.pop(contig, None)
+					break
 
 	return cluster_results, contig_reassignments
 
@@ -652,7 +661,7 @@ taxonomy_info = dict()
 if taxonomy_table_path:
 	taxonomy_table = pd.read_table(taxonomy_table_path)
 	for i,row in taxonomy_table.iterrows():
-		taxonomy_info[row['contig']] = { 'phylum': row['phylum'], 'class': row['class'], 'order': row['order'], 'family': row['family'], 'genus': row['genus'], 'species': row['species']}
+		taxonomy_info[row['contig']] = { 'kingdom': row['kingdom'], 'phylum': row['phylum'], 'class': row['class'], 'order': row['order'], 'family': row['family'], 'genus': row['genus'], 'species': row['species']}
 
 	# Make combined contig table
 	new_contig_table_path = contig_table + '.taxonomy'
@@ -660,11 +669,11 @@ if taxonomy_table_path:
 	with open(contig_table, 'r') as old_contig_table:
 		for i,line in enumerate(old_contig_table):
 			if i == 0:
-				new_contig_table.write(line.rstrip() + '\tphylum\tclass\torder\tfamily\tgenus\tspecies\n')
+				new_contig_table.write(line.rstrip() + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\n')
 			else:
 				line_list = line.rstrip().split('\t')
 				contig = line_list[0]
-				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\n')
+				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['kingdom'] + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\n')
 	new_contig_table.close()
 	contig_table = new_contig_table_path
 
@@ -881,7 +890,7 @@ while True:
 		local_BH_tSNE_round = 0
 		local_current_table = copy.deepcopy(current_table)
 
-		taxonomic_levels = ['phylum', 'class', 'order', 'family', 'genus', 'species']
+		taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 		logger.info('Further splitting according to taxonomic classifications')
 		for taxonomic_level in taxonomic_levels:
 			logger.info('Taxonomic level: ' + taxonomic_level)
