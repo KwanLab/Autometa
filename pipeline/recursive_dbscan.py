@@ -504,7 +504,7 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
     return redundancy
 
-def ML_assessClusters(table):
+def ML_assessClusters(table, confidence_cutoff = 50, clusters_to_examine = None):
 	cluster_counts = dict() # Keyed by cluster, holds totals for 'congruent' classification or 'different' classification
 	contig_reassignments = dict()
 
@@ -513,19 +513,23 @@ def ML_assessClusters(table):
 	# For each contig we make a new training set
 	cluster_list = subset_table['cluster'].tolist()
 	contig_list = subset_table['contig'].tolist()
-	cluster_contig_counts = dict()
-	current_contig_assignments = dict()
+	#cluster_contig_counts = dict()
+	#current_contig_assignments = dict()
 
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
 		current_cluster = row['cluster']
 
-		current_contig_assignments[current_contig] = current_cluster
+		if clusters_to_examine is not None:
+			if current_cluster not in clusters_to_examine:
+				continue
 
-		if current_cluster in cluster_contig_counts:
-			cluster_contig_counts[current_cluster] += 1
-		else:
-			cluster_contig_counts[current_cluster] = 1
+		#current_contig_assignments[current_contig] = current_cluster
+
+		#if current_cluster in cluster_contig_counts:
+		#	cluster_contig_counts[current_cluster] += 1
+		#else:
+		#	cluster_contig_counts[current_cluster] = 1
 
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
@@ -544,13 +548,16 @@ def ML_assessClusters(table):
 
 			if j == i:
 				classification_features = np.array([current_features])
+				## Comment out the following if you want the contig being assessed to be taken out of the training set
+				#features.append(current_features)
+				#labels.append(subrow['cluster'])
 			else:
 				features.append(current_features)
 				labels.append(subrow['cluster'])
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 
-		if ML_prediction == current_cluster and confidence >= 50:
+		if ML_prediction == current_cluster and confidence >= confidence_cutoff:
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
@@ -564,17 +571,17 @@ def ML_assessClusters(table):
 		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
 		cluster_results[cluster] = percentage
 
-	# For clusters with only one contig, we assign a value of 100
-	# This ensures that genomes assembled to one contig are not misassigned to some other cluster down the line
-	for cluster in cluster_contig_counts:
-		if cluster_contig_counts[cluster] == 1:
-			cluster_results[cluster] = 100.0
-
-			# Delete reassignments
-			for contig in current_contig_assignments:
-				if current_contig_assignments[contig] == cluster:
-					contig_reassignments.pop(contig, None)
-					break
+	## For clusters with only one contig, we assign a value of 100
+	## This ensures that genomes assembled to one contig are not misassigned to some other cluster down the line
+	#for cluster in cluster_contig_counts:
+	#	if cluster_contig_counts[cluster] == 1:
+	#		cluster_results[cluster] = 100.0
+	#
+	#		# Delete reassignments
+	#		for contig in current_contig_assignments:
+	#			if current_contig_assignments[contig] == cluster:
+	#				contig_reassignments.pop(contig, None)
+	#				break
 
 	return cluster_results, contig_reassignments
 
@@ -583,7 +590,13 @@ def reassignClusters(table, reassignments):
 	for i, row in table.iterrows():
 		current_contig = row['contig']
 		if current_contig in reassignments:
-			table.ix[i, 'cluster'] = reassignments[current_contig]
+			if reassignments[current_contig] == 'unclustered':
+				table.ix[i, 'cluster'] = reassignments[current_contig]
+			else:
+				redundant = redundant_marker_prediction(current_contig, reassignments[current_contig], table, 'cluster')
+				logger.debug(current_contig + ' predicted to be in cluster ' + reassignments[current_contig] + ' but add redundancy')
+				if not redundant:
+					table.ix[i, 'cluster'] = reassignments[current_contig]
 
 def classifyContigs(table):
 	contig_reassignments = dict()
@@ -628,7 +641,21 @@ def classifyContigs(table):
 
 	return contig_reassignments
 
+def findSingletons(table):
+	cluster_contig_counts = dict()
+	for i,row in table.iterrows():
+		current_cluster = row['cluster']
+		if current_cluster in cluster_contig_counts:
+			cluster_contig_counts[current_cluster] += 1
+		else:
+			cluster_contig_counts[current_cluster] = 1
 
+	singletons_found = dict()
+	for cluster in cluster_contig_counts:
+		if cluster_contig_counts[cluster] == 1:
+			singletons_found[cluster] = 1
+
+	return singletons_found
 
 parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -871,6 +898,8 @@ BH_tSNE_counter = 0
 while True:
 	data_size = len(current_table.index)
 	# If there are two few datapoints we get errors in BH-tSNE
+	# It's worth noting here that if we break at the first iteration we will have problems, but then
+	# again, it is unlikely the user will want to bin 10 contigs or less.
 	if data_size <= 10:
 		break
 
@@ -991,11 +1020,25 @@ while True:
 
 	good_clusters = dict()
 	bad_clusters = True
+
+	#singletons = findSingletons(current_table)
+	#for cluster in singletons:
+	#	good_clusters[cluster] = 1
+	#	cluster_scores[cluster] = 100
+
 	while bad_clusters:
+		clusters_to_consider = dict()
 		# Make note of "good" clusters that are >= 100%
 		for cluster in cluster_scores:
 			if cluster_scores[cluster] == 100:
 				good_clusters[cluster] = 1
+			else:
+				clusters_to_consider[cluster] = 1
+
+		#singletons = findSingletons(current_table)
+		#for cluster in singletons:
+		#	good_clusters[cluster] = 1
+		#	cluster_scores[cluster] = 100
 
 		# Now filter out reassignments according to the running list of "good" clusters
 		contig_clusters = dict()
@@ -1018,7 +1061,7 @@ while True:
 		print('Cluster pruning iteration: ' + str(iteration))
 		logger.info('Cluster pruning iteration: ' + str(iteration))
 
-		cluster_scores, contig_reassignments = ML_assessClusters(current_table)
+		cluster_scores, contig_reassignments = ML_assessClusters(current_table, 50, clusters_to_consider)
 		logger.debug(pprint.pformat(cluster_scores))
 		iteration += 1
 
@@ -1027,11 +1070,20 @@ while True:
 			if cluster_scores[cluster] < 90 and cluster not in good_clusters:
 				bad_clusters = True
 
-	### Now we classify the unclustered fraction to our refined training set.
-	print('Cluster ML recruitment')
-	logger.info('Cluster ML recruitment')
-	contig_reassignments = classifyContigs(current_table)
-	reassignClusters(current_table, contig_reassignments)
+	#### We reclassify singletons to make sure that they are bona fide singleton genomes
+	#print('Singleton reclassification')
+	#logger.info('Singleton reclassification')
+	## Find singleton clusters
+	#singletons = findSingletons(current_table)
+	#
+	#cluster_scores, contig_reassignments = ML_assessClusters(current_table, 90, singletons)
+	#reassignClusters(current_table, contig_reassignments)
+
+	#### Now we classify the unclustered fraction to our refined training set.
+	#print('Cluster ML recruitment')
+	#logger.info('Cluster ML recruitment')
+	#contig_reassignments = classifyContigs(current_table)
+	#reassignClusters(current_table, contig_reassignments)
 	master_table.update(current_table)
 
 	### Set up the next iteration
