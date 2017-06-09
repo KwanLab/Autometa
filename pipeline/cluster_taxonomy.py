@@ -30,8 +30,8 @@ canonical_ranks = {
 
 def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# Function that determines for a given taxid, whether the majority of proteins
-	# in a contig, with rank equal to or above the given rank, are common ancestors of 
-	# the taxid.  If the majority are, this function returns True, otherwise it returns 
+	# in a contig, with rank equal to or above the given rank, are common ancestors of
+	# the taxid.  If the majority are, this function returns True, otherwise it returns
 	# False
 
 	# First we make a modified rank_priority list that only includes the current rank and above
@@ -209,7 +209,7 @@ taxid_index = None
 for i,heading in enumerate(contig_table_first_line_list):
 	if heading == 'contig':
 		contig_index = i
-	if heading == 'db.cluster':
+	if heading == 'cluster':
 		cluster_index = i
 	if heading == 'length':
 		length_index = i
@@ -225,7 +225,7 @@ if contig_index is None:
 	print 'Error, could not find a "contig" column in ' + contig_table_path
 	sys.exit(2)
 if cluster_index is None:
-	print 'Error, could not find a "db.cluster" column in ' + contig_table_path
+	print 'Error, could not find a "cluster" column in ' + contig_table_path
 	sys.exit(2)
 if length_index is None:
 	print 'Error, could not find a "length" column in  ' + contig_table_path
@@ -236,8 +236,8 @@ if taxid_index is None:
 if column_count['contig'] > 1:
 	print 'Error, there is more than one "contig" column in ' + contig_table_path
 	sys.exit(2)
-if column_count['db.cluster'] > 1:
-	print 'Error, there is more than one "db.cluster" column in ' + contig_table_path
+if column_count['cluster'] > 1:
+	print 'Error, there is more than one "cluster" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['length'] > 1:
 	print 'Error, there is more than one "length" column in ' + contig_table_path
@@ -308,7 +308,7 @@ for cluster in tqdm(contig_classifications, total=total_clusters):
 				if isConsistentWithOtherOrfs(taxid, rank, contig_classifications[cluster], taxids):
 					acceptedTaxid = taxid
 					break
-	
+
 	# If acceptedTaxid is still None at this point, there was some kind of draw, so we need to find the lowest taxonomic level where there is a
 	# majority
 	if acceptedTaxid is None:

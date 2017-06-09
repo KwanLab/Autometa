@@ -688,7 +688,7 @@ taxonomy_info = dict()
 if taxonomy_table_path:
 	taxonomy_table = pd.read_table(taxonomy_table_path)
 	for i,row in taxonomy_table.iterrows():
-		taxonomy_info[row['contig']] = { 'kingdom': row['kingdom'], 'phylum': row['phylum'], 'class': row['class'], 'order': row['order'], 'family': row['family'], 'genus': row['genus'], 'species': row['species']}
+		taxonomy_info[row['contig']] = { 'kingdom': row['kingdom'], 'phylum': row['phylum'], 'class': row['class'], 'order': row['order'], 'family': row['family'], 'genus': row['genus'], 'species': row['species'], 'taxid': row['taxid']}
 
 	# Make combined contig table
 	new_contig_table_path = contig_table + '.taxonomy'
@@ -696,11 +696,11 @@ if taxonomy_table_path:
 	with open(contig_table, 'r') as old_contig_table:
 		for i,line in enumerate(old_contig_table):
 			if i == 0:
-				new_contig_table.write(line.rstrip() + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\n')
+				new_contig_table.write(line.rstrip() + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n')
 			else:
 				line_list = line.rstrip().split('\t')
 				contig = line_list[0]
-				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['kingdom'] + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\n')
+				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['kingdom'] + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\t' + taxonomy_info[contig]['taxid']'\n')
 	new_contig_table.close()
 	contig_table = new_contig_table_path
 
