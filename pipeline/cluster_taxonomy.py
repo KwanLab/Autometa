@@ -159,7 +159,7 @@ with open(names_dmp_path) as names_dmp:
 		# Only add scientific name entries
 		if line_list[3] == 'scientific name':
 			# line_list[1] = line_list[1].replace(' ', '_')
-			taxids[line_list[0]] = { 'name': line_list[1] }
+			taxids[int(float(line_list[0]))] = { 'name': line_list[1] }
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid nodes'
 wc_output = subprocess.check_output(['wc', '-l', nodes_dmp_path])
@@ -173,8 +173,8 @@ with open(nodes_dmp_path) as nodes_dmp:
 		for i,value in enumerate(line_list):
 			line_list[i] = value.strip()
 
-		taxids[ line_list[0] ][ 'parent' ] = line_list[1]
-		taxids[ line_list[0] ][ 'rank' ] = line_list[2]
+		taxids[ int(float(line_list[0])) ][ 'parent' ] = int(float(line_list[1]))
+		taxids[ int(float(line_list[0])) ][ 'rank' ] = line_list[2]
 
 #name_lookup = {} # Dictionary of dictionaries, keyed by rank then name
 #for taxid in taxids:
@@ -253,7 +253,7 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		contig = line_list[contig_index]
 		cluster = line_list[cluster_index]
 		length = line_list[length_index]
-		taxid = line_list[taxid_index]
+		taxid = int(float(line_list[taxid_index]))
 
 		taxRank = None
 		if taxid == 'unclassified':
