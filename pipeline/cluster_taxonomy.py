@@ -259,6 +259,10 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		if taxid == 'unclassified':
 			taxid = 1
 			taxRank = 'root'
+		elif taxid not in taxids:
+			# This happens sometimes when the taxid database and the NR database are not in sync
+			taxid = 1
+			taxRank = 'root'
 		else:
 			taxRank = taxids[taxid]['rank']
 
