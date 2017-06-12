@@ -504,17 +504,14 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
     return redundancy
 
-def ML_assessClusters(table, confidence_cutoff = 50, clusters_to_examine = None):
+def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clusters_to_examine = None):
 	cluster_counts = dict() # Keyed by cluster, holds totals for 'congruent' classification or 'different' classification
 	contig_reassignments = dict()
 
 	subset_table = table.loc[table['cluster'] != 'unclustered']
 
-	# For each contig we make a new training set
-	cluster_list = subset_table['cluster'].tolist()
-	contig_list = subset_table['contig'].tolist()
-	#cluster_contig_counts = dict()
-	#current_contig_assignments = dict()
+	# Identify singletons
+	singletons = findSingletons(table)
 
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
@@ -523,13 +520,6 @@ def ML_assessClusters(table, confidence_cutoff = 50, clusters_to_examine = None)
 		if clusters_to_examine is not None:
 			if current_cluster not in clusters_to_examine:
 				continue
-
-		#current_contig_assignments[current_contig] = current_cluster
-
-		#if current_cluster in cluster_contig_counts:
-		#	cluster_contig_counts[current_cluster] += 1
-		#else:
-		#	cluster_contig_counts[current_cluster] = 1
 
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
@@ -542,9 +532,9 @@ def ML_assessClusters(table, confidence_cutoff = 50, clusters_to_examine = None)
 
 		for j,subrow in subset_table.iterrows():
 			if taxonomy_table_path:
-				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist())
+				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist() + coverage_list[j])
 			else:
-				current_features = pca_matrix[j]
+				current_features = pca_matrix[j] + coverage_list[j]
 
 			if j == i:
 				classification_features = np.array([current_features])
@@ -557,7 +547,15 @@ def ML_assessClusters(table, confidence_cutoff = 50, clusters_to_examine = None)
 
 		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
 
-		if ML_prediction == current_cluster and confidence >= confidence_cutoff:
+		if current_cluster in singletons:
+			redundant = redundant_marker_prediction(current_contig, ML_prediction, subset_table, 'cluster')
+			if confidence >= singleton_cutoff and not redundant:
+				cluster_counts[current_cluster]['different'] += 1
+				logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence: ' + str(confidence))
+				contig_reassignments[current_cluster] = 'unclustered'
+			else:
+				cluster_counts[current_cluster]['congruent'] += 1
+		elif ML_prediction == current_cluster and confidence >= confidence_cutoff:
 			cluster_counts[current_cluster]['congruent'] += 1
 		else:
 			cluster_counts[current_cluster]['different'] += 1
@@ -839,6 +837,8 @@ else:
 ### Set up master table for the whole program
 master_table = pd.read_table(contig_table)
 
+coverage_list = master_table['cov'].tolist()
+
 ### Collate training data for ML steps later
 # We now set up global data structures to be used in supervised machine learning
 contig_list = master_table['contig'].tolist()
@@ -1061,7 +1061,7 @@ while True:
 		print('Cluster pruning iteration: ' + str(iteration))
 		logger.info('Cluster pruning iteration: ' + str(iteration))
 
-		cluster_scores, contig_reassignments = ML_assessClusters(current_table, 50, clusters_to_consider)
+		cluster_scores, contig_reassignments = ML_assessClusters(current_table, 50, 90, clusters_to_consider)
 		logger.debug(pprint.pformat(cluster_scores))
 		iteration += 1
 
