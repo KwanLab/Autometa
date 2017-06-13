@@ -7,6 +7,13 @@ from sklearn import tree,metrics,preprocessing
 from sklearn.model_selection import train_test_split
 import collections
 import argparse
+#For kmer matrix reduction
+from scipy import stats
+import math
+from sklearn import decomposition
+#for parallel ML
+from joblib import Parallel, delayed
+import random
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -22,22 +29,15 @@ parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
 parser.add_argument('-n','--num_iterations', help='Number of iterations for \
     jackknife cross-validation.', default=10)
-parser.add_argument('-m','--train_w_markers', help='Only train the ML classifier\
-    with marker contigs.', default="True")
+parser.add_argument('-m','--k_mer_matrix', help='k-mer_matrix file.', default="k-mer_matrix")
 parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
 args = vars(parser.parse_args())
 
-#Set load paramters - convert to argparse
-bootstrap_iterations = int(args['num_iterations'])
-confidence_cutoff = float(args['Confidence_cutoff'])
-cluster_column_name = args['cluster_column']
-unclustered_name = args['unclustered_name']
-train_w_markers = args['train_w_markers']
-taxonomy_matrix_dict = {}
-
 #1. Load table with cluster info, taxonomy as binary matrices with pandas
 print("Loading contig table..")
+#Disable pandas warnings
+pd.options.mode.chained_assignment = None
 contig_table = pd.read_csv(args['contig_tab'],sep="\t")
 
 print("Loading taxonomy info as dummy matrices..")
@@ -47,6 +47,131 @@ order_dummy_matrix = pd.get_dummies(contig_table['order'])
 family_dummy_matrix = pd.get_dummies(contig_table['family'])
 genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
 species_dummy_martix = pd.get_dummies(contig_table['species'])
+
+###For k-kmer matrix reduction - START
+
+def revcomp( string ):
+	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
+	complement_list = list()
+
+	for i in range(0, len(string) ):
+		if string[i] in trans_dict:
+			complement_list.append(trans_dict[string[i]])
+		else:
+			return -1
+
+	return ''.join(reversed(complement_list))
+
+def normalizeKmers(count_matrix): # list of lists, not a np matrix
+	# We now remove all the k-mers where all counts are '1'
+	#logger.info('Trimming k-mers')
+	columns_to_delete = dict()
+	for i in range(0, len(unique_k_mers.keys())):
+		non_zero_counts = 0
+		for j in range(0, len(count_matrix)):
+			if count_matrix[j][i] > 1:
+				non_zero_counts += 1
+
+		if non_zero_counts == 0:
+			columns_to_delete[i] = 1
+
+	filtered_contig_k_mer_counts = list()
+	for i in range(0, len(count_matrix)):
+		new_row = list()
+		#unique_k_mers is a global variable
+		for j in range(0, len(unique_k_mers.keys())):
+			if j not in columns_to_delete:
+				new_row.append(count_matrix[i][j])
+		filtered_contig_k_mer_counts.append(new_row)
+
+	# 3. Normalization
+	#logger.info('Normalizing counts')
+
+	k_mer_frequency_matrix = list()
+
+	for count_list in filtered_contig_k_mer_counts:
+		total_count = 0
+		for count in count_list:
+			total_count += count
+
+		normalized_list = list()
+		for count in count_list:
+			normalized_list.append(float(count)/total_count)
+
+		# Now we calculate the Centered log-ratio (CLR) transformation
+		# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and
+		# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+		geometric_mean = stats.mstats.gmean(normalized_list)
+		clr_list = list()
+
+		for item in normalized_list:
+			intermediate_value = item / geometric_mean
+			clr_list.append(math.log(intermediate_value))
+
+		k_mer_frequency_matrix.append(clr_list)
+
+	return k_mer_frequency_matrix
+
+#contig_table = "full_table"
+master_table = contig_table
+
+#Define "unique_k_mers"
+# Count K-mer frequencies
+k_mer_size = 5
+matrix_file = args['k_mer_matrix']
+k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
+
+count = 0
+unique_k_mers = dict()
+
+DNA_letters = ['A', 'T', 'C', 'G']
+all_k_mers = list(DNA_letters)
+for i in range(1, k_mer_size):
+	new_list = list()
+	for current_seq in all_k_mers:
+		for char in DNA_letters:
+			new_list.append(current_seq + char)
+	all_k_mers = new_list
+
+# Now we trim k-mers and put them in the dictionary
+for k_mer in all_k_mers:
+	k_mer_reverse = revcomp(k_mer)
+	if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
+		unique_k_mers[k_mer] = count
+		count += 1
+
+# Now we load the k-mer matrix
+k_mer_dict = {}
+with open(matrix_file) as matrix:
+	for i,line in enumerate(matrix):
+		if i > 0:
+			line_list = line.rstrip().split('\t')
+			contig = line_list.pop(0)
+			line_list = [ int(x) for x in line_list ]
+			k_mer_dict[contig] = line_list
+
+# Make normalized k-mer matrix
+contig_list = master_table['contig'].tolist()
+k_mer_counts = list()
+for contig in contig_list:
+	k_mer_counts.append(k_mer_dict[contig])
+
+normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+
+# For performance reasons we reduce the dimensions to 50 with PCA
+pca = decomposition.PCA(n_components=50)
+pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+###For k-kmer matrix reduction - END
+
+#Set load paramters - convert to argparse
+bootstrap_iterations = int(args['num_iterations'])
+confidence_cutoff = float(args['Confidence_cutoff'])
+if confidence_cutoff % bootstrap_iterations != 0  and len(str(confidence_cutoff)) == len(str(bootstrap_iterations)):
+    confidence_cutoff = round_down(confidence_cutoff,bootstrap_iterations)
+cluster_column_name = args['cluster_column']
+unclustered_name = args['unclustered_name']
+taxonomy_matrix_dict = {}
+
 
 #2. Parse vizbin, cov, and taxonomy info in "features" and autometa-defined
 # clusters into "labels" for classifier using appropriate data structure
@@ -66,33 +191,21 @@ for count,contig in enumerate(contig_table['contig']):
     tax_species = list(species_dummy_martix.iloc[count])
     taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
     taxonomy_matrix_dict[contig] = taxonomy
-    if train_w_markers.lower() == "true":
-        if contig_table['num_single_copies'][count] > 0 and cluster != unclustered_name:
-            vizbin_x = contig_table['vizbin_x'][count]
-            vizbin_y = contig_table['vizbin_y'][count]
-            length = contig_table['length'][count]
-            cov = contig_table['cov'][count]
-            gc = contig_table['gc'][count]
-            #Actually the label here should be the bin name
-            #label = known_genome
-            label = cluster
-            features.append([vizbin_x,vizbin_y,cov] + taxonomy)
-            labels.append(label)
-    elif train_w_markers.lower() == "false":
-        if cluster != unclustered_name:
-            vizbin_x = contig_table['vizbin_x'][count]
-            vizbin_y = contig_table['vizbin_y'][count]
-            length = contig_table['length'][count]
-            cov = contig_table['cov'][count]
-            gc = contig_table['gc'][count]
-            #Actually the label here should be the bin name
-            #label = known_genome
-            label = cluster
-            features.append([vizbin_x,vizbin_y,cov] + taxonomy)
-            labels.append(label)
-    else:
-        print("Unrecognized argument for -m.\nExiting...")
-        exit()
+    if cluster != unclustered_name:
+        bh_tsne_x = contig_table['bh_tsne_x'][count]
+        bh_tsne_y = contig_table['bh_tsne_y'][count]
+        length = contig_table['length'][count]
+        cov = contig_table['cov'][count]
+        gc = contig_table['gc'][count]
+        #Actually the label here should be the bin name
+        #label = known_genome
+        label = cluster
+        #features.append([bh_tsne_x,bh_tsne_y,cov] + taxonomy)
+        features.append(pca_matrix[count].tolist() + [cov] + taxonomy)
+        labels.append(label)
+
+def round_down(num, divisor):
+    return num - (num%divisor)
 
 def jackknife_training(features,labels):
     #Function to randomly subsample data into halves (hence 0.5), train
@@ -160,10 +273,9 @@ temp_contig_table = contig_table.copy(deep=True)
 print("Recruiting unclustered sequences. This could take a while...")
 for count,contig in enumerate(contig_table['contig']):
     taxonomy = taxonomy_matrix_dict[contig]
-    vizbin_x_x = contig_table.iloc[count]['vizbin_x']
-    vizbin_y_x = contig_table.iloc[count]['vizbin_y']
-    cov_x = contig_table.iloc[count]['cov']
-    composition_feature_list = [vizbin_x_x,vizbin_y_x,cov_x]
+    bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
+    bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
+    composition_feature_list = pca_matrix[count].tolist() + [cov]
     #Concatenate composition and taxonomy features into single list
     single_np_array = np.array([composition_feature_list + taxonomy])
     contig_length = contig_table.iloc[count]['length']
