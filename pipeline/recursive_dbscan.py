@@ -698,7 +698,7 @@ if taxonomy_table_path:
 			else:
 				line_list = line.rstrip().split('\t')
 				contig = line_list[0]
-				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['kingdom'] + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\t' + taxonomy_info[contig]['taxid'] + '\n')
+				new_contig_table.write(line.rstrip() + '\t' + taxonomy_info[contig]['kingdom'] + '\t' + taxonomy_info[contig]['phylum'] + '\t' + taxonomy_info[contig]['class'] + '\t' + taxonomy_info[contig]['order'] + '\t' + taxonomy_info[contig]['family'] + '\t' + taxonomy_info[contig]['genus'] + '\t' + taxonomy_info[contig]['species'] + '\t' + str(taxonomy_info[contig]['taxid']) + '\n')
 	new_contig_table.close()
 	contig_table = new_contig_table_path
 
