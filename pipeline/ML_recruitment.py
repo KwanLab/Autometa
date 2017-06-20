@@ -48,6 +48,9 @@ family_dummy_matrix = pd.get_dummies(contig_table['family'])
 genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
 species_dummy_martix = pd.get_dummies(contig_table['species'])
 
+def round_down(num, divisor):
+    return num - (num%divisor)
+
 ###For k-kmer matrix reduction - START
 
 def revcomp( string ):
@@ -203,9 +206,6 @@ for count,contig in enumerate(contig_table['contig']):
         #features.append([bh_tsne_x,bh_tsne_y,cov] + taxonomy)
         features.append(pca_matrix[count].tolist() + [cov] + taxonomy)
         labels.append(label)
-
-def round_down(num, divisor):
-    return num - (num%divisor)
 
 def jackknife_training(features,labels):
     #Function to randomly subsample data into halves (hence 0.5), train
