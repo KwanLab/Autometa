@@ -169,7 +169,7 @@ pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
 #Set load paramters - convert to argparse
 bootstrap_iterations = int(args['num_iterations'])
 confidence_cutoff = float(args['Confidence_cutoff'])
-if confidence_cutoff % bootstrap_iterations != 0  and len(str(confidence_cutoff)) == len(str(bootstrap_iterations)):
+if confidence_cutoff % bootstrap_iterations != 0  and len(str(int(confidence_cutoff))) == len(str(bootstrap_iterations)):
     confidence_cutoff = round_down(confidence_cutoff,bootstrap_iterations)
 cluster_column_name = args['cluster_column']
 unclustered_name = args['unclustered_name']
