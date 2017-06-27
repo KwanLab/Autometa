@@ -144,6 +144,7 @@ for k_mer in all_k_mers:
 		count += 1
 
 # Now we load the k-mer matrix
+print("Loading k-mer matrix...")
 k_mer_dict = {}
 with open(matrix_file) as matrix:
 	for i,line in enumerate(matrix):
@@ -154,6 +155,7 @@ with open(matrix_file) as matrix:
 			k_mer_dict[contig] = line_list
 
 # Make normalized k-mer matrix
+print("Normalizing k-mer martix...")
 contig_list = master_table['contig'].tolist()
 k_mer_counts = list()
 for contig in contig_list:
@@ -161,6 +163,7 @@ for contig in contig_list:
 
 normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
+print("Reducing normalized k-mer matrix to 50 dimensions with PCA...")
 # For performance reasons we reduce the dimensions to 50 with PCA
 pca = decomposition.PCA(n_components=50)
 pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
@@ -265,44 +268,57 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
     return redundancy
 
-ML_predictions_dict = {}
-ML_recruitment_list = []
-prediction_accuracy_list = []
-temp_contig_table = contig_table.copy(deep=True)
-#Recruit unclustered sequences
-print("Recruiting unclustered sequences. This could take a while...")
-for count,contig in enumerate(contig_table['contig']):
-    taxonomy = taxonomy_matrix_dict[contig]
-    bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
-    bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
-    composition_feature_list = pca_matrix[count].tolist() + [cov]
-    #Concatenate composition and taxonomy features into single list
-    single_np_array = np.array([composition_feature_list + taxonomy])
-    contig_length = contig_table.iloc[count]['length']
-    cluster = contig_table.iloc[count][cluster_column_name]
-    #If contig is unclustered, make ML prediction
-    if cluster == unclustered_name:# and contig_table.iloc[count]['num_single_copies'] > 0:
-        ML_prediction,confidence = calculate_bootstap_replicates(single_np_array,bootstrap_iterations)
-        ML_predictions_dict[contig] = ML_prediction,confidence
-        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
-        #If it the prediction passes confidence cutoff
-        #Could also look for redundant markers...
-        redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
-        if confidence >= confidence_cutoff and not redundant:
-            #Add prediction to ML_recruitment_list
-            ML_recruitment_list.append(ML_prediction)
-            prediction_accuracy_list.append(ML_prediction)
-            #Update contig table, so that any markers added to the cluster will
-            #be considered in the next check of marker redundancy
-            temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
+num_confident_predictions = 1
+iteration = 0
+while num_confident_predictions > 0:
+    ML_predictions_dict = {}
+    ML_recruitment_list = []
+    prediction_accuracy_list = []
+    temp_contig_table = contig_table.copy(deep=True)
+    #Recruit unclustered sequences
+    num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclustered_name)
+    print("Recruiting {} unclustered sequences. This could take a while...".format(num_unclustered_contigs))
+    for count,contig in enumerate(contig_table['contig']):
+        taxonomy = taxonomy_matrix_dict[contig]
+        bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
+        bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
+        composition_feature_list = pca_matrix[count].tolist() + [cov]
+        #Concatenate composition and taxonomy features into single list
+        single_np_array = np.array([composition_feature_list + taxonomy])
+        contig_length = contig_table.iloc[count]['length']
+        #After the first iteration, train from previous confident predictions
+        if iteration >= 1:
+            cluster = contig_table.iloc[count]['ML_expanded_clustering']
+        #Otherwise, just use the initial clustering as labels
         else:
-            ML_recruitment_list.append(unclustered_name)
-    else:
-        ML_recruitment_list.append(cluster)
+            cluster = contig_table.iloc[count][cluster_column_name]
 
-num_predictions = len(ML_predictions_dict)
-num_confident_predictions = len(prediction_accuracy_list)
-print("{} of {} predictions were {}% confident and non-redundant".format(num_confident_predictions,num_predictions,confidence_cutoff))
+        #If contig is unclustered, make ML prediction
+        if cluster == unclustered_name:# and contig_table.iloc[count]['num_single_copies'] > 0:
+            ML_prediction,confidence = calculate_bootstap_replicates(single_np_array,bootstrap_iterations)
+            ML_predictions_dict[contig] = ML_prediction,confidence
+            print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
+            #If it the prediction passes confidence cutoff
+            #Could also look for redundant markers...
+            redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
+            if confidence >= confidence_cutoff and not redundant:
+                #Add prediction to ML_recruitment_list
+                ML_recruitment_list.append(ML_prediction)
+                prediction_accuracy_list.append(ML_prediction)
+                #Update contig table, so that any markers added to the cluster will
+                #be considered in the next check of marker redundancy
+                temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
+            else:
+                ML_recruitment_list.append(unclustered_name)
+        else:
+            ML_recruitment_list.append(cluster)
 
-contig_table['ML_expanded_clustering'] = ML_recruitment_list
+    num_predictions = len(ML_predictions_dict)
+    num_confident_predictions = len(prediction_accuracy_list)
+    print("{} of {} predictions were {}% confident and non-redundant for iteration {}".format(num_confident_predictions,num_predictions,confidence_cutoff,iteration))
+
+    contig_table['ML_expanded_clustering'] = ML_recruitment_list
+    iteration += 1
+
+#Write out final table
 contig_table.to_csv(args['out_table'],sep="\t",index=False)
