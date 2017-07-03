@@ -64,7 +64,7 @@ def run_blast2lca(input_file):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
 	else:
-		subprocess.call("/home/ijmiller/go/bin/blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
+		subprocess.call("blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
 			.format(input_file, output), shell = True)
 	return output
 
