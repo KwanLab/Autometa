@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import division
+import time
 import numpy as np
 import pandas as pd
 from sklearn import tree,metrics,preprocessing
@@ -14,7 +15,7 @@ from sklearn import decomposition
 #for parallel ML
 from joblib import Parallel, delayed
 import random
-import time
+import multiprocessing
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -24,6 +25,8 @@ parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker
 parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
 parser.add_argument('-c','--cluster_column', help='Name of column for cluster', \
     default='cluster')
+parser.add_argument('-p','--processors', help='Number of processors', \
+    default=1)
 parser.add_argument('-r','--recursive', help='If specified, will run classification \
     iteratively and refine traning data after each iteration.', action='store_true')
 parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
@@ -181,6 +184,9 @@ pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
 ###For k-kmer matrix reduction - END
 
 #Set load paramters - convert to argparse
+processors = int(args['processors'])
+if processors > multiprocessing.cpu_count():
+    processors = multiprocessing.cpu_count()
 bootstrap_iterations = int(args['num_iterations'])
 confidence_cutoff = float(args['Confidence_cutoff'])
 if confidence_cutoff % bootstrap_iterations != 0  and len(str(int(confidence_cutoff))) == len(str(bootstrap_iterations)):
@@ -291,6 +297,8 @@ while num_confident_predictions > 0:
     temp_contig_table = contig_table.copy(deep=True)
     #Recruit unclustered sequences
     num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclustered_name)
+    unclustered_contig_feature_list = []
+    unclustered_contig_list = []
     print("Recruiting {} unclustered sequences. This could take a while...".format(num_unclustered_contigs))
     for count,contig in enumerate(contig_table['contig']):
         bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
@@ -310,28 +318,38 @@ while num_confident_predictions > 0:
         else:
             cluster = contig_table.iloc[count][cluster_column_name]
 
-        #If contig is unclustered, make ML prediction
-        if cluster == unclustered_name:# and contig_table.iloc[count]['num_single_copies'] > 0:
-            ML_prediction,confidence = calculate_bootstap_replicates(single_np_array,bootstrap_iterations)
-            ML_predictions_dict[contig] = ML_prediction,confidence
-            print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
-            #If it the prediction passes confidence cutoff
-            #Could also look for redundant markers...
-            redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
-            if confidence >= confidence_cutoff and not redundant:
-                #Add prediction to ML_recruitment_list
-                ML_recruitment_list.append(ML_prediction)
-                prediction_accuracy_list.append(ML_prediction)
-                recruited_sequence_length += contig_length
-                #Update contig table, so that any markers added to the cluster will
-                #be considered in the next check of marker redundancy
-                temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
-            else:
-                ML_recruitment_list.append(unclustered_name)
+        #If contig is unclustered, prepare feature array for (multiproccesed) ML prediction
+        if cluster == unclustered_name:
+            unclustered_contig_feature_list.append(single_np_array)
+            unclustered_contig_list.append(contig)
+
         else:
             ML_recruitment_list.append(cluster)
 
-    num_predictions = len(ML_predictions_dict)
+    #START - Multiprocess subroutine
+    multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstap_replicates)(features, bootstrap_iterations) for features in unclustered_contig_feature_list)
+    #END - Multiprocess subroutine
+    for count,output_tuple in enumerate(multiprocessed_output):
+        ML_prediction,confidence = output_tuple
+        ML_predictions_dict[contig] = ML_prediction,confidence
+        #Assuming index (from multiprocessing) is preserved
+        contig = unclustered_contig_list[count]
+        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
+        #If it the prediction passes confidence cutoff
+        #Could also look for redundant markers...
+        redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
+        if confidence >= confidence_cutoff and not redundant:
+            #Add prediction to ML_recruitment_list
+            ML_recruitment_list.append(ML_prediction)
+            prediction_accuracy_list.append(ML_prediction)
+            recruited_sequence_length += contig_length
+            #Update contig table, so that any markers added to the cluster will
+            #be considered in the next check of marker redundancy
+            temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
+        else:
+            ML_recruitment_list.append(unclustered_name)
+
+    num_predictions = len(multiprocessed_output)
     num_confident_predictions = len(prediction_accuracy_list)
     elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - iteration_start_time),2)))
     print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS)".format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time))
