@@ -11,6 +11,7 @@ import sys
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.")
 parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
 parser.add_argument('-p','--processors', help='assembly.fasta', default=1)
+parser.add_argument('-n','--nr_diamond_db', help='Diamond formatted nr database', default="/media/box2/nr_old/nr")
 parser.add_argument('-t','--taxdump', help='Path to directory with taxdump files.',required=True)
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
@@ -73,7 +74,7 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 #diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-diamond_database_path = '/media/box2/nr_old/nr'
+diamond_database_path = args['nr_diamond_db'] #/media/box2/nr_old/nr'
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 
