@@ -14,6 +14,7 @@ from sklearn import decomposition
 #for parallel ML
 from joblib import Parallel, delayed
 import random
+import time
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -23,6 +24,8 @@ parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker
 parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
 parser.add_argument('-c','--cluster_column', help='Name of column for cluster', \
     default='cluster')
+parser.add_argument('-r','--recursive', help='If specified, will run classification \
+    iteratively and refine traning data after each iteration.', action='store_true')
 parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
     to use to keep ML-based predictions.', default=95)
 parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
@@ -34,25 +37,32 @@ parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
 args = vars(parser.parse_args())
 
+#Mark start time
+start_time = time.time()
 #1. Load table with cluster info, taxonomy as binary matrices with pandas
 print("Loading contig table..")
 #Disable pandas warnings
 pd.options.mode.chained_assignment = None
 contig_table = pd.read_csv(args['contig_tab'],sep="\t")
 
-print("Loading taxonomy info as dummy matrices..")
-phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
-class_dummy_matrix = pd.get_dummies(contig_table['class'])
-order_dummy_matrix = pd.get_dummies(contig_table['order'])
-family_dummy_matrix = pd.get_dummies(contig_table['family'])
-genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
-species_dummy_martix = pd.get_dummies(contig_table['species'])
+print("Looking for taxonomy info in {}".format(args['contig_tab']))
+use_taxonomy_info = False
+try:
+    phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
+    class_dummy_matrix = pd.get_dummies(contig_table['class'])
+    order_dummy_matrix = pd.get_dummies(contig_table['order'])
+    family_dummy_matrix = pd.get_dummies(contig_table['family'])
+    genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
+    species_dummy_martix = pd.get_dummies(contig_table['species'])
+    print("Loaded taxonomy info as dummy matrices..")
+    use_taxonomy_info = True
+except KeyError:
+    print("Couldn't find taxonomy info in table. Excluding as training feature...")
 
 def round_down(num, divisor):
     return num - (num%divisor)
 
 ###For k-kmer matrix reduction - START
-
 def revcomp( string ):
 	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
 	complement_list = list()
@@ -167,6 +177,7 @@ print("Reducing normalized k-mer matrix to 50 dimensions with PCA...")
 # For performance reasons we reduce the dimensions to 50 with PCA
 pca = decomposition.PCA(n_components=50)
 pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
+
 ###For k-kmer matrix reduction - END
 
 #Set load paramters - convert to argparse
@@ -184,19 +195,17 @@ taxonomy_matrix_dict = {}
 print("Loading other features and labels...")
 features = []
 labels = []
-#length_weight = []
 for count,contig in enumerate(contig_table['contig']):
-    #Actually the label here should be the bin name
-    #known_genome =  contig_table['known_genome'][count]
     cluster = contig_table[cluster_column_name][count]
-    tax_phylum = list(phylum_dummy_matrix.iloc[count])
-    tax_class = list(class_dummy_matrix.iloc[count])
-    tax_order = list(order_dummy_matrix.iloc[count])
-    tax_family = list(family_dummy_matrix.iloc[count])
-    tax_genus = list(genus_dummy_matrix.iloc[count])
-    tax_species = list(species_dummy_martix.iloc[count])
-    taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-    taxonomy_matrix_dict[contig] = taxonomy
+    if use_taxonomy_info:
+        tax_phylum = list(phylum_dummy_matrix.iloc[count])
+        tax_class = list(class_dummy_matrix.iloc[count])
+        tax_order = list(order_dummy_matrix.iloc[count])
+        tax_family = list(family_dummy_matrix.iloc[count])
+        tax_genus = list(genus_dummy_matrix.iloc[count])
+        tax_species = list(species_dummy_martix.iloc[count])
+        taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+        taxonomy_matrix_dict[contig] = taxonomy
     if cluster != unclustered_name:
         bh_tsne_x = contig_table['bh_tsne_x'][count]
         bh_tsne_y = contig_table['bh_tsne_y'][count]
@@ -207,7 +216,10 @@ for count,contig in enumerate(contig_table['contig']):
         #label = known_genome
         label = cluster
         #features.append([bh_tsne_x,bh_tsne_y,cov] + taxonomy)
-        features.append(pca_matrix[count].tolist() + [cov] + taxonomy)
+        if use_taxonomy_info:
+            features.append(pca_matrix[count].tolist() + [cov] + taxonomy)
+        else:
+            features.append(pca_matrix[count].tolist() + [cov])
         labels.append(label)
 
 def jackknife_training(features,labels):
@@ -271,20 +283,25 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
 num_confident_predictions = 1
 iteration = 0
 while num_confident_predictions > 0:
+    iteration_start_time = time.time()
     ML_predictions_dict = {}
     ML_recruitment_list = []
+    recruited_sequence_length = 0
     prediction_accuracy_list = []
     temp_contig_table = contig_table.copy(deep=True)
     #Recruit unclustered sequences
     num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclustered_name)
     print("Recruiting {} unclustered sequences. This could take a while...".format(num_unclustered_contigs))
     for count,contig in enumerate(contig_table['contig']):
-        taxonomy = taxonomy_matrix_dict[contig]
         bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
         bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
         composition_feature_list = pca_matrix[count].tolist() + [cov]
         #Concatenate composition and taxonomy features into single list
-        single_np_array = np.array([composition_feature_list + taxonomy])
+        if use_taxonomy_info:
+            taxonomy = taxonomy_matrix_dict[contig]
+            single_np_array = np.array([composition_feature_list + taxonomy])
+        else:
+            single_np_array = np.array([composition_feature_list])
         contig_length = contig_table.iloc[count]['length']
         #After the first iteration, train from previous confident predictions
         if iteration >= 1:
@@ -305,6 +322,7 @@ while num_confident_predictions > 0:
                 #Add prediction to ML_recruitment_list
                 ML_recruitment_list.append(ML_prediction)
                 prediction_accuracy_list.append(ML_prediction)
+                recruited_sequence_length += contig_length
                 #Update contig table, so that any markers added to the cluster will
                 #be considered in the next check of marker redundancy
                 temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
@@ -315,10 +333,16 @@ while num_confident_predictions > 0:
 
     num_predictions = len(ML_predictions_dict)
     num_confident_predictions = len(prediction_accuracy_list)
-    print("{} of {} predictions were {}% confident and non-redundant for iteration {}".format(num_confident_predictions,num_predictions,confidence_cutoff,iteration))
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - iteration_start_time),2)))
+    print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS)".format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time))
 
     contig_table['ML_expanded_clustering'] = ML_recruitment_list
+    #Break after first iteration if recursive option not specified:
+    if not args['recursive']:
+        break
     iteration += 1
 
+elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+print("Done! Total elapsed time = {} (HH:MM:SS)".format(elapsed_time))
 #Write out final table
 contig_table.to_csv(args['out_table'],sep="\t",index=False)
