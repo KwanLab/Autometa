@@ -11,6 +11,7 @@ import sys
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.")
 parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
 parser.add_argument('-p','--processors', help='assembly.fasta', default=1)
+parser.add_argument('-t','--taxdump', help='Path to directory with taxdump files.',required=True)
 parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
 args = vars(parser.parse_args())
@@ -46,14 +47,14 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 	#return  view_output
 	#might want to change name of outputfile
 
-def run_blast2lca(input_file):
+def run_blast2lca(input_file,taxdump_path):
 	output = input_file.rstrip(".tab") + ".lca"
 	if os.path.isfile(output):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
 	else:
-		subprocess.call("blast2lca -savemem -dict /home/jkwan/blast2lca_taxdb/gi_taxid.bin -nodes /home/jkwan/blast2lca_taxdb/nodes.dmp -names /home/jkwan/blast2lca_taxdb/names.dmp {} > {}"\
-			.format(input_file, output), shell = True)
+		subprocess.call("blast2lca -savemem -dict {}/gi_taxid.bin -nodes {}/nodes.dmp -names {}/names.dmp {} > {}"\
+			.format(taxdump_path,input_file, output), shell = True)
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
@@ -64,7 +65,7 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path)
 	return 'taxonomy.tab'
 
 #diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
-taxdump_dir_path = '/home/jkwan/blast2lca_taxdb'
+taxdump_dir_path = args['taxdump']#'/home/jkwan/blast2lca_taxdb'
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 pipeline_path = sys.path[0]
@@ -93,7 +94,7 @@ else:
 	diamond_output = prodigal_output + ".tab"
 
 if not os.path.isfile(prodigal_output + ".lca"):
-    blast2lca_output = run_blast2lca(diamond_output)
+    blast2lca_output = run_blast2lca(diamond_output,taxdump_dir_path)
 else:
     blast2lca_output = prodigal_output + ".lca"
 
