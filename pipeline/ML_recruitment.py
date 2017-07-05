@@ -30,7 +30,7 @@ parser.add_argument('-p','--processors', help='Number of processors', \
 parser.add_argument('-r','--recursive', help='If specified, will run classification \
     iteratively and refine traning data after each iteration.', action='store_true')
 parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
-    to use to keep ML-based predictions.', default=95)
+    to use to keep ML-based predictions.', default=100)
 parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
 parser.add_argument('-n','--num_iterations', help='Number of iterations for \
@@ -109,14 +109,14 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 def jackknife_training(features,labels):
     #Function to randomly subsample data into halves (hence 0.5), train
     #ML-classifier and make prediction. Used iteratively in
-    #calculate_bootstap_replicates() function (see below)
+    #calculate_bootstrap_replicates() function (see below)
     train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
     my_classifier = tree.DecisionTreeClassifier()
     my_classifier = my_classifier.fit(train_features,train_labels)
     predictions = my_classifier.predict(test_features)
     return my_classifier
 
-def calculate_bootstap_replicates(feature_array,iterations = 10):
+def calculate_bootstrap_replicates(feature_array,iterations = 10):
     prediction_list = []
     for i in range(iterations):
         #Here features and labels are global variables
@@ -164,11 +164,50 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
     return redundancy
 
+def calculateClusterStats(pandas_table,cluster_column,life_domain="bacteria"):
+    #Function to calculate completeness and contamination of every dbscan
+    #clusters for a given clustering condition (e.g. eps value)
+    if life_domain=="bacteria":
+        expected_number = 139
+    elif life_domain=="archaea":
+        expected_number = 164
+    else:
+        print("Unexpected life domain: {}. Please select 'bacteria' or 'archaea'.".format(life_domain))
+        exit()
+
+    cluster_dict = {}
+    #Will probably have to change some of this to accomodate non-marker contigs
+    for count,contig in enumerate(pandas_table['contig']):
+        label = pandas_table[cluster_column][count]
+        num_markers = pandas_table['num_single_copies'][count]
+        if num_markers >= 1:
+            if label not in cluster_dict:
+                cluster_dict[label] = {}
+                cluster_dict[label]['PFAMs'] = pandas_table.iloc[count]['single_copy_PFAMs'].split(",")
+            else:
+                cluster_dict[label]['PFAMs'] += pandas_table.iloc[count]['single_copy_PFAMs'].split(",")
+
+    #Now calculate completeness and purity for each cluster
+    for cluster,PFAM_dict in cluster_dict.items():
+        PFAM_list = PFAM_dict.values()[0]
+        counter = collections.Counter(PFAM_list)
+        completeness = len(counter)/expected_number*100
+
+        repeated_markers = 0
+        for PFAM,frequency in dict(counter).items():
+            if frequency > 1:
+                repeated_markers += 1
+
+        purity = 100 - (repeated_markers/expected_number*100)
+        cluster_dict[cluster]['completeness'] = completeness
+        cluster_dict[cluster]['purity'] = purity
+
+    return cluster_dict
 
 #Mark start time
 start_time = time.time()
 #1. Load table with cluster info, taxonomy as binary matrices with pandas
-print("Loading contig table..")
+print("Loading contig table...")
 #Disable pandas warnings
 pd.options.mode.chained_assignment = None
 contig_table = pd.read_csv(args['contig_tab'],sep="\t")
@@ -182,7 +221,7 @@ try:
     family_dummy_matrix = pd.get_dummies(contig_table['family'])
     genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
     species_dummy_martix = pd.get_dummies(contig_table['species'])
-    print("Loaded taxonomy info as dummy matrices..")
+    print("Loaded taxonomy info as dummy matrices...")
     use_taxonomy_info = True
 except KeyError:
     print("Couldn't find taxonomy info in table. Excluding as training feature...")
@@ -329,7 +368,7 @@ while num_confident_predictions > 0:
             ML_recruitment_list.append(cluster)
 
     #START - Multiprocess subroutine
-    multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstap_replicates)(features, bootstrap_iterations) for features in unclustered_contig_feature_list)
+    multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstrap_replicates)(features, bootstrap_iterations) for features in unclustered_contig_feature_list)
     #END - Multiprocess subroutine
     for count,output_tuple in enumerate(multiprocessed_output):
         ML_prediction,confidence = output_tuple
@@ -353,8 +392,19 @@ while num_confident_predictions > 0:
 
     num_predictions = len(multiprocessed_output)
     num_confident_predictions = len(prediction_accuracy_list)
+    #Calculate average cluster stats
+    cluster_stats_dict = calculateClusterStats(contig_table,cluster_column_name)
+    cluster_dict = calculateClusterStats(contig_table,cluster_column)
+    completeness_list = []
+    purity_list = []
+    for cluster,info_dictionary in cluster_dict.items():
+        completeness_list.append(info_dictionary['completeness'])
+        purity_list.append(info_dictionary['purity'])
+    mean_completeness = round(np.mean(completeness_list),2)
+    mean_purity = round(np.mean(purity_list),2)
     elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - iteration_start_time),2)))
-    print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS)".format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time))
+    print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS). Mean completeness,purity: {},{}"\
+        .format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time,mean_completeness,mean_purity))
 
     contig_table['ML_expanded_clustering'] = ML_recruitment_list
     #Break after first iteration if recursive option not specified:
