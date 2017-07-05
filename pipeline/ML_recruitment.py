@@ -394,10 +394,9 @@ while num_confident_predictions > 0:
     num_confident_predictions = len(prediction_accuracy_list)
     #Calculate average cluster stats
     cluster_stats_dict = calculateClusterStats(contig_table,cluster_column_name)
-    cluster_dict = calculateClusterStats(contig_table,cluster_column)
     completeness_list = []
     purity_list = []
-    for cluster,info_dictionary in cluster_dict.items():
+    for cluster,info_dictionary in cluster_stats_dict.items():
         completeness_list.append(info_dictionary['completeness'])
         purity_list.append(info_dictionary['purity'])
     mean_completeness = round(np.mean(completeness_list),2)
