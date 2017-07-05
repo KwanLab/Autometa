@@ -298,7 +298,9 @@ taxonomy_matrix_dict = {}
 print("Loading other features and labels...")
 features = []
 labels = []
+contig_index_dict = {}
 for count,contig in enumerate(contig_table['contig']):
+    contig_index_dict[contig] = count
     cluster = contig_table[cluster_column_name][count]
     if use_taxonomy_info:
         tax_phylum = list(phylum_dummy_matrix.iloc[count])
@@ -353,17 +355,15 @@ while num_confident_predictions > 0:
             single_np_array = np.array([composition_feature_list])
         contig_length = contig_table.iloc[count]['length']
         #After the first iteration, train from previous confident predictions
-        if iteration >= 1:
-            cluster = contig_table.iloc[count]['ML_expanded_clustering']
-        #Otherwise, just use the initial clustering as labels
-        else:
-            cluster = contig_table.iloc[count][cluster_column_name]
+        cluster = contig_table.iloc[count][cluster_column_name]
 
         #If contig is unclustered, prepare feature array for (multiproccesed) ML prediction
         if cluster == unclustered_name:
             unclustered_contig_feature_list.append(single_np_array)
             unclustered_contig_list.append(contig)
+            ML_recruitment_list.append(unclustered_name)
 
+        #I think the index of the list is getting messed up by this, actually. Maybe store index and cluster assingment in separate df
         else:
             ML_recruitment_list.append(cluster)
 
@@ -381,14 +381,16 @@ while num_confident_predictions > 0:
         redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
         if confidence >= confidence_cutoff and not redundant:
             #Add prediction to ML_recruitment_list
-            ML_recruitment_list.append(ML_prediction)
+            #ML_recruitment_list.append(ML_prediction)
+            ML_recruitment_list[contig_index_dict[contig]] = ML_prediction
             prediction_accuracy_list.append(ML_prediction)
             recruited_sequence_length += contig_length
             #Update contig table, so that any markers added to the cluster will
             #be considered in the next check of marker redundancy
             temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
         else:
-            ML_recruitment_list.append(unclustered_name)
+            #ML_recruitment_list.append(unclustered_name)
+            ML_recruitment_list[contig_index_dict[contig]] = unclustered_name
 
     num_predictions = len(multiprocessed_output)
     num_confident_predictions = len(prediction_accuracy_list)
@@ -399,8 +401,8 @@ while num_confident_predictions > 0:
     for cluster,info_dictionary in cluster_stats_dict.items():
         completeness_list.append(info_dictionary['completeness'])
         purity_list.append(info_dictionary['purity'])
-    mean_completeness = round(np.mean(completeness_list),2)
-    mean_purity = round(np.mean(purity_list),2)
+    mean_completeness = round(np.mean(completeness_list),1)
+    mean_purity = round(np.mean(purity_list),1)
     elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - iteration_start_time),2)))
     print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS). Mean completeness,purity: {},{}"\
         .format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time,mean_completeness,mean_purity))
