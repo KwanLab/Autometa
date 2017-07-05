@@ -371,10 +371,10 @@ while num_confident_predictions > 0:
     multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstrap_replicates)(features, bootstrap_iterations) for features in unclustered_contig_feature_list)
     #END - Multiprocess subroutine
     for count,output_tuple in enumerate(multiprocessed_output):
-        ML_prediction,confidence = output_tuple
-        ML_predictions_dict[contig] = ML_prediction,confidence
         #Assuming index (from multiprocessing) is preserved
         contig = unclustered_contig_list[count]
+        ML_prediction,confidence = output_tuple
+        ML_predictions_dict[contig] = ML_prediction,confidence
         print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
         #If it the prediction passes confidence cutoff
         #Could also look for redundant markers...
