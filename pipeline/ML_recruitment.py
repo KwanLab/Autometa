@@ -299,9 +299,16 @@ print("Loading other features and labels...")
 features = []
 labels = []
 contig_index_dict = {}
+contig_feature_dict = {}
 for count,contig in enumerate(contig_table['contig']):
     contig_index_dict[contig] = count
+    bh_tsne_x = contig_table['bh_tsne_x'][count]
+    bh_tsne_y = contig_table['bh_tsne_y'][count]
+    length = contig_table['length'][count]
+    cov = contig_table['cov'][count]
+    gc = contig_table['gc'][count]
     cluster = contig_table[cluster_column_name][count]
+    contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
     if use_taxonomy_info:
         tax_phylum = list(phylum_dummy_matrix.iloc[count])
         tax_class = list(class_dummy_matrix.iloc[count])
@@ -311,21 +318,12 @@ for count,contig in enumerate(contig_table['contig']):
         tax_species = list(species_dummy_martix.iloc[count])
         taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
         taxonomy_matrix_dict[contig] = taxonomy
+        contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
     if cluster != unclustered_name:
-        bh_tsne_x = contig_table['bh_tsne_x'][count]
-        bh_tsne_y = contig_table['bh_tsne_y'][count]
-        length = contig_table['length'][count]
-        cov = contig_table['cov'][count]
-        gc = contig_table['gc'][count]
-        #Actually the label here should be the bin name
-        #label = known_genome
-        label = cluster
-        #features.append([bh_tsne_x,bh_tsne_y,cov] + taxonomy)
-        if use_taxonomy_info:
-            features.append(pca_matrix[count].tolist() + [cov] + taxonomy)
-        else:
-            features.append(pca_matrix[count].tolist() + [cov])
-        labels.append(label)
+        features.append(contig_feature_dict[contig])
+        labels.append(cluster)
+
+print("There are {} training contigs...".format(len(features)))
 
 num_confident_predictions = 1
 iteration = 0
@@ -342,9 +340,9 @@ while num_confident_predictions > 0:
     num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclustered_name)
     unclustered_contig_feature_list = []
     unclustered_contig_list = []
-    print("Recruiting {} unclustered sequences. This could take a while...".format(num_unclustered_contigs))
+    print("Recruiting {} unclustered sequences with {} training contigs. This could take a while...".format(num_unclustered_contigs,len(features)))
     for count,contig in enumerate(contig_table['contig']):
-        bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
+        """bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
         bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
         composition_feature_list = pca_matrix[count].tolist() + [cov]
         #Concatenate composition and taxonomy features into single list
@@ -352,7 +350,8 @@ while num_confident_predictions > 0:
             taxonomy = taxonomy_matrix_dict[contig]
             single_np_array = np.array([composition_feature_list + taxonomy])
         else:
-            single_np_array = np.array([composition_feature_list])
+            single_np_array = np.array([composition_feature_list])"""
+        single_np_array = np.array([contig_feature_dict[contig]])
         contig_length = contig_table.iloc[count]['length']
         #After the first iteration, train from previous confident predictions
         cluster = contig_table.iloc[count][cluster_column_name]
@@ -379,18 +378,23 @@ while num_confident_predictions > 0:
         #If it the prediction passes confidence cutoff
         #Could also look for redundant markers...
         redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
+        global_contig_index = contig_index_dict[contig]
         if confidence >= confidence_cutoff and not redundant:
-            #Add prediction to ML_recruitment_list
+            #Add prediction to ML_recruitment_list/replace with updated label
             #ML_recruitment_list.append(ML_prediction)
-            ML_recruitment_list[contig_index_dict[contig]] = ML_prediction
+            ML_recruitment_list[global_contig_index] = ML_prediction
             prediction_accuracy_list.append(ML_prediction)
             recruited_sequence_length += contig_length
             #Update contig table, so that any markers added to the cluster will
             #be considered in the next check of marker redundancy
             temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
+
+            #Update training data
+            features.append(contig_feature_dict[contig])
+            labels.append(ML_prediction)
         else:
             #ML_recruitment_list.append(unclustered_name)
-            ML_recruitment_list[contig_index_dict[contig]] = unclustered_name
+            ML_recruitment_list[global_contig_index] = unclustered_name
 
     num_predictions = len(multiprocessed_output)
     num_confident_predictions = len(prediction_accuracy_list)
