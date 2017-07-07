@@ -43,7 +43,6 @@ args = vars(parser.parse_args())
 def round_down(num, divisor):
     return num - (num%divisor)
 
-###For k-kmer matrix reduction - START
 def revcomp( string ):
 	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
 	complement_list = list()
@@ -145,24 +144,26 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     contig_index = list(pandas_table['contig']).index(contig_name)
     #contig_df = pandas_table.loc[(pandas_table.contig == contig_name)]
     redundancy = False
-    #if len(contig_PFAMs) > 0:
+    is_marker_contig = False
     #Avoid non-marker contigs in this calculation, for some reason evaluating to floats..
     if not isinstance(pandas_table.iloc[contig_index]['single_copy_PFAMs'],float):
         contig_PFAMs = pandas_table['single_copy_PFAMs'][contig_index].split(",")
+        if len(contig_PFAMs) > 0:
+            is_marker_contig = True
         for PFAM in contig_PFAMs:
             if PFAM in cluster_PFAMs:
                 redundancy = True
                 print("-->This prediction adds marker redundancy...skipping...")
-                return redundancy
+                return redundancy,is_marker_contig
             else:
                 pass
     else:
         #If no markers, can't add contamination...
         redundancy = False
-        return redundancy
+        return redundancy,is_marker_contig
     #Maybe this update should happen after function return?
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
-    return redundancy
+    return redundancy,is_marker_contig
 
 def calculateClusterStats(pandas_table,cluster_column,life_domain="bacteria"):
     #Function to calculate completeness and contamination of every dbscan
@@ -342,15 +343,6 @@ while num_confident_predictions > 0:
     unclustered_contig_list = []
     print("Recruiting {} unclustered sequences with {} training contigs. This could take a while...".format(num_unclustered_contigs,len(features)))
     for count,contig in enumerate(contig_table['contig']):
-        """bh_tsne_x = contig_table.iloc[count]['bh_tsne_x']
-        bh_tsne_y = contig_table.iloc[count]['bh_tsne_y']
-        composition_feature_list = pca_matrix[count].tolist() + [cov]
-        #Concatenate composition and taxonomy features into single list
-        if use_taxonomy_info:
-            taxonomy = taxonomy_matrix_dict[contig]
-            single_np_array = np.array([composition_feature_list + taxonomy])
-        else:
-            single_np_array = np.array([composition_feature_list])"""
         single_np_array = np.array([contig_feature_dict[contig]])
         contig_length = contig_table.iloc[count]['length']
         #After the first iteration, train from previous confident predictions
@@ -377,7 +369,7 @@ while num_confident_predictions > 0:
         print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
         #If it the prediction passes confidence cutoff
         #Could also look for redundant markers...
-        redundant = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
+        redundant,is_marker_contig = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
         global_contig_index = contig_index_dict[contig]
         if confidence >= confidence_cutoff and not redundant:
             #Add prediction to ML_recruitment_list/replace with updated label
@@ -389,9 +381,10 @@ while num_confident_predictions > 0:
             #be considered in the next check of marker redundancy
             temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
 
-            #Update training data
-            features.append(contig_feature_dict[contig])
-            labels.append(ML_prediction)
+            #Update training data with any confident and non-redundant marker contig classifications
+            if is_marker_contig:
+                features.append(contig_feature_dict[contig])
+                labels.append(ML_prediction)
         else:
             #ML_recruitment_list.append(unclustered_name)
             ML_recruitment_list[global_contig_index] = unclustered_name
