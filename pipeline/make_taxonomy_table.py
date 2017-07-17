@@ -41,7 +41,10 @@ def run_prodigal(path_to_assembly):
 def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
     view_output = prodigal_output + ".tab"
     current_dir = os.getcwd()
-    subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}".format(prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
+    tmp_dir_path = current_dir + '/tmp'
+	if not os.path.isdir(tmp_dir_path):
+		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
+    subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_database_path, num_processors, prodigal_daa,tmp_dir_path), shell = True)
     subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
     return view_output
 
