@@ -58,7 +58,7 @@ def run_blast2lca(input_file,taxdump_path):
 		print "Continuing to next step..."
 	else:
 		subprocess.call("blast2lca -savemem -dict {}/gi_taxid.bin -nodes {}/nodes.dmp -names {}/names.dmp {} > {}"\
-			.format(taxdump_path,input_file, output), shell = True)
+			.format(taxdump_path,taxdump_path,taxdump_path,input_file, output), shell = True)
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
