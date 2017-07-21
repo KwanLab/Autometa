@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# Program to carry out secondary dbscan clustering on a re-run of BH_tSNE on unclustered contigs (using low "perplexity" setting)
-# When you run BH_tSNE this way, Davies-Bouldin index seems to fail because the groups are quite diffuse, although DBSCAN seems to do
-# fine with the correct eps value.  Here we judge DBSCAN results based on the number of pure clusters (sum of total purity)
-
 import readline
 import sys
 import os
@@ -41,7 +37,10 @@ hdlr = logging.FileHandler('recursive_dbscan.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
+console = logging.StreamHandler()
+console.setFormatter(formatter)
 logger.setLevel(logging.DEBUG)
+logger.addHandler(console)
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -278,9 +277,6 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		if row['db_cluster'] in other_clusters:
 			output_db_table.set_value(index, 'db_cluster', -1)
 
-	output_filename = 'BH_tSNE' + str(BH_tSNE_counter) + '_DBSCAN' + str(round_counter) + '_eps' + str(best_eps_value) + '.tab'
-	output_db_table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=None)
-
 	# We now drop the db_cluster column
 	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
 	unclustered = subset_other_db_table
@@ -362,70 +358,60 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 
 	return k_mer_frequency_matrix
 
-def run_BH_tSNE(output_filename,table, do_pca=True):
+def run_BH_tSNE(table, do_pca=True):
 
 	pca_dimensions = 50
 	perplexity = 30.0
 
-	if os.path.isfile(output_filename):
-		print "BH_tSNE output already exists!"
-		print "Continuing to next step..."
-		logger.info('BH_tSNE output already exists!')
-		logger.info('Continuing to next step...')
-		return None
+	print "run_BH_tSNE: Running k-mer based binning..."
+	logger.info('run_BH_tSNE: Running k-mer based binning...')
+	# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
+
+	# We make a submatrix, consisting of the contigs in the table
+	k_mer_counts_submatrix = list()
+	for i,row in table.iterrows():
+		k_mer_counts_submatrix.append(k_mer_counts[i])
+
+	normalized_k_mer_submatrix = normalizeKmers(k_mer_counts_submatrix)
+
+	# PCA
+
+	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
+		logger.info('run_BH_tSNE: Principal component analysis')
+		pca = decomposition.PCA(n_components=pca_dimensions)
+		pca_matrix = pca.fit_transform(normalized_k_mer_submatrix)
 	else:
-		print "run_BH_tSNE: Running k-mer based binning..."
-		logger.info('run_BH_tSNE: Running k-mer based binning...')
-		# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
+		logger.info('run_BH_tSNE: Principle component analysis step skipped')
 
-		# We make a submatrix, consisting of the contigs in the table
-		k_mer_counts_submatrix = list()
-		for i,row in table.iterrows():
-			k_mer_counts_submatrix.append(k_mer_counts[i])
+	# BH-tSNE
+	logger.info('run_BH_tSNE: BH-tSNE')
 
-		normalized_k_mer_submatrix = normalizeKmers(k_mer_counts_submatrix)
+	# Adjust perplexity according to the number of data points
+	# Took logic from tsne source code
+	if (len(normalized_k_mer_submatrix) - 1) < (3 * perplexity)  :
+		perplexity = (float(len(normalized_k_mer_submatrix) - 1) / 3) - 1
 
-		# PCA
+	logger.info(str(len(normalized_k_mer_submatrix)) + ' data points')
+	logger.info(str(len(normalized_k_mer_submatrix[0])) + ' dimensions')
 
-		if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
-			logger.info('run_BH_tSNE: Principal component analysis')
-			pca = decomposition.PCA(n_components=pca_dimensions)
-			pca_matrix = pca.fit_transform(normalized_k_mer_submatrix)
-		else:
-			logger.info('run_BH_tSNE: Principle component analysis step skipped')
+	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
+		X = np.array(pca_matrix)
+	else:
+		X = np.array(normalized_k_mer_submatrix)
+	bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
 
-		# BH-tSNE
-		logger.info('run_BH_tSNE: BH-tSNE')
+	# We will add bh_tsne_x and bh_tsne_y columns to the contig table
 
-		# Adjust perplexity according to the number of data points
-		# Took logic from tsne source code
-		if (len(normalized_k_mer_submatrix) - 1) < (3 * perplexity)  :
-			perplexity = (float(len(normalized_k_mer_submatrix) - 1) / 3) - 1
+	bh_tsne_x = list()
+	bh_tsne_y = list()
 
-		logger.info(str(len(normalized_k_mer_submatrix)) + ' data points')
-		logger.info(str(len(normalized_k_mer_submatrix[0])) + ' dimensions')
+	for i in range(0, len(bh_tsne_matrix)):
+		bh_tsne_x.append(bh_tsne_matrix[i][0])
+		bh_tsne_y.append(bh_tsne_matrix[i][1])
 
-		if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
-			X = np.array(pca_matrix)
-		else:
-			X = np.array(normalized_k_mer_submatrix)
-		bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
+	table['bh_tsne_x'] = pd.Series(bh_tsne_x, index = table.index)
+	table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
 
-		logger.info('run_BH_tSNE: Outputting file ' + output_filename)
-
-		# We will add bh_tsne_x and bh_tsne_y columns to the contig table
-
-		bh_tsne_x = list()
-		bh_tsne_y = list()
-
-		for i in range(0, len(bh_tsne_matrix)):
-			bh_tsne_x.append(bh_tsne_matrix[i][0])
-			bh_tsne_y.append(bh_tsne_matrix[i][1])
-
-		table['bh_tsne_x'] = pd.Series(bh_tsne_x, index = table.index)
-		table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
-
-		table.to_csv(path_or_buf=output_filename, sep='\t', index=False, quoting=csv.QUOTE_NONE)
 
 def jackknife_training(features,labels,random_number):
 	#Function to randomly subsample data into halves (hence 0.5), train
@@ -655,7 +641,7 @@ def findSingletons(table):
 
 	return singletons_found
 
-parser = argparse.ArgumentParser(description="Prototype script to automatically carry out secondary clustering of BH_tSNE coordinates based on DBSCAN and cluster purity")
+parser = argparse.ArgumentParser(description="Automatically cluster contigs containing single copy marker genes using BH_tSNE and recursive DBSCAN, while maximizing cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
 parser.add_argument('-d','--domain', help='Microbial domain (bacteria|archaea)', default='bacteria')
 parser.add_argument('-f','--fasta', help='Assembly FASTA file', required=True)
@@ -837,12 +823,10 @@ else:
 ### Set up master table for the whole program
 master_table = pd.read_table(contig_table)
 
-coverage_list = master_table['cov'].tolist()
-
 ### Collate training data for ML steps later
 # We now set up global data structures to be used in supervised machine learning
 contig_list = master_table['contig'].tolist()
-
+coverage_list = master_table['cov'].tolist()
 taxonomy_matrix = list()
 
 if taxonomy_table_path:
@@ -882,230 +866,167 @@ master_table['bh_tsne_y'] = 0
 # We subset the table to include only contigs with marker genes, and this subset will then be clustered.
 current_table = master_table.loc[master_table['num_single_copies'] != 0]
 
-### Initial clustering, based on taxonomy (if available) and K-mer frequency analysis
-### Clustering validation is through single-copy marker analysis
-
 global_cluster_info = {}
 #global_cluster_contigs = {}
 completeness_cutoff = 20
 purity_cutoff = 90
 round_counter = 0
 current_fasta = fasta_path
-BH_tSNE_counter = 0
 
-# This is the main iteration loop
-# The loop breaks when BH-tSNE no longer can yield any more complete and pure clusters
-while True:
-	data_size = len(current_table.index)
-	# If there are two few datapoints we get errors in BH-tSNE
-	# It's worth noting here that if we break at the first iteration we will have problems, but then
-	# again, it is unlikely the user will want to bin 10 contigs or less.
-	if data_size <= 10:
-		break
 
-	# Run BH_tSNE
-	BH_tSNE_counter += 1
-	logger.info('Running BH-tSNE round ' + str(BH_tSNE_counter))
-	current_BH_tSNE_output = 'BH_tSNE' + str(BH_tSNE_counter) + '.tab'
-	# Carry out first BH_tSNE run
-	run_BH_tSNE(current_BH_tSNE_output,current_table) # Updates current_table with bh_tsne_x and bh_tsne_y
-	# Update master_table
+
+# Run BH_tSNE
+logger.info('Running BH-tSNE on single-copy marker contigs')
+# Carry out first BH_tSNE run
+run_BH_tSNE(current_table) # Updates current_table with bh_tsne_x and bh_tsne_y
+# Update master_table
+master_table.update(current_table)
+
+data_size = len(current_table.index)
+# Now if we have taxonomy data we split the data and cluster subfractions
+if taxonomy_info and data_size > 50:
+	local_current_table = copy.deepcopy(current_table)
+
+	taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+	logger.info('Further splitting according to taxonomic classifications')
+	for taxonomic_level in taxonomic_levels:
+		logger.info('Taxonomic level: ' + taxonomic_level)
+		unclustered_table = pd.DataFrame()
+
+		# Make subtables for each type of classification at the current level
+		classification_dict = dict()
+		for i,row in local_current_table.iterrows():
+			classification_dict[row[taxonomic_level]] = 1
+
+		# Skip iteration if the current taxonomic level is empty
+		if not classification_dict:
+			continue
+
+		for classification in classification_dict.keys():
+			logger.info('Examining ' + classification)
+			# Get subset table
+			subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
+
+			while True:
+				if len(subset_table.index) < 1:
+					break
+				round_counter += 1
+				logger.info('Running DBSCAN round ' + str(round_counter))
+
+				db_tables = runDBSCANs(subset_table)
+				cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+
+				subset_table = local_unclustered_table
+
+				if not cluster_information:
+					break
+
+				# Populate the global data structures
+				for	cluster in cluster_information:
+					new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
+					global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+				for contig in contig_cluster_dictionary:
+					new_cluster_name = 'DBSCAN'+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+					table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
+					local_current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+
+			# Add unclustered_table to combined unclustered dataframe
+			unclustered_table = unclustered_table.append(local_unclustered_table)
+
+		current_table.update(local_current_table)
+
+		#current_table = copy.deepcopy(unclustered_table)
+		local_current_table = unclustered_table
+else:
+	local_current_table = copy.deepcopy(current_table)
+	while True:
+		round_counter += 1
+		logger.info('Running DBSCAN round ' + str(round_counter))
+
+		db_tables = runDBSCANs(local_current_table)
+		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		local_current_table = unclustered_table
+
+		if not cluster_information:
+			break
+
+		# Populate the global data structures
+		for	cluster in cluster_information:
+			new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
+			global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+		for contig in contig_cluster_dictionary:
+			new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+			table_indices = current_table[current_table['contig'] == contig].index.tolist()
+			current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+
+master_table.update(current_table)
+
+### Pruning of clusters through supervised machine learning classification
+### Based on whether each contig re-classifies to the same cluster when it is taken out of the training set
+
+# Now we refine the clustering using supervised ML
+all_good_clusters = False
+iteration = 0
+
+# Do initial iteration, where we generate the first scores
+print('Cluster pruning iteration: ' + str(iteration))
+logger.info('Cluster pruning iteration: ' + str(iteration))
+
+cluster_scores, contig_reassignments = ML_assessClusters(current_table) # cluster_scores pre-sorted in ascending order
+
+logger.debug(pprint.pformat(cluster_scores))
+iteration += 1
+
+good_clusters = dict()
+bad_clusters = True
+
+while bad_clusters:
+	clusters_to_consider = dict()
+	# Make note of "good" clusters that are >= 100%
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] == 100:
+			good_clusters[cluster] = 1
+		else:
+			clusters_to_consider[cluster] = 1
+
+	# Now filter out reassignments according to the running list of "good" clusters
+	contig_clusters = dict()
+	for i,row in master_table.iterrows():
+		contig = row['contig']
+		cluster = row['cluster']
+		contig_clusters[contig] = cluster
+
+	filtered_contig_reassignments = dict()
+	for contig in contig_reassignments:
+		current_cluster = contig_clusters[contig]
+		if current_cluster in good_clusters:
+			continue
+		else:
+			filtered_contig_reassignments[contig] = contig_reassignments[contig]
+
+	reassignClusters(current_table, filtered_contig_reassignments)
 	master_table.update(current_table)
 
-	abs_BH_tSNE_path = os.path.abspath(current_BH_tSNE_output)
-
-	# Now if we have taxonomy data we do another round of clustering
-	if taxonomy_info and data_size > 50:
-		local_BH_tSNE_round = 0
-		local_current_table = copy.deepcopy(current_table)
-
-		taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
-		logger.info('Further splitting according to taxonomic classifications')
-		for taxonomic_level in taxonomic_levels:
-			logger.info('Taxonomic level: ' + taxonomic_level)
-			unclustered_table = pd.DataFrame()
-
-			# Make subtables for each type of classification at the current level
-			classification_dict = dict()
-			for i,row in local_current_table.iterrows():
-				classification_dict[row[taxonomic_level]] = 1
-
-			# Skip iteration if the current taxonomic level is empty
-			if not classification_dict:
-				continue
-
-			for classification in classification_dict.keys():
-				logger.info('Examining ' + classification)
-				# Get subset table
-				subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
-
-				while True:
-					if len(subset_table.index) < 1:
-						break
-					round_counter += 1
-					local_BH_tSNE_round += 1
-					logger.info('Running DBSCAN round ' + str(round_counter))
-
-					db_tables = runDBSCANs(subset_table)
-					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-
-					subset_table = local_unclustered_table
-
-					if not cluster_information:
-						break
-
-					# Populate the global data structures
-					for	cluster in cluster_information:
-						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-						global_cluster_info[new_cluster_name] = cluster_information[cluster]
-
-					for contig in contig_cluster_dictionary:
-						new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-						table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
-						local_current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
-
-				# Add unclustered_table to combined unclustered dataframe
-				unclustered_table = unclustered_table.append(local_unclustered_table)
-
-			current_table.update(local_current_table)
-
-			#current_table = copy.deepcopy(unclustered_table)
-			local_current_table = unclustered_table
-	else:
-		local_current_table = copy.deepcopy(current_table)
-		local_BH_tSNE_round = 0
-		while True:
-			round_counter += 1
-			local_BH_tSNE_round += 1
-			logger.info('Running DBSCAN round ' + str(round_counter))
-
-			db_tables = runDBSCANs(local_current_table)
-			cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-			local_current_table = unclustered_table
-
-			if not cluster_information:
-				break
-
-			# Populate the global data structures
-			for	cluster in cluster_information:
-				new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(cluster)
-				global_cluster_info[new_cluster_name] = cluster_information[cluster]
-
-			for contig in contig_cluster_dictionary:
-				new_cluster_name = 'BH_tSNE' + str(BH_tSNE_counter) + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-				table_indices = current_table[current_table['contig'] == contig].index.tolist()
-				current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
-
-	if local_BH_tSNE_round == 1:
-		# This means that after the first BH_tSNE run, dbscan only ran once, meaning that no clusters were found upon first run, and we are done
-		break
-
-	master_table.update(current_table)
-
-	### Pruning of clusters through supervised machine learning classification
-	### Based on whether each contig re-classifies to the same cluster when it is taken out of the training set
-
-	# Now we refine the clustering using supervised ML
-	all_good_clusters = False
-	iteration = 0
-
-	# Do initial iteration, where we generate the first scores
 	print('Cluster pruning iteration: ' + str(iteration))
 	logger.info('Cluster pruning iteration: ' + str(iteration))
 
-	cluster_scores, contig_reassignments = ML_assessClusters(current_table) # cluster_scores pre-sorted in ascending order
-
+	cluster_scores, contig_reassignments = ML_assessClusters(current_table, 50, 90, clusters_to_consider)
 	logger.debug(pprint.pformat(cluster_scores))
 	iteration += 1
 
-	good_clusters = dict()
-	bad_clusters = True
+	bad_clusters = False
+	for cluster in cluster_scores:
+		if cluster_scores[cluster] < 90 and cluster not in good_clusters:
+			bad_clusters = True
 
-	#singletons = findSingletons(current_table)
-	#for cluster in singletons:
-	#	good_clusters[cluster] = 1
-	#	cluster_scores[cluster] = 100
+master_table.update(current_table)
 
-	while bad_clusters:
-		clusters_to_consider = dict()
-		# Make note of "good" clusters that are >= 100%
-		for cluster in cluster_scores:
-			if cluster_scores[cluster] == 100:
-				good_clusters[cluster] = 1
-			else:
-				clusters_to_consider[cluster] = 1
-
-		#singletons = findSingletons(current_table)
-		#for cluster in singletons:
-		#	good_clusters[cluster] = 1
-		#	cluster_scores[cluster] = 100
-
-		# Now filter out reassignments according to the running list of "good" clusters
-		contig_clusters = dict()
-		for i,row in master_table.iterrows():
-			contig = row['contig']
-			cluster = row['cluster']
-			contig_clusters[contig] = cluster
-
-		filtered_contig_reassignments = dict()
-		for contig in contig_reassignments:
-			current_cluster = contig_clusters[contig]
-			if current_cluster in good_clusters:
-				continue
-			else:
-				filtered_contig_reassignments[contig] = contig_reassignments[contig]
-
-		reassignClusters(current_table, filtered_contig_reassignments)
-		master_table.update(current_table)
-
-		print('Cluster pruning iteration: ' + str(iteration))
-		logger.info('Cluster pruning iteration: ' + str(iteration))
-
-		cluster_scores, contig_reassignments = ML_assessClusters(current_table, 50, 90, clusters_to_consider)
-		logger.debug(pprint.pformat(cluster_scores))
-		iteration += 1
-
-		bad_clusters = False
-		for cluster in cluster_scores:
-			if cluster_scores[cluster] < 90 and cluster not in good_clusters:
-				bad_clusters = True
-
-	#### We reclassify singletons to make sure that they are bona fide singleton genomes
-	#print('Singleton reclassification')
-	#logger.info('Singleton reclassification')
-	## Find singleton clusters
-	#singletons = findSingletons(current_table)
-	#
-	#cluster_scores, contig_reassignments = ML_assessClusters(current_table, 90, singletons)
-	#reassignClusters(current_table, contig_reassignments)
-
-	#### Now we classify the unclustered fraction to our refined training set.
-	#print('Cluster ML recruitment')
-	#logger.info('Cluster ML recruitment')
-	#contig_reassignments = classifyContigs(current_table)
-	#reassignClusters(current_table, contig_reassignments)
-	master_table.update(current_table)
-
-	### Set up the next iteration
-	current_table = current_table.loc[current_table['cluster'] == 'unclustered']
-
-
-	# If we are not done, write a new fasta for the next BH_tSNE run
-	# First convert the r table to a pandas table
-	#unclustered_pd = pandas2ri.ri2py(current_r_table)
-	unclustered_seqrecords = []
-	for i, row in unclustered_table.iterrows():
-		contig = row['contig']
-		unclustered_seqrecords.append(assembly_seqs[contig])
-
-	current_fasta = 'unclustered_for_BH_tSNE' + str(BH_tSNE_counter + 1) + '.fasta'
-	SeqIO.write(unclustered_seqrecords, current_fasta, 'fasta')
-
-	# Right now the iteration doesn't happen because it seems to be counter-productive
-	# at least in some situations. The structure is left here so that it can be turned on
-	# to conduct experiments - just delete the break command below
-	break
-
+# We do a final overall BH-tSNE run so that the dataset can be visualized later
+logger.info('Running BH-tSNE on all contigs')
+# Carry out first BH_tSNE run
+run_BH_tSNE(master_table)
 
 # Output master_table
 master_table_path = outdir + '/full_table'
@@ -1137,26 +1058,3 @@ for cluster in summary_info:
 
 	summary_table.write(outputString)
 summary_table.close()
-
-# Now for each 'complete' cluster, we output a separate fasta file.  We collect all contigs from the 'failed' and 'noise' clusters and
-# output them to one fasta (unclustered.fasta)
-
-# Initialize output fasta lists
-output_fastas = {} # Keyed by cluster
-
-for i, row in master_table.iterrows():
-	contig = row['contig']
-	cluster = row['cluster']
-	seq_record = assembly_seqs[contig]
-	if cluster in output_fastas:
-		output_fastas[cluster].append(seq_record)
-	else:
-		output_fastas[cluster] = [ seq_record ]
-
-# Now write fasta files
-for cluster in output_fastas:
-	if cluster == 'unclustered':
-		fasta_output_path = outdir + '/' + str(cluster) + '.fasta'
-	else:
-		fasta_output_path = outdir + '/cluster_' + str(cluster) + '.fasta'
-	SeqIO.write(output_fastas[cluster], fasta_output_path, 'fasta')
