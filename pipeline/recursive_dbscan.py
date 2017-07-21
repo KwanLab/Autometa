@@ -186,18 +186,24 @@ def getClusterSummaryInfo(pandas_table):
 	return output_dictionary
 
 def runDBSCANs(table):
-	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
-	current_eps = 0.3
-	db_tables = {} # Will be keyed by eps
+	current_eps_list = [ 0.3 ]
+	for i in range(1, processors):
+		current_eps_list.append(current_eps_list[-1] + 0.1)
+
+	db_tables = {}
 	number_of_clusters = float('inf')
 	while(number_of_clusters > 1):
-		dbscan_output_pd = dbscan_simple(table, current_eps)
-		new_pd_copy = copy.deepcopy(dbscan_output_pd)
-		db_tables[current_eps] = new_pd_copy
-		current_eps = current_eps + 0.1
+		dbscan_outputs = Parallel(n_jobs=processors)(delayed(dbscan_simple)(table, eps) for eps in current_eps_list)
+		for i,eps in enumerate(current_eps_list):
+			new_pd_copy = copy.deepcopy(dbscan_outputs[i])
+			db_tables[eps] = new_pd_copy
 
-		# Count the number of clusters
-		number_of_clusters = countClusters(new_pd_copy)
+		number_of_clusters = countClusters(dbscan_outputs[-1])
+
+		# Make new list
+		current_eps_list = [ current_eps_list[-1] + 0.1 ]
+		for i in range(1, processors):
+			current_eps_list.append(current_eps_list[-1] + 0.1)
 
 	return db_tables
 
@@ -424,36 +430,25 @@ def jackknife_training(features,labels,random_number):
 	return my_classifier
 
 def ML_parallel(feature_array, features, labels, random_number):
-		jackknifed_classifier = jackknife_training(features,labels,random_number)
-		ML_prediction = jackknifed_classifier.predict(feature_array)[0]
-		return ML_prediction
+	jackknifed_classifier = jackknife_training(features,labels,random_number)
+	ML_prediction = jackknifed_classifier.predict(feature_array)[0]
+	return ML_prediction
 
-def calculate_bootstap_replicates(feature_array, features, labels, iterations = 10):
-
-	if iterations > 1:
-		# Determine number of jobs
-		if iterations > processors:
-			num_jobs = processors
-		else:
-			num_jobs = iterations
-
-		# If you don't make this list of random numbers, then all the bootstraps will come back
-		# with the same answer, and the confidence score will always be 100.0
-		random_numbers = list()
-		for i in range(0, iterations):
-			number = random.randint(0, 65535)
-			random_numbers.append(number)
-
-		prediction_list = Parallel(n_jobs = num_jobs)(delayed(ML_parallel)(feature_array, features, labels, i) for i in random_numbers)
-	else:
-		ML_prediction = ML_parallel(feature_array, features, labels, 1)
-		prediction_list = [ ML_prediction ]
-
+def calculate_bootstrap_replicates(input_dictionary,iterations = 10):
+	prediction_list = []
+	training_features = input_dictionary['training_features']
+	training_labels = input_dictionary['training_labels']
+	classification_features = input_dictionary['classification_features']
+	for i in range(iterations):
+		#Here features and labels are global variables
+		jackknifed_classifier = jackknife_training(training_features,training_labels)
+		ML_prediction = jackknifed_classifier.predict(classification_features)[0]
+		prediction_list.append(ML_prediction)
 	counter = collections.Counter(prediction_list)
 	top_prediction_set = counter.most_common(1)
 	top_prediction = top_prediction_set[0][0]
 	confidence = top_prediction_set[0][1]
-	confidence_percent = round(float(confidence)/iterations*100,3)
+	confidence_percent = round(confidence/iterations*100,3)
 	#To see frequency of all prediction: print counter
 	return top_prediction,confidence_percent
 
@@ -499,6 +494,11 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 	# Identify singletons
 	singletons = findSingletons(table)
 
+	# For each contig, we want to extract out its features, and make a custom training set that EXCLUDES that contig
+	contig_list = list()
+	cluster_list = list()
+	ML_inputs = list()
+
 	for i,row in subset_table.iterrows():
 		current_contig = row['contig']
 		current_cluster = row['cluster']
@@ -507,11 +507,14 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 			if current_cluster not in clusters_to_examine:
 				continue
 
+		contig_list.append(current_contig)
+		cluster_list.append(current_cluster)
+
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
 
 		# Set up data structures for training/classification
-		classification_features = None
+		to_be_classified_features = None
 
 		features = list()
 		labels = list()
@@ -523,7 +526,7 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 				current_features = pca_matrix[j] + coverage_list[j]
 
 			if j == i:
-				classification_features = np.array([current_features])
+				to_be_classified_features = np.array([current_features])
 				## Comment out the following if you want the contig being assessed to be taken out of the training set
 				#features.append(current_features)
 				#labels.append(subrow['cluster'])
@@ -531,7 +534,17 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 				features.append(current_features)
 				labels.append(subrow['cluster'])
 
-		ML_prediction, confidence = calculate_bootstap_replicates(classification_features, features, labels, 10)
+		temp_dict = { 'training_features': features, 'training_labels': labels, 'classification_features': to_be_classified_features}
+		ML_inputs.append(temp_dict)
+
+	# Now do the ML prediction in parallel
+	parallel_output = Parallel(n_jobs=processors)(delayed(calculate_bootstrap_replicates)(ML_dictionary, 10) for ML_dictionary in ML_inputs)
+
+	# Now we process the results
+	for i,output_tuple in enumerate(parallel_output):
+		ML_prediction,confidence = output_tuple
+		current_cluster = cluster_list[i]
+		current_contig = contig_list[i]
 
 		if current_cluster in singletons:
 			redundant = redundant_marker_prediction(current_contig, ML_prediction, subset_table, 'cluster')
@@ -554,18 +567,6 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 		total_count = cluster_counts[cluster]['congruent'] + cluster_counts[cluster]['different']
 		percentage = (float(cluster_counts[cluster]['congruent'])/total_count)*100
 		cluster_results[cluster] = percentage
-
-	## For clusters with only one contig, we assign a value of 100
-	## This ensures that genomes assembled to one contig are not misassigned to some other cluster down the line
-	#for cluster in cluster_contig_counts:
-	#	if cluster_contig_counts[cluster] == 1:
-	#		cluster_results[cluster] = 100.0
-	#
-	#		# Delete reassignments
-	#		for contig in current_contig_assignments:
-	#			if current_contig_assignments[contig] == cluster:
-	#				contig_reassignments.pop(contig, None)
-	#				break
 
 	return cluster_results, contig_reassignments
 
@@ -640,6 +641,27 @@ def findSingletons(table):
 			singletons_found[cluster] = 1
 
 	return singletons_found
+
+def countKmers(contig, sequenceCollection):
+	contig_seq = str(sequenceCollection[contig].seq)
+	# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
+	list_size = len(unique_k_mers.keys())
+	current_contig_k_mer_counts = [1 for k in range(0, list_size)]
+
+	for j in range(0, (len(contig_seq) - k_mer_size)):
+		k_mer = contig_seq[j:j + k_mer_size]
+		k_mer_reverse = revcomp(k_mer)
+
+		# Find appropriate index
+		# Note - this part naturally ignores any k_mers with weird characters
+		if k_mer in unique_k_mers:
+			index = unique_k_mers[k_mer]
+			current_contig_k_mer_counts[index] += 1
+		elif k_mer_reverse in unique_k_mers:
+			index = unique_k_mers[k_mer_reverse]
+			current_contig_k_mer_counts[index] += 1
+
+	return current_contig_k_mer_counts
 
 parser = argparse.ArgumentParser(description="Automatically cluster contigs containing single copy marker genes using BH_tSNE and recursive DBSCAN, while maximizing cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -782,26 +804,13 @@ else:
 	# The order of the indices depends on the order k-mers were encountered while making the dictionary
 	logger.info('Counting k-mers')
 
-	for contig_name in assembly_seqs:
-		contig_seq = str(assembly_seqs[contig_name].seq)
-		# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
-		list_size = len(unique_k_mers.keys())
-		current_contig_k_mer_counts = [1 for k in range(0, list_size)]
+	contig_name_list = list(assembly_seqs.keys())
 
-		for j in range(0, (len(contig_seq) - k_mer_size)):
-			k_mer = contig_seq[j:j + k_mer_size]
-			k_mer_reverse = revcomp(k_mer)
+	k_mer_count_list = Parallel(n_jobs=processors)(delayed(countKmers)(contig, assembly_seqs) for contig in assembly_seqs)
 
-			# Find appropriate index
-			# Note - this part naturally ignores any k_mers with weird characters
-			if k_mer in unique_k_mers:
-				index = unique_k_mers[k_mer]
-				current_contig_k_mer_counts[index] += 1
-			elif k_mer_reverse in unique_k_mers:
-				index = unique_k_mers[k_mer_reverse]
-				current_contig_k_mer_counts[index] += 1
-
-		k_mer_dict[contig_name] = current_contig_k_mer_counts
+	for i,k_mer_count in enumerate(k_mer_count_list):
+		contig_name = contig_name_list[i]
+		k_mer_dict[contig_name] = k_mer_count
 
 	# Write the file in case we have to do this again
 	matrix = open(matrix_file, 'w')
