@@ -419,11 +419,11 @@ def run_BH_tSNE(table, do_pca=True):
 	table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
 
 
-def jackknife_training(features,labels,random_number):
+def jackknife_training(features,labels):
 	#Function to randomly subsample data into halves (hence 0.5), train
 	#ML-classifier and make prediction. Used iteratively in
 	#calculate_bootstap_replicates() function (see below)
-	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50, random_state=random_number)
+	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size = 0.50)
 	my_classifier = tree.DecisionTreeClassifier()
 	my_classifier = my_classifier.fit(train_features,train_labels)
 	predictions = my_classifier.predict(test_features)
