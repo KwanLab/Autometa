@@ -448,7 +448,7 @@ def calculate_bootstrap_replicates(input_dictionary,iterations = 10):
 	top_prediction_set = counter.most_common(1)
 	top_prediction = top_prediction_set[0][0]
 	confidence = top_prediction_set[0][1]
-	confidence_percent = round(confidence/iterations*100,3)
+	confidence_percent = round(float(confidence)/iterations*100,3)
 	#To see frequency of all prediction: print counter
 	return top_prediction,confidence_percent
 
@@ -536,7 +536,7 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 
 		temp_dict = { 'training_features': features, 'training_labels': labels, 'classification_features': to_be_classified_features}
 		ML_inputs.append(temp_dict)
-
+	pdb.set_trace()
 	# Now do the ML prediction in parallel
 	parallel_output = Parallel(n_jobs=processors)(delayed(calculate_bootstrap_replicates)(ML_dictionary, 10) for ML_dictionary in ML_inputs)
 
