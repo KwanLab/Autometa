@@ -51,7 +51,10 @@ def run_prodigal(path_to_assembly):
 def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa):
     view_output = prodigal_output + ".tab"
     current_dir = os.getcwd()
-    subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {}".format(prodigal_output, diamond_database_path, num_processors, prodigal_daa), shell = True)
+    tmp_dir_path = current_dir + '/tmp'
+    if not os.path.isdir(tmp_dir_path):
+        os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
+    subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_database_path, num_processors, prodigal_daa,tmp_dir_path), shell = True)
     subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
     return view_output
 
@@ -77,7 +80,7 @@ def run_blast2lca(input_file,taxdump_path):
 		print "Continuing to next step..."
 	else:
 		subprocess.call("blast2lca -savemem -dict {}/gi_taxid.bin -nodes {}/nodes.dmp -names {}/names.dmp {} > {}"\
-			.format(taxdump_path,input_file, output), shell = True)
+			.format(taxdump_path,taxdump_path,taxdump_path,input_file, output), shell = True)
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
