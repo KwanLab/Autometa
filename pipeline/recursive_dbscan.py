@@ -186,24 +186,18 @@ def getClusterSummaryInfo(pandas_table):
 	return output_dictionary
 
 def runDBSCANs(table):
-	current_eps_list = [ 0.3 ]
-	for i in range(1, processors):
-		current_eps_list.append(current_eps_list[-1] + 0.1)
-
-	db_tables = {}
+	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
+	current_eps = 0.3
+	db_tables = {} # Will be keyed by eps
 	number_of_clusters = float('inf')
 	while(number_of_clusters > 1):
-		dbscan_outputs = Parallel(n_jobs=processors)(delayed(dbscan_simple)(table, eps) for eps in current_eps_list)
-		for i,eps in enumerate(current_eps_list):
-			new_pd_copy = copy.deepcopy(dbscan_outputs[i])
-			db_tables[eps] = new_pd_copy
+		dbscan_output_pd = dbscan_simple(table, current_eps)
+		new_pd_copy = copy.deepcopy(dbscan_output_pd)
+		db_tables[current_eps] = new_pd_copy
+		current_eps = current_eps + 0.1
 
-		number_of_clusters = countClusters(dbscan_outputs[-1])
-
-		# Make new list
-		current_eps_list = [ current_eps_list[-1] + 0.1 ]
-		for i in range(1, processors):
-			current_eps_list.append(current_eps_list[-1] + 0.1)
+		# Count the number of clusters
+		number_of_clusters = countClusters(new_pd_copy)
 
 	return db_tables
 
@@ -418,7 +412,6 @@ def run_BH_tSNE(table, do_pca=True):
 	table['bh_tsne_x'] = pd.Series(bh_tsne_x, index = table.index)
 	table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
 
-
 def jackknife_training(features,labels):
 	#Function to randomly subsample data into halves (hence 0.5), train
 	#ML-classifier and make prediction. Used iteratively in
@@ -428,11 +421,6 @@ def jackknife_training(features,labels):
 	my_classifier = my_classifier.fit(train_features,train_labels)
 	predictions = my_classifier.predict(test_features)
 	return my_classifier
-
-def ML_parallel(feature_array, features, labels, random_number):
-	jackknifed_classifier = jackknife_training(features,labels,random_number)
-	ML_prediction = jackknifed_classifier.predict(feature_array)[0]
-	return ML_prediction
 
 def calculate_bootstrap_replicates(input_dictionary,iterations = 10):
 	prediction_list = []
@@ -536,7 +524,7 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 
 		temp_dict = { 'training_features': features, 'training_labels': labels, 'classification_features': to_be_classified_features}
 		ML_inputs.append(temp_dict)
-	
+
 	# Now do the ML prediction in parallel
 	parallel_output = Parallel(n_jobs=processors)(delayed(calculate_bootstrap_replicates)(ML_dictionary, 10) for ML_dictionary in ML_inputs)
 
@@ -641,27 +629,6 @@ def findSingletons(table):
 			singletons_found[cluster] = 1
 
 	return singletons_found
-
-def countKmers(contig, sequenceCollection):
-	contig_seq = str(sequenceCollection[contig].seq)
-	# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
-	list_size = len(unique_k_mers.keys())
-	current_contig_k_mer_counts = [1 for k in range(0, list_size)]
-
-	for j in range(0, (len(contig_seq) - k_mer_size)):
-		k_mer = contig_seq[j:j + k_mer_size]
-		k_mer_reverse = revcomp(k_mer)
-
-		# Find appropriate index
-		# Note - this part naturally ignores any k_mers with weird characters
-		if k_mer in unique_k_mers:
-			index = unique_k_mers[k_mer]
-			current_contig_k_mer_counts[index] += 1
-		elif k_mer_reverse in unique_k_mers:
-			index = unique_k_mers[k_mer_reverse]
-			current_contig_k_mer_counts[index] += 1
-
-	return current_contig_k_mer_counts
 
 parser = argparse.ArgumentParser(description="Automatically cluster contigs containing single copy marker genes using BH_tSNE and recursive DBSCAN, while maximizing cluster purity")
 parser.add_argument('-m','--marker_tab', help='Output of make_marker_table.py', required=True)
@@ -804,13 +771,26 @@ else:
 	# The order of the indices depends on the order k-mers were encountered while making the dictionary
 	logger.info('Counting k-mers')
 
-	contig_name_list = list(assembly_seqs.keys())
+	for contig_name in assembly_seqs:
+		contig_seq = str(assembly_seqs[contig_name].seq)
+		# Initialize the list for the contig to be all 1s - as we can't have zero values in there for CLR later
+		list_size = len(unique_k_mers.keys())
+		current_contig_k_mer_counts = [1 for k in range(0, list_size)]
 
-	k_mer_count_list = Parallel(n_jobs=processors)(delayed(countKmers)(contig, assembly_seqs) for contig in assembly_seqs)
+		for j in range(0, (len(contig_seq) - k_mer_size)):
+			k_mer = contig_seq[j:j + k_mer_size]
+			k_mer_reverse = revcomp(k_mer)
 
-	for i,k_mer_count in enumerate(k_mer_count_list):
-		contig_name = contig_name_list[i]
-		k_mer_dict[contig_name] = k_mer_count
+			# Find appropriate index
+			# Note - this part naturally ignores any k_mers with weird characters
+			if k_mer in unique_k_mers:
+				index = unique_k_mers[k_mer]
+				current_contig_k_mer_counts[index] += 1
+			elif k_mer_reverse in unique_k_mers:
+				index = unique_k_mers[k_mer_reverse]
+				current_contig_k_mer_counts[index] += 1
+
+		k_mer_dict[contig_name] = current_contig_k_mer_counts
 
 	# Write the file in case we have to do this again
 	matrix = open(matrix_file, 'w')
