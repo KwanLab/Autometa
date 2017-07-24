@@ -45,10 +45,10 @@ def make_marker_table(fasta):
 		logger.info("hmmpress -f {}".format(hmm_marker_path))
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		logger.info("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']))
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table, args['p']))
 		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table,args['processors']), \
-			shell = True,stdout=FNULL, stderr=subprocess.STDOUT)
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_marker_table, args['p']), \
+			shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_marker_table
 
 def bin_assess_and_pick_cluster(pipeline_path,marker_tab, filtered_assembly, contig_table):
@@ -68,36 +68,34 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
 #argument parser
-parser = argparse.ArgumentParser(description="Script to run the autometa pipeline.")
-parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p','--processors', help='Number of processors used', default=1)
-parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
+parser = argparse.ArgumentParser(description="Script to run the Autometa pipeline.",\
+ epilog="Please do not forget to cite us. Thank you for using Autometa!",\
+  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-a', metavar='assembly', help='assembly.fasta', required=True)
+parser.add_argument('-p', metavar='processors', help='Processors to use', default=1)
+parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument('-c','--cluster_completeness_output', help='Best cluster output limited by completeness', default=20)
-parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', default = 'bacteria')
-parser.add_argument('-t','--taxonomy_tab', help='Output of make_taxonomy_table.py')
+parser.add_argument('-c', metavar='cluster completeness output', help='Best cluster output limited by completeness', default=20)
+parser.add_argument('-k', metavar='kingdom', help='Kingdom to consider (archaea|bacteria)',\
+choices=['bacteria','archaea'], default = 'bacteria')
+parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonomy_table.py')
 args = vars(parser.parse_args())
 
-length_cutoff = args['length_cutoff']
-fasta_assembly = os.path.basename(args['assembly'])
-processors = args['processors']
-cluster_completeness = args['cluster_completeness_output']
-kingdom = args['kingdom'].lower()
-taxonomy_table_path = args['taxonomy_tab']
-
-# Error check that kingdom is valid
-if not (kingdom == 'bacteria' or kingdom == 'archaea'):
-	print ('Error, kingdom must either be "archaea" or "bacteria"')
-	sys.exit(2)
+length_cutoff = args['l']
+fasta_assembly = os.path.basename(args['a'])
+processors = args['p']
+cluster_completeness = args['c']
+kingdom = args['k'].lower()
+taxonomy_table_path = args['t']
 
 #check if fasta in path
-if not os.path.isfile(args['assembly']):
-	print "Could not find {}...".format(args['assembly'])
-	logger.debug('Could not find {}...'.format(args['assembly']))
+if not os.path.isfile(args['a']):
+	print "Could not find {}...".format(args['a'])
+	logger.debug('Could not find {}...'.format(args['a']))
 	exit()
 
 #what input variables were and when you ran it (report fill path based on argparse)
-logger.info('Input: -a {} -p {} -l {} -c {}'.format(args['assembly'], processors, length_cutoff, cluster_completeness))
+logger.info('Input: -a {} -p {} -l {} -c {}'.format(args['a'], processors, length_cutoff, cluster_completeness))
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
@@ -120,7 +118,7 @@ commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).co
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
 
 #run length trim and store output name
-filtered_assembly = length_trim(args['assembly'],args['length_cutoff'])
+filtered_assembly = length_trim(args['a'], args['l'])
 contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 vizbin_output_path = "contig_vizbin.tab"
