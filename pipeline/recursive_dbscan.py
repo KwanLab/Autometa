@@ -521,9 +521,9 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 
 		for j,subrow in subset_table.iterrows():
 			if taxonomy_table_path:
-				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist() + coverage_list[j])
+				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist() + [ coverage_list[j] ])
 			else:
-				current_features = pca_matrix[j] + coverage_list[j]
+				current_features = pca_matrix[j] + [ coverage_list[j] ]
 
 			if j == i:
 				to_be_classified_features = np.array([current_features])
