@@ -7,20 +7,30 @@ import pandas as pd
 from Bio import SeqIO
 import sys
 
+def readable_dir(prospective_dir):
+  if not os.path.isdir(prospective_dir):
+    raise Exception("readable_dir: \"{0}\" is not a valid path".format(prospective_dir))
+  if os.access(prospective_dir, os.R_OK):
+    return prospective_dir
+  else:
+    raise Exception("readable_dir: \"{0}\" is not a readable directory".format(prospective_dir))
+
 #argument parser
-parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.")
-parser.add_argument('-a','--assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p','--processors', help='assembly.fasta', default=1)
-parser.add_argument('-n','--nr_diamond_db', help='Diamond formatted nr database', default="/media/box2/nr_old/nr")
-parser.add_argument('-t','--taxdump', help='Path to directory with taxdump files.',required=True)
-parser.add_argument('-l','--length_cutoff', help='Contig length cutoff to consider for binning.\
+parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
+parser.add_argument('-a', metavar='assembly', help='assembly.fasta', required=True)
+parser.add_argument('-p', metavar='processors', help='Processors to use. If not specified, will infer', default=1)
+parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-redundant (NR) protein database', default="/media/box2/nr_old/nr") #Need to update default
+parser.add_argument('-t', metavar='database directory', help='Path to directory with taxdump files.', required=True, type=readable_dir)
+parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
+parser.add_argument("-update", required=False, action='store_true', help='Adds/Updates nodes.dmp, names.dmp and accession2taxid files within taxdump directory specified with \"-t\"')
+
 args = vars(parser.parse_args())
 
-num_processors = args['processors']
-length_cutoff = args['length_cutoff']
-fasta_path = args['assembly']
-fasta_assembly_prefix = os.path.splitext(os.path.basename(args['assembly']))[0]
+num_processors = args['p']
+length_cutoff = args['l']
+fasta_path = args['a']
+fasta_assembly_prefix = os.path.splitext(os.path.basename(args['a']))[0]
 
 def length_trim(fasta_path,fasta_prefix,length_cutoff):
 	#Trim the length of fasta file
@@ -50,6 +60,18 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 
 	#return  view_output
 	#might want to change name of outputfile
+"""
+#blast2lca using accession numbers#
+def run_blast2lca(input_file, taxdump_path):
+	output = input_file.rstrip(".tab") + ".lca"
+	if os.path.isfile(output):
+		print "{} file already exists!".format(output)
+		print "Continuing to next step..."
+	else:
+		subprocess.call("{}/lca.py database_directory {} {} > {}".format(pipeline_path, taxdump_dir_path, input_file, output), shell = True)
+	return output
+
+"""
 
 def run_blast2lca(input_file,taxdump_path):
 	output = input_file.rstrip(".tab") + ".lca"
@@ -64,12 +86,12 @@ def run_blast2lca(input_file,taxdump_path):
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
 	initial_table_path = assembly_path + '.tab'
 	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
-	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path,tax_table_path, taxdump_dir_path), shell = True)
+	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, taxdump_dir_path), shell = True)
 	#contig_table_path, tax_table_path, taxdump_dir_path, output_file_path
 	return 'taxonomy.tab'
 
 #diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
-taxdump_dir_path = args['taxdump']#'/home/jkwan/blast2lca_taxdb'
+taxdump_dir_path = args['t']#'/home/jkwan/blast2lca_taxdb'
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 pipeline_path = sys.path[0]
@@ -77,9 +99,23 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 #diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-diamond_database_path = args['nr_diamond_db'] #/media/box2/nr_old/nr'
+diamond_database_path = args['n'] #/media/box2/nr_old/nr'
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
+names_dmp_path = taxdump_dir_path + '/names.dmp'
+nodes_dmp_path = taxdump_dir_path + '/nodes.dmp'
+accession2taxid_path = taxdump_dir_path + '/prot.accession2taxid'
+taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
+accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
+
+if args['update']:
+    os.system('wget -v %s -O %s/taxdump.tar.gz' % (taxdump_url, taxdump_dir_path))
+    os.system('tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (taxdump_dir_path, taxdump_dir_path))
+    os.system('rm %s/taxdum.tar.gz' % taxdump_dir_path)
+    os.system('wget -v %s -O %s.gz' % (accession2taxid_url, accession2taxid_path))
+    print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
+    os.system('gunzip -9vNf %s.gz > %s' % (accession2taxid_path, accession2taxid_path))
+    print("\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..." % taxdump_dir_path)
 
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
