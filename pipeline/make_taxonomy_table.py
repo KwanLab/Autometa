@@ -9,11 +9,11 @@ import sys
 
 def readable_dir(prospective_dir):
   if not os.path.isdir(prospective_dir):
-    raise Exception("readable_dir: \"{0}\" is not a valid path".format(prospective_dir))
+    raise Exception("\"{0}\" is not a valid path".format(prospective_dir))
   if os.access(prospective_dir, os.R_OK):
     return prospective_dir
   else:
-    raise Exception("readable_dir: \"{0}\" is not a readable directory".format(prospective_dir))
+    raise Exception("\"{0}\" is not a readable directory".format(prospective_dir))
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
