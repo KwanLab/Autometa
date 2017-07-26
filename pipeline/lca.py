@@ -9,19 +9,20 @@ Author: Evan R. Rees
 Required Extensions: lca_functions.so | lca_functions.c (lca_functions.pyx compiled using Cython)
 """
 
-try:
-    import lca_functions
-except ImportError as failed_import:
-    print("\nlca.py needs access to cython compiled file lca_functions.c or lca_functions.so\n\
-    To compile lca_functions.c file enter the following into the command line prompt:\n\n\
-    'python setup_lca_functions.py build_ext --inplace'\n\n")
-    raise failed_import
-
 import time, re, argparse, os
 from functools import reduce
 from itertools import chain
 from tqdm import tqdm
 from sys import argv
+from sys import exit
+
+try:
+    import lca_functions
+except ImportError as failed_import:
+    print("\nlca.py needs access to the cython compiled file: lca_functions.c or lca_functions.so.\n\
+To compile the lca_functions.c file enter the following into the command line prompt:\n\n\
+cmd line:python setup_lca_functions.py build_ext --inplace\n")
+    exit()
 
 def restricted_float(x):
     x = float(x)
