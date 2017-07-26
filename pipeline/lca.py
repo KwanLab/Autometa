@@ -8,7 +8,15 @@ Output: (blast.lca) LCA between filtered orfs (>90% top bit score) in BLAST.tab
 Author: Evan R. Rees
 Required Extensions: lca_functions.so | lca_functions.c (lca_functions.pyx compiled using Cython)
 """
-import lca_functions
+
+try:
+    import lca_functions
+except ImportError as failed_import:
+    print("\nlca.py needs access to cython compiled file lca_functions.c or lca_functions.so\n\
+    To compile lca_functions.c file enter the following into the command line prompt:\n\n\
+    'python setup_lca_functions.py build_ext --inplace'\n\n")
+    raise failed_import
+
 import time, re, argparse, os
 from functools import reduce
 from itertools import chain
