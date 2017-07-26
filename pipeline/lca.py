@@ -92,8 +92,8 @@ if args['update']:
     print("\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..." % taxdump_dir_path)
 
 start_time = time.time()
-
 output_filename = str(blast_file.split("/")[-1].rstrip(".tab"))
+
 if verbose:
     # Parse nodes file
     parents = dict()
@@ -363,7 +363,7 @@ else:
     parents = dict()
     children = dict()
     taxids = dict()
-
+    print('Beginning Parsing Node Dump File')
     with open(nodes_path) as nodes:
         for i,line in enumerate(nodes):
             if i > 0: # We skip the first line because it says that root is its own child!
@@ -440,11 +440,14 @@ else:
         else:
             pass
 
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+    print("Elapsed time is {} (HH:MM:SS)\nFinished Traversing Tree".format(elapsed_time))
+
     """
     Next Module: Constructs Sparse Table (Preprocessing for RMQ and LCA)
     Uses level array constructed from eulerian tour
     """
-
+    print('Building Sparse Table')
     sparse_table = lca_functions.Preprocess(level)
 
     """
@@ -452,23 +455,32 @@ else:
     taking accession numbers for (default 90% of) topbitscore and above
     Operating under the assumption bitscore is descending from highest to lowest for each gene
     """
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+    print("Elapsed time is %s (HH:MM:SS)\nSparse Table Created." % elapsed_time)
 
+    print("Parsing BLAST file")
     blast_orfs = lca_functions.Extract_blast(blast_file, bitscore_filter)
 
     """
     Next Module: Reads in Genbank accession2taxid_file
     Converts accession numbers from blast output to tax ids in preparation for LCA algorithm
     """
-
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+    print("Elapsed time is {} (HH:MM:SS)\nAccession Number Set Ready for Conversion".format(elapsed_time))
+    print("Parsing prot.accession2taxid File")
     accession2taxid_dict = lca_functions.Process_accession2taxid_file(accession2taxid_file, blast_orfs)
 
+    print("Converting Accession Numbers to Tax IDs")
     blast_taxids = lca_functions.Convert_accession2taxid(accession2taxid_dict, blast_orfs)
+
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+    print("Elapsed time is {} (HH:MM:SS)\nConversion from accession number to tax ID completed".format(elapsed_time))
 
     """
     Next Module: Performs LCA algorithm on taxids from converted BLAST accession numbers
     Uses reduce and finds LCA from list of taxids from blast output
     """
-
+    print("Beginning LCA")
     failed_orfs = list()
     failed_taxids = list()
     lca_dict = dict()
@@ -503,6 +515,10 @@ else:
                 lca_dict[orf] = {'lca' : 1}
                 #default lca to root
                 lca = True
+
+    elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+    print("Elapsed time is %s (HH:MM:SS)\nFinished Performing LCA" % elapsed_time)
+    print("Preparing %s.lca" % output_filename)
 
     """
      and adds to failed_taxids list, then performs RMQ again
