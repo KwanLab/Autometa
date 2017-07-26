@@ -6,9 +6,10 @@ Usage: For usage information, type "python lca.py -help" in the command line pro
 Input Parameters: nodes.dmp, names.dmp, prot.accession2taxid, (blast output file)
 Output: (blast.lca) LCA between filtered orfs (>90% top bit score) in BLAST.tab
 Author: Evan R. Rees
-Dependencies: lca_functions.so, lca_functions.c (lca_functions.pyx compiled using Cython)
+Required Extensions: lca_functions.so | lca_functions.c (lca_functions.pyx compiled using Cython)
 """
-import time, lca_functions, re, argparse, os
+import lca_functions
+import time, re, argparse, os
 from functools import reduce
 from itertools import chain
 from tqdm import tqdm
@@ -474,7 +475,7 @@ else:
     blast_taxids = lca_functions.Convert_accession2taxid(accession2taxid_dict, blast_orfs)
 
     elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
-    print("Elapsed time is {} (HH:MM:SS)\nConversion from accession number to tax ID completed".format(elapsed_time))
+    print("Elapsed time is {} (HH:MM:SS)\nConversion from Accession Numbers to Tax IDs Completed".format(elapsed_time))
 
     """
     Next Module: Performs LCA algorithm on taxids from converted BLAST accession numbers
