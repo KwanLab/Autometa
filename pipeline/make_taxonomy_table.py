@@ -9,11 +9,11 @@ import sys
 
 def readable_dir(prospective_dir):
   if not os.path.isdir(prospective_dir):
-    raise Exception("readable_dir: \"{0}\" is not a valid path".format(prospective_dir))
+    raise Exception("\"{0}\" is not a valid path".format(prospective_dir))
   if os.access(prospective_dir, os.R_OK):
     return prospective_dir
   else:
-    raise Exception("readable_dir: \"{0}\" is not a readable directory".format(prospective_dir))
+    raise Exception("\"{0}\" is not a readable directory".format(prospective_dir))
 
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
@@ -23,7 +23,8 @@ parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-r
 parser.add_argument('-t', metavar='database directory', help='Path to directory with taxdump files.', required=True, type=readable_dir)
 parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument("-update", required=False, action='store_true', help='Adds/Updates nodes.dmp, names.dmp and accession2taxid files within taxdump directory specified with \"-t\"')
+parser.add_argument("-update", required=False, action='store_true',\
+ help='Adds/Updates nodes.dmp, names.dmp and accession2taxid files within taxdump directory specified with \"-t\"')
 
 args = vars(parser.parse_args())
 
@@ -91,7 +92,7 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path)
 	return 'taxonomy.tab'
 
 #diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
-taxdump_dir_path = args['t']#'/home/jkwan/blast2lca_taxdb'
+taxdump_dir_path = args['t'].rstrip('/')#'/home/jkwan/blast2lca_taxdb'
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 pipeline_path = sys.path[0]
