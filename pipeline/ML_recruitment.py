@@ -322,7 +322,7 @@ for count,contig in enumerate(contig_table['contig']):
         taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
         taxonomy_matrix_dict[contig] = taxonomy
         contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
-    if cluster != unclustered_name and num_markers > 0::
+    if cluster != unclustered_name and num_markers > 0:
         features.append(contig_feature_dict[contig])
         labels.append(cluster)
 
