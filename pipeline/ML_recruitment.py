@@ -303,29 +303,28 @@ contig_index_dict = {}
 contig_feature_dict = {}
 for count,contig in enumerate(contig_table['contig']):
     num_markers = contig_table['num_single_copies'][count]
-    if num_markers > 0:
-        num_single_copies = contig_table
-        contig_index_dict[contig] = count
-        bh_tsne_x = contig_table['bh_tsne_x'][count]
-        bh_tsne_y = contig_table['bh_tsne_y'][count]
-        length = contig_table['length'][count]
-        cov = contig_table['cov'][count]
-        gc = contig_table['gc'][count]
-        cluster = contig_table[cluster_column_name][count]
-        contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
-        if use_taxonomy_info:
-            tax_phylum = list(phylum_dummy_matrix.iloc[count])
-            tax_class = list(class_dummy_matrix.iloc[count])
-            tax_order = list(order_dummy_matrix.iloc[count])
-            tax_family = list(family_dummy_matrix.iloc[count])
-            tax_genus = list(genus_dummy_matrix.iloc[count])
-            tax_species = list(species_dummy_martix.iloc[count])
-            taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
-            taxonomy_matrix_dict[contig] = taxonomy
-            contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
-        if cluster != unclustered_name:
-            features.append(contig_feature_dict[contig])
-            labels.append(cluster)
+    num_single_copies = contig_table
+    contig_index_dict[contig] = count
+    bh_tsne_x = contig_table['bh_tsne_x'][count]
+    bh_tsne_y = contig_table['bh_tsne_y'][count]
+    length = contig_table['length'][count]
+    cov = contig_table['cov'][count]
+    gc = contig_table['gc'][count]
+    cluster = contig_table[cluster_column_name][count]
+    contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
+    if use_taxonomy_info:
+        tax_phylum = list(phylum_dummy_matrix.iloc[count])
+        tax_class = list(class_dummy_matrix.iloc[count])
+        tax_order = list(order_dummy_matrix.iloc[count])
+        tax_family = list(family_dummy_matrix.iloc[count])
+        tax_genus = list(genus_dummy_matrix.iloc[count])
+        tax_species = list(species_dummy_martix.iloc[count])
+        taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
+        taxonomy_matrix_dict[contig] = taxonomy
+        contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
+    if cluster != unclustered_name and num_markers > 0::
+        features.append(contig_feature_dict[contig])
+        labels.append(cluster)
 
 print("There are {} training contigs...".format(len(features)))
 
