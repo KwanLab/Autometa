@@ -44,7 +44,7 @@ logger.addHandler(console)
 
 pp = pprint.PrettyPrinter(indent=4)
 
-def dbscan_simple(table, eps):
+def dbscan_simple(table, eps, dimensions):
 	table_copy = copy.deepcopy(table)
 	table_size = len(table.index)
 	#logger.debug('dbscan_simple, eps: ' + str(eps) + ', table_size: ' + str(table_size))
@@ -53,7 +53,10 @@ def dbscan_simple(table, eps):
 		table_copy.drop('db_cluster')
 
 	# Make a matrix
-	X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y', 'cov'])
+	if dimensions == 2:
+		X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
+	elif dimensions == 3:
+		X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y', 'cov'])
 	db = DBSCAN(eps=eps, min_samples=1).fit(X)
 
 	table_copy['db_cluster'] = db.labels_
@@ -109,8 +112,7 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 		else:
 			purity = (float(total_unique) / total_markers) * 100
 
-		cluster_multiple = float(total_marker_count) / total_markers
-		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity, 'multiple': cluster_multiple }
+		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
 
 	return cluster_details
 
@@ -185,19 +187,32 @@ def getClusterSummaryInfo(pandas_table):
 
 	return output_dictionary
 
-def runDBSCANs(table):
+def runDBSCANs(table, dimensions):
 	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
 	current_eps = 0.3
 	db_tables = {} # Will be keyed by eps
 	number_of_clusters = float('inf')
+	current_step = 0.1
+	number_of_tables = {}
 	while(number_of_clusters > 1):
-		dbscan_output_pd = dbscan_simple(table, current_eps)
+		print('EPS: ' + str(current_eps))
+		dbscan_output_pd = dbscan_simple(table, current_eps, dimensions)
 		new_pd_copy = copy.deepcopy(dbscan_output_pd)
 		db_tables[current_eps] = new_pd_copy
-		current_eps = current_eps + 0.1
+		current_eps = current_eps + current_step
 
 		# Count the number of clusters
 		number_of_clusters = countClusters(new_pd_copy)
+		if number_of_clusters in number_of_tables:
+			number_of_tables[number_of_clusters] += 1
+		else:
+			number_of_tables[number_of_clusters] = 1
+
+		# We speed this up if we are getting a lot of tables with the same number of clusters
+		if number_of_tables[number_of_clusters] > 10:
+			current_step = current_step * 10
+
+		print('number of clusters: ' + str(number_of_clusters))
 
 	return db_tables
 
@@ -240,8 +255,8 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 
 	# Get eps value with highest number of complete clusters
 	#sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
-	#sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
-	sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
+	sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
+	#sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
 	best_eps_value = sorted_eps_values[0]
 
 	# For impure clusters, output BH_tSNE table
@@ -876,79 +891,83 @@ data_size = len(current_table.index)
 if taxonomy_info and data_size > 50:
 	local_current_table = copy.deepcopy(current_table)
 
-	taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
-	logger.info('Further splitting according to taxonomic classifications')
-	for taxonomic_level in taxonomic_levels:
-		logger.info('Taxonomic level: ' + taxonomic_level)
-		unclustered_table = pd.DataFrame()
+	for dimensions in [2, 3]:
+		taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+		logger.info('Further splitting according to taxonomic classifications')
+		for taxonomic_level in taxonomic_levels:
+			logger.info('Taxonomic level: ' + taxonomic_level)
+			unclustered_table = pd.DataFrame()
 
-		# Make subtables for each type of classification at the current level
-		classification_dict = dict()
-		for i,row in local_current_table.iterrows():
-			classification_dict[row[taxonomic_level]] = 1
+			# Make subtables for each type of classification at the current level
+			classification_dict = dict()
+			for i,row in local_current_table.iterrows():
+				classification_dict[row[taxonomic_level]] = 1
 
-		# Skip iteration if the current taxonomic level is empty
-		if not classification_dict:
-			continue
+			# Skip iteration if the current taxonomic level is empty
+			if not classification_dict:
+				continue
 
-		for classification in classification_dict.keys():
-			logger.info('Examining ' + classification)
-			# Get subset table
-			subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
+			for classification in classification_dict.keys():
+				logger.info('Examining ' + classification)
+				# Get subset table
+				subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
 
-			while True:
-				if len(subset_table.index) < 1:
-					break
-				round_counter += 1
-				logger.info('Running DBSCAN round ' + str(round_counter))
+				while True:
+					if len(subset_table.index) < 1:
+						break
+					round_counter += 1
+					logger.info('Running DBSCAN round ' + str(round_counter))
 
-				db_tables = runDBSCANs(subset_table)
-				cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+					db_tables = runDBSCANs(subset_table)
+					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
-				subset_table = local_unclustered_table
+					subset_table = local_unclustered_table
 
-				if not cluster_information:
-					break
+					if not cluster_information:
+						break
 
-				# Populate the global data structures
-				for	cluster in cluster_information:
-					new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
-					global_cluster_info[new_cluster_name] = cluster_information[cluster]
+					# Populate the global data structures
+					for	cluster in cluster_information:
+						new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
+						global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
-				for contig in contig_cluster_dictionary:
-					new_cluster_name = 'DBSCAN'+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-					table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
-					local_current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+					for contig in contig_cluster_dictionary:
+						new_cluster_name = 'DBSCAN'+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+						table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
+						local_current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
 
-			# Add unclustered_table to combined unclustered dataframe
-			unclustered_table = unclustered_table.append(local_unclustered_table)
+				# Add unclustered_table to combined unclustered dataframe
+				unclustered_table = unclustered_table.append(local_unclustered_table)
 
-		current_table.update(local_current_table)
+			current_table.update(local_current_table)
 
-		#current_table = copy.deepcopy(unclustered_table)
-		local_current_table = unclustered_table
+			#current_table = copy.deepcopy(unclustered_table)
+			local_current_table = unclustered_table
 else:
 	local_current_table = copy.deepcopy(current_table)
-	while True:
-		round_counter += 1
-		logger.info('Running DBSCAN round ' + str(round_counter))
 
-		db_tables = runDBSCANs(local_current_table)
-		cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
-		local_current_table = unclustered_table
+	for dimensions in [2, 3]:
+		while True:
+			round_counter += 1
+			logger.info('Running DBSCAN round ' + str(round_counter))
 
-		if not cluster_information:
-			break
+			db_tables = runDBSCANs(local_current_table)
+			cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
-		# Populate the global data structures
-		for	cluster in cluster_information:
-			new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
-			global_cluster_info[new_cluster_name] = cluster_information[cluster]
+			if not cluster_information:
+				break
 
-		for contig in contig_cluster_dictionary:
-			new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-			table_indices = current_table[current_table['contig'] == contig].index.tolist()
-			current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+			# Populate the global data structures
+			for	cluster in cluster_information:
+				new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
+				global_cluster_info[new_cluster_name] = cluster_information[cluster]
+
+			for contig in contig_cluster_dictionary:
+				new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+				table_indices = current_table[current_table['contig'] == contig].index.tolist()
+				current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+
+			local_current_table = unclustered_table
 
 master_table.update(current_table)
 
