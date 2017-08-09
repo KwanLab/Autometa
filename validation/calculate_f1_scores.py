@@ -97,7 +97,7 @@ with open(args['out'],"w") as outfile:
             F1 = 0.0
         else:
             #recall is % of which that dominant cluster recovers the reference genome
-            recall = round(dominant_cluster_length/float(reference_genome_length)*100,1)
+            recall = round(dominant_cluster_length/float(reference_genome_length)*100,5)
             #precision is the  % (in length) of dominant cluster that's represented by corresponding reference genome
             total_cluster_len = 0
             ref_genome_len = 0
@@ -109,7 +109,7 @@ with open(args['out'],"w") as outfile:
                 #else: print("\t{} is in bin: {}, but does not have ref genome: {}".format(contig,dominant_cluster,reference_genome))
                 total_cluster_len += contig_length
             precision = round(ref_genome_len/float(total_cluster_len)*100)
-            F1 = round(2 * (precision*recall)/(precision+recall),1)
+            F1 = round(2 * (precision*recall)/(precision+recall),5)
 
         print reference_genome,reference_genome_length,dominant_cluster,total_cluster_len,dominant_cluster_length,recall,precision,F1
         out_list = [reference_genome,reference_genome_length,dominant_cluster,total_cluster_len,dominant_cluster_length,recall,precision,F1]
