@@ -554,7 +554,7 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 			if confidence >= singleton_cutoff and not redundant:
 				cluster_counts[current_cluster]['different'] += 1
 				logger.debug('assessClusters: contig ' + current_contig + ', current cluster: ' + current_cluster + ', predicted: ' + ML_prediction + ', confidence: ' + str(confidence))
-				contig_reassignments[current_cluster] = 'unclustered'
+				contig_reassignments[current_contig] = 'unclustered'
 			else:
 				cluster_counts[current_cluster]['congruent'] += 1
 		elif ML_prediction == current_cluster and confidence >= confidence_cutoff:
@@ -918,7 +918,7 @@ if taxonomy_info and data_size > 50:
 					round_counter += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
 
-					db_tables = runDBSCANs(subset_table)
+					db_tables = runDBSCANs(subset_table, dimensions)
 					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 					subset_table = local_unclustered_table
@@ -951,7 +951,7 @@ else:
 			round_counter += 1
 			logger.info('Running DBSCAN round ' + str(round_counter))
 
-			db_tables = runDBSCANs(local_current_table)
+			db_tables = runDBSCANs(local_current_table, dimensions)
 			cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 			if not cluster_information:
