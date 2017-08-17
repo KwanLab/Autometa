@@ -59,14 +59,19 @@ def dbscan_simple(table, eps, dimensions):
 		X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y', 'cov'])
 	db = DBSCAN(eps=eps, min_samples=1).fit(X)
 
-	table_copy['db_cluster'] = db.labels_
+	output_dictionary = {}
+	label_list = db.labels_.tolist()
+	for i,row in table_copy.iterrows():
+		contig = row['contig']
+		label = label_list.pop(0)
+		output_dictionary[contig] = label
 
-	return table_copy
+	return output_dictionary
 
-def countClusters(pandas_table):
+def countClusters(dictionary):
 	clusters = {}
-	for i, row in pandas_table.iterrows():
-		cluster = row['db_cluster']
+	for key in dictionary:
+		cluster = dictionary[key]
 		if cluster not in clusters:
 			clusters[cluster] = 1
 		else:
@@ -74,11 +79,10 @@ def countClusters(pandas_table):
 	number_of_clusters = len(list(clusters.keys()))
 	return number_of_clusters
 
-def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
+def getClusterInfo(cluster_dictionary, hmm_dictionary, life_domain):
 	marker_totals = {}
-	for i, row in pandas_table.iterrows():
-		contig = row['contig']
-		cluster = row['db_cluster']
+	for contig in cluster_dictionary:
+		cluster = cluster_dictionary[contig]
 		if cluster not in marker_totals:
 			marker_totals[cluster] = {}
 
@@ -190,19 +194,39 @@ def getClusterSummaryInfo(pandas_table):
 def runDBSCANs(table, dimensions):
 	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
 	current_eps = 0.3
-	db_tables = {} # Will be keyed by eps
+	output_dictionary = {} # Will be keyed by eps
 	number_of_clusters = float('inf')
 	current_step = 0.1
+
+	# Determine lower bound to number of genomes within the table
+	current_pfam_totals = {}
+	for i, row in table.iterrows():
+		single_copy_PFAM_string = row['single_copy_PFAMs']
+		PFAM_list = single_copy_PFAM_string.split(',')
+		for PFAM in PFAM_list:
+			if PFAM not in current_pfam_totals:
+				current_pfam_totals[PFAM] = 1
+			else:
+				current_pfam_totals[PFAM] += 1
+	sorted_totals = sorted(current_pfam_totals.values())
+	if sorted_totals:
+		lower_bound = sorted_totals[0]
+		if lower_bound == 1:
+			lower_bound = 2
+	else:
+		lower_bound = 2
+
 	number_of_tables = {}
 	while(number_of_clusters > 1):
 		print('EPS: ' + str(current_eps))
-		dbscan_output_pd = dbscan_simple(table, current_eps, dimensions)
-		new_pd_copy = copy.deepcopy(dbscan_output_pd)
-		db_tables[current_eps] = new_pd_copy
+		dbscan_output = dbscan_simple(table, current_eps, dimensions)
+		#new_pd_copy = copy.deepcopy(dbscan_output_pd)
+		#db_tables[current_eps] = new_pd_copy
+		output_dictionary[current_eps] = dbscan_output
 		current_eps = current_eps + current_step
 
 		# Count the number of clusters
-		number_of_clusters = countClusters(new_pd_copy)
+		number_of_clusters = countClusters(dbscan_output)
 		if number_of_clusters in number_of_tables:
 			number_of_tables[number_of_clusters] += 1
 		else:
@@ -214,14 +238,15 @@ def runDBSCANs(table, dimensions):
 
 		print('number of clusters: ' + str(number_of_clusters))
 
-	return db_tables
+	#return db_tables
+	return output_dictionary
 
-def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
+def assessDBSCAN(table, dbscan_dictionary, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
 	# Assess clusters of each DBSCAN table
 	cluster_info = {} # Dictionary that is keyed by eps, will hold details of each cluster in each table
-	for eps in table_dictionary:
-		current_table = table_dictionary[eps]
-		current_cluster_info = getClusterInfo(current_table, hmm_dictionary, domain)
+	for eps in dbscan_dictionary:
+		current_dictionary = dbscan_dictionary[eps]
+		current_cluster_info = getClusterInfo(current_dictionary, hmm_dictionary, domain)
 		cluster_info[eps] = current_cluster_info
 
 	number_complete_and_pure_clusters = {}
@@ -259,10 +284,6 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	#sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
 	best_eps_value = sorted_eps_values[0]
 
-	# For impure clusters, output BH_tSNE table
-	# First, find pure clusters
-	best_db_table = table_dictionary[best_eps_value]
-
 	complete_and_pure_clusters = {}
 	other_clusters = {}
 	for cluster in cluster_info[best_eps_value]:
@@ -280,21 +301,15 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 		else:
 			other_clusters[cluster] = 1
 
-	# Subset the data frame
-	subset_other_db_table = copy.deepcopy(best_db_table)
-
-	for cluster in complete_and_pure_clusters:
-		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
-
-	# Output a table with the classifications, mainly for debug/investigation purposes
-	output_db_table = copy.deepcopy(best_db_table)
-	for index, row in output_db_table.iterrows():
-		if row['db_cluster'] in other_clusters:
-			output_db_table.set_value(index, 'db_cluster', -1)
-
-	# We now drop the db_cluster column
-	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
-	unclustered = subset_other_db_table
+	# Drop the rows in the input table that are in complete and pure clusters
+	output_table = copy.deepcopy(table)
+	rows_to_drop = list()
+	for i, row in output_table.iterrows():
+		contig = row['contig']
+		cluster = dbscan_dictionary[best_eps_value][contig]
+		if cluster in complete_and_pure_clusters:
+			rows_to_drop.append(i)
+	filtered_output_table = output_table.drop(rows_to_drop)
 
 	# We now make a data structure containing cluster information for complete clusters only
 	output_cluster_info = {}
@@ -302,14 +317,13 @@ def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, 
 	for cluster in complete_and_pure_clusters:
 		output_cluster_info[cluster] = {'completeness': cluster_info[best_eps_value][cluster]['completeness'], 'purity': cluster_info[best_eps_value][cluster]['purity']}
 
-	# Now we grab contig names from the best db table
-	for i, row in best_db_table.iterrows():
-		contig = row['contig']
-		cluster = row['db_cluster']
+	# Now we grab contig names from the best eps value
+	for contig in dbscan_dictionary[best_eps_value]:
+		cluster = dbscan_dictionary[best_eps_value][contig]
 		if cluster in complete_and_pure_clusters:
 			output_contig_cluster[contig] = cluster
 
-	return output_cluster_info, output_contig_cluster, unclustered
+	return output_cluster_info, output_contig_cluster, filtered_output_table
 
 def revcomp( string ):
 	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
@@ -488,6 +502,33 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
     #pandas_table[cluster_column_name][contig_index] = predicted_cluster
     return redundancy
 
+def reclassify_contig(table, contig_name, iterations = 10):
+	# Set up data structures for training/classification
+	to_be_classified_features = None
+
+	features = list()
+	labels = list()
+
+	for j,row in table.iterrows():
+		current_contig = row['contig']
+		if taxonomy_table_path:
+			current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist() + [ coverage_list[j] ])
+		else:
+			current_features = pca_matrix[j] + [ coverage_list[j] ]
+
+		if current_contig == contig_name:
+			to_be_classified_features = np.array([current_features])
+			## Comment out the following if you want the contig being assessed to be taken out of the training set
+			#features.append(current_features)
+			#labels.append(subrow['cluster'])
+		else:
+			features.append(current_features)
+			labels.append(row['cluster'])
+
+	temp_dict = { 'training_features': features, 'training_labels': labels, 'classification_features': to_be_classified_features}
+	classification, confidence = calculate_bootstrap_replicates(temp_dict, iterations)
+	return classification, confidence
+
 def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clusters_to_examine = None):
 	cluster_counts = dict() # Keyed by cluster, holds totals for 'congruent' classification or 'different' classification
 	contig_reassignments = dict()
@@ -516,32 +557,8 @@ def ML_assessClusters(table, confidence_cutoff = 50, singleton_cutoff = 90, clus
 		if current_cluster not in cluster_counts:
 			cluster_counts[current_cluster] = { 'congruent': 0, 'different': 0 }
 
-		# Set up data structures for training/classification
-		to_be_classified_features = None
-
-		features = list()
-		labels = list()
-
-		for j,subrow in subset_table.iterrows():
-			if taxonomy_table_path:
-				current_features = np.array(taxonomy_matrix[j] + pca_matrix[j].tolist() + [ coverage_list[j] ])
-			else:
-				current_features = pca_matrix[j] + [ coverage_list[j] ]
-
-			if j == i:
-				to_be_classified_features = np.array([current_features])
-				## Comment out the following if you want the contig being assessed to be taken out of the training set
-				#features.append(current_features)
-				#labels.append(subrow['cluster'])
-			else:
-				features.append(current_features)
-				labels.append(subrow['cluster'])
-
-		temp_dict = { 'training_features': features, 'training_labels': labels, 'classification_features': to_be_classified_features}
-		ML_inputs.append(temp_dict)
-
 	# Now do the ML prediction in parallel
-	parallel_output = Parallel(n_jobs=processors)(delayed(calculate_bootstrap_replicates)(ML_dictionary, 10) for ML_dictionary in ML_inputs)
+	parallel_output = Parallel(n_jobs=processors)(delayed(reclassify_contig)(subset_table, contig_name, 10) for contig_name in contig_list)
 
 	# Now we process the results
 	for i,output_tuple in enumerate(parallel_output):
@@ -918,8 +935,8 @@ if taxonomy_info and data_size > 50:
 					round_counter += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
 
-					db_tables = runDBSCANs(subset_table, dimensions)
-					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+					db_dictionary = runDBSCANs(subset_table, dimensions)
+					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(subset_table, db_dictionary, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 					subset_table = local_unclustered_table
 
@@ -951,8 +968,8 @@ else:
 			round_counter += 1
 			logger.info('Running DBSCAN round ' + str(round_counter))
 
-			db_tables = runDBSCANs(local_current_table, dimensions)
-			cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+			db_dictionary = runDBSCANs(local_current_table, dimensions)
+			cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(local_current_table, db_dictionary, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 			if not cluster_information:
 				break
@@ -967,7 +984,7 @@ else:
 				table_indices = current_table[current_table['contig'] == contig].index.tolist()
 				current_table.set_value(table_indices[0], 'cluster', new_cluster_name)
 
-			local_current_table = unclustered_table
+			local_current_table = local_unclustered_table
 
 master_table.update(current_table)
 
