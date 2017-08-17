@@ -17,3 +17,5 @@ def summarize_f1_stats(f1_table_path):
 #in: /home/jkwan/Sequence_data/Autometa_benchmarking
 path_list = !find . -name F1.tab
 for path in path_list: print summarize_f1_stats(path)
+
+#Testing for slack channel notification
