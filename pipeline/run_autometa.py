@@ -12,7 +12,7 @@ import logging
 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
-	outfile_name = os.path.basename(fasta).split(".")[0]) + "_filtered.fasta"
+	outfile_name = os.path.basename(fasta).split(".")[0] + "_filtered.fasta"
 	output_path = output_dir + '/' + outfile_name
 	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path), shell = True)
@@ -23,7 +23,7 @@ def make_contig_table(fasta):
 	output_table_name = str(fasta).split('.')[0] + ".tab"
 	output_path = output_dir + '/' + output_table_name
 	logger.info("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_path))
-	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_path, shell = True)
+	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_path), shell = True)
 	return output_path
 
 def make_marker_table(fasta):
@@ -56,29 +56,57 @@ def make_marker_table(fasta):
 
 def recursive_dbscan(input_table, filtered_assembly, domain):
 	recursive_dbscan_output_path = output_dir + '/recursive_dbscan_output.tab'
+	k_mer_file = output_dir + '/k-mer_matrix'
+	logger.info("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, recursive_dbscan_output_path, domain))
+	subprocess.call("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, recursive_dbscan_output_path, domain), shell=True)
 
-	logger.info("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, domain))
-	subprocess.call("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, domain), shell=True)
-
-	return recursive_dbscan_output_path
+	return recursive_dbscan_output_path, k_mer_file
 
 def combine_tables(table1_path, table2_path):
-	table1_name = os.path.basename(table1_path)
-	table2_name = os.path.basename(table2_path)
 	comb_table_path = output_dir + '/combined_contig_info.tab'
-	script = 'head -n 1 ' + table1_path + ' > ' + output_dir + '/' + table1_name + '_header\n'\
-		+ 'tail -n +2 ' + table1_path + ' | sort -k 1,1 > ' + output_dir + '/' + table1_name + '_sort\n'\
-		+ 'head -n 1 ' + table2_path + ' > ' + output_dir + '/' + table2_name + '_header\n'\
-		+ 'tail -n +2 ' + table2_path + ' > ' + output_dir + '/' + table2_name + '_sort\n'\
-		+ "{join -t $'\\t' " + output_dir + '/' + table1_name + '_header ' + output_dir + '/' + table2_name + "_header; join -t $'\\t' " + output_dir + '/' + table1_name + '_sort ' + output_dir + '/' + table2_name + '_sort} > ' + comb_table_path
-	os.system("bash -c '%s'" % script)
-	cleanup_script = 'rm ' + output_dir + '/' + table1_name + '_header\n'\
-		+ 'rm ' + output_dir + '/' + table1_name + '_sort\n'\
-		+ 'rm ' + output_dir + '/' + table2_name + '_header\n'\
-		+ 'rm ' + output_dir + '/' + table2_name + '_sort'
-	os.system("bash -c '%s'" % cleanup_script)
+	# Note: in this sub we assume that the tables have column 1 in common
+	# Store lines of table 2, keyed by the value of the first column
+
+	# First make data structure from table 2
+	table2_lines = dict()
+	with open(table2_path) as table2:
+		for i, line in enumerate(table2):
+			line_list = line.rstrip().split('\t')
+			contig = line_list.pop(0)
+			if i == 0:
+				table_2_header = '\t'.join(line_list)
+			else:
+				table2_lines[contig] = '\t'.join(line_list)
+
+	comb_table = open(comb_table_path, 'w')
+	with open(table1_path) as table1:
+		for i, line in enumerate(table1):
+			line_list = line.rstrip().split('\t')
+			contig = line_list.pop(0)
+			if i == 0:
+				new_header = line.rstrip() + '\t' + table_2_header + '\n'
+				comb_table.write(new_header)
+			else:
+				new_line = line.rstrip() + '\t' + table2_lines[contig] + '\n'
+				comb_table.write(new_line)
+
+	comb_table.close()
 
 	return comb_table_path
+
+def ML_prune(input_table, matrix):
+	ML_prune_output_path = output_dir + '/ML_prune_output.tab'
+	logger.info("{}/ML_prune.py -t {} -a {} -o {} -k {} -p {} -m {}".format(pipeline_path, input_table, fasta_assembly, ML_prune_output_path, kingdom, processors, matrix))
+	subprocess.call("{}/ML_prune.py -t {} -a {} -o {} -k {} -p {} -m {}".format(pipeline_path, input_table, fasta_assembly, ML_prune_output_path, kingdom, processors, matrix), shell=True)
+
+	return ML_prune_output_path
+
+def ML_recruitment(input_table, matrix):
+	ML_recruitment_output_path = output_dir + '/ML_recruitment_output.tab'
+	logger.info("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
+	subprocess.call("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path), shell=True)
+
+	return ML_recruitment_output_path
 
 #logger
 logger = logging.getLogger('run_autometa.py')
@@ -101,6 +129,8 @@ parser.add_argument('-k', metavar='kingdom', help='Kingdom to consider (archaea|
 choices=['bacteria','archaea'], default = 'bacteria')
 parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonomy_table.py')
 parser.add_argument('-o', metavar='output directory', help='Directory to store all output files', default = '.')
+parser.add_argument('-u', help='Use ML to prune clusters', action='store_true')
+parser.add_argument('-r', help='Use ML to further recruit unclassified contigs', action='store_true')
 args = vars(parser.parse_args())
 
 length_cutoff = args['l']
@@ -110,6 +140,8 @@ cluster_completeness = args['c']
 kingdom = args['k'].lower()
 taxonomy_table_path = args['t']
 output_dir = args['o']
+do_ML_prune = args['u']
+do_ML_recruitment = args['r']
 
 #check if fasta in path
 if not os.path.isfile(args['a']):
@@ -154,7 +186,15 @@ if taxonomy_table_path:
 else:
 	combined_table_path = combine_tables(contig_table, marker_tab_path)
 
-recursive_dbscan_output = recursive_dbscan(combined_table_path, filtered_assembly, kingdom)
+recursive_dbscan_output, matrix_file = recursive_dbscan(combined_table_path, filtered_assembly, kingdom)
+
+if do_ML_prune:
+	ML_prune_output = ML_prune(recursive_dbscan_output, matrix_file)
+
+if do_ML_prune and do_ML_recruitment:
+	ML_recruitment(ML_prune_output, matrix_file)
+elif do_ML_recruitment:
+	ML_recruitment(recursive_dbscan_output, matrix_file)
 
 elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
 

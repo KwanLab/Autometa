@@ -17,14 +17,16 @@ from sklearn import decomposition
 import os
 import statistics
 import argparse
+import logging
 import pdb
+
 
 def run_BH_tSNE(table, do_pca=True):
 
 	pca_dimensions = 50
 	perplexity = 30.0
 
-	print "run_BH_tSNE: Running k-mer based binning..."
+	logger.info("run_BH_tSNE: Running k-mer based binning...")
 	# Note - currently doesn't handle cases where PCA dimensions and perplexity set too high
 
 	# We make a submatrix, consisting of the contigs in the table
@@ -37,22 +39,22 @@ def run_BH_tSNE(table, do_pca=True):
 	# PCA
 
 	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
-		print('run_BH_tSNE: Principal component analysis')
+		logger.info('run_BH_tSNE: Principal component analysis')
 		pca = decomposition.PCA(n_components=pca_dimensions)
 		pca_matrix = pca.fit_transform(normalized_k_mer_submatrix)
 	else:
-		print('run_BH_tSNE: Principle component analysis step skipped')
+		logger.info('run_BH_tSNE: Principle component analysis step skipped')
 
 	# BH-tSNE
-	print('run_BH_tSNE: BH-tSNE')
+	logger.info('run_BH_tSNE: BH-tSNE')
 
 	# Adjust perplexity according to the number of data points
 	# Took logic from tsne source code
 	if (len(normalized_k_mer_submatrix) - 1) < (3 * perplexity)  :
 		perplexity = (float(len(normalized_k_mer_submatrix) - 1) / 3) - 1
 
-	print(str(len(normalized_k_mer_submatrix)) + ' data points')
-	print(str(len(normalized_k_mer_submatrix[0])) + ' dimensions')
+	logger.info(str(len(normalized_k_mer_submatrix)) + ' data points')
+	logger.info(str(len(normalized_k_mer_submatrix[0])) + ' dimensions')
 
 	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
 		X = np.array(pca_matrix)
@@ -80,7 +82,7 @@ def runDBSCANs(table, dimensions):
 	current_step = 0.1
 	number_of_tables = {}
 	while(number_of_clusters > 1):
-		print('EPS: ' + str(current_eps))
+		logger.info('EPS: ' + str(current_eps))
 		dbscan_output_pd = dbscan_simple(table, current_eps, dimensions)
 		new_pd_copy = copy.deepcopy(dbscan_output_pd)
 		db_tables[current_eps] = new_pd_copy
@@ -97,7 +99,7 @@ def runDBSCANs(table, dimensions):
 		if number_of_tables[number_of_clusters] > 10:
 			current_step = current_step * 10
 
-		print('number of clusters: ' + str(number_of_clusters))
+		logger.info('number of clusters: ' + str(number_of_clusters))
 
 	return db_tables
 
@@ -282,7 +284,7 @@ def revcomp( string ):
 
 def normalizeKmers(count_matrix): # list of lists, not a np matrix
 	# We now remove all the k-mers where all counts are '1'
-	print('Trimming k-mers')
+	logger.info('Trimming k-mers')
 	columns_to_delete = dict()
 	for i in range(0, len(unique_k_mers.keys())):
 		non_zero_counts = 0
@@ -303,7 +305,7 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 		filtered_contig_k_mer_counts.append(new_row)
 
 	# 3. Normalization
-	print('Normalizing counts')
+	logger.info('Normalizing counts')
 
 	k_mer_frequency_matrix = list()
 
@@ -330,12 +332,11 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 
 	return k_mer_frequency_matrix
 
-parser = argparse.ArgumentParser(description="Perform initial clustering via\
-	BH-tSNE and DBSCAN.")
+parser = argparse.ArgumentParser(description="Perform initial clustering via BH-tSNE and DBSCAN.")
 parser.add_argument('-t','--input_table', help='Master contig table. Optionally can contain taxonomy data', required=True)
 parser.add_argument('-a','--assembly_fasta', help='Assembly fasta', required=True)
 parser.add_argument('-o','--output_table', help='Path to output table', required=True)
-parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', choices=['bacteria','archaea'], default = 'bacteria')')
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', choices=['bacteria','archaea'], default = 'bacteria')
 
 args = vars(parser.parse_args())
 
@@ -343,6 +344,17 @@ input_table_path = args['input_table']
 input_fasta_path = args['assembly_fasta']
 output_table_path = args['output_table']
 domain = args['kingdom']
+
+#logger
+logger = logging.getLogger('recursive_dbscan.py')
+hdlr = logging.FileHandler('recursive_dbscan.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+console = logging.StreamHandler()
+console.setFormatter(formatter)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(console)
 
 master_table = pd.read_table(input_table_path)
 master_table['cluster'] = 'unclustered'
@@ -379,8 +391,8 @@ for k_mer in all_k_mers:
 		count += 1
 
 if os.path.isfile(matrix_file):
-	print "K-mer matrix already exists!"
-	print "Continuing to next step..."
+	logger.info("K-mer matrix already exists!")
+	logger.info("Continuing to next step...")
 
 	# Now we load the k-mer matrix
 	with open(matrix_file) as matrix:
@@ -395,7 +407,7 @@ else:
 	# First we make a dictionary of all the possible k-mers (discounting revcomps)
 	# Under each key is an index to be used in the subsequent lists
 	# The order of the indices depends on the order k-mers were encountered while making the dictionary
-	print('Counting k-mers')
+	logger.info('Counting k-mers')
 
 	for contig_name in assembly_seqs:
 		contig_seq = str(assembly_seqs[contig_name].seq)
@@ -488,9 +500,9 @@ else:
 if has_taxonomy_info and data_size > 50:
 	for dimensions in [2, 3]:
 		taxonomic_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
-		print('Further splitting according to taxonomic classifications')
+		logger.info('Further splitting according to taxonomic classifications')
 		for taxonomic_level in taxonomic_levels:
-			print('Taxonomic level: ' + taxonomic_level)
+			logger.info('Taxonomic level: ' + taxonomic_level)
 			unclustered_table = pd.DataFrame()
 
 			# Make subtables for each type of classification at the current level
@@ -503,7 +515,7 @@ if has_taxonomy_info and data_size > 50:
 				continue
 
 			for classification in classification_dict.keys():
-				print('Examining ' + classification)
+				logger.info('Examining ' + classification)
 				# Get subset table
 				subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
 
@@ -511,7 +523,7 @@ if has_taxonomy_info and data_size > 50:
 					if len(subset_table.index) < 1:
 						break
 					round_counter += 1
-					print('Running DBSCAN round ' + str(round_counter))
+					logger.info('Running DBSCAN round ' + str(round_counter))
 
 					db_tables = runDBSCANs(subset_table, dimensions)
 					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
@@ -540,7 +552,7 @@ else:
 	for dimensions in [2, 3]:
 		while True:
 		    round_counter += 1
-		    print('Running DBSCAN round ' + str(round_counter))
+		    logger.info('Running DBSCAN round ' + str(round_counter))
 
 		    db_tables = runDBSCANs(local_current_table, dimensions)
 		    cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
