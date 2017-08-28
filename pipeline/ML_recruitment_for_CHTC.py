@@ -13,7 +13,6 @@ from scipy import stats
 import math
 from sklearn import decomposition
 import random
-#For multiprocessing
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -29,23 +28,12 @@ parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
     to use to keep ML-based predictions.', default=100)
 parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
+parser.add_argument('-l','--unclustered_list', help='List file of unclassified contigs')
 parser.add_argument('-n','--num_iterations', help='Number of iterations for \
     jackknife cross-validation.', default=10)
 parser.add_argument('-m','--k_mer_matrix', help='k-mer_matrix file.', default="k-mer_matrix")
-parser.add_argument('-o','--out_table', help='Output table with new column\
-    for ML-recruited sequences.',required=True)
+parser.add_argument('-o','--out_prefix', help='Output prefix for table and list.',required=True)
 args = vars(parser.parse_args())
-
-args = {}
-#In: /Users/Ian/Desktop/Bioinformatics_2017/autometa_testing/CHTC_parallelization/78.125Mbp/
-args['contig_tab'] = "dbscan_2_3_dimensions.tab"
-args['cluster_column'] = "cluster"
-args['Confidence_cutoff'] = 100
-args['k_mer_matrix'] = 'k-mer_matrix'
-args['out_table'] = "test.out"
-args['num_iterations'] = 10
-args['unclustered_name'] = "unclustered"
-args['unclustered_contig_list'] = "still_unclassified.list"
 
 #############################
 def round_down(num, divisor):
@@ -236,9 +224,6 @@ try:
 except KeyError:
     print("Couldn't find taxonomy info in table. Excluding as training feature...")
 
-#contig_table = "full_table"
-master_table = contig_table
-
 #Define "unique_k_mers"
 # Count K-mer frequencies
 k_mer_size = 5
@@ -277,7 +262,7 @@ with open(matrix_file) as matrix:
 
 # Make normalized k-mer matrix
 print("Normalizing k-mer martix...")
-contig_list = master_table['contig'].tolist()
+contig_list = contig_table['contig'].tolist()
 k_mer_counts = list()
 for contig in contig_list:
 	k_mer_counts.append(k_mer_dict[contig])
@@ -318,6 +303,7 @@ for count,contig in enumerate(contig_table['contig']):
     gc = contig_table['gc'][count]
     cluster = contig_table[cluster_column_name][count]
     contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
+    #contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov]
     if use_taxonomy_info:
         tax_phylum = list(phylum_dummy_matrix.iloc[count])
         tax_class = list(class_dummy_matrix.iloc[count])
@@ -327,13 +313,12 @@ for count,contig in enumerate(contig_table['contig']):
         tax_species = list(species_dummy_martix.iloc[count])
         taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
         taxonomy_matrix_dict[contig] = taxonomy
-        contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
+        contig_feature_dict[contig] += taxonomy
     if cluster != unclustered_name and num_markers > 0:
         features.append(contig_feature_dict[contig])
         labels.append(cluster)
 
 print("There are {} training contigs...".format(len(features)))
-
 
 ####################### 3.  Train classifier and make predictions   ############################
 
@@ -346,10 +331,10 @@ num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclu
 unclustered_contig_feature_list = []
 
 #This is where the input list would be read in
-if args['unclustered_contig_list'] != None:
-    unclustered_contig_list_file = args['unclustered_contig_list']
+if args['unclustered_list'] != None:
+    unclustered_list_file = args['unclustered_list']
     unclustered_contig_table = pd.DataFrame(columns = contig_table.columns)
-    with open(unclustered_contig_list_file) as infile:
+    with open(unclustered_list_file) as infile:
         for line in infile:
             contig = line.rstrip()
             global_contig_index = contig_index_dict[contig]
@@ -360,26 +345,29 @@ print("Recruiting {} unclustered sequences with {} training contigs. This could 
 
 newDF = pd.DataFrame(columns = contig_table.columns)
 
-for count,row in unclustered_contig_table.iterrows():
-    contig = row['contig']
-    single_np_array = np.array([contig_feature_dict[contig]])
-    contig_length = contig_table.iloc[count]['length']
+with open(args['out_prefix'] + "_unclassified.list", "w") as outfile:
+    for count,row in unclustered_contig_table.iterrows():
+        contig = row['contig']
+        single_np_array = np.array([contig_feature_dict[contig]])
+        contig_length = contig_table.iloc[count]['length']
 
-    #Make predictions
-    prediction,confidence = calculate_bootstrap_replicates(features, bootstrap_iterations)
-    print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, prediction,confidence))
-    redundant,is_marker_contig = redundant_marker_prediction(contig,prediction,temp_contig_table,cluster_column_name)
+        #Make predictions
+        prediction,confidence = calculate_bootstrap_replicates(single_np_array, bootstrap_iterations)
+        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, prediction,confidence))
+        redundant,is_marker_contig = redundant_marker_prediction(contig,prediction,temp_contig_table,cluster_column_name)
 
-    if confidence >= confidence_cutoff and not redundant:
-        #temp_contig_table[cluster_column_name].iloc[count] = prediction
-        row[cluster_column_name] = prediction
-        newDF = newDF.append(row)#, ignore_index = True)
-    else:
-        with open("still_unclassified.list", "a") as outfile:
+        if confidence >= confidence_cutoff and not redundant:
+            #temp_contig_table[cluster_column_name].iloc[count] = prediction
+            row[cluster_column_name] = prediction
+            newDF = newDF.append(row)#, ignore_index = True)
+
+        else:
             outfile.write(contig + "\n")
 
-newDF.to_csv("new_classified.tab",sep="\t",index=False,mode="w",header=False,na_rep="NA")
+newDF.to_csv(args['out_prefix'] + "_classified.tab",sep="\t",index=False,mode="w",header=False,na_rep="NA")
 
+elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
+print("Done! Total elapsed time = {} (HH:MM:SS)".format(elapsed_time))
 
 """
 Output should be:
