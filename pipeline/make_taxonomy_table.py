@@ -7,6 +7,7 @@ import pandas as pd
 from Bio import SeqIO
 import sys
 
+#Referred to in arg parse -t
 def readable_dir(prospective_dir):
   if not os.path.isdir(prospective_dir):
     raise Exception("\"{0}\" is not a valid path".format(prospective_dir))
@@ -129,7 +130,7 @@ if not os.path.isfile(prodigal_output + ".daa"):
 	#diamond_output =
 	diamond_output = run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa)
 elif os.stat(prodigal_output + ".daa").st_size == 0:
-	print "{} files empty. Re-running diamond blast...".format(prodigal_output + ".tab")
+	print "{} file is empty. Re-running diamond blast...".format(prodigal_output + ".daa")
 	diamond_output = run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal_daa)
 else:
 	diamond_output = prodigal_output + ".tab"
