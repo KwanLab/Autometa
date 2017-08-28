@@ -322,7 +322,7 @@ for count,contig in enumerate(contig_table['contig']):
         tax_species = list(species_dummy_martix.iloc[count])
         taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
         taxonomy_matrix_dict[contig] = taxonomy
-        contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov]
+        contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov] + taxonomy
         #contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov] + taxonomy
     if cluster != unclustered_name and num_markers > 0:
         features.append(contig_feature_dict[contig])
