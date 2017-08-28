@@ -311,7 +311,8 @@ for count,contig in enumerate(contig_table['contig']):
     cov = contig_table['cov'][count]
     gc = contig_table['gc'][count]
     cluster = contig_table[cluster_column_name][count]
-    contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
+    #contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
+    contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov]
     if use_taxonomy_info:
         tax_phylum = list(phylum_dummy_matrix.iloc[count])
         tax_class = list(class_dummy_matrix.iloc[count])
