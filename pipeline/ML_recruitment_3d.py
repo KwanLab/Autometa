@@ -35,75 +35,12 @@ parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
     in cluster column', default="unclustered")
 parser.add_argument('-n','--num_iterations', help='Number of iterations for \
     jackknife cross-validation.', default=10)
-parser.add_argument('-m','--k_mer_matrix', help='k-mer_matrix file.', default="k-mer_matrix")
 parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
 args = vars(parser.parse_args())
 
 def round_down(num, divisor):
     return num - (num%divisor)
-
-def revcomp( string ):
-	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
-	complement_list = list()
-
-	for i in range(0, len(string) ):
-		if string[i] in trans_dict:
-			complement_list.append(trans_dict[string[i]])
-		else:
-			return -1
-
-	return ''.join(reversed(complement_list))
-
-def normalizeKmers(count_matrix): # list of lists, not a np matrix
-	# We now remove all the k-mers where all counts are '1'
-	#logger.info('Trimming k-mers')
-	columns_to_delete = dict()
-	for i in range(0, len(unique_k_mers.keys())):
-		non_zero_counts = 0
-		for j in range(0, len(count_matrix)):
-			if count_matrix[j][i] > 1:
-				non_zero_counts += 1
-
-		if non_zero_counts == 0:
-			columns_to_delete[i] = 1
-
-	filtered_contig_k_mer_counts = list()
-	for i in range(0, len(count_matrix)):
-		new_row = list()
-		#unique_k_mers is a global variable
-		for j in range(0, len(unique_k_mers.keys())):
-			if j not in columns_to_delete:
-				new_row.append(count_matrix[i][j])
-		filtered_contig_k_mer_counts.append(new_row)
-
-	# 3. Normalization
-	#logger.info('Normalizing counts')
-
-	k_mer_frequency_matrix = list()
-
-	for count_list in filtered_contig_k_mer_counts:
-		total_count = 0
-		for count in count_list:
-			total_count += count
-
-		normalized_list = list()
-		for count in count_list:
-			normalized_list.append(float(count)/total_count)
-
-		# Now we calculate the Centered log-ratio (CLR) transformation
-		# See Aitchison, J. The Statistical Analysis of Compositional Data (1986) and
-		# Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
-		geometric_mean = stats.mstats.gmean(normalized_list)
-		clr_list = list()
-
-		for item in normalized_list:
-			intermediate_value = item / geometric_mean
-			clr_list.append(math.log(intermediate_value))
-
-		k_mer_frequency_matrix.append(clr_list)
-
-	return k_mer_frequency_matrix
 
 def jackknife_training(features,labels):
     #Function to randomly subsample data into halves (hence 0.5), train
@@ -230,58 +167,6 @@ except KeyError:
 #contig_table = "full_table"
 master_table = contig_table
 
-#Define "unique_k_mers"
-# Count K-mer frequencies
-k_mer_size = 5
-matrix_file = args['k_mer_matrix']
-k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
-
-count = 0
-unique_k_mers = dict()
-
-DNA_letters = ['A', 'T', 'C', 'G']
-all_k_mers = list(DNA_letters)
-for i in range(1, k_mer_size):
-	new_list = list()
-	for current_seq in all_k_mers:
-		for char in DNA_letters:
-			new_list.append(current_seq + char)
-	all_k_mers = new_list
-
-# Now we trim k-mers and put them in the dictionary
-for k_mer in all_k_mers:
-	k_mer_reverse = revcomp(k_mer)
-	if (k_mer not in unique_k_mers) and (k_mer_reverse not in unique_k_mers):
-		unique_k_mers[k_mer] = count
-		count += 1
-
-# Now we load the k-mer matrix
-print("Loading k-mer matrix...")
-k_mer_dict = {}
-with open(matrix_file) as matrix:
-	for i,line in enumerate(matrix):
-		if i > 0:
-			line_list = line.rstrip().split('\t')
-			contig = line_list.pop(0)
-			line_list = [ int(x) for x in line_list ]
-			k_mer_dict[contig] = line_list
-
-# Make normalized k-mer matrix
-print("Normalizing k-mer martix...")
-contig_list = master_table['contig'].tolist()
-k_mer_counts = list()
-for contig in contig_list:
-	k_mer_counts.append(k_mer_dict[contig])
-
-normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
-
-print("Reducing normalized k-mer matrix to 50 dimensions with PCA...")
-# For performance reasons we reduce the dimensions to 50 with PCA
-pca = decomposition.PCA(n_components=50)
-pca_matrix = pca.fit_transform(normalized_k_mer_matrix)
-
-###For k-kmer matrix reduction - END
-
 #Set load paramters - convert to argparse
 processors = int(args['processors'])
 if processors > multiprocessing.cpu_count():
@@ -311,7 +196,6 @@ for count,contig in enumerate(contig_table['contig']):
     cov = contig_table['cov'][count]
     gc = contig_table['gc'][count]
     cluster = contig_table[cluster_column_name][count]
-    #contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
     contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov]
     if use_taxonomy_info:
         tax_phylum = list(phylum_dummy_matrix.iloc[count])
