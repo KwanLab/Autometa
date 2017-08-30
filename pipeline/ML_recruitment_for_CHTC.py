@@ -345,24 +345,21 @@ print("Recruiting {} unclustered sequences with {} training contigs. This could 
 
 newDF = pd.DataFrame(columns = contig_table.columns)
 
-with open(args['out_prefix'] + "_unclassified.list", "w") as outfile:
-    for count,row in unclustered_contig_table.iterrows():
-        contig = row['contig']
-        single_np_array = np.array([contig_feature_dict[contig]])
-        contig_length = contig_table.iloc[count]['length']
+for count,row in unclustered_contig_table.iterrows():
+    contig = row['contig']
+    single_np_array = np.array([contig_feature_dict[contig]])
+    contig_length = contig_table.iloc[count]['length']
 
-        #Make predictions
-        prediction,confidence = calculate_bootstrap_replicates(single_np_array, bootstrap_iterations)
-        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, prediction,confidence))
-        redundant,is_marker_contig = redundant_marker_prediction(contig,prediction,temp_contig_table,cluster_column_name)
+    #Make predictions
+    prediction,confidence = calculate_bootstrap_replicates(single_np_array, bootstrap_iterations)
+    print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, prediction,confidence))
+    redundant,is_marker_contig = redundant_marker_prediction(contig,prediction,temp_contig_table,cluster_column_name)
 
-        if confidence >= confidence_cutoff and not redundant:
-            #temp_contig_table[cluster_column_name].iloc[count] = prediction
-            row[cluster_column_name] = prediction
-            newDF = newDF.append(row)#, ignore_index = True)
+    if confidence >= confidence_cutoff and not redundant:
+        #temp_contig_table[cluster_column_name].iloc[count] = prediction
+        row[cluster_column_name] = prediction
+        newDF = newDF.append(row)#, ignore_index = True)
 
-        else:
-            outfile.write(contig + "\n")
 
 newDF.to_csv(args['out_prefix'] + "_classified.tab",sep="\t",index=False,mode="w",header=False,na_rep="NA")
 
