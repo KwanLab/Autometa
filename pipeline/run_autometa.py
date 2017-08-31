@@ -55,10 +55,10 @@ def make_marker_table(fasta):
 	return output_path
 
 def recursive_dbscan(input_table, filtered_assembly, domain):
-	recursive_dbscan_output_path = output_dir + '/recursive_dbscan_output.tab'
+	#recursive_dbscan_output_path = output_dir + '/recursive_dbscan_output.tab'
 	k_mer_file = output_dir + '/k-mer_matrix'
-	logger.info("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, recursive_dbscan_output_path, domain))
-	subprocess.call("{}/recursive_dbscan.py -t {} -a {} -o {} -k {}".format(pipeline_path, input_table, filtered_assembly, recursive_dbscan_output_path, domain), shell=True)
+	logger.info("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain))
+	subprocess.call("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain), shell=True)
 
 	return recursive_dbscan_output_path, k_mer_file
 

@@ -335,14 +335,16 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 parser = argparse.ArgumentParser(description="Perform initial clustering via BH-tSNE and DBSCAN.")
 parser.add_argument('-t','--input_table', help='Master contig table. Optionally can contain taxonomy data', required=True)
 parser.add_argument('-a','--assembly_fasta', help='Assembly fasta', required=True)
-parser.add_argument('-o','--output_table', help='Path to output table', required=True)
+#parser.add_argument('-o','--output_table', help='Path to output table', required=True)
+parser.add_argument('-d','--output_dir', help='Path to output directory', default='.')
 parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', choices=['bacteria','archaea'], default = 'bacteria')
 
 args = vars(parser.parse_args())
 
 input_table_path = args['input_table']
 input_fasta_path = args['assembly_fasta']
-output_table_path = args['output_table']
+output_dir_path = args['output_dir']
+output_table_path = output_dir_path + '/recursive_dbscan_output.tab'
 domain = args['kingdom']
 
 #logger
@@ -357,7 +359,6 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(console)
 
 master_table = pd.read_table(input_table_path)
-master_table['cluster'] = 'unclustered'
 master_table['bh_tsne_x'] = 0
 master_table['bh_tsne_y'] = 0
 
@@ -368,7 +369,7 @@ for seq_record in SeqIO.parse(input_fasta_path, 'fasta'):
 
 # Count K-mer frequencies
 k_mer_size = 5
-matrix_file = 'k-mer_matrix'
+matrix_file = output_dir_path + '/k-mer_matrix'
 k_mer_dict = dict() # Holds lists of k-mer counts, keyed by contig name
 
 count = 0
@@ -453,17 +454,30 @@ contig_list = master_table['contig'].tolist()
 coverage_list = master_table['cov'].tolist()
 taxonomy_matrix = list()
 
-# Make normalized k-mer matrix
-k_mer_counts = list()
-for contig in contig_list:
-	k_mer_counts.append(k_mer_dict[contig])
-
-normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
-
-
+## Make normalized k-mer matrix
+#k_mer_counts = list()
+#for contig in contig_list:
+#	k_mer_counts.append(k_mer_dict[contig])
+#
+#normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
 
-run_BH_tSNE(master_table)
+BH_tSNE_output_file = output_dir_path + '/BH_tSNE_output.tab'
+
+if os.path.isfile(BH_tSNE_output_file):
+	logger.info("K-mer matrix already exists!")
+	logger.info("Continuing to next step...")
+
+	# Now we load the file
+	master_table = pd.read_table(BH_tSNE_output_file)
+	master_table['cluster'] = 'unclustered'
+else:
+	run_BH_tSNE(master_table)
+
+	# Write file to disk
+	master_table.to_csv(path_or_buf=BH_tSNE_output_file, sep='\t', index=False, quoting=csv.QUOTE_NONE)
+
+	master_table['cluster'] = 'unclustered'
 
 contig_markers = {}
 for i, row in master_table.iterrows():
