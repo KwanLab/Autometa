@@ -465,7 +465,7 @@ for contig in contig_list:
 BH_tSNE_output_file = output_dir_path + '/BH_tSNE_output.tab'
 
 if os.path.isfile(BH_tSNE_output_file):
-	logger.info("K-mer matrix already exists!")
+	logger.info("BH_tSNE output already exists!")
 	logger.info("Continuing to next step...")
 
 	# Now we load the file
