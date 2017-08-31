@@ -454,11 +454,11 @@ contig_list = master_table['contig'].tolist()
 coverage_list = master_table['cov'].tolist()
 taxonomy_matrix = list()
 
-## Make normalized k-mer matrix
-#k_mer_counts = list()
-#for contig in contig_list:
-#	k_mer_counts.append(k_mer_dict[contig])
-#
+# Make normalized k-mer matrix
+k_mer_counts = list()
+for contig in contig_list:
+	k_mer_counts.append(k_mer_dict[contig])
+
 #normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
 
