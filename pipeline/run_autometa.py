@@ -182,7 +182,7 @@ marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
 if taxonomy_table_path:
-	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
+	combined_table_path = combine_tables(marker_tab_path, taxonomy_table_path)
 else:
 	combined_table_path = combine_tables(contig_table, marker_tab_path)
 
