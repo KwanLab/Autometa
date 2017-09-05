@@ -74,22 +74,48 @@ def run_BH_tSNE(table, do_pca=True):
 	table['bh_tsne_x'] = pd.Series(bh_tsne_x, index = table.index)
 	table['bh_tsne_y'] = pd.Series(bh_tsne_y, index = table.index)
 
-def runDBSCANs(table, dimensions):
+def runDBSCANs(table, dimensions, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
 	# Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one group
 	current_eps = 0.3
-	db_tables = {} # Will be keyed by eps
+	#db_tables = {} # Will be keyed by eps
 	number_of_clusters = float('inf')
 	current_step = 0.1
 	number_of_tables = {}
+	best_median = 0
+	best_table_so_far = None
+	best_cluster_info = dict()
+	number_rounds_with_zero_clusters = 0
+	some_clusters_found = False
 	while(number_of_clusters > 1):
 		logger.info('EPS: ' + str(current_eps))
 		dbscan_output_pd = dbscan_simple(table, current_eps, dimensions)
-		new_pd_copy = copy.deepcopy(dbscan_output_pd)
-		db_tables[current_eps] = new_pd_copy
-		current_eps = current_eps + current_step
+
+		# Assess table
+		cluster_info = getClusterInfo(dbscan_output_pd, hmm_dictionary, domain)
+
+		# Determine median completeness
+		completenessList = []
+		for cluster in cluster_info:
+			completeness = cluster_info[cluster]['completeness']
+			purity = cluster_info[cluster]['purity']
+			if completeness > completeness_cutoff and purity > purity_cutoff:
+				completenessList.append(completeness)
+		if completenessList:
+			current_median = np.median(completenessList)
+		else:
+			current_median = 0
+		#pdb.set_trace()
+		if current_median >= best_median:
+			best_median = current_median
+			best_table_so_far = dbscan_output_pd
+			best_cluster_info = cluster_info
+		#else:
+		#	break
+		logger.info('Median: ' + str(current_median))
+		logger.info('No. complete and pure: ' + str(len(completenessList)))
 
 		# Count the number of clusters
-		number_of_clusters = countClusters(new_pd_copy)
+		number_of_clusters = countClusters(dbscan_output_pd)
 		if number_of_clusters in number_of_tables:
 			number_of_tables[number_of_clusters] += 1
 		else:
@@ -99,9 +125,69 @@ def runDBSCANs(table, dimensions):
 		if number_of_tables[number_of_clusters] > 10:
 			current_step = current_step * 10
 
+		current_eps = current_eps + current_step
+
 		logger.info('number of clusters: ' + str(number_of_clusters))
 
-	return db_tables
+		# Break conditions to speed up pipeline
+		# Often when you start at 0.3 there are zero complete and pure clusters, because the groups are too small.
+		# Later, some are found as the groups enlarge enough, but after it becomes zero again, it is a lost cause and we may as well stop.
+		# On the other hand, sometimes we never find any groups, so perhaps we should give up if by EPS 1.3 we never find any complete/pure groups.
+		if completenessList:
+			some_clusters_found = True
+		else:
+			if some_clusters_found: # I.e. at some point clusters were found, but not this time 
+				break
+			else:
+				number_rounds_with_zero_clusters += 1
+
+		if number_rounds_with_zero_clusters >= 10: # Give up if we've got up to eps 1.3 and still no complete and pure clusters
+			break
+
+	#pdb.set_trace()
+	logger.info('Best completeness median: ' + str(best_median))
+
+	complete_and_pure_clusters = {}
+	other_clusters = {}
+	for cluster in best_cluster_info:
+		completeness = best_cluster_info[cluster]['completeness']
+		purity = best_cluster_info[cluster]['purity']
+
+		# Explicitly remove the noise cluster (-1)
+		# Note: in the R DBSCAN implementation, the noise cluster is 0, in the sklearn implementation, the noise cluster is -1
+		if cluster == -1:
+			other_clusters[cluster] = 1
+			continue
+
+		if completeness > completeness_cutoff and purity > purity_cutoff:
+			complete_and_pure_clusters[cluster] = 1
+		else:
+			other_clusters[cluster] = 1
+
+	# Subset the data frame
+	subset_other_db_table = copy.deepcopy(best_table_so_far)
+
+	for cluster in complete_and_pure_clusters:
+		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
+
+	# We now drop the db_cluster column
+	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
+	unclustered = subset_other_db_table
+
+	# We now make a data structure containing cluster information for complete clusters only
+	output_cluster_info = {}
+	output_contig_cluster = {}
+	for cluster in complete_and_pure_clusters:
+		output_cluster_info[cluster] = {'completeness': best_cluster_info[cluster]['completeness'], 'purity': best_cluster_info[cluster]['purity']}
+
+	# Now we grab contig names from the best db table
+	for i, row in best_table_so_far.iterrows():
+		contig = row['contig']
+		cluster = row['db_cluster']
+		if cluster in complete_and_pure_clusters:
+			output_contig_cluster[contig] = cluster
+
+	return output_cluster_info, output_contig_cluster, unclustered
 
 def dbscan_simple(table, eps, dimensions):
 	table_copy = copy.deepcopy(table)
@@ -175,100 +261,6 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 
 	return cluster_details
 
-def assessDBSCAN(table_dictionary, hmm_dictionary, domain, completeness_cutoff, purity_cutoff):
-	# Assess clusters of each DBSCAN table
-	cluster_info = {} # Dictionary that is keyed by eps, will hold details of each cluster in each table
-	for eps in table_dictionary:
-		current_table = table_dictionary[eps]
-		current_cluster_info = getClusterInfo(current_table, hmm_dictionary, domain)
-		cluster_info[eps] = current_cluster_info
-
-	number_complete_and_pure_clusters = {}
-	number_pure_clusters = {}
-	median_completeness = {}
-	mean_completeness = {}
-	completeness_product = {}
-	for eps in cluster_info:
-		complete_clusters = 0
-		pure_clusters = 0
-		completenessList = []
-		for cluster in cluster_info[eps]:
-			completeness = cluster_info[eps][cluster]['completeness']
-			purity = cluster_info[eps][cluster]['purity']
-			if completeness > completeness_cutoff and purity > purity_cutoff:
-				complete_clusters += 1
-				completenessList.append(completeness)
-			if purity > purity_cutoff:
-				pure_clusters += 1
-		number_complete_and_pure_clusters[eps] = complete_clusters
-		number_pure_clusters[eps] = pure_clusters
-		# Protect against warning if list is empty
-		if completenessList:
-			median_completeness[eps] = np.median(completenessList)
-			mean_completeness[eps] = np.mean(completenessList)
-		else:
-			median_completeness[eps] = 0
-			mean_completeness[eps] = 0
-
-		completeness_product[eps] = number_complete_and_pure_clusters[eps] * mean_completeness[eps]
-
-	# Get eps value with highest number of complete clusters
-	#sorted_eps_values = sorted(number_complete_and_pure_clusters, key=number_complete_and_pure_clusters.__getitem__, reverse=True)
-	sorted_eps_values = sorted(median_completeness, key=median_completeness.__getitem__, reverse=True)
-	#sorted_eps_values = sorted(mean_completeness, key=mean_completeness.__getitem__, reverse=True)
-	best_eps_value = sorted_eps_values[0]
-
-	# For impure clusters, output BH_tSNE table
-	# First, find pure clusters
-	best_db_table = table_dictionary[best_eps_value]
-
-	complete_and_pure_clusters = {}
-	other_clusters = {}
-	for cluster in cluster_info[best_eps_value]:
-		completeness = cluster_info[best_eps_value][cluster]['completeness']
-		purity = cluster_info[best_eps_value][cluster]['purity']
-
-		# Explicitly remove the noise cluster (-1)
-		# Note: in the R DBSCAN implementation, the noise cluster is 0, in the sklearn implementation, the noise cluster is -1
-		if cluster == -1:
-			other_clusters[cluster] = 1
-			continue
-
-		if completeness > completeness_cutoff and purity > purity_cutoff:
-			complete_and_pure_clusters[cluster] = 1
-		else:
-			other_clusters[cluster] = 1
-
-	# Subset the data frame
-	subset_other_db_table = copy.deepcopy(best_db_table)
-
-	for cluster in complete_and_pure_clusters:
-		subset_other_db_table = subset_other_db_table[subset_other_db_table['db_cluster'] != cluster]
-
-	# Output a table with the classifications, mainly for debug/investigation purposes
-	output_db_table = copy.deepcopy(best_db_table)
-	for index, row in output_db_table.iterrows():
-		if row['db_cluster'] in other_clusters:
-			output_db_table.set_value(index, 'db_cluster', -1)
-
-	# We now drop the db_cluster column
-	subset_other_db_table = subset_other_db_table.drop('db_cluster', 1)
-	unclustered = subset_other_db_table
-
-	# We now make a data structure containing cluster information for complete clusters only
-	output_cluster_info = {}
-	output_contig_cluster = {}
-	for cluster in complete_and_pure_clusters:
-		output_cluster_info[cluster] = {'completeness': cluster_info[best_eps_value][cluster]['completeness'], 'purity': cluster_info[best_eps_value][cluster]['purity']}
-
-	# Now we grab contig names from the best db table
-	for i, row in best_db_table.iterrows():
-		contig = row['contig']
-		cluster = row['db_cluster']
-		if cluster in complete_and_pure_clusters:
-			output_contig_cluster[contig] = cluster
-
-	return output_cluster_info, output_contig_cluster, unclustered
 
 def revcomp( string ):
 	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
@@ -539,8 +531,8 @@ if has_taxonomy_info and data_size > 50:
 					round_counter += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
 
-					db_tables = runDBSCANs(subset_table, dimensions)
-					cluster_information, contig_cluster_dictionary, local_unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+					#db_tables = runDBSCANs(subset_table, dimensions)
+					cluster_information, contig_cluster_dictionary, local_unclustered_table = runDBSCANs(subset_table, dimensions, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 					subset_table = local_unclustered_table
 
@@ -568,8 +560,8 @@ else:
 		    round_counter += 1
 		    logger.info('Running DBSCAN round ' + str(round_counter))
 
-		    db_tables = runDBSCANs(local_current_table, dimensions)
-		    cluster_information, contig_cluster_dictionary, unclustered_table = assessDBSCAN(db_tables, contig_markers, domain, completeness_cutoff, purity_cutoff)
+		    #db_tables = runDBSCANs(local_current_table, dimensions)
+		    cluster_information, contig_cluster_dictionary, unclustered_table = runDBSCANs(local_current_table, dimensions, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
 		    if not cluster_information:
 		        break
