@@ -94,13 +94,6 @@ def combine_tables(table1_path, table2_path):
 
 	return comb_table_path
 
-def ML_prune(input_table, matrix):
-	ML_prune_output_path = output_dir + '/ML_prune_output.tab'
-	logger.info("{}/ML_prune.py -t {} -a {} -o {} -k {} -p {} -m {}".format(pipeline_path, input_table, fasta_assembly, ML_prune_output_path, kingdom, processors, matrix))
-	subprocess.call("{}/ML_prune.py -t {} -a {} -o {} -k {} -p {} -m {}".format(pipeline_path, input_table, fasta_assembly, ML_prune_output_path, kingdom, processors, matrix), shell=True)
-
-	return ML_prune_output_path
-
 def ML_recruitment(input_table, matrix):
 	ML_recruitment_output_path = output_dir + '/ML_recruitment_output.tab'
 	logger.info("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
@@ -129,7 +122,6 @@ parser.add_argument('-k', metavar='kingdom', help='Kingdom to consider (archaea|
 choices=['bacteria','archaea'], default = 'bacteria')
 parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonomy_table.py')
 parser.add_argument('-o', metavar='output directory', help='Directory to store all output files', default = '.')
-parser.add_argument('-u', help='Use ML to prune clusters', action='store_true')
 parser.add_argument('-r', help='Use ML to further recruit unclassified contigs', action='store_true')
 args = vars(parser.parse_args())
 
@@ -140,7 +132,6 @@ cluster_completeness = args['c']
 kingdom = args['k'].lower()
 taxonomy_table_path = args['t']
 output_dir = args['o']
-do_ML_prune = args['u']
 do_ML_recruitment = args['r']
 
 #check if fasta in path
@@ -188,12 +179,7 @@ else:
 
 recursive_dbscan_output, matrix_file = recursive_dbscan(combined_table_path, filtered_assembly, kingdom)
 
-if do_ML_prune:
-	ML_prune_output = ML_prune(recursive_dbscan_output, matrix_file)
-
-if do_ML_prune and do_ML_recruitment:
-	ML_recruitment(ML_prune_output, matrix_file)
-elif do_ML_recruitment:
+if do_ML_recruitment:
 	ML_recruitment(recursive_dbscan_output, matrix_file)
 
 elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - start_time),2)))
