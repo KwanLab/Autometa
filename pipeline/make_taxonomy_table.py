@@ -62,7 +62,7 @@ def run_diamond(prodigal_output, diamond_database_path, num_processors, prodigal
 
 	#return  view_output
 	#might want to change name of outputfile
-"""
+
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
 	output = input_file.rstrip(".tab") + ".lca"
@@ -73,8 +73,8 @@ def run_blast2lca(input_file, taxdump_path):
 		subprocess.call("{}/lca.py database_directory {} {} > {}".format(pipeline_path, taxdump_dir_path, input_file, output), shell = True)
 	return output
 
-"""
 
+"""
 def run_blast2lca(input_file,taxdump_path):
 	output = input_file.rstrip(".tab") + ".lca"
 	if os.path.isfile(output):
@@ -84,7 +84,7 @@ def run_blast2lca(input_file,taxdump_path):
 		subprocess.call("blast2lca -savemem -dict {}/gi_taxid.bin -nodes {}/nodes.dmp -names {}/names.dmp {} > {}"\
 			.format(taxdump_path,taxdump_path,taxdump_path,input_file, output), shell = True)
 	return output
-
+"""
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path): #Have to update this
 	initial_table_path = assembly_path + '.tab'
 	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
