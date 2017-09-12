@@ -20,7 +20,7 @@ def readable_dir(prospective_dir):
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
 parser.add_argument('-a', metavar='assembly', help='assembly.fasta', required=True)
 parser.add_argument('-p', metavar='processors', help='Processors to use. If not specified, will infer', default=1)
-parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-redundant (NR) protein database', default="/media/box2/nr_old/nr") #Need to update default
+parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-redundant (NR) protein database', required=True)
 parser.add_argument('-t', metavar='database directory', help='Path to directory with taxdump files.', required=True, type=readable_dir)
 parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
  Default is 10,000 bp.', default=10000, type = int)
