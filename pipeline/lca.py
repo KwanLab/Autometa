@@ -9,12 +9,14 @@ Author: Evan R. Rees
 Required Extensions: lca_functions.so | lca_functions.c (lca_functions.pyx compiled using Cython)
 """
 
-import time, re, argparse, os
+import time
+import re
+import argparse
+import os
 from functools import reduce
 from itertools import chain
 from tqdm import tqdm
-from sys import argv
-from sys import exit
+from sys import argv, exit
 
 try:
     import lca_functions
@@ -52,26 +54,32 @@ prot.accession2taxid is updated weekly and may be found at:\nftp://ftp.ncbi.nih.
 
 subparsers = parser.add_subparsers(title='Method for Accession of Database Files',\
 help="Additional help may be provided by specifying (database_files|database_directory) -h")
-
 parser_databasefiles = subparsers.add_parser("database_files",\
 help="Accesses database files provided by individually listing nodes.dmp, names.dmp and accession2taxid")
-parser_databasefiles.add_argument("nodes.dmp", help="Path to nodes.dmp file")
-parser_databasefiles.add_argument("names.dmp", help="Path to names.dmp file")
-parser_databasefiles.add_argument("accession2taxid", help="Path to prot.accession2taxid file")
+parser_databasefiles.add_argument("nodes.dmp",\
+help="Path to nodes.dmp file")
+parser_databasefiles.add_argument("names.dmp",\
+help="Path to names.dmp file")
+parser_databasefiles.add_argument("accession2taxid",\
+help="Path to prot.accession2taxid file")
 parser_databasefiles.set_defaults(parser_databasedirectory=False, parser_databasefiles=True)
 
-parser_databasedirectory = subparsers.add_parser("database_directory", help="Accesses database files from directory provided")
-parser_databasedirectory.add_argument('path_to_database_directory', action='store',\
-help='Path to directory with database files.', type=readable_dir)
+parser_databasedirectory = subparsers.add_parser("database_directory",\
+help="Accesses database files from directory provided")
+parser_databasedirectory.add_argument('path_to_database_directory', action='store', type=readable_dir,\
+help='Path to directory with database files.')
 parser_databasedirectory.add_argument("-update", required=False, action='store_true',\
 help='Updates nodes.dmp, names.dmp and accession2taxid files within the specified directory')
 parser_databasedirectory.set_defaults(parser_databasefiles=False, parser_databasedirectory=True)
 
-parser.add_argument("-v", "--verbose", required=False, help="Indicate verbose progress reporting", action='store_true')
-parser.add_argument("blast", metavar='BLAST output', help="Path to BLAST output file.")
+parser.add_argument("-v", "--verbose", required=False,\
+help="Indicate verbose progress reporting", action='store_true')
+parser.add_argument("blast", metavar='BLAST output',\
+help="Path to BLAST output file.")
 parser.add_argument("-f", metavar='bitscore filter', required=False, default=0.9, type=restricted_float,\
 help="Filter to parse percentage of top BLAST hits based on bitscore.")
-parser.add_argument("-fail_info", required=False, help="Writes out files with failure taxid/orf information", action='store_true')
+parser.add_argument("-fail_info", required=False, action='store_true',\
+help="Writes out files with failure taxid/orf information")
 
 args = vars(parser.parse_args())
 
