@@ -149,12 +149,20 @@ do_ML_recruitment = args['r']
 make_tax_table = args['maketaxtable']
 diamond_database_path = args['n']
 taxdump_dir = args['taxdb']
-if args['maketaxtable'] and not args['n']:
-	print("Must specify diamond database")
+
+#check if appropriate databases specified for make taxonomy table
+if args['maketaxtable'] and not args['n'] and not args['taxdb']:
+	print("Must specify diamond database (-n) and taxdump directory (-taxdb)")
 	exit()
 elif args['maketaxtable'] and not args['taxdb']:
-	print("Must specify taxdump directory")
+	print("Must specify taxdump directory (-taxdb)")
 	exit()
+elif args['maketaxtable'] and not args['n']:
+	print("Must specify diamond database (-n)")
+	exit()
+else:
+	pass
+
 #check if fasta in path
 if not os.path.isfile(args['a']):
 	print "Could not find {}...".format(args['a'])
@@ -193,7 +201,6 @@ contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
-#Need to check if args['t'] and args['maketaxtable'] are specified then decide what to do with given table and generated table
 if taxonomy_table_path and not args['maketaxtable']:
 	combined_table_path = combine_tables(marker_tab_path, taxonomy_table_path)
 elif taxonomy_table_path and args['maketaxtable']:
@@ -202,8 +209,14 @@ elif taxonomy_table_path and args['maketaxtable']:
 		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(args['t']))
 		taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
+	elif os.path.isfile(args['t'] and os.stat(args['t']).st_size == 0):
+		print "{} file is empty, running make_taxonomy_table.py".format(args['t'])
+		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(args['t']))
+		taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
+		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
 	else:
 		print "{} already exists, not performing make_taxonomy_table.py".format(args['t'])
+		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
 elif not taxonomy_table_path and args['maketaxtable']:
 	taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 	combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
