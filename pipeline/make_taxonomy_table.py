@@ -124,7 +124,7 @@ else:
 	diamond_output = prodigal_output + ".tab"
 
 if not os.path.isfile(prodigal_output + ".lca"):
-    print "Could not find {}. Running lca... ".format(prodigal_output + ".lca")
+    print "Could not find {}. Running lca...".format(prodigal_output + ".lca")
     blast2lca_output = run_blast2lca(diamond_output,taxdump_dir_path)
 elif os.stat(prodigal_output + ".lca").st_size == 0:
     print "{} file is empty. Re-running lca...".format(prodigal_output + ".lca")
