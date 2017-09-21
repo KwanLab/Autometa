@@ -18,7 +18,7 @@ install [pip](https://packaging.python.org/tutorials/installing-packages/ "pytho
 python module dependencies.
 pip install these modules:
 
-```shell
+```bash
 pip install numpy
 pip install tqdm
 pip install cython
@@ -30,12 +30,12 @@ pip install cython
 
 You will need to navigate to the directory in which you have placed lca_functions.pyx and setup_lca_functions.py
 
-`python setup_lca_functions.py build_ext --inplace`
+`$ python setup_lca_functions.py build_ext --inplace`
 
 ####If the setup worked properly
 you will be able to access the LCA usage information
 
-`python lca.py --help`
+`$ python lca.py --help`
 
 This will display:
 ```
@@ -81,40 +81,40 @@ LCA has a built in feature of automatically downloading and preparing NCBI's dat
 
 If you wish to have LCA set up your database information, simply pass the update flag when performing your first LCA.
 
-`python lca.py database_directory <path to where you want to keep the database files> -update <BLAST output file>`
+`$ python lca.py database_directory <path to where you want to keep the database files> -update <BLAST output file>`
 
 LCA will navigate to the specified directory, download and extract the database files before performing LCA.
 
 Additional help information may be found for the database selection by specifying help after selecting database_directory or database_files
 
-`python lca.py database_directory -h` or `python lca.py database_files -h`
+`$ python lca.py database_directory -h` or `python lca.py database_files -h`
 
 ### Additional Features
 
 LCA has additional optional arguments to provide greater flexibility
 
-1. Bitscore Filter\t(-f)\t[default = 90%]
-1. Verbose\t(-v)
-1. Failure Information\t(-fail_info)
+1. Bitscore Filter (-f)
+1. Verbose  (-v)
+1. Failure Information  (-fail_info)
 ___
 
 
-1. **Bitscore filter** is the designated value for ORFs to parse from the BLAST results. The default filters 90% and above of the top BLAST bitscore for each ORF. For reduced resolution, you can specify lower values as decimals to parse more hits from the BLAST results. This may result in a higher final LCA for each ORF being queried.
+**Bitscore filter** is the designated value for ORFs to parse from the BLAST results. The default filters 90% and above of the top BLAST bitscore for each ORF. For reduced resolution, you can specify lower values as decimals to parse more hits from the BLAST results. This may result in a higher final LCA for each ORF being queried.
 
 _Example application of filter:_
 
-`python lca.py database_directory <path to database directory> -f 0.4 <BLAST file>`
+`$ python lca.py database_directory <path to database directory> -f 0.4 <BLAST file>`
 
-2. **Verbose** is the flag for printing LCA progress to the terminal. The default has verbose turned off. Simply specifying the `-v` flag will initiate printing to the terminal.
+**Verbose** is the flag for printing LCA progress to the terminal. The default has verbose turned off. Simply specifying the `-v` flag will initiate printing to the terminal.
 
 _Example application of verbose:_
 
-`python lca.py database_directory <path to database directory> -v <BLAST file>`
+`$ python lca.py database_directory <path to database directory> -v <BLAST file>`
 
-3. **Failure Information** is a flag that writes out a file "output_filename_failed_orfs.lca" if any ORFs fail during the LCA analysis.
+**Failure Information** is a flag that writes out a file "output_filename_failed_orfs.lca" if any ORFs fail during the LCA analysis.
 
 _Example application of failure information tracking:_
-`python lca.py database_directory <path to database directory> -fail_info <BLAST file>`
+`$ python lca.py database_directory <path to database directory> -fail_info <BLAST file>`
 
 ## Deployment
 
@@ -132,11 +132,11 @@ Please read [CONTRIBUTING.md](path to file for instructions for making pull requ
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
+Could place something here if we plan on keeping updated
 
 ## Authors
 
-* **Jason Kwan** - *Tree creation*
+* **Jason C. Kwan** - *Tree creation*
 * **Evan R. Rees** - *RMQ and Sparse table algorithm as well as framework*
 
 ## License
@@ -146,19 +146,22 @@ This project is licensed under the >>NEED TO INSERT LICENSE TITLE HERE>> License
 ## Acknowledgments
 Special Thanks to:
 * Miguel Pignatelli
-* Ian Miller
+
+* Ian J. Miller
 
 
-### Agorithms
+### Algorithms
 
 Tree of Life Creation:
 The tree of life is constructed from the node.dmp file from [NCBI's taxonomy database](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/ "NCBI's taxonomy database directory") located in the taxdump.tar.gz compressed file. Branches stemming from the root are constructed until the entire tree has been built. Paths between each node by are built by traversing the tree using an Eulerian tour method. During the Eulerian tour, features of each tax ID are stored for sparse table creation.
 ___
+
 Sparse Table:
 The depth of each taxonomic ID in relation to the rest of the tree is used to efficiently store the tree in memory for quick lookup of taxonomic information. This algorithm employs dynamic programming to assess each tax ID in a range of other tax IDs starting from a range of the tax ID and it's closest relative and increasing to a range from the tax ID and it's furthest relative.
 ___
+
 Range Minimum Query (RMQ):
-Following the generation of the sparse table, a list of lists populated by respective ORFs from the BLAST query is given to the RMQ algorithm to determine the LCA. The RMQ algorithm utilizes the generated tree of tax IDs, sparse table, features of each tax ID. i.e. depth and location within the tree of tax IDs. The RMQ algorithm will look at the ORFs in pairs reducing the LCA to a final lowest common ancestor. Upon receiving the ORF list input, the RMQ algorithm will look at ORF pairs, determine the tax IDs between the two and return the closest tax ID to the root. Each ORF pair has an array of tax IDs linking the relation between the two. The array of tax IDs between the two ORFs is investigated for a lowest common ancestor. An LCA is returned and subsequent RMQ is performed between the returned LCA and the next ORF until a final LCA is returned. As more divergent ORFs are introduced the LCA will get higher until the lowest common ancestor is the root.
+Following the generation of the sparse table, a list of lists populated by respective ORFs from the BLAST query is given to the RMQ algorithm to determine the LCA. The RMQ algorithm utilizes the generated tree of tax IDs, sparse table and features of each tax ID. i.e. depth and location within the tree of tax IDs. The RMQ algorithm will look at the ORFs in pairs reducing the LCA to a final lowest common ancestor. Upon receiving the ORF list input, the RMQ algorithm will look at ORF pairs, determine the tax IDs between the two and return the closest tax ID to the root. Each ORF pair has an array of tax IDs linking the relation between the two. The array of tax IDs between the two ORFs is investigated for a lowest common ancestor. An LCA is returned and subsequent RMQ is performed between the returned LCA and the next ORF until a final LCA is returned. As more divergent ORFs are introduced the LCA will get higher until the lowest common ancestor is the root.
 
 
 
