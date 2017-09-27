@@ -13,6 +13,7 @@ import sys
 from time import *
 from tqdm import *
 import subprocess
+import argparse
 import pprint
 import pdb
 pp = pprint.PrettyPrinter(indent=4)
@@ -135,9 +136,18 @@ def lowest_majority(contigDictionary, taxidDictionary):
 	# Just in case
 	return 1
 
-contig_table_path = sys.argv[1]
-taxdump_dir_path = sys.argv[2]
-output_file_path = sys.argv[3]
+parser = argparse.ArgumentParser(description="Summarize the taxonomy of clusters in a table")
+parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
+parser.add_argument('-c','--cluster_column', help='Name of column for cluster', \
+    default='cluster')
+parser.add_argument('-x','--taxdump_path', help='Path to taxdump directory (downloaded from NCBI taxonomy)', required=True)
+parser.add_argument('-o','--out_table', help='Output table path',required=True)
+args = vars(parser.parse_args())
+
+contig_table_path = args['contig_tab']
+taxdump_dir_path = args['taxdump_path']
+output_file_path = args['out_table']
+cluster_column_name = args['cluster_column']
 
 # Process NCBI taxdump files
 names_dmp_path = taxdump_dir_path + '/names.dmp'
@@ -209,7 +219,7 @@ taxid_index = None
 for i,heading in enumerate(contig_table_first_line_list):
 	if heading == 'contig':
 		contig_index = i
-	if heading == 'cluster':
+	if heading == cluster_column_name:
 		cluster_index = i
 	if heading == 'length':
 		length_index = i
