@@ -8,10 +8,13 @@ and contamination from the master contig table cluster column.")
 parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
 parser.add_argument('-c','--cluster_column', help='Cluster column name', \
 default="sklearn_recursive_dbscan")
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)',\
+choices=['bacteria','archaea'], default = 'bacteria')
 args = vars(parser.parse_args())
 
 contig_table = pd.read_csv(args['contig_tab'], sep = "\t")
 cluster_column = args['cluster_column']
+kingdom = args['kingdom']
 
 #contig_table = pd.read_csv("ATCC-MSA-1001_master_contig.tab", sep = "\t")
 #cluster_column = "sklearn_recursive_dbscan"
@@ -56,7 +59,7 @@ def calculateClusterStats(pandas_table,cluster_column,life_domain="bacteria"):
 
     return cluster_dict
 
-cluster_dict = calculateClusterStats(contig_table,cluster_column)
+cluster_dict = calculateClusterStats(contig_table,cluster_column,kingdom)
 
 print("cluster\tcompleteness\tpurity")
 for cluster,info_dictionary in cluster_dict.items():
