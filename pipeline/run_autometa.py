@@ -202,24 +202,24 @@ marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
 if taxonomy_table_path and not args['maketaxtable']:
-	combined_table_path = combine_tables(marker_tab_path, taxonomy_table_path)
+	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif taxonomy_table_path and args['maketaxtable']:
 	if not os.path.isfile(args['t']):
 		print "Could not find {}, running make_taxonomy_table.py".format(args['t'])
 		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(args['t']))
 		taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
-		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	elif os.path.isfile(args['t'] and os.stat(args['t']).st_size == 0):
 		print "{} file is empty, running make_taxonomy_table.py".format(args['t'])
 		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(args['t']))
 		taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
-		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	else:
 		print "{} already exists, not performing make_taxonomy_table.py".format(args['t'])
-		combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif not taxonomy_table_path and args['maketaxtable']:
 	taxonomy_table = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
-	combined_table_path = combine_tables(marker_tab_path, taxonomy_table)
+	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 else:
 	combined_table_path = combine_tables(contig_table, marker_tab_path)
 
