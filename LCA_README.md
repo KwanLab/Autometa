@@ -144,10 +144,11 @@ Could place something here if we plan on keeping updated
 This project is licensed under the >>NEED TO INSERT LICENSE TITLE HERE>> License - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Acknowledgments
-Special Thanks to:
-* Miguel Pignatelli
 
-* Ian J. Miller
+##### Special Thanks to:
+
+* _Miguel Pignatelli_
+* _Ian J. Miller_
 
 
 ### Algorithms
