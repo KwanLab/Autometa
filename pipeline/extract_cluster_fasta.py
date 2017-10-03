@@ -29,9 +29,9 @@ for count,contig in enumerate(contig_tab['contig']):
 outdirectory_path = args['outdir']
 for cluster in cluster_dict:
     if cluster == 'unclustered':
-        fasta_output_path = outdirectory_path + str(cluster) + '.fasta'
+        fasta_output_path = outdirectory_path + '/' + str(cluster) + '.fasta'
     else:
-        fasta_output_path = outdirectory_path + 'cluster_' + str(cluster) + '.fasta'
+        fasta_output_path = outdirectory_path + '/cluster_' + str(cluster) + '.fasta'
     cluster_seq_record_list = cluster_dict[cluster]
     #Turn list of contig names into seq records
     seq_record_list = [fasta_record_dict[seq] for seq in cluster_seq_record_list]
