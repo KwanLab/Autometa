@@ -13,6 +13,7 @@ from scipy import stats
 import math
 from sklearn import decomposition
 import random
+from tqdm import *
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -208,10 +209,47 @@ start_time = time.time()
 print("Loading contig table...")
 #Disable pandas warnings
 pd.options.mode.chained_assignment = None
-contig_table = pd.read_csv(args['contig_tab'],sep="\t")
+column_data_types = dtype={'contig': str,'cov':float,'single_copy_PFAMs':str,\
+    'num_single_copies':int,'phylum':str,'class':str,'order':str,\
+    'family':str,'genus':str,'species':str,'bh_tsne_x':float,'bh_tsne_y':float,\
+    'cluster':str}
+
+iter_csv = pd.read_csv(args['contig_tab'], iterator=True, chunksize=1000, sep="\t",dtype=column_data_types,usecols=column_data_types.keys())
+contig_table = pd.concat([chunk[chunk['cluster'] != "unclustered"] for chunk in iter_csv])
+contig_table.reset_index(drop=True,inplace=True)
+#contig_table = pd.read_csv(args['contig_tab'],sep="\t",\
+#    dtype=column_data_types,usecols=column_data_types.keys())
+
+#This is where the input list would be read in
+if args['unclustered_list'] != None:
+    unclustered_list_file = args['unclustered_list']
+    unclustered_list = []
+
+    with open(unclustered_list_file) as infile:
+        for line in infile:
+            unclustered_list.append(line.rstrip())
+
+    unclustered_contig_table = pd.DataFrame(columns = contig_table.columns)
+    for contig in unclustered_list:
+        print("Pulling features for {}...".format(contig))
+        iter_csv = pd.read_csv(args['contig_tab'], iterator=True, chunksize=1000, sep="\t",dtype=column_data_types,usecols=column_data_types.keys())
+        contig_df = pd.concat([chunk[chunk['contig'] == contig] for chunk in iter_csv])
+        unclustered_contig_table = unclustered_contig_table.append(contig_df)
+    unclustered_contig_table.reset_index(drop=True,inplace=True)
+    """unclustered_contig_table = pd.DataFrame(columns = contig_table.columns)
+    with open(unclustered_list_file) as infile:
+        for line in infile:
+            contig = line.rstrip()
+            global_contig_index = contig_index_dict[contig]
+            unclustered_contig_table = unclustered_contig_table.append(contig_table.iloc[global_contig_index])"""
+    contig_table = contig_table.append(unclustered_contig_table)
+    contig_table.reset_index(drop=True,inplace=True)
+else:
+    unclustered_contig_table = contig_table.loc[contig_table[cluster_column_name] == unclustered_name]
 
 print("Looking for taxonomy info in {}".format(args['contig_tab']))
 use_taxonomy_info = False
+tax_columns = ['phylum','class','order','family','genus','species']
 try:
     phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
     class_dummy_matrix = pd.get_dummies(contig_table['class'])
@@ -221,8 +259,11 @@ try:
     species_dummy_martix = pd.get_dummies(contig_table['species'])
     print("Loaded taxonomy info as dummy matrices...")
     use_taxonomy_info = True
+    #print("Removing raw tax info from pandas df...")
+    #contig_table.drop(tax_columns, inplace=True, axis=1)
 except KeyError:
     print("Couldn't find taxonomy info in table. Excluding as training feature...")
+
 
 #Define "unique_k_mers"
 # Count K-mer frequencies
@@ -268,6 +309,9 @@ for contig in contig_list:
 	k_mer_counts.append(k_mer_dict[contig])
 
 normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
+del contig_list
+del k_mer_dict
+del k_mer_counts
 
 print("Reducing normalized k-mer matrix to 50 dimensions with PCA...")
 # For performance reasons we reduce the dimensions to 50 with PCA
@@ -292,20 +336,20 @@ features = []
 labels = []
 contig_index_dict = {}
 contig_feature_dict = {}
-for count,contig in enumerate(contig_table['contig']):
+for count,contig in enumerate(tqdm(contig_table['contig'],total=len(contig_table['contig']))):
     num_markers = contig_table['num_single_copies'][count]
     num_single_copies = contig_table
     contig_index_dict[contig] = count
     bh_tsne_x = contig_table['bh_tsne_x'][count]
     bh_tsne_y = contig_table['bh_tsne_y'][count]
-    length = contig_table['length'][count]
+    #length = contig_table['length'][count]
     cov = contig_table['cov'][count]
-    gc = contig_table['gc'][count]
+    #gc = contig_table['gc'][count]
     cluster = contig_table[cluster_column_name][count]
     contig_feature_dict[contig] = pca_matrix[count].tolist() + [cov]
     #contig_feature_dict[contig] = [bh_tsne_x] + [bh_tsne_y] + [cov]
     if use_taxonomy_info:
-        tax_phylum = list(phylum_dummy_matrix.iloc[count])
+        """tax_phylum = list(phylum_dummy_matrix.iloc[count])
         tax_class = list(class_dummy_matrix.iloc[count])
         tax_order = list(order_dummy_matrix.iloc[count])
         tax_family = list(family_dummy_matrix.iloc[count])
@@ -313,7 +357,11 @@ for count,contig in enumerate(contig_table['contig']):
         tax_species = list(species_dummy_martix.iloc[count])
         taxonomy = tax_phylum + tax_class + tax_order + tax_family + tax_genus + tax_species
         taxonomy_matrix_dict[contig] = taxonomy
-        contig_feature_dict[contig] += taxonomy
+        contig_feature_dict[contig] += taxonomy"""
+        contig_feature_dict[contig] += (list(phylum_dummy_matrix.iloc[count]) + \
+            list(class_dummy_matrix.iloc[count]) + list(order_dummy_matrix.iloc[count]) \
+            + list(family_dummy_matrix.iloc[count]) + list(genus_dummy_matrix.iloc[count])\
+            + list(species_dummy_martix.iloc[count]))
     if cluster != unclustered_name and num_markers > 0:
         features.append(contig_feature_dict[contig])
         labels.append(cluster)
@@ -325,22 +373,11 @@ print("There are {} training contigs...".format(len(features)))
 iteration_start_time = time.time()
 ML_predictions_dict = {}
 ML_recruitment_list = []
-recruited_sequence_length = 0
+#recruited_sequence_length = 0
 temp_contig_table = contig_table.copy(deep=True)
 num_unclustered_contigs = contig_table[cluster_column_name].tolist().count(unclustered_name)
 unclustered_contig_feature_list = []
 
-#This is where the input list would be read in
-if args['unclustered_list'] != None:
-    unclustered_list_file = args['unclustered_list']
-    unclustered_contig_table = pd.DataFrame(columns = contig_table.columns)
-    with open(unclustered_list_file) as infile:
-        for line in infile:
-            contig = line.rstrip()
-            global_contig_index = contig_index_dict[contig]
-            unclustered_contig_table = unclustered_contig_table.append(contig_table.iloc[global_contig_index])
-else:
-    unclustered_contig_table = contig_table.loc[contig_table[cluster_column_name] == unclustered_name]
 print("Recruiting {} unclustered sequences with {} training contigs. This could take a while...".format(len(unclustered_contig_table),len(features)))
 
 newDF = pd.DataFrame(columns = contig_table.columns)
@@ -348,7 +385,7 @@ newDF = pd.DataFrame(columns = contig_table.columns)
 for count,row in unclustered_contig_table.iterrows():
     contig = row['contig']
     single_np_array = np.array([contig_feature_dict[contig]])
-    contig_length = contig_table.iloc[count]['length']
+    #contig_length = contig_table.iloc[count]['length']
 
     #Make predictions
     prediction,confidence = calculate_bootstrap_replicates(single_np_array, bootstrap_iterations)
