@@ -336,7 +336,8 @@ features = []
 labels = []
 contig_index_dict = {}
 contig_feature_dict = {}
-for count,contig in enumerate(tqdm(contig_table['contig'],total=len(contig_table['contig']))):
+#for count,contig in enumerate(tqdm(contig_table['contig'],total=len(contig_table['contig']))):
+for count,contig in enumerate(contig_table['contig']):
     num_markers = contig_table['num_single_copies'][count]
     num_single_copies = contig_table
     contig_index_dict[contig] = count
