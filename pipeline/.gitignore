@@ -1,1 +1,4 @@
 *log
+build
+*.so
+*.c
