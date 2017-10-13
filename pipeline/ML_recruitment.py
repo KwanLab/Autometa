@@ -219,12 +219,12 @@ kingdom = args['kingdom']
 print("Looking for taxonomy info in {}".format(args['contig_tab']))
 use_taxonomy_info = False
 try:
-    phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
-    class_dummy_matrix = pd.get_dummies(contig_table['class'])
-    order_dummy_matrix = pd.get_dummies(contig_table['order'])
-    family_dummy_matrix = pd.get_dummies(contig_table['family'])
-    genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
-    species_dummy_martix = pd.get_dummies(contig_table['species'])
+    phylum_dummy_matrix = pd.get_dummies(contig_table['phylum']).astype(np.int8)
+    class_dummy_matrix = pd.get_dummies(contig_table['class']).astype(np.int8)
+    order_dummy_matrix = pd.get_dummies(contig_table['order']).astype(np.int8)
+    family_dummy_matrix = pd.get_dummies(contig_table['family']).astype(np.int8)
+    genus_dummy_matrix = pd.get_dummies(contig_table['genus']).astype(np.int8)
+    species_dummy_martix = pd.get_dummies(contig_table['species']).astype(np.int8)
     print("Loaded taxonomy info as dummy matrices...")
     use_taxonomy_info = True
 except KeyError:
