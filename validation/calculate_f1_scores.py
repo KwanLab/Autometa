@@ -48,7 +48,7 @@ for index,row in contig_table.iterrows():
 
 #2. Calculate precision and recall
 
-def find_dominant_cluster_length(contig_list,contig_dict):
+def find_dominant_cluster_length(contig_list,contig_dict,reference_genome):
     #Function to calculate recall based on contig_list and contig_dict
     #A. Identify which cluster best/most represents reference genome
     cluster_dict = {}
@@ -65,7 +65,17 @@ def find_dominant_cluster_length(contig_list,contig_dict):
     #Find dominant cluster
     max_cluster_length = max(cluster_dict.values())
     #make sure that there aren't two clusters with the same length
-    assert cluster_dict.values().count(max_cluster_length) <= 1
+    try:
+        assert cluster_dict.values().count(max_cluster_length) <= 1
+    except AssertionError:
+        num_clusters_with_same_mapped_length = cluster_dict.values().count(max_cluster_length)
+        print
+        #I don't think this would actually affect the F1 calculation, either case it would be the same
+        print("Warning: There are {} clusters that share a max aligned length of {} for {}".format(num_clusters_with_same_mapped_length,max_cluster_length,reference_genome))
+        dominant_clusters = sorted(cluster_dict.items(), key=operator.itemgetter(1))[-num_clusters_with_same_mapped_length:]
+        #print cluster_dict
+        print dominant_clusters
+        print
     #convert nan to string
     dominant_cluster = str(max(cluster_dict.iteritems(), key=operator.itemgetter(1))[0])
     #if the "dominant" cluster is unclustered, then use next in line, if available
@@ -87,7 +97,7 @@ with open(args['out'],"w") as outfile:
     outfile.write("ref_genome\tref_genome_len\tdominant_cluster\ttotal_dominant_cluster_len\tref_aln_dominant_cluster_len\trecall\tprecision\tF1\n")
     print("ref_genome\tref_genome_len\tdominant_cluster\ttotal_dominant_cluster_len\tref_aln_dominant_cluster_len\trecall\tprecision\tF1\n")
     for reference_genome,contig_list in reference_genome_dict.items():
-        dominant_cluster,dominant_cluster_length = find_dominant_cluster_length(contig_list,contig_dict)
+        dominant_cluster,dominant_cluster_length = find_dominant_cluster_length(contig_list,contig_dict,reference_genome)
         reference_genome_length = sum([contig_dict[contig]['length'] for contig in contig_list])
         if dominant_cluster == args['unclustered_term']:
             recall = 0.0
