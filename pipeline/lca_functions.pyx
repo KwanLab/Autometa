@@ -131,7 +131,7 @@ def verboseExtract_blast(blast_file, bitscore_filter=0.9):
         blast_dict = dict()
         temp_orf_list = list()
         for line in tqdm(blast_file, desc='Filtering Accession Numbers', leave=True, total=total_hits, dynamic_ncols=True):
-            match = re.search(r'(NODE_\d*_length_\d*_cov_\d*\.\d*_ID_\d*_\d*)\s(\S+)\s\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+\.\d)',line)
+            match = re.search(r'(NODE_\d*_length_\d*_cov_\d*\.\d*_\d*)\s+(\S+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+\.\d)',line)
             if match:
                 orf = match.group(1)
                 if orf in temp_orf_list:

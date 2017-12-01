@@ -81,7 +81,7 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, taxdump_dir_path)
 	return 'taxonomy.tab'
 
 #diamond_path = subprocess.check_output('find ~ -name "diamond"', shell=True).rstrip("\n") # assume diamond is in the path
-taxdump_dir_path = args['t'].rstrip('/')#'/home/jkwan/blast2lca_taxdb'
+taxdump_dir_path = args['t'].rstrip('/')
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 pipeline_path = sys.path[0]
@@ -89,7 +89,7 @@ pathList = pipeline_path.split('/')
 pathList.pop()
 autometa_path = '/'.join(pathList)
 #diamond_database_path = subprocess.check_output('find /mnt/not_backed_up/nr_diamond/ -name "nr.dmnd"', shell=True).strip("\n")
-diamond_database_path = args['n'] #/media/box2/nr_old/nr'
+diamond_database_path = args['n']
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 names_dmp_path = taxdump_dir_path + '/names.dmp'
@@ -124,6 +124,10 @@ else:
 	diamond_output = prodigal_output + ".tab"
 
 if not os.path.isfile(prodigal_output + ".lca"):
+    print "Could not find {}. Running lca...".format(prodigal_output + ".lca")
+    blast2lca_output = run_blast2lca(diamond_output,taxdump_dir_path)
+elif os.stat(prodigal_output + ".lca").st_size == 0:
+    print "{} file is empty. Re-running lca...".format(prodigal_output + ".lca")
     blast2lca_output = run_blast2lca(diamond_output,taxdump_dir_path)
 else:
     blast2lca_output = prodigal_output + ".lca"

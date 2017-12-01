@@ -1,4 +1,4 @@
 *log
-build
-*.so
 *.c
+*.so
+build/
