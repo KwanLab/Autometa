@@ -22,7 +22,7 @@ try:
     import lca_functions
 except ImportError as failed_import:
     print("\nlca.py needs access to the cython compiled file: lca_functions.c or lca_functions.so.\n\
-To compile the lca_functions.c file, navigate to the directory containing lca_functions.pyx\n\
+To compile the lca_functions file, navigate to the directory containing lca_functions.pyx\n\
 Enter the following into the command line prompt:\n\n\
 cmd line:\tpython setup_lca_functions.py build_ext --inplace\n")
     exit()
