@@ -10,13 +10,21 @@ import multiprocessing
 import pdb
 import logging
 
+def cythonize_lca_functions():
+	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
+	subprocess.call("cd {}".format(pipeline_path), shell=True)
+	subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
+	subprocess.call("cd {}".format(output_dir), shell=True)
+
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
+	output_path = output_dir + '/taxonomy.tab'
 	logger.info("{}/make_taxonomy_table.py  -a {} -n {} -t {} -p {} -l {}".\
 		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff))
 	subprocess.call("{}/make_taxonomy_table.py -a {} -n {} -t {} -p {} -l {}".\
 		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff),\
 		shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+	return output_path
 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
@@ -150,6 +158,23 @@ make_tax_table = args['maketaxtable']
 diamond_database_path = args['n']
 taxdump_dir = args['taxdb']
 
+#Check user CPUs
+user_CPU_number = multiprocessing.cpu_count()
+
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
+
+# Output current branch and commit
+branch_command = "git -C " + autometa_path + " branch | grep \* | sed 's/^..//'"
+branch = subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
+
+commit_command = 'git -C ' + autometa_path + ' rev-parse --short HEAD'
+commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
+
+logger.info('Currently running branch ' + branch + ', commit ' + commit)
+
 #check if appropriate databases specified for make taxonomy table
 if args['maketaxtable'] and not args['n'] and not args['taxdb']:
 	print("Must specify diamond database (-n) and taxdump directory (-taxdb)")
@@ -178,23 +203,6 @@ else:
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
 
-#Check user CPUs
-user_CPU_number = multiprocessing.cpu_count()
-
-pipeline_path = sys.path[0]
-pathList = pipeline_path.split('/')
-pathList.pop()
-autometa_path = '/'.join(pathList)
-
-# Output current branch and commit
-branch_command = "git -C " + autometa_path + " branch | grep \* | sed 's/^..//'"
-branch = subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
-
-commit_command = 'git -C ' + autometa_path + ' rev-parse --short HEAD'
-commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).communicate()[0].rstrip()
-
-logger.info('Currently running branch ' + branch + ', commit ' + commit)
-
 #run length trim and store output name
 filtered_assembly = length_trim(fasta_assembly, length_cutoff)
 contig_table = make_contig_table(filtered_assembly)
@@ -207,17 +215,23 @@ elif taxonomy_table_path and args['maketaxtable']:
 	if not os.path.isfile(args['t']):
 		print "Could not find {}, running make_taxonomy_table.py".format(args['t'])
 		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(args['t']))
+		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	elif os.path.isfile(args['t'] and os.stat(args['t']).st_size == 0):
 		print "{} file is empty, running make_taxonomy_table.py".format(args['t'])
 		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(args['t']))
+		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	else:
 		print "{} already exists, not performing make_taxonomy_table.py".format(args['t'])
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif not taxonomy_table_path and args['maketaxtable']:
+	if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+		cythonize_lca_functions()
 	taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 else:
