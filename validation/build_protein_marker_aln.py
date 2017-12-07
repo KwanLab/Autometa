@@ -22,6 +22,7 @@ from collections import Counter
 #NOTE: Had to manually add "AAA.1"  toB. luti and B. thetaiotaomicron seq names
 #to have MarkerScanner.pl parse their names properly
 
+#in: /home/ijmiller/AMPHORA2/MIX-51/test
 ref_genome_table = pd.read_csv("ncbi_ref_genomes.tab",sep="\t")
 genome_filename_dict = {}
 
@@ -63,7 +64,7 @@ subprocess.call("find . -mindepth 2 -maxdepth 2 -name '*.pep'  | xargs -I % cat 
 
 #3. Reformat combined protein sequence file with another run of AMPHORA’s MarkerScanner.pl
 subprocess.call(["mkdir","combined"])
-os.chdir("combined")
+os.chdir("combined") #/home/ijmiller/AMPHORA2/MIX-51/fasta_test/combined
 subprocess.call(["MarkerScanner.pl","-Bacteria","../combined.pep"])
 
 #4. Align markers with AMPHORA’s MarkerAlignTrim.pl
@@ -73,7 +74,7 @@ if os.path.exists("combined.aln"):
     aln_list.remove("combined.aln")
 
 #5.  Identify list of shared markers and extract individual aligned sequences
-#num_input_genome = 51 #--> Defined above
+#num_input_genome = 52 #--> Defined above
 bad_contig_list = []
 shared_protein_list = []
 marker_list = []
@@ -143,6 +144,7 @@ if len(shared_protein_list) == 0:
 #NOTE: Should check length - Jason's note in 'amphora_merge_alignments.pl'
 # Sometimes APMPHORA2 misses a character on the end of the last sequence
 # Check the alignment lengths
+print("\nChecking to make sure all shared markers have same alignment length:")
 aln_length_dict = {}
 for shared_protein in shared_protein_list:
     for genome in genome_dict.keys():
@@ -158,7 +160,7 @@ combined_aln_dict = {}
 for genome in genome_dict.keys():
     combined_aln_dict[genome] = ""
     for count,shared_protein in enumerate(shared_protein_list):
-        print genome,shared_protein
+        #print genome,shared_protein
         seq = genome_dict[genome][shared_protein]
         corrected_seq = ""
         #Replace masked letters
