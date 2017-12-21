@@ -38,6 +38,8 @@ parser.add_argument('-n','--num_iterations', help='Number of iterations for \
 parser.add_argument('-m','--k_mer_matrix', help='k-mer_matrix file.', default="k-mer_matrix")
 parser.add_argument('-o','--out_table', help='Output table with new column\
     for ML-recruited sequences.',required=True)
+parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)',\
+    choices=['bacteria','archaea'], default = 'bacteria')
 args = vars(parser.parse_args())
 
 def round_down(num, divisor):
@@ -212,16 +214,17 @@ print("Loading contig table...")
 #Disable pandas warnings
 pd.options.mode.chained_assignment = None
 contig_table = pd.read_csv(args['contig_tab'],sep="\t")
+kingdom = args['kingdom']
 
 print("Looking for taxonomy info in {}".format(args['contig_tab']))
 use_taxonomy_info = False
 try:
-    phylum_dummy_matrix = pd.get_dummies(contig_table['phylum'])
-    class_dummy_matrix = pd.get_dummies(contig_table['class'])
-    order_dummy_matrix = pd.get_dummies(contig_table['order'])
-    family_dummy_matrix = pd.get_dummies(contig_table['family'])
-    genus_dummy_matrix = pd.get_dummies(contig_table['genus'])
-    species_dummy_martix = pd.get_dummies(contig_table['species'])
+    phylum_dummy_matrix = pd.get_dummies(contig_table['phylum']).astype(np.int8)
+    class_dummy_matrix = pd.get_dummies(contig_table['class']).astype(np.int8)
+    order_dummy_matrix = pd.get_dummies(contig_table['order']).astype(np.int8)
+    family_dummy_matrix = pd.get_dummies(contig_table['family']).astype(np.int8)
+    genus_dummy_matrix = pd.get_dummies(contig_table['genus']).astype(np.int8)
+    species_dummy_martix = pd.get_dummies(contig_table['species']).astype(np.int8)
     print("Loaded taxonomy info as dummy matrices...")
     use_taxonomy_info = True
 except KeyError:
@@ -394,7 +397,7 @@ while num_confident_predictions > 0:
     num_predictions = len(multiprocessed_output)
     num_confident_predictions = len(prediction_accuracy_list)
     #Calculate average cluster stats
-    cluster_stats_dict = calculateClusterStats(contig_table,cluster_column_name)
+    cluster_stats_dict = calculateClusterStats(contig_table,cluster_column_name,kingdom)
     completeness_list = []
     purity_list = []
     for cluster,info_dictionary in cluster_stats_dict.items():

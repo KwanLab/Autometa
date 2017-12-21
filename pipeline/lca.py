@@ -2,7 +2,7 @@
 """
 Name: Lowest Common Ancestor Script (LCA)
 Function: Finds LCA of all orfs from BLAST query
-Usage: For usage information, type "python lca.py -help" in the command line prompt
+Usage: For usage information, type "python lca.py --help" in the command line prompt
 Input Parameters: nodes.dmp, names.dmp, prot.accession2taxid, (blast output file)
 Output: (blast.lca) LCA between filtered orfs (>90% top bit score) in BLAST.tab
 Author: Evan R. Rees
@@ -22,7 +22,7 @@ try:
     import lca_functions
 except ImportError as failed_import:
     print("\nlca.py needs access to the cython compiled file: lca_functions.c or lca_functions.so.\n\
-To compile the lca_functions.c file, navigate to the directory containing lca_functions.pyx\n\
+To compile the lca_functions file, navigate to the directory containing lca_functions.pyx\n\
 Enter the following into the command line prompt:\n\n\
 cmd line:\tpython setup_lca_functions.py build_ext --inplace\n")
     exit()
@@ -46,7 +46,7 @@ epilog='''The LCA analysis output will be directed to run_taxonomy.py\n\n\
 
 NOTE:\nLCA analysis will produce best results when database files are up to date.\n\
 Database files can be automatically updated before performing LCA analysis by specifying:\n\
-\"lca.py [-f] [-v] [-fail_info] database_directory <path_to_database_directory> -update BLAST output\"\n\n\
+\"lca.py [-f] [-v] [-fail_info] database_directory <path to database directory> -update <BLAST output>\"\n\n\
 
 Up to date versions of nodes.dmp and names.dmp may be found at:\nftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz\n\n\
 prot.accession2taxid is updated weekly and may be found at:\nftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz''',

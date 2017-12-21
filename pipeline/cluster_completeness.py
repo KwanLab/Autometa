@@ -3,7 +3,7 @@
 # Program that determines the completeness of clusters called by dbscan
 
 import sys
-import argparse 
+import argparse
 from Bio import SeqIO
 import pdb
 import pandas as pd
@@ -25,7 +25,7 @@ def assess_assembly(seq_record_list):
 
 parser = argparse.ArgumentParser(description='Script to determine the completeness of clusters called by dbscan')
 parser.add_argument('-d','--dbscantable', help='table containing dbscan information', required=True)
-parser.add_argument('-c','--column', help='bin column name in dbscan table', default = 'db.cluster')
+parser.add_argument('-c','--column', help='bin column name in dbscan table', default = 'cluster')
 parser.add_argument('-m','--markertable', help='marker table created with make_marker_table', required=True)
 parser.add_argument('-f','--fasta', help='contig fasta file', required=True)
 parser.add_argument('-o','--output', help='output directory for summary table and cluster fasta files', required=True)
@@ -131,13 +131,13 @@ for i,line in enumerate(dbscan_table_rows):
 		if cluster not in gc_in_cluster:
 			gc_in_cluster[cluster] = 0
 		if cluster not in cov_in_cluster:
-			cov_in_cluster[cluster] = 0 
+			cov_in_cluster[cluster] = 0
 		if cluster not in stdev_cov:
 			stdev_cov[cluster] = []
 		if cluster not in stdev_gc:
 			stdev_gc[cluster] = []
 
-		gc_in_cluster[cluster] += gc  
+		gc_in_cluster[cluster] += gc
 		cov_in_cluster[cluster] += cov
 		stdev_cov[cluster].append(cov)
 		stdev_gc[cluster].append(gc)
@@ -193,7 +193,7 @@ summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcomplet
 for cluster in cluster_sequences:
 	if cluster == 'unclaimed':
 		continue
-		
+
 	attributes = assess_assembly(cluster_sequences[cluster])
 	if kingdom == 'bacteria':
 		total_markers = 139
@@ -212,9 +212,9 @@ for cluster in cluster_sequences:
 	std_cov = np.std(stdev_cov[cluster], ddof=1)
 	completeness = (float(number_of_markers_found)/total_markers) * 100
 	purity = (float(number_unique_markers)/number_of_markers_found) * 100
-	
+
 	if completeness >= cluster_completeness:
-		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t{0:.6f}'.format(completeness) + 
+		summary_table.write(str(cluster) + '\t' + str(attributes['size']) + '\t' + str(attributes['largest_sequence']) + '\t' + str(attributes['n50']) + '\t' + str(attributes['number_sequences']) + '\t{0:.6f}'.format(completeness) +
 		'\t{0:.6f}\t'.format(purity) + str(average_cov) + '\t' + str(std_cov) + '\t' + str(average_gc) + '\t' + str(std_gc) + '\t' + 'True'  + '\n')
                 # Now output the fasta file
                 fasta_output_path = output_prefix + '/cluster_' + cluster + '.fasta'

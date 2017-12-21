@@ -10,6 +10,22 @@ import multiprocessing
 import pdb
 import logging
 
+def cythonize_lca_functions():
+	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
+	subprocess.call("cd {}".format(pipeline_path), shell=True)
+	subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
+	subprocess.call("cd {}".format(output_dir), shell=True)
+
+def run_make_taxonomy_tab(fasta, length_cutoff):
+	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
+	output_path = output_dir + '/taxonomy.tab'
+	logger.info("{}/make_taxonomy_table.py  -a {} -n {} -t {} -p {} -l {}".\
+		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff))
+	subprocess.call("{}/make_taxonomy_table.py -a {} -n {} -t {} -p {} -l {}".\
+		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff),\
+		shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+	return output_path
+
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = os.path.basename(fasta).split(".")[0] + "_filtered.fasta"
@@ -123,6 +139,11 @@ choices=['bacteria','archaea'], default = 'bacteria')
 parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonomy_table.py')
 parser.add_argument('-o', metavar='output directory', help='Directory to store all output files', default = '.')
 parser.add_argument('-r', help='Use ML to further recruit unclassified contigs', action='store_true')
+parser.add_argument('-maketaxtable', action='store_true',\
+help='runs make_taxonomy_table.py before performing autometa binning. Must specify taxdump database directory (-taxdb) & diamond database (-n)')
+parser.add_argument('-taxdb', metavar='taxdump directory', help='Path to directory with taxdump files', required=False)
+parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-redundant (NR) protein database', required=False)
+
 args = vars(parser.parse_args())
 
 length_cutoff = args['l']
@@ -133,21 +154,9 @@ kingdom = args['k'].lower()
 taxonomy_table_path = args['t']
 output_dir = args['o']
 do_ML_recruitment = args['r']
-
-#check if fasta in path
-if not os.path.isfile(args['a']):
-	print "Could not find {}...".format(args['a'])
-	logger.debug('Could not find {}...'.format(args['a']))
-	exit()
-
-#what input variables were and when you ran it (report fill path based on argparse)
-if taxonomy_table_path:
-	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -t {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, taxonomy_table_path, output_dir))
-else:
-	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, output_dir))
-
-start_time = time.time()
-FNULL = open(os.devnull, 'w')
+make_tax_table = args['maketaxtable']
+diamond_database_path = args['n']
+taxdump_dir = args['taxdb']
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
@@ -166,14 +175,65 @@ commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).co
 
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
 
+#check if appropriate databases specified for make taxonomy table
+if args['maketaxtable'] and not args['n'] and not args['taxdb']:
+	print("Must specify diamond database (-n) and taxdump directory (-taxdb)")
+	exit()
+elif args['maketaxtable'] and not args['taxdb']:
+	print("Must specify taxdump directory (-taxdb)")
+	exit()
+elif args['maketaxtable'] and not args['n']:
+	print("Must specify diamond database (-n)")
+	exit()
+else:
+	pass
+
+#check if fasta in path
+if not os.path.isfile(args['a']):
+	print "Could not find {}...".format(args['a'])
+	logger.debug('Could not find {}...'.format(args['a']))
+	exit()
+
+#what input variables were and when you ran it (report fill path based on argparse)
+if taxonomy_table_path:
+	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -t {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, taxonomy_table_path, output_dir))
+else:
+	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, output_dir))
+
+start_time = time.time()
+FNULL = open(os.devnull, 'w')
+
 #run length trim and store output name
 filtered_assembly = length_trim(fasta_assembly, length_cutoff)
 contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
-if taxonomy_table_path:
-	combined_table_path = combine_tables(marker_tab_path, taxonomy_table_path)
+if taxonomy_table_path and not args['maketaxtable']:
+	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
+elif taxonomy_table_path and args['maketaxtable']:
+	if not os.path.isfile(args['t']):
+		print "Could not find {}, running make_taxonomy_table.py".format(args['t'])
+		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(args['t']))
+		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+			cythonize_lca_functions()
+		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
+	elif os.path.isfile(args['t'] and os.stat(args['t']).st_size == 0):
+		print "{} file is empty, running make_taxonomy_table.py".format(args['t'])
+		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(args['t']))
+		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+			cythonize_lca_functions()
+		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
+	else:
+		print "{} already exists, not performing make_taxonomy_table.py".format(args['t'])
+		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
+elif not taxonomy_table_path and args['maketaxtable']:
+	if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+		cythonize_lca_functions()
+	taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
+	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 else:
 	combined_table_path = combine_tables(contig_table, marker_tab_path)
 
