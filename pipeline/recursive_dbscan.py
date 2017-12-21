@@ -15,7 +15,7 @@ from Bio.Alphabet import IUPAC
 from tsne import bh_sne
 from sklearn import decomposition
 import os
-import statistics
+#import statistics
 import argparse
 import logging
 import pdb
@@ -136,7 +136,7 @@ def runDBSCANs(table, dimensions, hmm_dictionary, domain, completeness_cutoff, p
 		if completenessList:
 			some_clusters_found = True
 		else:
-			if some_clusters_found: # I.e. at some point clusters were found, but not this time 
+			if some_clusters_found: # I.e. at some point clusters were found, but not this time
 				break
 			else:
 				number_rounds_with_zero_clusters += 1
