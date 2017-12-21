@@ -88,7 +88,6 @@ def combine_tables(table1_path, table2_path):
 	with open(table2_path) as table2:
 		for i, line in enumerate(table2):
 			line_list = line.rstrip().split('\t')
-			table_2_width = len(line_list)
 			contig = line_list.pop(0)
 			if i == 0:
 				table_2_header = '\t'.join(line_list)
@@ -108,7 +107,7 @@ def combine_tables(table1_path, table2_path):
 				if contig in table2_lines:
 					new_line = line.rstrip() + '\t' + table2_lines[contig] + '\n'
 				else:
-					new_line = line.rstrip() + '\t' + '\t'.join([''] * table_2_width) + '\n'
+					new_line = line.rstrip() + '\t' + 'NA' + '\t' + '0' + '\n'
 				comb_table.write(new_line)
 
 	comb_table.close()
