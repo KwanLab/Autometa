@@ -414,8 +414,8 @@ while num_markers_classifed > 0:
     mean_completeness = round(np.mean(completeness_list),1)
     mean_purity = round(np.mean(purity_list),1)
     elapsed_time = time.strftime('%H:%M:%S', time.gmtime(round((time.time() - iteration_start_time),2)))
-    print("{} of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS). Mean completeness,purity: {},{}"\
-        .format(num_confident_predictions,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time,mean_completeness,mean_purity))
+    print("{} ({} marker contigs) of {} predictions ({} bp) were {}% confident and non-redundant for iteration {} in {} (HH:MM:SS). Mean completeness,purity: {},{}"\
+        .format(num_confident_predictions,num_markers_classifed,num_predictions,recruited_sequence_length,confidence_cutoff,iteration,elapsed_time,mean_completeness,mean_purity))
 
     contig_table['ML_expanded_clustering'] = ML_recruitment_list
     #Break after first iteration if recursive option not specified:
