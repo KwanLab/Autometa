@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+db_dir_path#!/usr/bin/env python
 
 import argparse
 import os
@@ -19,10 +19,10 @@ def cythonize_lca_functions():
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
 	output_path = output_dir + '/taxonomy.tab'
-	logger.info("{}/make_taxonomy_table.py  -a {} -n {} -t {} -p {} -l {}".\
-		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff))
-	subprocess.call("{}/make_taxonomy_table.py -a {} -n {} -t {} -p {} -l {}".\
-		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff),\
+	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {}".\
+		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
+	subprocess.call("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {}".\
+		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff),\
 		shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_path
 
@@ -142,9 +142,8 @@ parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonom
 parser.add_argument('-o', metavar='output directory', help='Directory to store all output files', default = '.')
 parser.add_argument('-r', help='Use ML to further recruit unclassified contigs', action='store_true')
 parser.add_argument('-maketaxtable', action='store_true',\
-help='runs make_taxonomy_table.py before performing autometa binning. Must specify taxdump database directory (-taxdb) & diamond database (-n)')
-parser.add_argument('-taxdb', metavar='taxdump directory', help='Path to directory with taxdump files', required=False)
-parser.add_argument('-n', metavar='NR Diamond db', help='Diamond formatted non-redundant (NR) protein database', required=False)
+help='runs make_taxonomy_table.py before performing autometa binning. Must specify databases directory (-db)')
+parser.add_argument('-db', metavar='databases directory', help='Path to directory with taxdump files', required=False)
 
 args = vars(parser.parse_args())
 
@@ -157,7 +156,6 @@ taxonomy_table_path = args['t']
 output_dir = args['o']
 do_ML_recruitment = args['r']
 make_tax_table = args['maketaxtable']
-diamond_database_path = args['n']
 taxdump_dir = args['taxdb']
 
 #Check user CPUs
@@ -178,17 +176,9 @@ commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).co
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
 
 #check if appropriate databases specified for make taxonomy table
-if args['maketaxtable'] and not args['n'] and not args['taxdb']:
-	print("Must specify diamond database (-n) and taxdump directory (-taxdb)")
+if args['maketaxtable'] and not args['db']:
+	print("Must specify databases directory (-db)")
 	exit()
-elif args['maketaxtable'] and not args['taxdb']:
-	print("Must specify taxdump directory (-taxdb)")
-	exit()
-elif args['maketaxtable'] and not args['n']:
-	print("Must specify diamond database (-n)")
-	exit()
-else:
-	pass
 
 #check if fasta in path
 if not os.path.isfile(args['a']):
