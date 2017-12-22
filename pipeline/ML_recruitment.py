@@ -155,7 +155,7 @@ def redundant_marker_prediction(contig_name,predicted_cluster,pandas_table,clust
         for PFAM in contig_PFAMs:
             if PFAM in cluster_PFAMs:
                 redundancy = True
-                print("-->This prediction adds marker redundancy...skipping...")
+                #print("-->This prediction adds marker redundancy...skipping...")
                 return redundancy,is_marker_contig
             else:
                 pass
@@ -332,13 +332,15 @@ for count,contig in enumerate(contig_table['contig']):
 print("There are {} training contigs...".format(len(features)))
 
 num_confident_predictions = 1
+num_markers_classifed = 1
 iteration = 0
-while num_confident_predictions > 0:
+while num_markers_classifed > 0:
+    classified_marker_list = []
     iteration_start_time = time.time()
     ML_predictions_dict = {}
     ML_recruitment_list = []
     recruited_sequence_length = 0
-    prediction_accuracy_list = []
+    accurate_prediction_list = []
     temp_contig_table = contig_table.copy(deep=True)
     #Recruit unclustered sequences
     if iteration > 0:
@@ -347,6 +349,8 @@ while num_confident_predictions > 0:
     unclustered_contig_feature_list = []
     unclustered_contig_list = []
     print("Recruiting {} unclustered sequences with {} training contigs. This could take a while...".format(num_unclustered_contigs,len(features)))
+
+    #Prepare unclustered contig feature array
     for count,contig in enumerate(contig_table['contig']):
         single_np_array = np.array([contig_feature_dict[contig]])
         contig_length = contig_table.iloc[count]['length']
@@ -371,31 +375,35 @@ while num_confident_predictions > 0:
         contig = unclustered_contig_list[count]
         ML_prediction,confidence = output_tuple
         ML_predictions_dict[contig] = ML_prediction,confidence
-        print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
+        #print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
         #If it the prediction passes confidence cutoff
         #Could also look for redundant markers...
         redundant,is_marker_contig = redundant_marker_prediction(contig,ML_prediction,temp_contig_table,cluster_column_name)
         global_contig_index = contig_index_dict[contig]
         if confidence >= confidence_cutoff and not redundant:
+            print("ML predictions and jackknife confidence for contig {}: {},{}".format(contig, ML_prediction,confidence))
             #Add prediction to ML_recruitment_list/replace with updated label
             #ML_recruitment_list.append(ML_prediction)
             ML_recruitment_list[global_contig_index] = ML_prediction
-            prediction_accuracy_list.append(ML_prediction)
+            accurate_prediction_list.append(ML_prediction)
             recruited_sequence_length += contig_length
             #Update contig table, so that any markers added to the cluster will
             #be considered in the next check of marker redundancy
             temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
+            contig_table[cluster_column_name].iloc[global_contig_index] = ML_prediction #NOTE: Think this may be source of error
 
             #Update training data with any confident and non-redundant marker contig classifications
             if is_marker_contig:
                 features.append(contig_feature_dict[contig])
                 labels.append(ML_prediction)
+                classified_marker_list.append(ML_prediction)
         else:
             #ML_recruitment_list.append(unclustered_name)
             ML_recruitment_list[global_contig_index] = unclustered_name
 
     num_predictions = len(multiprocessed_output)
-    num_confident_predictions = len(prediction_accuracy_list)
+    num_confident_predictions = len(accurate_prediction_list)
+    num_markers_classifed = len(classified_marker_list)
     #Calculate average cluster stats
     cluster_stats_dict = calculateClusterStats(contig_table,cluster_column_name,kingdom)
     completeness_list = []
