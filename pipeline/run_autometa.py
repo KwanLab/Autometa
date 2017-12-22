@@ -106,9 +106,7 @@ def combine_tables(table1_path, table2_path):
 				# We have to check whether the line exists in table 2
 				if contig in table2_lines:
 					new_line = line.rstrip() + '\t' + table2_lines[contig] + '\n'
-				else:
-					new_line = line.rstrip() + '\t' + 'NA' + '\t' + '0' + '\n'
-				comb_table.write(new_line)
+					comb_table.write(new_line)
 
 	comb_table.close()
 
