@@ -87,14 +87,14 @@ This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper.
 
 ### Step 1: Split data into kingdom bins [optional]
 
-We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive. 
+We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive.
 
 ```
 make_taxonomy_table.py -a ~/autometa/test_data/scaffolds.fasta -p 16 \
-	-t ~/autometa/databases -l 3000
+	-db ~/autometa/databases -l 3000
 ```
 
-In the above command, we give the script make\_taxonomy\_table.py the assembly fasta file (-a), specify the number of CPUs to use (-p), the directory to use for database files (-t) and that we will just consider contigs above 3,000 bp (-l). The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. This script will then do the following:
+In the above command, we give the script make\_taxonomy\_table.py the assembly fasta file (-a), specify the number of CPUs to use (-p), the directory to use for database files (-db) and that we will just consider contigs above 3,000 bp (-l). The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. This script will then do the following:
 
 1. Genes are identified in each contig with Prodigal.
 2. Gene protein sequences are searched against nr with DIAMOND.
@@ -103,10 +103,10 @@ In the above command, we give the script make\_taxonomy\_table.py the assembly f
 
 #### Output files produced by make\_taxonomy\_table.py
 
-File                         | Description 
+File                         | Description
 -----------------------------|------------
 Bacteria.fasta               | Contigs classified as bacterial  
-scaffolds_filtered.fasta     | All contigs above the length cutoff 
+scaffolds_filtered.fasta     | All contigs above the length cutoff
 scaffolds_filtered.fasta.tab | Table describing the GC content, length and coverage of filtered contigs
 scaffolds_filtered.orfs.daa  | The output from DIAMOND (binary format)
 scaffolds_filtered.orfs.faa  | ORF translations obtained from Prodigal
@@ -120,7 +120,7 @@ Note that in our test data, there are no non-bacterial contigs. For other datase
 
 ### Step 2: Bin bacterial contigs with BH-tSNE and DBSCAN
 
-Note: This procedure can also be used on archaeal sequences, but will most likely not work well on other kingdoms, because the relevant single-copy gene markers are not included in Autometa. 
+Note: This procedure can also be used on archaeal sequences, but will most likely not work well on other kingdoms, because the relevant single-copy gene markers are not included in Autometa.
 
 Here we are running Autometa on the Bacteria.fasta file made in step 1.
 
@@ -150,7 +150,7 @@ recursive\_dbscan\_output.tab | Output table containing the cluster (bin) for ea
 
 ### Step 3: Recruit unclustered contigs to bins through supervised machine learning [optional]
 
-In this step we use supervised machine learning to classify the unclustered contigs to the bins that we have produced (formally, the bins produced in step 2 are the training set). Depending on the size of your dataset, this step can be computationally intensive. 
+In this step we use supervised machine learning to classify the unclustered contigs to the bins that we have produced (formally, the bins produced in step 2 are the training set). Depending on the size of your dataset, this step can be computationally intensive.
 
 ```
 ML_recruitment.py -t recursive_dbscan_output.tab -r -m k-mer_matrix -o ML_recruitment_output.tab
@@ -167,4 +167,3 @@ For convenience, it is possible to run all three of the above steps through run\
 ```
 [Fill in later]
 ```
-
