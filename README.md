@@ -37,9 +37,10 @@ First we install Prodigal, HMMER and DIAMOND.
 
 ```
 sudo apt-get install prodigal hmmer build-essential zlib1g-dev
-git clone https://github.com/bbuchfink/diamond.git
+mkdir diamond
 cd diamond
-./build_simple.sh
+wget http://github.com/bbuchfink/diamond/releases/download/v0.9.14/diamond-linux64.tar.gz
+tar xvf diamond-linux64.tar.gz
 ```
 
 At this point you should add the diamond directory to your $PATH environmental variable.
@@ -76,6 +77,8 @@ You should now add the autometa/pipeline directory to your $PATH environmental v
 Usage
 -----
 Before you run Autometa, you need to have assembled your shotgun metagenome. We recommend using MetaSPAdes (part of the [SPAdes](http://cab.spbu.ru/software/spades/) package) after removing Illumina adaptors with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic).
+
+[Need to include here the procedure for getting coverage from a sam file]
 
 Here we demonstrate the use of Autometa with the test dataset:
 
