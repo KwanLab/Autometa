@@ -19,7 +19,7 @@ def update_dbs(database_path, db='all'):
     if db == 'all':
         os.system('wget -q %s -O %s/taxdump.tar.gz' % (taxdump_url, database_path))
         os.system('wget -q %s -O %s/taxdump.tar.gz.md5' % (taxdump_md5, database_path))
-        os.system('tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
+        os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
         os.system('rm %s/taxdump.tar.gz' % database_path)
         os.system('wget -q %s -O %s/prot.accession2taxid.gz' % (accession2taxid_url, database_path))
         os.system('wget -q %s -O %s/prot.accession2taxid.gz.md5' % (accession2taxid_md5, database_path))
@@ -50,7 +50,7 @@ def update_dbs(database_path, db='all'):
         print("updating nodes.dmp and names.dmp")
         os.system('wget -q %s -O %s/taxdump.tar.gz' % (taxdump_url, database_path))
         os.system('wget -q %s -O %s/taxdump.tar.gz.md5' % (taxdump_md5, database_path))
-        os.system('tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
+        os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
         os.system('rm %s/taxdump.tar.gz' % database_path)
         print("nodes.dmp and names.dmp updated")
 
