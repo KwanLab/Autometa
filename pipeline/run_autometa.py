@@ -19,9 +19,9 @@ def cythonize_lca_functions():
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
 	output_path = output_dir + '/taxonomy.tab'
-	logger.info("{}/make_taxonomy_table.py  -a {} -n {} -t {} -p {} -l {}".\
+	logger.info("{}/make_taxonomy_table.py  -a {} -n {} -db {} -p {} -l {}".\
 		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff))
-	subprocess.call("{}/make_taxonomy_table.py -a {} -n {} -t {} -p {} -l {}".\
+	subprocess.call("{}/make_taxonomy_table.py -a {} -n {} -db {} -p {} -l {}".\
 		format(pipeline_path, fasta, diamond_database_path, taxdump_dir, processors, length_cutoff),\
 		shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_path
