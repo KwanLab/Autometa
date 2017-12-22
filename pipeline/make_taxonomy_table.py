@@ -32,21 +32,27 @@ def update_dbs(database_path, db='all'):
         os.system('rm %s/nr.gz' % database_path)
         print("\nnodes.dmp, names.dmp, prot.accession2taxid and nr.dmnd files updated in %s\nResuming..." % database_path)
     if db == 'nr':
+        print("updating nr.dmnd")
         os.system('wget -q %s -O %s/nr.gz' % (nr_diamond_db_url, database_path))
         os.system('wget -q %s -O %s/nr.gz.md5' % (nr_diamond_db_md5, database_path))
         print("building nr.dmnd database, this may take some time")
         subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
         os.system('rm %s/nr.gz' % database_path)
+        print("nr.dmnd updated")
     if db == 'acc2taxid':
+        print("updating prot.accession2taxid")
         os.system('wget -q %s -O %s.gz' % (accession2taxid_url, accession2taxid_path))
         os.system('wget -q %s -O %s.gz.md5' % (accession2taxid_md5, accession2taxid_path))
         print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
         os.system('gunzip -9vNf %s.gz > %s' % (accession2taxid_path, accession2taxid_path))
+        print("prot.accession2taxid updated")
     if db == 'taxdump':
+        print("updating nodes.dmp and names.dmp")
         os.system('wget -q %s -O %s/taxdump.tar.gz' % (taxdump_url, database_path))
         os.system('wget -q %s -O %s/taxdump.tar.gz.md5' % (taxdump_md5, database_path))
         os.system('tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
         os.system('rm %s/taxdump.tar.gz' % database_path)
+        print("nodes.dmp and names.dmp updated")
 
 def check_db(current_nr_md5, current_acc2taxid_md5, current_taxdump_md5):
     taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
@@ -155,19 +161,15 @@ if args['update']:
     print("Checking database directory for updates")
     nr_status, acc2taxid_status, taxdump_status = check_db(current_nr_md5, current_acc2taxid_md5, current_taxdump_md5)
     if nr_status != 0:
-        #dl nr database and process
         update_dbs(db_dir_path, db='nr')
-        print("nr.dmnd updated")
     else:
         print("nr.dmnd already up to date")
     if acc2taxid_status != 0:
         update_dbs(db_dir_path, db='acc2taxid')
-        print("prot.accession2taxid updated")
     else:
         print("prot.accession2taxid already up to date")
     if taxdump_status != 0:
         update_dbs(db_dir_path, db='taxdump')
-        print("nodes.dmp and names.dmp updated")
     else:
         print("nodes.dmp and names.dmp already up to date")
     print('Resuming make_taxonomy_table.py...')
