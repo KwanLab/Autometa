@@ -139,15 +139,17 @@ filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 if db_dir_path == 'autometa_databases_directory':
     #Default settings
     db_dir_path = autometa_path + '/databases'
-    if not os.path.isdir(db_dir_path):
-        #Verify the 'Autometa databases' directory exists
-        print('No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...')
-        os.system('mkdir {}'.format(db_dir_path))
-        update_dbs(db_dir_path)
-    elif not os.listdir(db_dir_path):
-        #The 'Autometa databases' directory is empty
-        print('AutoMeta databases directory empty, populating with appropriate databases.\nThis may take some time...')
-        update_dbs(db_dir_path)
+
+if not os.path.isdir(db_dir_path):
+    #Verify the 'Autometa databases' directory exists
+    print('No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...')
+    os.system('mkdir {}'.format(db_dir_path))
+    update_dbs(db_dir_path)
+elif not os.listdir(db_dir_path):
+    #The 'Autometa databases' directory is empty
+    print('AutoMeta databases directory empty, populating with appropriate databases.\nThis may take some time...')
+    update_dbs(db_dir_path)
+
 
 names_dmp_path = db_dir_path + '/names.dmp'
 nodes_dmp_path = db_dir_path + '/nodes.dmp'
