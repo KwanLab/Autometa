@@ -156,7 +156,7 @@ taxonomy_table_path = args['t']
 output_dir = args['o']
 do_ML_recruitment = args['r']
 make_tax_table = args['maketaxtable']
-taxdump_dir = args['taxdb']
+taxdump_dir = args['db']
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
