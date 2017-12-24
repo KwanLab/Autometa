@@ -94,10 +94,10 @@ We found that in host-associated metagenomes, this step vastly improves the binn
 
 ```
 make_taxonomy_table.py -a ~/autometa/test_data/scaffolds.fasta -p 16 \
-	-db ~/autometa/databases -l 3000
+	-l 3000
 ```
 
-In the above command, we give the script make\_taxonomy\_table.py the assembly fasta file (-a), specify the number of CPUs to use (-p), the directory to use for database files (-db) and that we will just consider contigs above 3,000 bp (-l). The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. This script will then do the following:
+In the above command, we give the script make\_taxonomy\_table.py the assembly fasta file (-a), specify the number of CPUs to use (-p), and that we will just consider contigs above 3,000 bp (-l). The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the -db flag, a "databases" subdirectory will be made in the Autometa directory. This script will do the following:
 
 1. Genes are identified in each contig with Prodigal.
 2. Gene protein sequences are searched against nr with DIAMOND.
