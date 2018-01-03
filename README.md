@@ -99,11 +99,9 @@ NODE_1_length_319818_cov_8.03695
 ...then Autometa can use the coverage information in the contig names. If you've used another assembler, then you first have to make a coverage table.
 
 ```
-calculate_read_coverage.py -a ~/autometa/test_data/scaffolds.fasta -p 16 \
-	-F reads_R1.fastq.gz -R reads_R2.fastq.gz -o coverage.tab
+calculate_read_coverage.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
+	--forward_reads reads_R1.fastq.gz --reverse_reads reads_R2.fastq.gz --out coverage.tab
 ```
-
-[Need to include here the procedure for getting coverage from a sam file]
 
 Here we demonstrate the use of Autometa with the test dataset:
 
@@ -111,18 +109,24 @@ Here we demonstrate the use of Autometa with the test dataset:
 autometa/test_data/scaffolds.fasta
 ```
 
-This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper.
+This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper. For your convenience we have also included a pre-calculated coverage table that you try out below.
+
+```
+autometa/test_data/coverage.tab
+```
 
 ### Step 1: Split data into kingdom bins [optional]
 
 We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive.
 
 ```
-make_taxonomy_table.py -a ~/autometa/test_data/scaffolds.fasta -p 16 \
-	-l 3000
+make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
+	--length_cutoff 3000
 ```
 
-In the above command, we give the script make\_taxonomy\_table.py the assembly fasta file (-a), specify the number of CPUs to use (-p), and that we will just consider contigs above 3,000 bp (-l). The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the -db flag, a "databases" subdirectory will be made in the Autometa directory. This script will do the following:
+If you want to use an external coverage table (see above), you can use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
+
+The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. This script will do the following:
 
 1. Genes are identified in each contig with Prodigal.
 2. Gene protein sequences are searched against nr with DIAMOND.
@@ -153,10 +157,13 @@ Note: This procedure can also be used on archaeal sequences, but will most likel
 Here we are running Autometa on the Bacteria.fasta file made in step 1.
 
 ```
-run_autometa.py -a Bacteria.fasta -p 16 -l 3000 -t taxonomy.tab
+run_autometa.py --assembly Bacteria.fasta --processors 16 --length_cutoff 3000 \
+	--taxonomy_table taxonomy.tab
 ```
 
-In the above command, we are supplying Bacteria.fasta to Autometa, and also the taxonomy table (taxonomy.tab) produced in step 1. If we supply a taxonomy table, then this information is used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. In the above command we are also specifying to use 16 CPUs (-p), and that our length cutoff is 3,000 bp (-l). We are using the default output directory of the current working directory (this can be set with the -o flag), and by default the pipeline assumes we are looking at bacterial contigs (use -k archaea otherwise). The script will do the following:
+If you want to use an external coverage table, use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
+
+In the above command, we are supplying Bacteria.fasta to Autometa, and also the taxonomy table (taxonomy.tab) produced in step 1. If we supply a taxonomy table, then this information is used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. We are using the default output directory of the current working directory (this can be set with the --output_dir flag), and by default the pipeline assumes we are looking at bacterial contigs (use --kingdom archaea otherwise). The script will do the following:
 
 1. Find single-copy marker genes in the input contigs with HMMER
 2. Generate two-dimensional BH-tSNE coordinates for each contig based on 5-mer frequencies
@@ -181,17 +188,25 @@ recursive\_dbscan\_output.tab | Output table containing the cluster (bin) for ea
 In this step we use supervised machine learning to classify the unclustered contigs to the bins that we have produced (formally, the bins produced in step 2 are the training set). Depending on the size of your dataset, this step can be computationally intensive.
 
 ```
-ML_recruitment.py -t recursive_dbscan_output.tab -r -m k-mer_matrix -o ML_recruitment_output.tab
+ML_recruitment.py --contig_tab recursive_dbscan_output.tab --recursive \
+	--k_mer_matrix k-mer_matrix --out_table ML_recruitment_output.tab
 ```
 
-In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab, -t), as well as the k-mer\_matrix file produced in step 2 (-m), and specify the output file (ML\_recruitment\_output.tab, -o). We also use the -r flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. The specified output file is a table with the following columns:
+In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. The specified output file is a table with the following columns:
 
-
+[Include details of the output table]
 
 ### Running all steps in sequence
 
 For convenience, it is possible to run all three of the above steps through run\_autometa.py, as shown below:
 
 ```
-[Fill in later]
+run_autometa.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
+	--length_cutoff 3000 --maketaxtable --ML_recruitment
 ```
+
+In the above command, the '--maketaxtable' flag tells run\_autometa.py to run make\_taxonomy\_table.py, and the '--ML_recruitment' flag tells run\_autometa.py to run ML\_recruitment.py. Note, this runs ML\_recruitment.py with the '--recursive' flag.
+
+Analysis of results
+===================
+
