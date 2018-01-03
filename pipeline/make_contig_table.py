@@ -49,7 +49,7 @@ output = open( output_table_path, 'w' )
 
 output.write('contig\tlength\tgc\tcov\n')
 
-for seq_record in SeqIO.parse(input_fasta_path, 'fasta'):
+for seq_record in SeqIO.parse(fasta_assembly_path, 'fasta'):
 	length = str(len(seq_record))
 	gc = str(GC(str(seq_record.seq)))
 	contig = str(seq_record.id)
@@ -67,6 +67,6 @@ for seq_record in SeqIO.parse(input_fasta_path, 'fasta'):
 		else:
 			print('Error, ' + contig + ' not the right format to extract coverage from sequence name')
 			quit()
-	output.write(contig + '\t' + length + '\t' + gc + '\t' + cov + '\n')
+	output.write(contig + '\t' + length + '\t' + gc + '\t' + str(cov) + '\n')
 
 output.close

@@ -68,9 +68,9 @@ def make_marker_table(fasta):
 		logger.info("hmmpress -f {}".format(hmm_marker_path))
 		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
 		logger.info("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, args['p']))
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors))
 		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, args['p']), \
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors), \
 			shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
 	return output_path
 
@@ -181,14 +181,14 @@ commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).co
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
 
 #check if appropriate databases specified for make taxonomy table
-if args['maketaxtable'] and not args['db']:
+if make_tax_table and not taxdump_dir:
 	print("Must specify databases directory (-db)")
 	exit()
 
 #check if fasta in path
-if not os.path.isfile(args['a']):
-	print "Could not find {}...".format(args['a'])
-	logger.debug('Could not find {}...'.format(args['a']))
+if not os.path.isfile(fasta_assembly):
+	print "Could not find {}...".format(fasta_assembly)
+	logger.debug('Could not find {}...'.format(fasta_assembly))
 	exit()
 
 #what input variables were and when you ran it (report fill path based on argparse)
@@ -206,27 +206,27 @@ else:
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
-if taxonomy_table_path and not args['maketaxtable']:
+if taxonomy_table_path and not make_tax_table:
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
-elif taxonomy_table_path and args['maketaxtable']:
-	if not os.path.isfile(args['t']):
-		print "Could not find {}, running make_taxonomy_table.py".format(args['t'])
-		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(args['t']))
+elif taxonomy_table_path and make_tax_table:
+	if not os.path.isfile(make_tax_table):
+		print "Could not find {}, running make_taxonomy_table.py".format(make_tax_table)
+		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(make_tax_table))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
-	elif os.path.isfile(args['t'] and os.stat(args['t']).st_size == 0):
-		print "{} file is empty, running make_taxonomy_table.py".format(args['t'])
-		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(args['t']))
+	elif os.path.isfile(taxonomy_table_path and os.stat(taxonomy_table_path).st_size == 0):
+		print "{} file is empty, running make_taxonomy_table.py".format(taxonomy_table_path)
+		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(taxonomy_table_path))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	else:
-		print "{} already exists, not performing make_taxonomy_table.py".format(args['t'])
+		print "{} already exists, not performing make_taxonomy_table.py".format(taxonomy_table_path)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
-elif not taxonomy_table_path and args['maketaxtable']:
+elif not taxonomy_table_path and make_tax_table:
 	if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 		cythonize_lca_functions()
 	taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
