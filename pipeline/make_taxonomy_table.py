@@ -135,7 +135,7 @@ parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to
 
 args = vars(parser.parse_args())
 
-db_dir_path = args['d'].rstrip('/')
+db_dir_path = args['db_dir'].rstrip('/')
 num_processors = args['p']
 length_cutoff = args['l']
 fasta_path = args['a']
