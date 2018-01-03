@@ -82,9 +82,12 @@ single_read_path_list = args['single_reads']
 sam_file = run_bowtie2(assembly_file,forward_read_path_list,reverse_read_path_list,single_read_path_list,args['processors'])
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
-sorted_bam_file = assembly_file_prefix + ".sort"
+sorted_bam_file = assembly_file_prefix + ".sort.bam"
 subprocess.call(" ".join(['samtools view ','-bS ' + sam_file, ' | ', \
     'samtools sort ', '-o ', sorted_bam_file]), shell = True)
+
+#Clean up the SAM file, which will be a lot larger than the sorted BAM file
+subprocess.call(" ".join(['rm ', sam_file]), shell=True)
 
 #3. Tabulate the average coverage of each contig.
 
