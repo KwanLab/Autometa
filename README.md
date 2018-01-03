@@ -3,7 +3,7 @@ Autometa
 
 An automated pipeline to deconvolute single metagenomic assemblies to separate individual bacterial and archaeal genomes. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
 
-Miller, I. J.; Rees, E.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2017**, xx
+Miller, I. J.; Rees, E.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2018**, xx
 
 Dependencies
 ------------
@@ -28,6 +28,12 @@ Python packages (Note: this list assumes the use of Anaconda Python)
 * [tsne](https://pypi.python.org/pypi/tsne)
 * [joblib](https://pypi.python.org/pypi/joblib)
 
+Additionally, if you want to calculate your own contig coverages (rather than trusting the coverage values given by the SPAdes assembler), you will need:
+
+* [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
+* [Samtools](https://github.com/samtools/samtools)
+* [Bedtools](http://bedtools.readthedocs.io/en/latest/)
+
 Installation
 ------------
 
@@ -44,6 +50,12 @@ tar xvf diamond-linux64.tar.gz
 ```
 
 At this point you should add the diamond directory to your $PATH environmental variable.
+
+If you want to calculate coverages, then also install bowtie2, samtools and bedtools:
+
+```
+sudo apt-get install bowtie2 samtools bedtools
+```
 
 Install Anaconda Python.
 
@@ -77,6 +89,19 @@ You should now add the autometa/pipeline directory to your $PATH environmental v
 Usage
 -----
 Before you run Autometa, you need to have assembled your shotgun metagenome. We recommend using MetaSPAdes (part of the [SPAdes](http://cab.spbu.ru/software/spades/) package) after removing Illumina adaptors with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic).
+
+Note that if you use SPAdes or something else that names contigs like this:
+
+```
+NODE_1_length_319818_cov_8.03695
+```
+
+...then Autometa can use the coverage information in the contig names. If you've used another assembler, then you first have to make a coverage table.
+
+```
+calculate_read_coverage.py -a ~/autometa/test_data/scaffolds.fasta -p 16 \
+	-F reads_R1.fastq.gz -R reads_R2.fastq.gz -o coverage.tab
+```
 
 [Need to include here the procedure for getting coverage from a sam file]
 
