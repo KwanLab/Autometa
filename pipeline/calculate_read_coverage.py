@@ -29,7 +29,7 @@ parser.add_argument('-p','--processors', metavar='<int>', help='Number of proces
 parser.add_argument('-F','--forward_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) forward reads (must be in same order as reverse list)', nargs='*')
 parser.add_argument('-R','--reverse_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) reverse reads (must be in same order as forward list)', nargs='*')
 parser.add_argument('-S','--single_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Single (*.fastq|*.fastq.gz) reads', nargs='*')
-parser.add_argument('-o','--out', help='Tab delimited table for contig and average\
+parser.add_argument('-o','--out', metavar='<output.tab>', help='Tab delimited table for contig and average\
     read coverage', default="outfile.tab")
 args = vars(parser.parse_args())
 
