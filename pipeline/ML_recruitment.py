@@ -22,23 +22,23 @@ parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker
     as training data. Features to train with include sequence coverage,\
     composition, and homology. Confidence is calculated using jackknife\
     cross-validation by randomly subsetting the training data n number of times.")
-parser.add_argument('-t','--contig_tab', help='Master contig table', required=True)
-parser.add_argument('-c','--cluster_column', help='Name of column for cluster', \
+parser.add_argument('-t','--contig_tab', metavar='<contig.tab>', help='Path to master contig table which includes initial clusters', required=True)
+parser.add_argument('-c','--cluster_column', metavar='<column header>', help='Name of column containing initial cluster information', \
     default='cluster')
-parser.add_argument('-p','--processors', help='Number of processors', \
+parser.add_argument('-p','--processors', metavar='<int>', help='Number of processors to use', type=int, \
     default=1)
 parser.add_argument('-r','--recursive', help='If specified, will run classification \
     iteratively and refine traning data after each iteration.', action='store_true')
-parser.add_argument('-C','--Confidence_cutoff', help='Confidence cutoff value\
-    to use to keep ML-based predictions.', default=100)
-parser.add_argument('-u','--unclustered_name', help='Name of unclustered group \
+parser.add_argument('-C','--Confidence_cutoff', metavar='<int>', help='Confidence cutoff value\
+    to use to keep ML-based predictions.', type=int, default=100)
+parser.add_argument('-u','--unclustered_name', metavar='<unclustered name>', help='Name of unclustered group \
     in cluster column', default="unclustered")
-parser.add_argument('-n','--num_iterations', help='Number of iterations for \
-    jackknife cross-validation.', default=10)
-parser.add_argument('-m','--k_mer_matrix', help='k-mer_matrix file.', default="k-mer_matrix")
-parser.add_argument('-o','--out_table', help='Output table with new column\
+parser.add_argument('-n','--num_iterations', metavar='<int>', help='Number of iterations for \
+    jackknife cross-validation.', type=int, default=10)
+parser.add_argument('-m','--k_mer_matrix', metavar='<k-mer.tab>', help='Path to k-mer_matrix file.', default="k-mer_matrix")
+parser.add_argument('-o','--out_table', metavar='<output.tab>', help='Path to create output table with new column\
     for ML-recruited sequences.',required=True)
-parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)',\
+parser.add_argument('-k','--kingdom', metavar='<archaea|bacteria>', help='Kingdom to consider (archaea|bacteria)',\
     choices=['bacteria','archaea'], default = 'bacteria')
 args = vars(parser.parse_args())
 
