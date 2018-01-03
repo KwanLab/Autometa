@@ -109,15 +109,19 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path): #Ha
 	#contig_table_path, tax_table_path, db_dir_path, output_file_path
 	return 'taxonomy.tab'
 
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
+
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
-parser.add_argument('-a', metavar='assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p', metavar='processors', help='Processors to use. If not specified, will infer', default=1)
-parser.add_argument('-db', metavar='databases directory', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files', required=False, default='autometa_databases_directory')
-parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
- Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument("-update", required=False, action='store_true',\
- help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory. Default will update to Autometa databases directory')
+parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
+parser.add_argument('-p', '--processors', metavar='<int>', help='Number of processors to use.', type=int, default=1)
+parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files. If this path does not exist, will create and download files.', required=False, default=autometa_path + '/databases')
+parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type = int)
+parser.add_argument('-u', '--update', required=False, action='store_true',\
+ help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 
 args = vars(parser.parse_args())
 
@@ -128,17 +132,8 @@ fasta_path = args['a']
 fasta_assembly_prefix = os.path.splitext(os.path.basename(args['a']))[0]
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
-pipeline_path = sys.path[0]
-pathList = pipeline_path.split('/')
-pathList.pop()
-autometa_path = '/'.join(pathList)
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
-
-"""Sets current db files within dir specified by user or defaults to AutoMeta db dir"""
-if db_dir_path == 'autometa_databases_directory':
-    #Default settings
-    db_dir_path = autometa_path + '/databases'
 
 if not os.path.isdir(db_dir_path):
     #Verify the 'Autometa databases' directory exists
