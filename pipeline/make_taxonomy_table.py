@@ -127,7 +127,7 @@ autometa_path = '/'.join(pathList)
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
 parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
 parser.add_argument('-p', '--processors', metavar='<int>', help='Number of processors to use.', type=int, default=1)
-parser.add_argument('-d', '--db_dir', metavar='<dir>', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files. If this path does not exist, will create and download files.', required=False, default=autometa_path + '/databases')
+parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files. If this path does not exist, will create and download files.', required=False, default=autometa_path + '/databases')
 parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type = int)
 parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
@@ -136,15 +136,15 @@ parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to
 args = vars(parser.parse_args())
 
 db_dir_path = args['db_dir'].rstrip('/')
-num_processors = args['p']
-length_cutoff = args['l']
-fasta_path = args['a']
+num_processors = args['processors']
+length_cutoff = args['length_cutoff']
+fasta_path = args['assembly']
 fasta_assembly_prefix = os.path.splitext(os.path.basename(args['a']))[0]
 prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
-cov_table = args['v']
+cov_table = args['cov_table']
 
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists

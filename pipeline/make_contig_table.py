@@ -20,9 +20,9 @@ parser.add_argument('-o', '--output', metavar='<output.tab>', help='Path to crea
 
 args = vars(parser.parse_args())
 
-fasta_assembly_path = os.path.abspath(args['a'])
-coverage_table_path = args['c']
-output_table_path = args['o']
+fasta_assembly_path = os.path.abspath(args['assembly'])
+coverage_table_path = args['coverage']
+output_table_path = args['output']
 
 use_coverage_table = False
 

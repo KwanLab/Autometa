@@ -151,17 +151,17 @@ parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to
 
 args = vars(parser.parse_args())
 
-length_cutoff = args['l']
-fasta_assembly = os.path.abspath(args['a'])
-processors = args['p']
-cluster_completeness = args['c']
-kingdom = args['k'].lower()
-taxonomy_table_path = args['t']
-output_dir = args['o']
-do_ML_recruitment = args['r']
+length_cutoff = args['length_cutoff']
+fasta_assembly = os.path.abspath(args['assembly'])
+processors = args['processors']
+cluster_completeness = args['completeness_cutoff']
+kingdom = args['kingdom'].lower()
+taxonomy_table_path = args['taxonomy_table']
+output_dir = args['output_dir']
+do_ML_recruitment = args['ML_recruitment']
 make_tax_table = args['maketaxtable']
-taxdump_dir = args['db']
-cov_table = args['v']
+taxdump_dir = args['db_dir']
+cov_table = args['cov_table']
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
