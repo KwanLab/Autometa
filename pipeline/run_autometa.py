@@ -34,12 +34,15 @@ def length_trim(fasta,length_cutoff):
 	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path), shell = True)
 	return outfile_name
 
-def make_contig_table(fasta):
-	#looks like this script is assuming contigs from a spades assembly
+def make_contig_table(fasta, coverage_table):
 	output_table_name = str(fasta).split('.')[0] + ".tab"
 	output_path = output_dir + '/' + output_table_name
-	logger.info("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_path))
-	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path,fasta,output_path), shell = True)
+	if coverage_table:
+		logger.info("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
+		subprocess.call("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path), shell = True)
+	else:
+		logger.info("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path))
+		subprocess.call("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path), shell = True)
 	return output_path
 
 def make_marker_table(fasta):
@@ -131,19 +134,19 @@ logger.setLevel(logging.DEBUG)
 parser = argparse.ArgumentParser(description="Script to run the Autometa pipeline.",\
  epilog="Please do not forget to cite us. Thank you for using Autometa!",\
   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-a', metavar='assembly', help='assembly.fasta', required=True)
-parser.add_argument('-p', metavar='processors', help='Processors to use', default=1)
-parser.add_argument('-l', metavar='cutoff length', help='Contig length cutoff to consider for binning.\
- Default is 10,000 bp.', default=10000, type = int)
-parser.add_argument('-c', metavar='cluster completeness output', help='Best cluster output limited by completeness', default=20)
-parser.add_argument('-k', metavar='kingdom', help='Kingdom to consider (archaea|bacteria)',\
+parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
+parser.add_argument('-p', '--processors', metavar='<int>', help='Number of processors to use', type=int, default=1)
+parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type=int)
+parser.add_argument('-c', '--completeness_cutoff', metavar='<float>', help='Completeness cutoff (in percent) to use for accepting clusters', type=float, default=20.0)
+parser.add_argument('-k', '--kingdom', metavar='<archaea|bacteria>', help='Kingdom to consider',\
 choices=['bacteria','archaea'], default = 'bacteria')
-parser.add_argument('-t', metavar='taxonomy table', help='Output of make_taxonomy_table.py')
-parser.add_argument('-o', metavar='output directory', help='Directory to store all output files', default = '.')
-parser.add_argument('-r', help='Use ML to further recruit unclassified contigs', action='store_true')
-parser.add_argument('-maketaxtable', action='store_true',\
+parser.add_argument('-t', '--taxonomy_table', metavar='<taxonomy.tab>', help='Path to output of make_taxonomy_table.py')
+parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store all output files', default = '.')
+parser.add_argument('-r', '--ML_recruitment', help='Use ML to further recruit unclassified contigs', action='store_true')
+parser.add_argument('-m', '--maketaxtable', action='store_true',\
 help='runs make_taxonomy_table.py before performing autometa binning. Must specify databases directory (-db)')
-parser.add_argument('-db', metavar='databases directory', help='Path to directory with taxdump files', required=False)
+parser.add_argument('-db', '--db_dir', metavar='<dir>', help="Path to directory with taxdump files. If this doesn't exist, the files will be automatically downloaded", required=False)
+parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 
 args = vars(parser.parse_args())
 
@@ -157,6 +160,7 @@ output_dir = args['o']
 do_ML_recruitment = args['r']
 make_tax_table = args['maketaxtable']
 taxdump_dir = args['db']
+cov_table = args['v']
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
@@ -187,17 +191,17 @@ if not os.path.isfile(args['a']):
 	exit()
 
 #what input variables were and when you ran it (report fill path based on argparse)
-if taxonomy_table_path:
-	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -t {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, taxonomy_table_path, output_dir))
-else:
-	logger.info('Input: -a {} -p {} -l {} -c {} -k {} -o {}'.format(args['a'], processors, length_cutoff, cluster_completeness, kingdom, output_dir))
+logger.info('Input command: ' + ' '.join(sys.argv))
 
 start_time = time.time()
 FNULL = open(os.devnull, 'w')
 
 #run length trim and store output name
 filtered_assembly = length_trim(fasta_assembly, length_cutoff)
-contig_table = make_contig_table(filtered_assembly)
+if cov_table:
+	contig_table = make_contig_table(filtered_assembly, cov_table)
+else:
+	contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table
