@@ -18,6 +18,7 @@ def cythonize_lca_functions():
 
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
+	# Note we don't have to supply the cov_table here because earlier in this script we already run make_contig_table.py
 	output_path = output_dir + '/taxonomy.tab'
 	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {}".\
 		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
@@ -201,7 +202,7 @@ filtered_assembly = length_trim(fasta_assembly, length_cutoff)
 if cov_table:
 	contig_table = make_contig_table(filtered_assembly, cov_table)
 else:
-	contig_table = make_contig_table(filtered_assembly)
+	contig_table = make_contig_table(filtered_assembly, cov_table)
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table

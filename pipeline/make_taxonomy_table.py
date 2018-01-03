@@ -102,11 +102,20 @@ def run_blast2lca(input_file, taxdump_path):
 		subprocess.call("{}/lca.py database_directory {} {} > {}".format(pipeline_path, db_dir_path, input_file, output), shell = True)
 	return output
 
-def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path): #Have to update this
+def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
 	initial_table_path = assembly_path + '.tab'
-	subprocess.call("{}/make_contig_table.py {} {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
-	subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path), shell = True)
-	#contig_table_path, tax_table_path, db_dir_path, output_file_path
+
+    # Only make the contig table if it doesn't already exist
+    if not os.path.isfile(initial_table_path):
+        if coverage_table:
+            subprocess.call("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table), shell = True)
+        else:
+            subprocess.call("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
+
+    if coverage_table:        
+        subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path), shell = True)
+    else:
+	   subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path), shell = True)
 	return 'taxonomy.tab'
 
 pipeline_path = sys.path[0]
@@ -122,6 +131,7 @@ parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory 
 parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type = int)
 parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
+parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 
 args = vars(parser.parse_args())
 
@@ -134,6 +144,7 @@ prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
 prodigal_daa = prodigal_output + ".daa"
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
+cov_table = args['v']
 
 if not os.path.isdir(db_dir_path):
     #Verify the 'Autometa databases' directory exists
@@ -196,7 +207,7 @@ else:
     blast2lca_output = prodigal_output + ".lca"
 
 print "Running add_contig_taxonomy.py... "
-taxonomy_table = run_taxonomy(pipeline_path, filtered_assembly, blast2lca_output, db_dir_path)
+taxonomy_table = run_taxonomy(pipeline_path, filtered_assembly, blast2lca_output, db_dir_path, cov_table)
 
 # Split the original contigs into sets for each kingdom
 taxonomy_pd = pd.read_table(taxonomy_table)
