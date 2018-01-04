@@ -214,6 +214,10 @@ if not os.path.isfile(fasta_assembly):
 	logger.debug('Could not find {}...'.format(fasta_assembly))
 	exit()
 
+# Make output directory if it doesn't exist
+if not os.path.isdir(output_dir):
+	os.makedirs(output_dir)
+
 #what input variables were and when you ran it (report fill path based on argparse)
 logger.info('Input command: ' + ' '.join(sys.argv))
 
