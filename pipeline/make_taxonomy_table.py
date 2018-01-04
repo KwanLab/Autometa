@@ -86,7 +86,7 @@ def update_dbs(database_path, db='all'):
 
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
 			print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-			os.system('gunzip -9vNf %s.gz > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
+			os.system('gunzip -9vNf %s > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
 			print("prot.accession2taxid updated")
 	if db == 'all' or db == 'taxdump':
 		# Download taxdump only if the version we have is not current
