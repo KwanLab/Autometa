@@ -51,7 +51,7 @@ def update_dbs(database_path, db='all'):
 	accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
 	accession2taxid_md5_url = accession2taxid_url+".md5"
 	nr_db_url = "ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-	nr_db_md5_url = nr_diamond_db_url+".md5"
+	nr_db_md5_url = nr_db_url+".md5"
 	#Downloading files for db population
 	if db == 'all' or db == 'nr':
 		# First download nr if we don't yet have it OR it is not up to date
