@@ -9,7 +9,7 @@ import sys
 import urllib2
 
 def run_command(command_string, stdout_path = None):
-	# Function that checks if a command ran properly. If it didn't, then 
+	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
 	if stdout_path:
 		f = open(stdout_path, 'w')
 		exit_code = subprocess.call(command_string, stdout=f, shell=True)
