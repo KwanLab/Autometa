@@ -100,18 +100,6 @@ def update_dbs(database_path, db='all'):
             os.system('rm %s/taxdump.tar.gz' % database_path)
             print("nodes.dmp and names.dmp updated")
 
-def check_db(current_nr_md5, current_acc2taxid_md5, current_taxdump_md5):
-	taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
-	taxdump_md5 = taxdump_url+".md5"
-	accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
-	accession2taxid_md5 = accession2taxid_url+".md5"
-	nr_diamond_db_url = "ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-	nr_diamond_db_md5 = nr_diamond_db_url+".md5"
-	nr_status = os.system('wget -q -O- {} | md5sum | sed \'s:-$:{}:\' | md5sum -c --status'.format(nr_diamond_db_md5, current_nr_md5))
-	acc2taxid_status = os.system('wget -q -O- {} | md5sum | sed \'s:-$:{}:\' | md5sum -c --status'.format(accession2taxid_md5, current_acc2taxid_md5))
-	taxdump_status = os.system('wget -q -O- {} | md5sum | sed \'s:-$:{}:\' | md5sum -c --status'.format(taxdump_md5, current_taxdump_md5))
-	return(nr_status, acc2taxid_status, taxdump_status)
-
 def length_trim(fasta_path,fasta_prefix,length_cutoff):
 	#Trim the length of fasta file
 	outfile_name = str(fasta_prefix) + "_filtered.fasta"
@@ -224,20 +212,7 @@ current_nr_md5 = db_dir_path + '/nr.gz.md5'
 
 if args['update']:
 	print("Checking database directory for updates")
-	nr_status, acc2taxid_status, taxdump_status = check_db(current_nr_md5, current_acc2taxid_md5, current_taxdump_md5)
-	if nr_status != 0:
-		update_dbs(db_dir_path, db='nr')
-	else:
-		print("nr.dmnd already up to date")
-	if acc2taxid_status != 0:
-		update_dbs(db_dir_path, db='acc2taxid')
-	else:
-		print("prot.accession2taxid already up to date")
-	if taxdump_status != 0:
-		update_dbs(db_dir_path, db='taxdump')
-	else:
-		print("nodes.dmp and names.dmp already up to date")
-	print('Resuming make_taxonomy_table.py...')
+    update_dbs(db_dir_path, 'all')
 
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
