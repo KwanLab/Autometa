@@ -218,6 +218,10 @@ if not os.path.isfile(fasta_assembly):
 if not os.path.isdir(output_dir):
 	os.makedirs(output_dir)
 
+#if make_tax_table specified but taxonomy_table_path not defined
+if make_tax_table and not taxonomy_table_path:
+	taxonomy_table_path = output_dir + '/taxonomy.tab' 
+
 #what input variables were and when you ran it (report fill path based on argparse)
 logger.info('Input command: ' + ' '.join(sys.argv))
 
@@ -236,7 +240,7 @@ marker_tab_path = make_marker_table(filtered_assembly)
 if taxonomy_table_path and not make_tax_table:
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif taxonomy_table_path and make_tax_table:
-	if not os.path.isfile(make_tax_table):
+	if not os.path.isfile(taxonomy_table_path):
 		print "Could not find {}, running make_taxonomy_table.py".format(make_tax_table)
 		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(make_tax_table))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
