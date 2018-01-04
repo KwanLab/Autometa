@@ -222,6 +222,12 @@ if not os.path.isdir(output_dir):
 if make_tax_table and not taxonomy_table_path:
 	taxonomy_table_path = output_dir + '/taxonomy.tab' 
 
+#If coverage table is given, it must exist
+if cov_table:
+	if not os.path.isfile(cov_table):
+		print('Error! Could not find coverage table at the following path: ' + cov_table)
+		exit(1)
+
 #what input variables were and when you ran it (report fill path based on argparse)
 logger.info('Input command: ' + ' '.join(sys.argv))
 
