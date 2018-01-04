@@ -33,6 +33,21 @@ parser.add_argument('-o','--out', metavar='<output.tab>', help='Tab delimited ta
     read coverage', default="outfile.tab")
 args = vars(parser.parse_args())
 
+def run_command(command_string, stdout_path = None):
+    # Function that checks if a command ran properly. If it didn't, then print an error message then quit
+    if stdout_path:
+        f = open(stdout_path, 'w')
+        exit_code = subprocess.call(command_string, stdout=f, shell=True)
+        f.close()
+    else:
+        exit_code = subprocess.call(command_string, shell=True)
+
+    if exit_code != 0:
+        print('calculate_read_coverage.py: Error, the command:')
+        print(command_string)
+        print('failed, with exit code ' + str(exit_code))
+        exit(1)
+
 def run_bowtie2(path_to_assembly,paths_to_F_reads,paths_to_R_reads,paths_to_S_reads,num_processors=1):
     # Check the number/type of reads we have as input
     if not (len(paths_to_F_reads) or len(paths_to_R_reads) or len(paths_to_S_reads)):
@@ -53,7 +68,7 @@ def run_bowtie2(path_to_assembly,paths_to_F_reads,paths_to_R_reads,paths_to_S_re
 	#When "shell = True", need to give one string, not a list
     #Build bowtie2 database
     bowtie2_db = os.path.splitext(os.path.basename(path_to_assembly))[0]
-    subprocess.call(" ".join(['bowtie2-build ',path_to_assembly, bowtie2_db]), shell = True)
+    run_command(" ".join(['bowtie2-build ',path_to_assembly, bowtie2_db]))
     #Run bowtie2 alignment
     sam_file_name = bowtie2_db + '.sam'
 
@@ -66,7 +81,7 @@ def run_bowtie2(path_to_assembly,paths_to_F_reads,paths_to_R_reads,paths_to_S_re
     if paths_to_S_reads:
         bowtie2_command_string = bowtie2_command_string + ' -U ' + S_read_path_string
 
-    subprocess.call(bowtie2_command_string, shell = True)
+    run_command(bowtie2_command_string)
     return sam_file_name
 
 #Check for dependencies in $PATH
@@ -83,27 +98,23 @@ sam_file = run_bowtie2(assembly_file,forward_read_path_list,reverse_read_path_li
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
 sorted_bam_file = assembly_file_prefix + ".sort.bam"
-subprocess.call(" ".join(['samtools view ','-bS ' + sam_file, ' | ', \
-    'samtools sort ', '-o ', sorted_bam_file]), shell = True)
+run_command('samtools view -bS {} | samtools sort -o {}'.format(sam_file, sorted_bam_file))
 
 #Clean up the SAM file, which will be a lot larger than the sorted BAM file
-subprocess.call(" ".join(['rm ', sam_file]), shell=True)
+run_command('rm ' + sam_file)
 
 #3. Tabulate the average coverage of each contig.
 
 #Run fasta_length_table.pl
 contig_length_tab_file = assembly_file_prefix + ".tab"
-subprocess.call(" ".join(['fasta_length_table.pl ', assembly_file, '> ',\
-    contig_length_tab_file]), shell = True)
+run_command('fasta_length_table.pl ' + assembly_file, contig_length_tab_file)
 
 #Run genomeCoverageBed
 genome_bed_file = assembly_file_prefix + ".txt"
-subprocess.call(" ".join(['genomeCoverageBed ', '-ibam ', sorted_bam_file, \
-    '-g ' + contig_length_tab_file, '> ' + genome_bed_file]), shell = True)
+run_command('genomeCoverageBed -ibam {} -g {}'.format(sorted_bam_file, contig_length_tab_file), genome_bed_file)
 
 #Build final table
 outfile = args['out']
-subprocess.call(" ".join(['contig_coverage_from_bedtools.pl ', genome_bed_file, \
-    '> ' + outfile]), shell = True)
+run_command('contig_coverage_from_bedtools.pl ' + genome_bed_file, outfile)
 
 #Future features: check for .fastq.gz, dependencies in path, default processors
