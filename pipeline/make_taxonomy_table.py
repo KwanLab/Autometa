@@ -24,7 +24,7 @@ def run_command(command_string, stdout_path = None):
 		exit(1)
 
 def cythonize_lca_functions():
-	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
+	print("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
 	run_command("cd {}".format(pipeline_path))
 	run_command("./setup_lca_functions.py build_ext --inplace")
 	run_command("cd {}".format(output_dir))
