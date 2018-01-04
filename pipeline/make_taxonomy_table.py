@@ -12,10 +12,10 @@ def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then 
 	if stdout_path:
 		f = open(stdout_path, 'w')
-		exit_code = subprocess.call(command_string, stdout=f)
+		exit_code = subprocess.call(command_string, stdout=f, shell=True)
 		f.close()
 	else:
-		exit_code = subprocess.call(command_string)
+		exit_code = subprocess.call(command_string, shell=True)
 
 	if exit_code != 0:
 		print('Error, the command:')
