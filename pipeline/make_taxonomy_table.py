@@ -8,11 +8,26 @@ from Bio import SeqIO
 import sys
 import urllib2
 
+def run_command(command_string, stdout_path):
+	# Function that checks if a command ran properly. If it didn't, then 
+	if stdout_path:
+		f = open(stdout_path, 'w')
+		exit_code = subprocess.call(command_string, stdout=f)
+		f.close()
+	else:
+		exit_code = subprocess.call(command_string)
+
+	if exit_code != 0:
+		print('Error, the command:')
+		print(command_string)
+		print('failed, with exit code ' + str(exit_code))
+		exit(1)
+
 def cythonize_lca_functions():
 	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
-	subprocess.call("cd {}".format(pipeline_path), shell=True)
-	subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
-	subprocess.call("cd {}".format(output_dir), shell=True)
+	run_command("cd {}".format(pipeline_path))
+	run_command("./setup_lca_functions.py build_ext --inplace")
+	run_command("cd {}".format(output_dir))
 
 def download_file(destination_dir, file_url, md5_url):
 	filename = file_url.split('/')[-1]
@@ -21,8 +36,8 @@ def download_file(destination_dir, file_url, md5_url):
 	md5check = False
 	
 	while md5check == False:
-		os.system('wget %s -O %s' % (file_url, destination_dir + '/' + filename))
-		os.system('wget %s -O %s' % (md5_url, destination_dir + '/' + md5name))
+		run_command('wget {} -O {}'.format(file_url, destination_dir + '/' + filename))
+		run_command('wget {} -O {}'.format(md5_url, destination_dir + '/' + md5name))
 
 		downloaded_md5 = subprocess.check_output(['md5sum', destination_dir + '/' + filename]).split(' ')[0]
 
@@ -69,10 +84,8 @@ def update_dbs(database_path, db='all'):
 			returnCode = subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
 			if returnCode == 0: # i.e. job was successful
 			#Make an md5 file to signal that we have built the database successfully
-				md5out = open(database_path + '/nr.dmnd.md5', 'w')
-				subprocess.call(['md5sum', database_path + '/nr.dmnd'], stdout = md5out)
-				md5out.close()
-				os.system('rm %s/nr.gz' % database_path)
+				run_command('md5sum ' + database_path + '/nr.dmnd', database_path + '/nr.dmnd.md5')
+				run_command('rm {}/nr.gz'.format(database_path))
 				print("nr.dmnd updated")
 	if db == 'all' or db == 'acc2taxid':
 		# Download prot.accession2taxid.gz only if the version we have is not current
@@ -86,7 +99,7 @@ def update_dbs(database_path, db='all'):
 
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
 			print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-			os.system('gunzip -9vNf %s > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
+			run_command('gunzip -9vNf {}'.format(database_path + '/prot.accession2taxid.gz'), database_path + '/prot.accession2taxid')
 			print("prot.accession2taxid updated")
 	if db == 'all' or db == 'taxdump':
 		# Download taxdump only if the version we have is not current
@@ -99,14 +112,14 @@ def update_dbs(database_path, db='all'):
 			download_file(database_path, taxdump_url, taxdump_md5_url)
 
 		if os.path.isfile(database_path + '/taxdump.tar.gz'):
-			os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
-			os.system('rm %s/taxdump.tar.gz' % database_path)
+			run_command('tar -xzf {}/taxdump.tar.gz -C {} names.dmp nodes.dmp'.format(database_path, database_path))
+			run_command('rm {}/taxdump.tar.gz'.format(database_path))
 			print("nodes.dmp and names.dmp updated")
 
 def length_trim(fasta_path,fasta_prefix,length_cutoff):
 	#Trim the length of fasta file
 	outfile_name = str(fasta_prefix) + "_filtered.fasta"
-	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta_path, length_cutoff, outfile_name), shell = True)
+	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta_path, length_cutoff, outfile_name))
 	return outfile_name
 
 def run_prodigal(path_to_assembly):
@@ -116,8 +129,7 @@ def run_prodigal(path_to_assembly):
 		print "{} file already exists!".format(prodigal_output)
 		print "Continuing to next step..."
 	else:
-		subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
-	 	'.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
+		run_command('prodigal -i {} -a {}.orfs.faa -p meta -m -o {}.txt'.format(path_to_assembly, path_to_assembly.split(".")[0], path_to_assembly.split(".")[0]))
 
 def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
@@ -125,8 +137,8 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	tmp_dir_path = current_dir + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	subprocess.call("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path), shell = True)
-	subprocess.call("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output), shell = True)
+	run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 	return view_output
 
 #blast2lca using accession numbers#
@@ -136,7 +148,7 @@ def run_blast2lca(input_file, taxdump_path):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
 	else:
-		subprocess.call("{}/lca.py database_directory {} {} > {}".format(pipeline_path, db_dir_path, input_file, output), shell = True)
+		run_command("{}/lca.py database_directory {} {} > {}".format(pipeline_path, db_dir_path, input_file, output))
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
@@ -145,14 +157,14 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,cover
 	# Only make the contig table if it doesn't already exist
 	if not os.path.isfile(initial_table_path):
 		if coverage_table:
-			subprocess.call("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table), shell = True)
+			run_command("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table))
 		else:
-			subprocess.call("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path), shell = True)
+			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
 
 	if coverage_table:		
-		subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path), shell = True)
+		run_command("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path))
 	else:
-	   subprocess.call("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path), shell = True)
+	   run_command("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path))
 	return 'taxonomy.tab'
 
 pipeline_path = sys.path[0]
@@ -189,7 +201,7 @@ if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
 	print('No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...')
-	os.system('mkdir {}'.format(db_dir_path))
+	run_command('mkdir {}'.format(db_dir_path))
 	update_dbs(db_dir_path)
 elif not os.listdir(db_dir_path):
 	#The 'Autometa databases' directory is empty
