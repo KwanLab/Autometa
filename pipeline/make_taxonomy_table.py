@@ -65,40 +65,40 @@ def update_dbs(database_path, db='all'):
 
 		# Now we make the diamond database
 		if not (os.path.isfile(database_path + '/nr.dmnd') and os.path.isfile(databse_path + '/nr.dmnd.md5')):
-            print("building nr.dmnd database, this may take some time")
-            subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
-            #Make an md5 file to signal that we have built the database successfully
-            subprocess.call('md5sum ' + database_path + '/nr.dmnd > ' + database_path + '/nr.dmnd.md5')
-            os.system('rm %s/nr.gz' % database_path)
-            print("nr.dmnd updated")
+			print("building nr.dmnd database, this may take some time")
+			subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
+			#Make an md5 file to signal that we have built the database successfully
+			subprocess.call('md5sum ' + database_path + '/nr.dmnd > ' + database_path + '/nr.dmnd.md5')
+			os.system('rm %s/nr.gz' % database_path)
+			print("nr.dmnd updated")
 	if db == 'all' or db == 'acc2taxid':
-        # Download prot.accession2taxid.gz only if the version we have is not current
-        if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
-            if not md5IsCurrent(database_path + '/prot.accession2taxid.gz.md5', accession2taxid_md5_url):
-                print("updating prot.accession2taxid")
-                download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
-        else:
-            print("updating prot.accession2taxid")
-            download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
+		# Download prot.accession2taxid.gz only if the version we have is not current
+		if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
+			if not md5IsCurrent(database_path + '/prot.accession2taxid.gz.md5', accession2taxid_md5_url):
+				print("updating prot.accession2taxid")
+				download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
+		else:
+			print("updating prot.accession2taxid")
+			download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
 
-        if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
-            print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-            os.system('gunzip -9vNf %s.gz > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
-            print("prot.accession2taxid updated")
+		if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
+			print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
+			os.system('gunzip -9vNf %s.gz > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
+			print("prot.accession2taxid updated")
 	if db == 'all' or db == 'taxdump':
 		# Download taxdump only if the version we have is not current
-        if os.path.isfile(database_path + '/taxdump.tar.gz.md5'):
-            if not md5IsCurrent(database_path + '/taxdump.tar.gz.md5', taxdump_md5_url):
-                print("updating nodes.dmp and names.dmp")
-                download_file(database_path, taxdump_url, taxdump_md5_url)
-        else:
-            print("updating nodes.dmp and names.dmp")
-            download_file(database_path, taxdump_url, taxdump_md5_url)
+		if os.path.isfile(database_path + '/taxdump.tar.gz.md5'):
+			if not md5IsCurrent(database_path + '/taxdump.tar.gz.md5', taxdump_md5_url):
+				print("updating nodes.dmp and names.dmp")
+				download_file(database_path, taxdump_url, taxdump_md5_url)
+		else:
+			print("updating nodes.dmp and names.dmp")
+			download_file(database_path, taxdump_url, taxdump_md5_url)
 
-        if os.path.isfile(database_path + '/taxdump.tar.gz'):
-            os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
-            os.system('rm %s/taxdump.tar.gz' % database_path)
-            print("nodes.dmp and names.dmp updated")
+		if os.path.isfile(database_path + '/taxdump.tar.gz'):
+			os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
+			os.system('rm %s/taxdump.tar.gz' % database_path)
+			print("nodes.dmp and names.dmp updated")
 
 def length_trim(fasta_path,fasta_prefix,length_cutoff):
 	#Trim the length of fasta file
@@ -212,7 +212,7 @@ current_nr_md5 = db_dir_path + '/nr.gz.md5'
 
 if args['update']:
 	print("Checking database directory for updates")
-    update_dbs(db_dir_path, 'all')
+	update_dbs(db_dir_path, 'all')
 
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
