@@ -206,13 +206,13 @@ logger.info('Currently running branch ' + branch + ', commit ' + commit)
 #check if appropriate databases specified for make taxonomy table
 if make_tax_table and not db_dir_path:
 	print("Must specify databases directory (-db)")
-	exit()
+	exit(1)
 
 #check if fasta in path
 if not os.path.isfile(fasta_assembly):
 	print "Could not find {}...".format(fasta_assembly)
 	logger.debug('Could not find {}...'.format(fasta_assembly))
-	exit()
+	exit(1)
 
 # Make output directory if it doesn't exist
 if not os.path.isdir(output_dir):
