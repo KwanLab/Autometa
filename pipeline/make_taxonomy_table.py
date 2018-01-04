@@ -6,59 +6,99 @@ import os
 import pandas as pd
 from Bio import SeqIO
 import sys
+import urllib2
 
 def cythonize_lca_functions():
-    logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
-    subprocess.call("cd {}".format(pipeline_path), shell=True)
-    subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
-    subprocess.call("cd {}".format(output_dir), shell=True)
+	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
+	subprocess.call("cd {}".format(pipeline_path), shell=True)
+	subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
+	subprocess.call("cd {}".format(output_dir), shell=True)
+
+def download_file(destination_dir, file_url, md5_url):
+	filename = file_url.split('/')[-1]
+	md5name = md5_url.split('/')[-1]
+
+	md5check = False
+
+	while md5check == False:
+		os.system('wget -q %s -O %s/' % (file_url, destination_dir))
+		os.system('wget -q %s -O %s/' % (md5_url, destination_dir))
+
+		downloaded_md5 = subprocess.check_output(['md5sum', destination_dir + '/' + filename]).split(' ')[0]
+
+		with open(destination_dir + '/' + md5name, 'r') as check_md5_file:
+			check_md5 = check_md5_file.readline().split(' ')[0]
+
+		if downloaded_md5 == check_md5:
+			md5check = True
+
+def md5IsCurrent(local_md5_path, remote_md5_url):
+	remote_md5_handle = urllib2.urlopen(remote_md5_url)
+	remote_md5 = remote_md5_handle.readline().split(' ')[0]
+
+	with open(local_md5_path, 'r') as local_md5_file:
+		local_md5 = local_md5_file.readline().split(' ')[0]
+
+	if local_md5 == remote_md5:
+		return True
+	else:
+		return False
 
 def update_dbs(database_path, db='all'):
 	"""Updates databases for AutoMeta usage"""
 	taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
-	taxdump_md5 = taxdump_url+".md5"
+	taxdump_md5_url = taxdump_url+".md5"
 	accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
-	accession2taxid_md5 = accession2taxid_url+".md5"
-	nr_diamond_db_url = "ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-	nr_diamond_db_md5 = nr_diamond_db_url+".md5"
+	accession2taxid_md5_url = accession2taxid_url+".md5"
+	nr_db_url = "ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
+	nr_db_md5_url = nr_diamond_db_url+".md5"
 	#Downloading files for db population
-	if db == 'all':
-		os.system('wget -q %s -O %s/taxdump.tar.gz' % (taxdump_url, database_path))
-		os.system('wget -q %s -O %s/taxdump.tar.gz.md5' % (taxdump_md5, database_path))
-		os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
-		os.system('rm %s/taxdump.tar.gz' % database_path)
-		os.system('wget -q %s -O %s/prot.accession2taxid.gz' % (accession2taxid_url, database_path))
-		os.system('wget -q %s -O %s/prot.accession2taxid.gz.md5' % (accession2taxid_md5, database_path))
-		print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-		os.system('gunzip -9vNf %s/prot.accession2taxid.gz > %s/prot.accession2taxid' % (database_path, database_path))
-		print("Downloading and building nr.dmnd database\nThis may take some time...")
-		os.system('wget -q %s -O %s/nr.gz' % (nr_diamond_db_url, database_path))
-		os.system('wget -q %s -O %s/nr.gz.md5' % (nr_diamond_db_md5, database_path))
-		subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
-		os.system('rm %s/nr.gz' % database_path)
-		print("\nnodes.dmp, names.dmp, prot.accession2taxid and nr.dmnd files updated in %s\nResuming..." % database_path)
-	if db == 'nr':
-		print("updating nr.dmnd")
-		os.system('wget -q %s -O %s/nr.gz' % (nr_diamond_db_url, database_path))
-		os.system('wget -q %s -O %s/nr.gz.md5' % (nr_diamond_db_md5, database_path))
-		print("building nr.dmnd database, this may take some time")
-		subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
-		os.system('rm %s/nr.gz' % database_path)
-		print("nr.dmnd updated")
-	if db == 'acc2taxid':
-		print("updating prot.accession2taxid")
-		os.system('wget -q %s -O %s.gz' % (accession2taxid_url, accession2taxid_path))
-		os.system('wget -q %s -O %s.gz.md5' % (accession2taxid_md5, accession2taxid_path))
-		print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-		os.system('gunzip -9vNf %s.gz > %s' % (accession2taxid_path, accession2taxid_path))
-		print("prot.accession2taxid updated")
-	if db == 'taxdump':
-		print("updating nodes.dmp and names.dmp")
-		os.system('wget -q %s -O %s/taxdump.tar.gz' % (taxdump_url, database_path))
-		os.system('wget -q %s -O %s/taxdump.tar.gz.md5' % (taxdump_md5, database_path))
-		os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
-		os.system('rm %s/taxdump.tar.gz' % database_path)
-		print("nodes.dmp and names.dmp updated")
+	if db == 'all' or db == 'nr':
+		# First download nr if we don't yet have it OR it is not up to date
+		if os.path.isfile(database_path + '/nr.gz.md5'):
+			if not md5IsCurrent(database_path + '/nr.gz.md5', nr_db_md5_url):
+				print("updating nr.dmnd")
+				download_file(database_path, nr_db_url, nr_db_md5_url)
+		else:
+			print("updating nr.dmnd")
+			download_file(database_path, nr_db_url, nr_db_md5_url)
+
+		# Now we make the diamond database
+		if not (os.path.isfile(database_path + '/nr.dmnd') and os.path.isfile(databse_path + '/nr.dmnd.md5')):
+            print("building nr.dmnd database, this may take some time")
+            subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
+            #Make an md5 file to signal that we have built the database successfully
+            subprocess.call('md5sum ' + database_path + '/nr.dmnd > ' + database_path + '/nr.dmnd.md5')
+            os.system('rm %s/nr.gz' % database_path)
+            print("nr.dmnd updated")
+	if db == 'all' or db == 'acc2taxid':
+        # Download prot.accession2taxid.gz only if the version we have is not current
+        if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
+            if not md5IsCurrent(database_path + '/prot.accession2taxid.gz.md5', accession2taxid_md5_url):
+                print("updating prot.accession2taxid")
+                download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
+        else:
+            print("updating prot.accession2taxid")
+            download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
+
+        if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
+            print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
+            os.system('gunzip -9vNf %s.gz > %s' % (database_path + '/prot.accession2taxid.gz', database_path + '/prot.accession2taxid'))
+            print("prot.accession2taxid updated")
+	if db == 'all' or db == 'taxdump':
+		# Download taxdump only if the version we have is not current
+        if os.path.isfile(database_path + '/taxdump.tar.gz.md5'):
+            if not md5IsCurrent(database_path + '/taxdump.tar.gz.md5', taxdump_md5_url):
+                print("updating nodes.dmp and names.dmp")
+                download_file(database_path, taxdump_url, taxdump_md5_url)
+        else:
+            print("updating nodes.dmp and names.dmp")
+            download_file(database_path, taxdump_url, taxdump_md5_url)
+
+        if os.path.isfile(database_path + '/taxdump.tar.gz'):
+            os.system('tar -xzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (database_path, database_path))
+            os.system('rm %s/taxdump.tar.gz' % database_path)
+            print("nodes.dmp and names.dmp updated")
 
 def check_db(current_nr_md5, current_acc2taxid_md5, current_taxdump_md5):
 	taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
@@ -153,7 +193,7 @@ filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
 
 if not os.path.isfile(pipeline_path+"/lca_functions.so"):
-    cythonize_lca_functions()
+	cythonize_lca_functions()
 
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
@@ -164,7 +204,15 @@ elif not os.listdir(db_dir_path):
 	#The 'Autometa databases' directory is empty
 	print('AutoMeta databases directory empty, populating with appropriate databases.\nThis may take some time...')
 	update_dbs(db_dir_path)
-
+elif not (os.path.isfile(db_dir_path + '/nr.dmnd') or os.path.isfile(db_dir_path + '/nr.dmnd.md5') or os.path.isfile(db_dir_path + '/nr.gz.md5')):
+	print('NR database not found, downloading and building DIAMOND database.\nThis may take some time...')
+	update_dbs(db_dir_path, 'nr')
+elif not (os.path.isfile(db_dir_path + '/prot.accession2taxid') or os.path.isfile(db_dir_path + '/prot.accession2taxid.gz.md5')):
+	print('acc2taxid files not found, downloading.\nThis may take some time...')
+	update_dbs(db_dir_path, 'acc2taxid')
+elif not (os.path.isfile(db_dir_path + '/names.dmp') or os.path.isfile(db_dir_path + '/nodes.dmp') or os.path.isfile(db_dir_path + '/taxdump.tar.gz.md5')):
+	print('Taxdump files not found, downloading.\nThis may take some time...')
+	update_dbs(db_dir_path, 'taxdump')
 
 names_dmp_path = db_dir_path + '/names.dmp'
 nodes_dmp_path = db_dir_path + '/nodes.dmp'
