@@ -36,9 +36,10 @@ def run_command_quiet(command_string):
 
 def cythonize_lca_functions():
 	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
-	run_command("cd {}".format(pipeline_path))
-	run_command("./setup_lca_functions.py build_ext --inplace")
-	run_command("cd {}".format(output_dir))
+	current_dir = os.getcwd()
+	os.chdir(pipeline_path)
+	run_command("python setup_lca_functions.py build_ext --inplace")
+	os.chdir(current_dir)
 
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
