@@ -82,7 +82,7 @@ def update_dbs(database_path, db='all'):
 		# Now we make the diamond database
 		if not (os.path.isfile(database_path + '/nr.dmnd') and os.path.isfile(databse_path + '/nr.dmnd.md5')):
 			print("building nr.dmnd database, this may take some time")
-			returnCode = subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
+			returnCode = subprocess.call("diamond makedb --in {} --db {}/nr -p {}".format(database_path+'/nr.gz', database_path, num_processors), shell = True)
 			if returnCode == 0: # i.e. job was successful
 			#Make an md5 file to signal that we have built the database successfully
 				run_command('md5sum ' + database_path + '/nr.dmnd', database_path + '/nr.dmnd.md5')
