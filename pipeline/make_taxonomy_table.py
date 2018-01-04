@@ -196,6 +196,12 @@ prodigal_daa = prodigal_output + ".daa"
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
 
+# If cov_table defined, we need to check the file exists
+if cov_table:
+    if not os.path.isfile(cov_table):
+        print("Error! Could not find coverage table at the following path: " + cov_table)
+        exit(1)
+
 if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 	cythonize_lca_functions()
 
