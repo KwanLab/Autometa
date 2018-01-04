@@ -25,9 +25,10 @@ def run_command(command_string, stdout_path = None):
 
 def cythonize_lca_functions():
 	print("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
-	run_command("cd {}".format(pipeline_path))
-	run_command("./setup_lca_functions.py build_ext --inplace")
-	run_command("cd {}".format(output_dir))
+	current_dir = os.getcwd()
+	os.chdir(pipeline_path)
+	run_command("python setup_lca_functions.py build_ext --inplace")
+	os.chdir(current_dir)
 
 def download_file(destination_dir, file_url, md5_url):
 	filename = file_url.split('/')[-1]
