@@ -19,10 +19,10 @@ def download_file(destination_dir, file_url, md5_url):
 	md5name = md5_url.split('/')[-1]
 
 	md5check = False
-
+	
 	while md5check == False:
-		os.system('wget -q %s -O %s/' % (file_url, destination_dir))
-		os.system('wget -q %s -O %s/' % (md5_url, destination_dir))
+		os.system('wget %s -O %s' % (file_url, destination_dir + '/' + filename))
+		os.system('wget %s -O %s' % (md5_url, destination_dir + '/' + md5name))
 
 		downloaded_md5 = subprocess.check_output(['md5sum', destination_dir + '/' + filename]).split(' ')[0]
 
