@@ -183,7 +183,7 @@ taxonomy_table_path = args['taxonomy_table']
 output_dir = args['output_dir']
 do_ML_recruitment = args['ML_recruitment']
 make_tax_table = args['maketaxtable']
-taxdump_dir = args['db_dir']
+db_dir_path = args['db_dir']
 cov_table = args['cov_table']
 
 #Check user CPUs
@@ -204,7 +204,7 @@ commit = subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE).co
 logger.info('Currently running branch ' + branch + ', commit ' + commit)
 
 #check if appropriate databases specified for make taxonomy table
-if make_tax_table and not taxdump_dir:
+if make_tax_table and not db_dir_path:
 	print("Must specify databases directory (-db)")
 	exit()
 
