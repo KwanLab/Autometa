@@ -10,11 +10,35 @@ import multiprocessing
 import pdb
 import logging
 
+def run_command(command_string, stdout_path = None):
+	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
+	if stdout_path:
+		f = open(stdout_path, 'w')
+		exit_code = subprocess.call(command_string, stdout=f, shell=True)
+		f.close()
+	else:
+		exit_code = subprocess.call(command_string, shell=True)
+
+	if exit_code != 0:
+		print('run_autometa.py: Error, the command:')
+		print(command_string)
+		print('failed, with exit code ' + str(exit_code))
+		exit(1)
+
+def run_command_quiet(command_string):
+	exit_code = subprocess.call(command_string, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+
+	if exit_code !=0:
+		print('run_autometa.py: Error, the command:')
+		print(command_string)
+		print('failed, with exit code ' + str(exit_code))
+		exit(1)
+
 def cythonize_lca_functions():
 	logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
-	subprocess.call("cd {}".format(pipeline_path), shell=True)
-	subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
-	subprocess.call("cd {}".format(output_dir), shell=True)
+	run_command("cd {}".format(pipeline_path))
+	run_command("./setup_lca_functions.py build_ext --inplace")
+	run_command("cd {}".format(output_dir))
 
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
@@ -22,9 +46,8 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 	output_path = output_dir + '/taxonomy.tab'
 	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {}".\
 		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
-	subprocess.call("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {}".\
-		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff),\
-		shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+	run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {}".\
+		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
 	return output_path
 
 def length_trim(fasta,length_cutoff):
@@ -32,7 +55,7 @@ def length_trim(fasta,length_cutoff):
 	outfile_name = os.path.basename(fasta).split(".")[0] + "_filtered.fasta"
 	output_path = output_dir + '/' + outfile_name
 	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
-	subprocess.call("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path), shell = True)
+	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	return outfile_name
 
 def make_contig_table(fasta, coverage_table):
@@ -40,10 +63,10 @@ def make_contig_table(fasta, coverage_table):
 	output_path = output_dir + '/' + output_table_name
 	if coverage_table:
 		logger.info("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
-		subprocess.call("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path), shell = True)
+		run_command("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
 	else:
 		logger.info("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path))
-		subprocess.call("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path), shell = True)
+		run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path))
 	return output_path
 
 def make_marker_table(fasta):
@@ -66,19 +89,18 @@ def make_marker_table(fasta):
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
 		logger.info("hmmpress -f {}".format(hmm_marker_path))
-		subprocess.call("hmmpress -f {}".format(hmm_marker_path), shell=True,stdout=FNULL, stderr=subprocess.STDOUT)
+		run_command_quiet("hmmpress -f {}".format(hmm_marker_path))
 		logger.info("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors))
-		subprocess.call("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors), \
-			shell = True, stdout=FNULL, stderr=subprocess.STDOUT)
+		run_command_quiet("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
+			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors))
 	return output_path
 
 def recursive_dbscan(input_table, filtered_assembly, domain):
 	recursive_dbscan_output_path = output_dir + '/recursive_dbscan_output.tab'
 	k_mer_file = output_dir + '/k-mer_matrix'
 	logger.info("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain))
-	subprocess.call("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain), shell=True)
+	run_command("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain))
 
 	return recursive_dbscan_output_path, k_mer_file
 
@@ -119,7 +141,7 @@ def combine_tables(table1_path, table2_path):
 def ML_recruitment(input_table, matrix):
 	ML_recruitment_output_path = output_dir + '/ML_recruitment_output.tab'
 	logger.info("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
-	subprocess.call("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path), shell=True)
+	run_command("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
 
 	return ML_recruitment_output_path
 
