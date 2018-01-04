@@ -68,12 +68,12 @@ def update_dbs(database_path, db='all'):
 			print("building nr.dmnd database, this may take some time")
 			returnCode = subprocess.call("diamond makedb --in {} --db {}/nr".format(database_path+'/nr.gz', database_path), shell = True)
 			if returnCode == 0: # i.e. job was successful
-            #Make an md5 file to signal that we have built the database successfully
-                md5out = open(database_path + '/nr.dmnd.md5', 'w')
-                subprocess.call(['md5sum', database_path + '/nr.dmnd'], stdout = md5out)
-                md5out.close()
-                os.system('rm %s/nr.gz' % database_path)
-                print("nr.dmnd updated")
+			#Make an md5 file to signal that we have built the database successfully
+				md5out = open(database_path + '/nr.dmnd.md5', 'w')
+				subprocess.call(['md5sum', database_path + '/nr.dmnd'], stdout = md5out)
+				md5out.close()
+				os.system('rm %s/nr.gz' % database_path)
+				print("nr.dmnd updated")
 	if db == 'all' or db == 'acc2taxid':
 		# Download prot.accession2taxid.gz only if the version we have is not current
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
