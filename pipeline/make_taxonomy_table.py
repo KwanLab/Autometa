@@ -7,6 +7,12 @@ import pandas as pd
 from Bio import SeqIO
 import sys
 
+def cythonize_lca_functions():
+    logger.info("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
+    subprocess.call("cd {}".format(pipeline_path), shell=True)
+    subprocess.call("./setup_lca_functions.py build_ext --inplace", shell = True)
+    subprocess.call("cd {}".format(output_dir), shell=True)
+
 def update_dbs(database_path, db='all'):
 	"""Updates databases for AutoMeta usage"""
 	taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
@@ -145,6 +151,9 @@ prodigal_daa = prodigal_output + ".daa"
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
+
+if not os.path.isfile(pipeline_path+"/lca_functions.so"):
+    cythonize_lca_functions()
 
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
