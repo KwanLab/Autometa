@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import subprocess
 import sys
 
 def run_command(command_string, stdout_path = None):
