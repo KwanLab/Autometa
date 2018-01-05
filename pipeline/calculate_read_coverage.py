@@ -94,6 +94,22 @@ forward_read_path_list = args['forward_reads']
 reverse_read_path_list = args['reverse_reads']
 single_read_path_list = args['single_reads']
 
+if not os.path.isfile(assembly_file):
+    print ('Error! Could not find assembly file at the following path: ' + assembly_file)
+    exit(1)
+
+# Check that at least one of the above lists is not empty
+if not (forward_read_path_list or reverse_read_path_list or single_read_path_list):
+    print('Error! You need to specify some reads, with -F/-R (paired) and/or -S (single)')
+    exit(1)
+
+# Check that all read paths exist
+concatenated_read_path_list = forward_read_path_list + reverse_read_path_list + single_read_path_list
+for path in concatenated_read_path_list:
+    if not os.path.isfile(path):
+        print('Error! Cannot find the read file ': path)
+        exit(1)
+
 sam_file = run_bowtie2(assembly_file,forward_read_path_list,reverse_read_path_list,single_read_path_list,args['processors'])
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
