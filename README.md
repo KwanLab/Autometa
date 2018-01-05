@@ -79,12 +79,31 @@ Now download Autometa.
 
 ```
 git clone https://bitbucket.org/jason_c_kwan/autometa
-cd autometa/pipeline
-python setup_lca_functions.py build_ext --inplace
 ```
 
 You should now add the autometa/pipeline directory to your $PATH environmental variable
 
+### Running with Docker
+
+As an alternative to doing all the above manually, we have provided a Dockerfile with which to make an Autometa Docker image. This will automate the installation of all dependencies. To build the image:
+
+```
+git clone https://bitbucket.org/jason_c_kwan/autometa
+cd autometa
+docker build -t "autometa:run" .
+```
+
+This will download a load of stuff and set up the image for you on your system. NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
+
+After you have built the Docker image, you can run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
+
+Normal script                | Docker version
+-----------------------------|---------------------------------
+calculate\_read\_coverage.py | calculate\_read\_coverage\_docker.py
+make\_taxonomy\_table.py     | make\_taxonomy\_table\_docker.py
+run\_autometa.py             | run\_autometa\_docker.py
+ML\_recruitment.py           | ML\_recruitment\_docker.py
+cluster\_process.py          | cluster\_process\_docker.py
 
 Usage
 -----
@@ -194,7 +213,26 @@ ML_recruitment.py --contig_tab recursive_dbscan_output.tab --recursive \
 
 In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. The specified output file is a table with the following columns:
 
-[Include details of the output table]
+Column | Description
+-------|------------
+contig | Name of the contig in the input fasta
+length | Length of the contig in bp
+gc     | GC (%) of contig
+cov    | Coverage of the contig
+kingdom   | Assigned taxonomic kingdom for the contig
+phylum    | Assigned taxonomic phylum for the contig
+class     | Assigned taxonomic class for the contig
+order     | Assigned taxonomic order for the contig
+family    | Assigned taxonomic family for the contig
+genus     | Assigned taxonomic genus for the contig
+species   | Assigned taxonomic species for the contig
+taxid     | Assigned NCBI taxonomy ID number for the contig
+single\_copy\_PFAMs      | Comma-delimited list of the PFAM accession numbers of single-copy marker genes found within the contig
+num\_single\_copies      | The number of single-copy marker genes found within the contig
+bh\_tsne\_x              | The X coordinate after dimension reduction by BH-tSNE
+bh\_tsne\_y              | The Y coordinate after dimension reduction by BH-tSNE
+cluster                  | The cluster assigned by run\_autometa.py
+ML\_expanded\_clustering | The cluster assigned by ML\_recruitment.py (includes previous assignments by run\_autometa.py)
 
 ### Running all steps in sequence
 
@@ -210,3 +248,51 @@ In the above command, the '--maketaxtable' flag tells run\_autometa.py to run ma
 Analysis of results
 ===================
 
+At the end of the above process, you will have a master table which describes each contig in your metagenome, including which bin each was assigned to. However, this does not directly tell you much about each bin, so you can further process your data with the following command:
+
+```
+cluster_process.py --bin_table ML_recruitment_output.tab --column ML_expanded_clustering \
+	--fasta Bacteria.fasta --do_taxonomy --db_dir ~/autometa/databases \
+	--output_dir cluster_process_output
+```
+
+This will do a number of things:
+
+1. Create a directory called "cluster\_process\_output" in the current working directory
+2. Split Bacteria.fasta into separate fastas for each cluster (including unclustered contigs) and write them to the cluster\_process\_output folder
+3. Create a file called cluster\_summary\_table, and store it in the cluster\_process\_output folder
+4. Create a file called cluster\_taxonomy.tab, and store it in the cluster\_process\_output folder
+
+Note: if you don't want to analyze the taxonomy of your clusters, you can ommit the --do\_taxonomy and --db\_dir arguments. To analyze taxonomy here, you also need to have run make\_taxonomy\_table.py above.
+
+Cluster\_summary\_table contains the following columns:
+
+Column          | Description
+----------------|------------
+cluster         | The name of the cluster 
+size            | The size of the cluster in bp
+longest_contig  | The length in bp of the longest contig in the cluster
+n50             | The n50 of the contigs in the cluster
+number\_contigs | The number of contigs in the cluster
+completeness    | The estimated completeness of the cluster, based on single-copy marker genes
+purity          | The estimated purity of the cluster, based on the number of single-copy marker genes that are duplicated in the cluster
+av_cov          | The average coverage of contigs in the cluster, weighted by contig length
+av_gc           | The average GC (%) of the contigs in the cluster, weighted by contig length
+
+The cluster\_taxonomy.tab file similary contains full taxonomic information for each cluster, assigned based on the assigned taxonomy of the component contigs.
+
+### Visualizing your results
+
+Cluster\_process.py gives you some information about the clusters, but it's a good idea to manually look at the data to convince yourself that Autometa did a good job. It's worth noting here that no binning pipeline (including Autometa) is guaranteed to give 100% correct results all the time, and before using the results in publications etc. you should use your biological common sense/judgement. With the tables you have produced, this is easy to do using [R](https://www.r-project.org). Try typing the following in to R:
+
+```
+library(ggplot2)
+data = read.table('ML_recruitment_output.tab', header=TRUE, sep='\t')
+ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = ML_expanded_clustering )) + \
+	geom_point( aes( alphs = 0.5, size = sqrt( data$length ) / 100 )) + \
+	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
+	theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') + \
+	guides( color = guide_legend( title = 'Cluster/bin' ))
+```
+
+![colored_by_cluster](img/col_cluster.svg)
