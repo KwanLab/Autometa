@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from Bio import SeqIO
 import subprocess
+import math
 
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
@@ -98,13 +99,17 @@ for i,row in master_table.iterrows():
 	cov = float(row['cov'])
 	gc = float(row['gc'])
 	cluster = row[cluster_column_heading]
-	pfam_list = row['single_copy_PFAMs'].split(',')
 
 	contig_info[contig] = { 'length': length, 'cov': cov, 'gc': gc }
 	cluster_contigs[contig] = cluster
 
 	if cluster not in markers_in_cluster:
 		markers_in_cluster[cluster] = dict()
+
+	if math.isnan(row['single_copy_PFAMs']):
+		continue
+
+	pfam_list = row['single_copy_PFAMs'].split(',')
 
 	for pfam in pfam_list:
 		if pfam not in markers_in_cluster[cluster]:
