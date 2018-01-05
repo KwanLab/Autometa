@@ -79,12 +79,11 @@ def make_marker_table(fasta):
 		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
 
 	#need to add processors to this script
-	output_marker_table = fasta.split('.')[0] + "_marker.tab"
-	output_path = output_dir + '/' + output_marker_table
+	output_path = '.'.join(fasta.split('.')[:-1]) + '_marker.tab'
 	if os.path.isfile(output_path):
-		print "{} file already exists!".format(output_marker_table)
+		print "{} file already exists!".format(output_path)
 		print "Continuing to next step..."
-		logger.info('{} file already exists!'.format(output_marker_table))
+		logger.info('{} file already exists!'.format(output_path))
 		logger.info('Continuing to next step...')
 	else:
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
