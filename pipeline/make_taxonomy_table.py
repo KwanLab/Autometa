@@ -153,7 +153,7 @@ def run_blast2lca(input_file, taxdump_path):
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
-    assembly_filename = assembly_path.split('/')[-1]
+	assembly_filename = assembly_path.split('/')[-1]
 	initial_table_path = output_dir + '/' + assembly_filename + '.tab'
 
 	# Only make the contig table if it doesn't already exist
@@ -201,9 +201,9 @@ output_dir = args['output_dir']
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
-    if not os.path.isfile(cov_table):
-        print("Error! Could not find coverage table at the following path: " + cov_table)
-        exit(1)
+	if not os.path.isfile(cov_table):
+		print("Error! Could not find coverage table at the following path: " + cov_table)
+		exit(1)
 
 if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 	cythonize_lca_functions()
