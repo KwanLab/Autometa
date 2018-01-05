@@ -16,6 +16,7 @@ from sklearn import decomposition
 from joblib import Parallel, delayed
 import random
 import multiprocessing
+import os
 
 parser = argparse.ArgumentParser(description="Recruit unclustered (or non-marker)\
     sequences with Machine Learning classification using clustered sequence\
@@ -209,6 +210,16 @@ def calculateClusterStats(pandas_table,cluster_column,life_domain="bacteria"):
 
 #Mark start time
 start_time = time.time()
+
+# Do check to see if the contig table and the k_mer_matrix file exists
+if not os.path.isfile(args['contig_tab']):
+    print('Error! Could not find contig table at the following path: ' + args['contig_tab'])
+    exit(1)
+
+if not os.path.isfile(args['k_mer_matrix']):
+    print('Error! Could not find k-mer matrix file at the following path: ' + args['k_mer_matrix'])
+    exit(1)
+
 #1. Load table with cluster info, taxonomy as binary matrices with pandas
 print("Loading contig table...")
 #Disable pandas warnings
