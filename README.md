@@ -3,7 +3,7 @@ Autometa
 
 An automated pipeline to deconvolute single metagenomic assemblies to separate individual bacterial and archaeal genomes. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
 
-Miller, I. J.; Rees, E.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2018**, xx
+Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2018**, xx
 
 Dependencies
 ------------
