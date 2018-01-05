@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import subprocess
 
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
@@ -134,10 +135,12 @@ if cov_table:
 	autometa_command = autometa_command + ' --cov_table /output/{}'.format(cov_table_filename)
 
 # Construct Docker run command
-docker_command = 'docker run --volume {}:/output:rw --detach=false --rm autometa:run'.format(output_dir_absolute)
+docker_command = 'docker run --volume {}:/output:rw --detach=false --rm'.format(output_dir_absolute)
 
 if db_dir_path:
 	docker_command = docker_command + ' --volume {}:/databases:rw'.format(db_dir_path_absolute)
+
+docker_command = docker_command + ' autometa:run'
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + autometa_command
