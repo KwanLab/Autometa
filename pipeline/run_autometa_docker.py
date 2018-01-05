@@ -75,7 +75,7 @@ if not os.path.isdir(output_dir):
 if db_dir_path:
 	if not os.path.isdir(db_dir_path):
 		os.makedirs(db_dir_path)
-db_dir_path_absolute = os.path.abspath(db_dir_path)
+	db_dir_path_absolute = os.path.abspath(db_dir_path)
 
 #if make_tax_table specified but taxonomy_table_path not defined
 if make_tax_table and not taxonomy_table_path:
