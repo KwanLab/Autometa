@@ -145,7 +145,9 @@ make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --process
 
 If you want to use an external coverage table (see above), you can use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
 
-The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. This script will do the following:
+The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. 
+
+This script will do the following:
 
 1. Genes are identified in each contig with Prodigal.
 2. Gene protein sequences are searched against nr with DIAMOND.
@@ -211,7 +213,9 @@ ML_recruitment.py --contig_tab recursive_dbscan_output.tab --recursive \
 	--k_mer_matrix k-mer_matrix --out_table ML_recruitment_output.tab
 ```
 
-In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. The specified output file is a table with the following columns:
+In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. 
+
+The specified output file is a table with the following columns:
 
 Column | Description
 -------|------------
@@ -246,7 +250,7 @@ run_autometa.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 
 In the above command, the '--maketaxtable' flag tells run\_autometa.py to run make\_taxonomy\_table.py, and the '--ML_recruitment' flag tells run\_autometa.py to run ML\_recruitment.py. Note, this runs ML\_recruitment.py with the '--recursive' flag.
 
 Analysis of results
-===================
+-------------------
 
 At the end of the above process, you will have a master table which describes each contig in your metagenome, including which bin each was assigned to. However, this does not directly tell you much about each bin, so you can further process your data with the following command:
 
@@ -296,3 +300,32 @@ ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = ML_expanded_clustering ))
 ```
 
 ![colored_by_cluster](img/col_cluster.svg)
+
+In the above chart the points represent contigs. They are plotted on the two dimensions that result from dimension-reduction by BH-tSNE - you can think of the distance between points as being roughly proportional to their differences in 5-mer frequency. The points are also scaled in size according to the contig length, and they are colored by the assigned cluster/bin. You can see that there are some bins which are well-separated from others, but there are other bins that are close together. Cases like these might be worth investigating manually if you think, for instance, that multiple Autometa bins close together could actually be different parts of the same genome. If clusters are close together, there is also the possibility that contigs in the region have been misassigned. 
+
+In addition to using nucleotide composition, Autometa uses coverage and can also use taxonomy to distinguish contigs with similar composition. We can also visualize these differences with R.
+
+```
+ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = phylum )) + \
+	geom_point( aes( alphs = 0.5, size = sqrt( data$length ) / 100 )) + \
+	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
+	theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') + \
+	guides( color = guide_legend( title = 'Pylum' ))
+```
+
+![colored_by_phylum](img/col_phylum.svg)
+
+In the above plot, we have now colored the points by taxonomic phylum, and this reveals that several clusters that are close together in BH-tSNE space are in fact quite divergent from one another. This is probably the basis for Autometa's assignment of separate bins in these cases. In some cases, the contigs in a bin may in fact look divergent in plots like this (see, for example the grouping in the bottom left of the plot). You may want to manually examine cases such as these, but they could well be real if, for example, some contigs have few protein coding genes, or the organism is highly divergent from known sequences (see our paper [here](https://www.nature.com/articles/srep34362) for some examples). In this particular dataset, the coverages of all genomes are fairly similar, as revealed in the next plot:
+
+```
+ggplot( data, aes( x = cov, y = gc, col = ML_expanded_clustering )) + \
+	geom_point( aes( alphs = 0.5, size = sqrt( data$length ) / 100 )) + \
+	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
+	theme_classic() + xlab('Coverage') + ylab('GC (%)') + \
+	guides( color = guide_legend( title = 'Cluster/bin' )) + \
+	scale_x_continuous( limits = c( 200, 250 ))
+```
+
+![gc_cov_col_cluster](img/gc_cov_col_cluster.svg)
+
+In the above plot, the points are colored by cluster/bin again, and you can see that in this case, coverage is not much of a distinguishing feature. In other datasets, you may see closely related genomes at different coverages, which are separatable by Autometa.
