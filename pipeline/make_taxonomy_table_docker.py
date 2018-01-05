@@ -21,6 +21,11 @@ def run_command(command_string, stdout_path = None):
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
 
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
+
 #argument parser
 parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan.py")
 parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
