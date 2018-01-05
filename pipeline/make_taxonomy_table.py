@@ -153,7 +153,8 @@ def run_blast2lca(input_file, taxdump_path):
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
-	initial_table_path = assembly_path + '.tab'
+    assembly_filename = assembly_path.split('/')[-1]
+	initial_table_path = output_dir + '/' + assembly_filename + '.tab'
 
 	# Only make the contig table if it doesn't already exist
 	if not os.path.isfile(initial_table_path):
@@ -182,6 +183,7 @@ parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig lengt
 parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
+parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
 
 args = vars(parser.parse_args())
 
@@ -195,6 +197,7 @@ prodigal_daa = prodigal_output + ".daa"
 #add_contig_path = pipeline_path
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
+output_dir = args['output_dir']
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -286,7 +289,7 @@ for i, row in taxonomy_pd.iterrows():
 # Now we write the component fasta files
 for kingdom in categorized_seq_objects:
 	seq_list = categorized_seq_objects[kingdom]
-	output_path = kingdom + '.fasta'
+	output_path = output_dir + '/' + kingdom + '.fasta'
 	SeqIO.write(seq_list, output_path, 'fasta')
 
 print "Done!"
