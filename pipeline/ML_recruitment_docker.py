@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import subprocess
 
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
@@ -68,7 +69,7 @@ if not os.path.isfile(args['k_mer_matrix']):
 
 # We will use the directory that will hold the output table as the output directory
 out_table_path_absolute = os.path.abspath(out_table_path)
-output_dir = '/'.join(out_table_path_absolute.split('/')[:1])
+output_dir = '/'.join(out_table_path_absolute.split('/')[:-1])
 out_table_filename = out_table_path_absolute.split('/')[-1]
 
 # We have to create the output dir if it doesn't exist
