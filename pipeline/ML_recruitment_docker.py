@@ -17,7 +17,7 @@ def run_command(command_string, stdout_path = None):
 		exit_code = subprocess.call(command_string, shell=True)
 
 	if exit_code != 0:
-		print('run_autometa_docker.py: Error, the command:')
+		print('ML_recruitment.py: Error, the command:')
 		print(command_string)
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
