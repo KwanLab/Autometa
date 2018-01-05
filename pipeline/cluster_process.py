@@ -170,7 +170,7 @@ for cluster in cluster_sequences:
 		weighted_cov_av += seq_cov * seq_length_frac
 
 	# Write line in summary table
-	output_string = '\t'.join(cluster, str(total_size), str(longest_contig), str(n50), str(number_contigs), str(completeness), str(purity), str(weighted_cov_av), str(weighted_gc_av))
+	output_string = '\t'.join([cluster, str(total_size), str(longest_contig), str(n50), str(number_contigs), str(completeness), str(purity), str(weighted_cov_av), str(weighted_gc_av)])
 	summary_table.write(output_string + '\n')
 
 	# Write individual fasta file
