@@ -30,6 +30,7 @@ parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig lengt
 parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
+parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
 
 args = vars(parser.parse_args())
 
@@ -44,6 +45,7 @@ prodigal_daa = prodigal_output + ".daa"
 filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
 update = args['update']
+output_dir = args['output_dir']
 
 #check if fasta in path
 if not os.path.isfile(fasta_assembly):
@@ -85,7 +87,7 @@ if cov_table:
 			run_command('cp ' + cov_table_absolute + ' ' + output_dir_absolute + '/')
 
 # Construct make_taxonomy_table.py command to pass to the docker container
-make_taxonomy_table_command = 'make_taxonomy_table.py --assembly /output/{} --processors {} --db_dir /databases --length_cutoff {}'.format(\
+make_taxonomy_table_command = 'make_taxonomy_table.py --assembly /output/{} --processors {} --db_dir /databases --length_cutoff {} --output_dir /output'.format(\
 	fasta_filename, num_processors, length_cutoff)
 
 if cov_table:
