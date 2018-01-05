@@ -45,7 +45,7 @@ epilog='''The LCA analysis output will be directed to run_taxonomy.py\n\n\
 
 NOTE:\nLCA analysis will produce best results when database files are up to date.\n\
 Database files can be automatically updated before performing LCA analysis by specifying:\n\
-\"lca.py [-f][-fail_info] database_directory <path to database directory> -update <BLAST output>\"\n\n\
+\"lca.py [-f] [-fail_info] database_directory <path to database directory> -update <BLAST output>\"\n\n\
 
 Up to date versions of nodes.dmp and names.dmp may be found at:\nftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz\n\n\
 prot.accession2taxid is updated weekly and may be found at:\nftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz''',
