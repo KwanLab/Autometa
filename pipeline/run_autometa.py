@@ -57,7 +57,7 @@ def length_trim(fasta,length_cutoff):
 	output_path = output_dir + '/' + outfile_name
 	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
-	return outfile_name
+	return outfile_path
 
 def make_contig_table(fasta, coverage_table):
 	output_table_name = str(fasta).split('.')[0] + ".tab"
@@ -180,7 +180,7 @@ processors = args['processors']
 cluster_completeness = args['completeness_cutoff']
 kingdom = args['kingdom'].lower()
 taxonomy_table_path = args['taxonomy_table']
-output_dir = args['output_dir']
+output_dir = os.path.abspath(args['output_dir'])
 do_ML_recruitment = args['ML_recruitment']
 make_tax_table = args['maketaxtable']
 db_dir_path = args['db_dir']
