@@ -45,7 +45,8 @@ parser.add_argument('-c', '--column', metavar='<bin column name>', help='the nam
 parser.add_argument('-f', '--fasta', metavar='<assembly.fasta>', help='path to the assembly used to make the bin table', required=True)
 parser.add_argument('-o', '--output_dir', metavar='<dir>', help='path to the directory where output files will go', default='.')
 parser.add_argument('-k', '--kingdom', metavar='<archaea|bacteria>', help='kingdom to consider', choices=['bacteria', 'archaea'], default='bacteria')
-parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump files', required=True)
+parser.add_argument('-t', '--do_taxonomy', help='carry out taxonomic analysis on the clusters (you must have already run make_taxonomy_table.py)', action='store_true')
+parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump files')
 args = vars(parser.parse_args())
 
 bin_table_path = args['bin_table']
@@ -54,6 +55,7 @@ fasta_path = args['fasta']
 output_dir = args['output_dir']
 kingdom = args['kingdom']
 db_dir = args['db_dir']
+do_taxonomy = args['do_taxonomy']
 
 # Check paths exist
 if not os.path.isfile(bin_table_path):
@@ -64,17 +66,23 @@ if not os.path.isfile(fasta_path):
 	print('Error! Cannot find a fasta file at the following path: ' + fasta_path)
 	exit(1)
 
-if not os.path.isdir(db_dir):
-	print('Error! DB dir ' + db_dir + ' does not exist')
-	exit(1)
-else:
-	if not os.path.isfile(db_dir + '/names.dmp'):
-		print('Error! Cannot find names.dmp in ' + db_dir)
+# If the user has specified --do_taxonomy, then they also need to specify --db_dir
+if do_taxonomy:
+	if not db_dir:
+		print('Error! If you want to analyze taxonomy, you need to specify a path to database files (--db_dir)')
 		exit(1)
 
-	if not os.path.isfile(db_dir + '/nodes.dmp'):
-		print('Error! Cannot find nodes.dmp in ' + db_dir)
+	if not os.path.isdir(db_dir):
+		print('Error! DB dir ' + db_dir + ' does not exist')
 		exit(1)
+	else:
+		if not os.path.isfile(db_dir + '/names.dmp'):
+			print('Error! Cannot find names.dmp in ' + db_dir)
+			exit(1)
+
+		if not os.path.isfile(db_dir + '/nodes.dmp'):
+			print('Error! Cannot find nodes.dmp in ' + db_dir)
+			exit(1)
 
 # Make output directory if it isn't already there
 if not os.path.isdir(output_dir):
@@ -179,8 +187,9 @@ for cluster in cluster_sequences:
 
 summary_table.close()
 
-# Now run cluster_taxonomy.py
-taxonomy_output_path = output_dir + '/cluster_taxonomy.tab'
-cluster_taxonomy_command = 'cluster_taxonomy.py -t {} -c {} -x {} -o {}'.format(bin_table_path, cluster_column_heading, db_dir, taxonomy_output_path)
+if do_taxonomy:
+	# Now run cluster_taxonomy.py
+	taxonomy_output_path = output_dir + '/cluster_taxonomy.tab'
+	cluster_taxonomy_command = 'cluster_taxonomy.py -t {} -c {} -x {} -o {}'.format(bin_table_path, cluster_column_heading, db_dir, taxonomy_output_path)
 
-run_command(cluster_taxonomy_command)
+	run_command(cluster_taxonomy_command)
