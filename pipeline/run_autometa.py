@@ -57,7 +57,7 @@ def length_trim(fasta,length_cutoff):
 	output_path = output_dir + '/' + outfile_name
 	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
-	return outfile_path
+	return output_path
 
 def make_contig_table(fasta, coverage_table):
 	output_table_name = str(fasta).split('.')[0] + ".tab"
