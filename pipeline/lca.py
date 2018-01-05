@@ -343,7 +343,8 @@ if verbose:
             for i,value in enumerate(line_list):
                 line_list[i] = value.strip()
                 if line_list[3] == 'scientific name':
-                    reference_taxids[int(line_list[0])] = {'name':line_list[1]}
+                    nospace_name = line_list[1].replace(' ', '_')
+                    reference_taxids[int(line_list[0])] = {'name':nospace_name}
 
 
     with open(nodes_path, "r") as nodes_dmp:
@@ -553,7 +554,8 @@ else:
             for i,value in enumerate(line_list):
                 line_list[i] = value.strip()
                 if line_list[3] == 'scientific name':
-                    reference_taxids[int(line_list[0])] = {'name':line_list[1]}
+                    nospace_name = line_list[1].replace(' ', '_') # This helps with parsing in R later
+                    reference_taxids[int(line_list[0])] = {'name':nospace_name}
 
     with open(nodes_path, "r") as nodes_dmp:
         for line in nodes_dmp:
