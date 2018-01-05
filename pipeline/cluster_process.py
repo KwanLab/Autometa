@@ -2,11 +2,11 @@
 
 # Program to do post processing after binning
 
+from __future__ import division
 import argparse
 import os
 import pandas as pd
 from Bio import SeqIO
-from __future__ import division
 import subprocess
 
 def run_command(command_string, stdout_path = None):
