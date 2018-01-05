@@ -45,10 +45,10 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
 	# Note we don't have to supply the cov_table here because earlier in this script we already run make_contig_table.py
 	output_path = output_dir + '/taxonomy.tab'
-	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {}".\
-		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
-	run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {}".\
-		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff))
+	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {}".\
+		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
+	run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {}".\
+		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
 	return output_path
 
 def length_trim(fasta,length_cutoff):
