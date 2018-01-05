@@ -108,7 +108,7 @@ for i,row in master_table.iterrows():
 
 	for pfam in pfam_list:
 		if pfam not in markers_in_cluster[cluster]:
-			markers_in_cluster[cluster] = 1
+			markers_in_cluster[cluster][pfam] = 1
 		else:
 			markers_in_cluster[cluster][pfam] += 1
 
