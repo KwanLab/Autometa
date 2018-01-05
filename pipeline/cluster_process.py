@@ -106,10 +106,11 @@ for i,row in master_table.iterrows():
 	if cluster not in markers_in_cluster:
 		markers_in_cluster[cluster] = dict()
 
-	pfam_list = row['single_copy_PFAMs'].split(',')
-
-	if not pfam_list:
+	# Protect for instances where single_copy_PFAMs is empty, and gets converted to nan (a float) by pandas
+	if isinstance(row['single_copy_PFAMs'], float):
 		continue
+
+	pfam_list = row['single_copy_PFAMs'].split(',')
 
 	for pfam in pfam_list:
 		if pfam not in markers_in_cluster[cluster]:
