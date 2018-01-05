@@ -54,9 +54,9 @@ update = args['update']
 output_dir = args['output_dir']
 
 #check if fasta in path
-if not os.path.isfile(fasta_assembly):
-	print "Could not find {}...".format(fasta_assembly)
-	logger.debug('Could not find {}...'.format(fasta_assembly))
+if not os.path.isfile(fasta_path):
+	print "Could not find {}...".format(fasta_path)
+	logger.debug('Could not find {}...'.format(fasta_path))
 	exit(1)
 
 # We have to create the output dir if it doesn't exist
@@ -71,13 +71,13 @@ db_dir_path_absolute = os.path.abspath(db_dir_path)
 
 #If the assembly fasta is not already in the output dir, we need to copy it there so that the docker container can see it
 output_dir_absolute = os.path.abspath(output_dir)
-fasta_assembly_absolute = os.path.abspath(fasta_assembly)
-fasta_directory = '/'.join(fasta_assembly_absolute.split('/')[:-1])
-fasta_filename = fasta_assembly_absolute.split('/')[-1]
+fasta_path_absolute = os.path.abspath(fasta_path)
+fasta_directory = '/'.join(fasta_path_absolute.split('/')[:-1])
+fasta_filename = fasta_path_absolute.split('/')[-1]
 
 if output_dir_absolute != fasta_directory:
 	# This means we need to copy the fasta assembly to the output directory
-	run_command('cp ' + fasta_assembly_absolute + ' ' + output_dir_absolute + '/')
+	run_command('cp ' + fasta_path_absolute + ' ' + output_dir_absolute + '/')
 
 #If a coverage table is give, it must already exist.
 #If it exists, then it also should be copied to the output directory if it isn't already there
