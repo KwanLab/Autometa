@@ -267,7 +267,7 @@ This will do a number of things:
 3. Create a file called cluster\_summary\_table, and store it in the cluster\_process\_output folder
 4. Create a file called cluster\_taxonomy.tab, and store it in the cluster\_process\_output folder
 
-Note: if you don't want to analyze the taxonomy of your clusters, you can ommit the --do\_taxonomy and --db\_dir arguments. To analyze taxonomy here, you also need to have run make\_taxonomy\_table.py above.
+Note: if you don't want to analyze the taxonomy of your clusters, you can omit the --do\_taxonomy and --db\_dir arguments. To analyze taxonomy here, you also need to have run make\_taxonomy\_table.py above.
 
 Cluster\_summary\_table contains the following columns:
 
@@ -283,7 +283,7 @@ purity          | The estimated purity of the cluster, based on the number of si
 av_cov          | The average coverage of contigs in the cluster, weighted by contig length
 av_gc           | The average GC (%) of the contigs in the cluster, weighted by contig length
 
-The cluster\_taxonomy.tab file similary contains full taxonomic information for each cluster, assigned based on the assigned taxonomy of the component contigs.
+The cluster\_taxonomy.tab file similarly contains full taxonomic information for each cluster, assigned based on the assigned taxonomy of the component contigs.
 
 ### Visualizing your results
 
@@ -310,7 +310,7 @@ ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = phylum )) + \
 	geom_point( aes( alphs = 0.5, size = sqrt( data$length ) / 100 )) + \
 	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
 	theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') + \
-	guides( color = guide_legend( title = 'Pylum' ))
+	guides( color = guide_legend( title = 'Phylum' ))
 ```
 
 ![colored_by_phylum](img/col_phylum.svg)
