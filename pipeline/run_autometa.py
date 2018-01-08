@@ -59,7 +59,7 @@ def length_trim(fasta,length_cutoff):
 	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	return output_path
 
-def make_contig_table(fasta, coverage_table):
+def make_contig_table(fasta, coverage_table=None):
 	# Fasta is an absolute path
 	output_filename = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + '.tab'
 	output_path = output_dir + '/' + output_filename
