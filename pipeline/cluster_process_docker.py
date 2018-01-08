@@ -99,7 +99,7 @@ if do_taxonomy:
 # Construct docker run command
 docker_command = 'docker run --volume {}:/output:rw --detach=false --rm'.format(output_dir_absolute)
 
-if db_dir_path:
+if db_dir:
 	docker_command = docker_command + ' --volume {}:/databases:rw'.format(db_dir_absolute)
 
 docker_command = docker_command + ' autometa:run'
