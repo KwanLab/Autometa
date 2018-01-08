@@ -92,7 +92,7 @@ forward_read_path_list = args['forward_reads']
 reverse_read_path_list = args['reverse_reads']
 single_read_path_list = args['single_reads']
 
-output_dir = arg['output_dir']
+output_dir = args['output_dir']
 
 if not os.path.isfile(assembly_file):
     print ('Error! Could not find assembly file at the following path: ' + assembly_file)
