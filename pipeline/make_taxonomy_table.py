@@ -126,7 +126,7 @@ def length_trim(fasta_path,length_cutoff):
 
 def run_prodigal(path_to_assembly):
 	assembly_filename = os.path.abspath(path_to_assembly).split('/')[-1]
-	assembly_basename = '.'.join(assembly_filename).split('.')[:-1]
+	assembly_basename = '.'.join(assembly_filename.split('.')[:-1])
 	output_path = output_dir + '/' + assembly_basename + '.orfs.faa'
 	if os.path.isfile(output_path):
 		print "{} file already exists!".format(output_path)
