@@ -52,7 +52,12 @@ if not (forward_read_path_list or reverse_read_path_list or single_read_path_lis
     exit(1)
 
 # Check that all read paths exist
-concatenated_read_path_list = forward_read_path_list + reverse_read_path_list + single_read_path_list
+if forward_read_path_list:
+	concatenated_read_path_list = forward_read_path_list
+if reverse_read_path_list:
+	concatenated_read_path_list = concatenated_read_path_list + reverse_read_path_list
+if single_read_path_list:
+	concatenated_read_path_list = concatenated_read_path_list + single_read_path_list
 for path in concatenated_read_path_list:
     if not os.path.isfile(path):
         print('Error! Cannot find the read file: ' + path)
