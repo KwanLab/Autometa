@@ -1,7 +1,7 @@
 Autometa
 ========
 
-An automated pipeline to deconvolute single metagenomic assemblies to separate individual bacterial and archaeal genomes. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
+An automated pipeline which deconvolutes single metagenomic assemblies to separate individual bacterial and archaeal genomes. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
 
 Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2018**, xx
 
@@ -15,7 +15,7 @@ Third party programs
 * [DIAMOND](https://github.com/bbuchfink/diamond) (Tested with v0.7.9.58)
 * [Anaconda Python](https://www.anaconda.com)
 
-Databases (these will be automatically downloaded the first time you run make\_taxonomy\_table.py)
+Databases (these will be automatically downloaded the first time you run make\_taxonomy\_table.py). NOTE: You will need ~150 GB (at time of writing) to download and process these.
 
 * [nr](ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz) (Note: tested with newer NR versions without GI numbers)
 * [taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
@@ -37,7 +37,7 @@ Additionally, if you want to calculate your own contig coverages (rather than tr
 Installation
 ------------
 
-The following was tested on a new install of Ubuntu Server 16.04.3 LTS.
+The following was tested on the Autometa [Docker](https://www.docker.com) container, which is based on the [Anaconda Docker container](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
 
 First we install Prodigal, HMMER and DIAMOND.
 
@@ -93,7 +93,7 @@ cd autometa
 docker build -t "autometa:run" .
 ```
 
-This will download a load of stuff and set up the image for you on your system. NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
+This will download a load of stuff and set up the image for you on your system (~3 GB). NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
 
 After you have built the Docker image, you can run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
 
