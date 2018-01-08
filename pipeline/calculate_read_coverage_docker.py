@@ -66,6 +66,8 @@ for path in concatenated_read_path_list:
 if not os.path.isdir(output_dir):
 	os.makedirs(output_dir)
 
+output_dir = os.path.abspath(output_dir)
+
 # If the fasta file is not in the output dir, we copy it to the output dir
 assembly_file_absolute = os.path.abspath(assembly_file)
 assembly_dir = '/'.join(assembly_file_absolute.split('/')[:-1])
