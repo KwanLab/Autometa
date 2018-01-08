@@ -94,7 +94,7 @@ if forward_read_path_list:
 		read_filename = read_abs_path.split('/')[-1]
 		if read_dir not in read_directories:
 			read_directory_counter += 1
-			docker_dir_name = 'reads_dir_' + str(read_directory_counter)
+			docker_dir_name = '/reads_dir_' + str(read_directory_counter)
 			read_directories[read_dir] = docker_dir_name
 		docker_forward_read_path_list.append(read_directories[read_dir] + '/' + read_filename)
 	for path in reverse_read_path_list:
@@ -103,7 +103,7 @@ if forward_read_path_list:
 		read_filename = read_abs_path.split('/')[-1]
 		if read_dir not in read_directories:
 			read_directory_counter += 1
-			docker_dir_name = 'reads_dir_' + str(read_directory_counter)
+			docker_dir_name = '/reads_dir_' + str(read_directory_counter)
 			read_directories[read_dir] = docker_dir_name
 		docker_reverse_read_path_list.append(read_directories[read_dir] + '/' + read_filename)
 
@@ -114,7 +114,7 @@ if single_read_path_list:
 		read_filename = read_abs_path.split('/')[-1]
 		if read_dir not in read_directories:
 			read_directory_counter += 1
-			docker_dir_name = 'reads_dir_' + str(read_directory_counter)
+			docker_dir_name = '/reads_dir_' + str(read_directory_counter)
 			read_directories[read_dir] = docker_dir_name
 		docker_single_read_path_list.append(read_directories[read_dir] + '/' + read_filename)
 
