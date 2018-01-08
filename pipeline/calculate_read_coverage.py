@@ -29,8 +29,7 @@ parser.add_argument('-p','--processors', metavar='<int>', help='Number of proces
 parser.add_argument('-F','--forward_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) forward reads (must be in same order as reverse list)', nargs='*')
 parser.add_argument('-R','--reverse_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) reverse reads (must be in same order as forward list)', nargs='*')
 parser.add_argument('-S','--single_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Single (*.fastq|*.fastq.gz) reads', nargs='*')
-parser.add_argument('-o','--out', metavar='<output.tab>', help='Tab delimited table for contig and average\
-    read coverage', default="outfile.tab")
+parser.add_argument('-o','--output_dir', metavar='<dir>', help='Path to output directory', default='.')
 args = vars(parser.parse_args())
 
 def run_command(command_string, stdout_path = None):
@@ -67,7 +66,8 @@ def run_bowtie2(path_to_assembly,paths_to_F_reads,paths_to_R_reads,paths_to_S_re
 
 	#When "shell = True", need to give one string, not a list
     #Build bowtie2 database
-    bowtie2_db = os.path.splitext(os.path.basename(path_to_assembly))[0]
+    assembly_filename = os.path.abspath(path_to_assembly).split('/')[-1]
+    bowtie2_db = output_dir + '/' + assembly_filename
     run_command(" ".join(['bowtie2-build ',path_to_assembly, bowtie2_db]))
     #Run bowtie2 alignment
     sam_file_name = bowtie2_db + '.sam'
@@ -88,15 +88,17 @@ def run_bowtie2(path_to_assembly,paths_to_F_reads,paths_to_R_reads,paths_to_S_re
 
 #1. Align the comparison dataset reads to your assembly with bowtie2.
 assembly_file = args['assembly']
-assembly_file_prefix = os.path.splitext(os.path.basename(assembly_file))[0]
-
 forward_read_path_list = args['forward_reads']
 reverse_read_path_list = args['reverse_reads']
 single_read_path_list = args['single_reads']
 
+output_dir = arg['output_dir']
+
 if not os.path.isfile(assembly_file):
     print ('Error! Could not find assembly file at the following path: ' + assembly_file)
     exit(1)
+
+assembly_filename = os.path.abspath(assembly_file).split('/')[-1]
 
 # Check that at least one of the above lists is not empty
 if not (forward_read_path_list or reverse_read_path_list or single_read_path_list):
@@ -115,10 +117,14 @@ for path in concatenated_read_path_list:
         print('Error! Cannot find the read file: ' + path)
         exit(1)
 
+# Check that the output dir exists
+if not os.path.isdir(output_dir):
+    os.makedirs(output_dir)
+
 sam_file = run_bowtie2(assembly_file,forward_read_path_list,reverse_read_path_list,single_read_path_list,args['processors'])
 
 #2. Convert the SAM file to a sorted BAM file, and create a BAM index.
-sorted_bam_file = assembly_file_prefix + ".sort.bam"
+sorted_bam_file = output_dir + '/' + assembly_filename + '.sort.bam'
 run_command('samtools view -bS {} | samtools sort -o {}'.format(sam_file, sorted_bam_file))
 
 #Clean up the SAM file, which will be a lot larger than the sorted BAM file
@@ -127,15 +133,15 @@ run_command('rm ' + sam_file)
 #3. Tabulate the average coverage of each contig.
 
 #Run fasta_length_table.pl
-contig_length_tab_file = assembly_file_prefix + ".tab"
+contig_length_tab_file = output_dir + '/' + assembly_filename + '.tab'
 run_command('fasta_length_table.pl ' + assembly_file, contig_length_tab_file)
 
 #Run genomeCoverageBed
-genome_bed_file = assembly_file_prefix + ".txt"
+genome_bed_file = output_dir + '/' + assembly_filename + '.txt'
 run_command('genomeCoverageBed -ibam {} -g {}'.format(sorted_bam_file, contig_length_tab_file), genome_bed_file)
 
 #Build final table
-outfile = args['out']
+outfile = output_dir + '/coverage.tab'
 run_command('contig_coverage_from_bedtools.pl ' + genome_bed_file, outfile)
 
 #Future features: check for .fastq.gz, dependencies in path, default processors

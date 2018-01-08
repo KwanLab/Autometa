@@ -31,8 +31,7 @@ parser.add_argument('-p','--processors', metavar='<int>', help='Number of proces
 parser.add_argument('-F','--forward_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) forward reads (must be in same order as reverse list)', nargs='*')
 parser.add_argument('-R','--reverse_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Paired (*.fastq|*.fastq.gz) reverse reads (must be in same order as forward list)', nargs='*')
 parser.add_argument('-S','--single_reads', metavar='<reads.fastq|reads.fastq.gz>', help='Single (*.fastq|*.fastq.gz) reads', nargs='*')
-parser.add_argument('-o','--out', metavar='<output.tab>', help='Tab delimited table for contig and average\
-    read coverage', default="outfile.tab")
+parser.add_argument('-o','--output_dir', metavar='<dir>', help='Path to output directory', default='.')
 args = vars(parser.parse_args())
 
 assembly_file = args['assembly']
@@ -40,7 +39,7 @@ processors = args['processors']
 forward_read_path_list = args['forward_reads']
 reverse_read_path_list = args['reverse_reads']
 single_read_path_list = args['single_reads']
-outfile = args['out']
+output_dir = args['output_dir']
 
 if not os.path.isfile(assembly_file):
 	print ('Error! Could not find assembly file at the following path: ' + assembly_file)
@@ -62,11 +61,6 @@ for path in concatenated_read_path_list:
     if not os.path.isfile(path):
         print('Error! Cannot find the read file: ' + path)
         exit(1)
-
-# We will use the path for the output.tab as showing us which output dir to use
-outfile_absolute = os.path.abspath(outfile)
-output_dir = '/'.join(outfile_absolute.split('/')[:-1])
-outfile_filename = outfile_absolute.split('/')[-1]
 
 # We have to create the output dir if it doesn't exist
 if not os.path.isdir(output_dir):
@@ -119,8 +113,8 @@ if single_read_path_list:
 		docker_single_read_path_list.append(read_directories[read_dir] + '/' + read_filename)
 
 # Construct the calculate_read_coverage.py command
-calculate_read_coverage_command = 'calculate_read_coverage.py --assembly /output/{} --processors {} --out /output/{}'.format(\
-	assembly_filename, processors, outfile_filename)
+calculate_read_coverage_command = 'calculate_read_coverage.py --assembly /output/{} --processors {} --output_dir /output'.format(\
+	assembly_filename, processors)
 
 if docker_forward_read_path_list:
 	calculate_read_coverage_command = calculate_read_coverage_command + ' --forward_reads ' + ' '.join(docker_forward_read_path_list)
