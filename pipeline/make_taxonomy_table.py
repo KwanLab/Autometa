@@ -117,20 +117,21 @@ def update_dbs(database_path, db='all'):
 			run_command('rm {}/taxdump.tar.gz'.format(database_path))
 			print("nodes.dmp and names.dmp updated")
 
-def length_trim(fasta_path,fasta_prefix,length_cutoff):
+def length_trim(fasta_path,length_cutoff):
+	input_filename = '.'.join(os.path.abspath(fasta_path).split('/')[-1].split('.')[:-1])
 	#Trim the length of fasta file
-	outfile_name = str(fasta_prefix) + "_filtered.fasta"
-	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta_path, length_cutoff, outfile_name))
-	return outfile_name
+	outfile_path = output_dir + '/' + input_filename + "_filtered.fasta"
+	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta_path, length_cutoff, outfile_path))
+	return outfile_path
 
 def run_prodigal(path_to_assembly):
-	#When "shell = True", need to give one string, not a list
-	prodigal_output = path_to_assembly.split('.')[0] + '.orfs.faa'
-	if os.path.isfile(prodigal_output):
-		print "{} file already exists!".format(prodigal_output)
+	assembly_filename = os.path.abspath(path_to_assembly).split('/')[-1]
+	assembly_basename = '.'.join(assembly_filename).split('.')[:-1]
+	if os.path.isfile(output_path):
+		print "{} file already exists!".format(output_path)
 		print "Continuing to next step..."
 	else:
-		run_command('prodigal -i {} -a {}.orfs.faa -p meta -m -o {}.txt'.format(path_to_assembly, path_to_assembly.split(".")[0], path_to_assembly.split(".")[0]))
+		run_command('prodigal -i {} -a {}.orfs.faa -p meta -m -o {}.txt'.format(path_to_assembly, assembly_basename, assembly_basename))
 
 def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
@@ -144,7 +145,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
-	output = input_file.rstrip(".tab") + ".lca"
+	output = '.'.join(os.path.abspath(input_file).split('/')[-1].split('.')[:-1]) + ".lca"
 	if os.path.isfile(output):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
@@ -162,12 +163,10 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,cover
 			run_command("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table))
 		else:
 			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
+		
+	run_command("{}/add_contig_taxonomy.py {} {} {} {}/taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path, output_dir))
 
-	if coverage_table:		
-		run_command("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path))
-	else:
-	   run_command("{}/add_contig_taxonomy.py {} {} {} taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path))
-	return 'taxonomy.tab'
+	return output_dir + '/' + 'taxonomy.tab'
 
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
@@ -191,13 +190,14 @@ db_dir_path = args['db_dir'].rstrip('/')
 num_processors = args['processors']
 length_cutoff = args['length_cutoff']
 fasta_path = args['assembly']
-fasta_assembly_prefix = os.path.splitext(os.path.basename(args['assembly']))[0]
-prodigal_output = fasta_assembly_prefix + "_filtered.orfs"
-prodigal_daa = prodigal_output + ".daa"
-#add_contig_path = pipeline_path
-filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
 output_dir = args['output_dir']
+
+fasta_filename = os.path.abspath(fasta_path).split('/')[-1]
+
+prodigal_output = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.orfs"
+prodigal_daa = prodigal_output + ".daa"
+filtered_assembly = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.fasta"
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -245,7 +245,7 @@ if args['update']:
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
 	#Check for file and if it doesn't exist run make_marker_table
-	length_trim(fasta_path, fasta_assembly_prefix, length_cutoff)
+	length_trim(fasta_path, length_cutoff)
 	run_prodigal(filtered_assembly)
 
 if not os.path.isfile(prodigal_output + ".daa"):

@@ -53,7 +53,7 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 
 def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
-	outfile_name = os.path.basename(fasta).split(".")[0] + "_filtered.fasta"
+	outfile_name = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + "_filtered.fasta"
 	output_path = output_dir + '/' + outfile_name
 	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
@@ -61,7 +61,8 @@ def length_trim(fasta,length_cutoff):
 
 def make_contig_table(fasta, coverage_table):
 	# Fasta is an absolute path
-	output_path = '.'.join(fasta.split('.')[:-1]) + '.tab'
+	output_filename = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + '.tab'
+	output_path = output_dir + '/' + output_filename
 	if coverage_table:
 		logger.info("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
 		run_command("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
@@ -79,7 +80,8 @@ def make_marker_table(fasta):
 		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
 
 	#need to add processors to this script
-	output_path = '.'.join(fasta.split('.')[:-1]) + '_marker.tab'
+	output_filename = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + '_marker.tab'
+	output_path = output_dir + '/' + output_filename
 	if os.path.isfile(output_path):
 		print "{} file already exists!".format(output_path)
 		print "Continuing to next step..."
@@ -145,14 +147,6 @@ def ML_recruitment(input_table, matrix):
 
 	return ML_recruitment_output_path
 
-#logger
-logger = logging.getLogger('run_autometa.py')
-hdlr = logging.FileHandler('run_autometa.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
-
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the Autometa pipeline.",\
  epilog="Please do not forget to cite us. Thank you for using Autometa!",\
@@ -184,6 +178,14 @@ do_ML_recruitment = args['ML_recruitment']
 make_tax_table = args['maketaxtable']
 db_dir_path = args['db_dir']
 cov_table = args['cov_table']
+
+#logger
+logger = logging.getLogger(output_dir + '/run_autometa.py')
+hdlr = logging.FileHandler(output_dir + '/run_autometa.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
 
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
@@ -238,7 +240,7 @@ filtered_assembly = length_trim(fasta_assembly, length_cutoff)
 if cov_table:
 	contig_table = make_contig_table(filtered_assembly, cov_table)
 else:
-	contig_table = make_contig_table(filtered_assembly, cov_table)
+	contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 
 # Make combined table

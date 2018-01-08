@@ -7,6 +7,7 @@
 #    In descending order of votes:
 #        If classification shares common ancestry with majority of other proteins, accept result
 #    If no result, move up to next taxonomic level
+# Uses output from program blast2lca (https://github.com/emepyc/Blast2lca)
 
 import sys
 from time import *
