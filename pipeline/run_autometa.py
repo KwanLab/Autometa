@@ -270,6 +270,18 @@ elif not taxonomy_table_path and make_tax_table:
 else:
 	combined_table_path = combine_tables(contig_table, marker_tab_path)
 
+# If we carried out make_taxonomy_table.py, we now should use the appropriate kingdom bin instead of the raw
+# input fasta
+if make_tax_table:
+	# First, check that the expected kingdom bin is there
+	expected_kingdom_bin_path = output_dir + '/' + kingdom.title() + '.fasta'
+	if (not os.path.isfile(expected_kingdom_bin_path)) or os.stat(expected_kingdom_bin_path).st_size == 0:
+		print('Error! Something has gone wrong in the make_taxonomy_table.py stage - file ' + expected_kingdom_bin_path + ' is either not there or empty')
+		exit(1)
+
+	# Now change the input fasta to the output of make_taxonomy_table.py
+	filtered_assembly = expected_kingdom_bin_path 
+
 recursive_dbscan_output, matrix_file = recursive_dbscan(combined_table_path, filtered_assembly, kingdom)
 
 if do_ML_recruitment:
