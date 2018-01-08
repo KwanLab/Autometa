@@ -109,7 +109,7 @@ if cov_table:
 	else:
 		cov_table_absolute = os.path.abspath(cov_table)
 		cov_table_directory = '/'.join(cov_table_absolute.split('/')[:-1])
-		cov_table_filename = cov_table_absolute.split('/')[1]
+		cov_table_filename = cov_table_absolute.split('/')[-1]
 		if output_dir_absolute != cov_table_directory:
 			run_command('cp ' + cov_table_absolute + ' ' + output_dir_absolute + '/')
 
