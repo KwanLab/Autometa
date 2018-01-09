@@ -254,8 +254,8 @@ if taxonomy_table_path and not make_tax_table:
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif taxonomy_table_path and make_tax_table:
 	if not os.path.isfile(taxonomy_table_path):
-		print "Could not find {}, running make_taxonomy_table.py".format(make_tax_table_path)
-		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(make_tax_table_path))
+		print "Could not find {}, running make_taxonomy_table.py".format(taxonomy_table_path)
+		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(taxonomy_table_path))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
