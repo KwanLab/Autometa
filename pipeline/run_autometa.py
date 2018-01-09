@@ -45,10 +45,16 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
 	# Note we don't have to supply the cov_table here because earlier in this script we already run make_contig_table.py
 	output_path = output_dir + '/taxonomy.tab'
-	logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {}".\
-		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
-	run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {}".\
-		format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
+	if cov_table:
+		logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {} -v {}".\
+			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir, cov_table))
+		run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {} -v {}".\
+			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir, cov_table))
+	else:
+		logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {}".\
+			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
+		run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {}".\
+			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
 	return output_path
 
 def length_trim(fasta,length_cutoff):
@@ -248,8 +254,8 @@ if taxonomy_table_path and not make_tax_table:
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif taxonomy_table_path and make_tax_table:
 	if not os.path.isfile(taxonomy_table_path):
-		print "Could not find {}, running make_taxonomy_table.py".format(make_tax_table)
-		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(make_tax_table))
+		print "Could not find {}, running make_taxonomy_table.py".format(make_tax_table_path)
+		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(make_tax_table_path))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)

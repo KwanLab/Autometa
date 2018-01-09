@@ -146,7 +146,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
-	output = '.'.join(os.path.abspath(input_file).split('/')[-1].split('.')[:-1]) + ".lca"
+	output = output_dir + '/' + '.'.join(os.path.abspath(input_file).split('/')[-1].split('.')[:-1]) + ".lca"
 	if os.path.isfile(output):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."

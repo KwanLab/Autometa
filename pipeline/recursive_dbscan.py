@@ -350,14 +350,14 @@ console.setFormatter(formatter)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(console)
 
-master_table = pd.read_table(input_table_path)
-master_table['bh_tsne_x'] = 0
-master_table['bh_tsne_y'] = 0
+input_master_table = pd.read_table(input_table_path)
+input_master_table['bh_tsne_x'] = 0
+input_master_table['bh_tsne_y'] = 0
 
 # Load fasta sequences
 assembly_seqs = {}
 for seq_record in SeqIO.parse(input_fasta_path, 'fasta'):
-	assembly_seqs[seq_record.id] = seq_record
+	assembly_seqs[str(seq_record.id)] = seq_record
 
 # Count K-mer frequencies
 k_mer_size = 5
@@ -442,6 +442,16 @@ else:
 
 ### Collate training data for ML steps later
 # We now set up global data structures to be used in supervised machine learning
+
+# We need to subset the table, because under some circumstances the table could have more rows than the input fasta
+rows_of_interest = list()
+for index, row in input_master_table.iterrows():
+	contig = row['contig']
+	if contig in assembly_seqs:
+		rows_of_interest.append(index)
+
+master_table = input_master_table[rows_of_interest]
+
 contig_list = master_table['contig'].tolist()
 coverage_list = master_table['cov'].tolist()
 taxonomy_matrix = list()
