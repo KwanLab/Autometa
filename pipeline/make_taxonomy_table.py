@@ -10,7 +10,7 @@ import urllib2
 
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
-	print('calculate_read_coverage.py, run_command: ' + command_string)
+	print('make_taxonomy_table.py, run_command: ' + command_string)
 	if stdout_path:
 		f = open(stdout_path, 'w')
 		exit_code = subprocess.call(command_string, stdout=f, shell=True)
@@ -148,7 +148,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
 	output = output_dir + '/' + '.'.join(os.path.abspath(input_file).split('/')[-1].split('.')[:-1]) + ".lca"
-	if os.path.isfile(output):
+	if os.path.isfile(output) and not os.stat(prodigal_output + ".lca").st_size == 0:
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
 	else:
