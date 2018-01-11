@@ -450,7 +450,7 @@ for index, row in input_master_table.iterrows():
 	if contig in assembly_seqs:
 		rows_of_interest.append(index)
 
-master_table = input_master_table[rows_of_interest]
+master_table = input_master_table.iloc[rows_of_interest]
 
 contig_list = master_table['contig'].tolist()
 coverage_list = master_table['cov'].tolist()
