@@ -1,7 +1,7 @@
 Autometa
 ========
 
-An automated pipeline which deconvolutes single metagenomic assemblies to separate individual bacterial and archaeal genomes. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
+An automated binning pipeline for single metagenomes, in particular host-associated and highly complex ones. Autometa is free to use for academic and non-commercial users (see LICENSE.md). For commercial use contact [Jason Kwan](mailto:jason.kwan@wisc.edu). If you find Autometa useful to your work, please cite:
 
 Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. *bioRxiv*, **2018**, xx
 
@@ -10,9 +10,9 @@ Dependencies
 
 Third party programs
 
-* [Prodigal](https://github.com/hyattpd/prodigal/releases/) (Tested with v2.6.2)
-* [HMMER](http://hmmer.org) (Tested with v3.1b2)
-* [DIAMOND](https://github.com/bbuchfink/diamond) (Tested with v0.7.9.58)
+* [Prodigal](https://github.com/hyattpd/prodigal/releases/)
+* [HMMER](http://hmmer.org)
+* [DIAMOND](https://github.com/bbuchfink/diamond)
 * [Anaconda Python](https://www.anaconda.com)
 
 Databases (these will be automatically downloaded the first time you run make\_taxonomy\_table.py). NOTE: You will need ~150 GB (at time of writing) to download and process these.
@@ -37,7 +37,7 @@ Additionally, if you want to calculate your own contig coverages (rather than tr
 Installation
 ------------
 
-The following was tested on the Autometa [Docker](https://www.docker.com) container, which is based on the [Anaconda Docker container](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
+The following was tested on the Autometa [Docker](https://www.docker.com) image, which is based on the [Anaconda Docker image](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
 
 First we install Prodigal, HMMER and DIAMOND.
 
@@ -54,8 +54,16 @@ At this point you should add the diamond directory to your $PATH environmental v
 If you want to calculate coverages, then also install bowtie2, samtools and bedtools:
 
 ```
-sudo apt-get install bowtie2 samtools bedtools
+sudo apt-get install bowtie2 bedtools
+wget https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2
+tar -vxjf samtools-1.6.tar.bz2
+cd samtools-1.6
+./configure --prefix=~/samtools
+make
+make install
 ```
+
+You should add the ~/samtools/bin folder to your $PATH environmental variable.
 
 Install Anaconda Python.
 
@@ -93,7 +101,7 @@ cd autometa
 docker build -t "autometa:run" .
 ```
 
-This will download a load of stuff and set up the image for you on your system (~3 GB). NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
+This will download a load of stuff and set up the image for you on your system (~3.5 GB). NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
 
 After you have built the Docker image, you can run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
 
@@ -119,8 +127,10 @@ NODE_1_length_319818_cov_8.03695
 
 ```
 calculate_read_coverage.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
-	--forward_reads reads_R1.fastq.gz --reverse_reads reads_R2.fastq.gz --out coverage.tab
+	--forward_reads reads_R1.fastq.gz --reverse_reads reads_R2.fastq.gz
 ```
+
+The above command will produce a table called coverage.tab, containing the coverages of each contig in the assembly file.
 
 Here we demonstrate the use of Autometa with the test dataset:
 
@@ -128,7 +138,7 @@ Here we demonstrate the use of Autometa with the test dataset:
 autometa/test_data/scaffolds.fasta
 ```
 
-This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper. For your convenience we have also included a pre-calculated coverage table that you try out below.
+This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper. For your convenience we have also included a pre-calculated coverage table that you can try out below.
 
 ```
 autometa/test_data/coverage.tab
@@ -136,7 +146,7 @@ autometa/test_data/coverage.tab
 
 ### Step 1: Split data into kingdom bins [optional]
 
-We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive.
+We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive. 
 
 ```
 make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
@@ -145,14 +155,14 @@ make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --process
 
 If you want to use an external coverage table (see above), you can use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
 
-The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. 
+The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. In our testing, the above command took 9.8 hours to run on 16 CPUs the first time (where databases had to be downloaded and compiled), and 7.8 hours when the databases had already been downloaded. Of course, your mileage will vary depending on connection speed, computational specifications, etc., although the most important determinant of the time required will be the complexity of the input dataset.
 
-This script will do the following:
+Make\_taxonomy\_table.py will do the following:
 
-1. Genes are identified in each contig with Prodigal.
-2. Gene protein sequences are searched against nr with DIAMOND.
-3. From the hits for each gene, the lowest common ancestor (LCA) is determined.
-4. The taxonomy of each contig is determined by examining the LCA of each component protein (see paper for details)
+1. Identify genes in each contig with Prodigal.
+2. Search gene protein sequences against nr with DIAMOND.
+3. Determine the lowest common ancestor (LCA) of blast hits within 10% of the top bitscore.
+4. Determine the taxonomy of each contig by examining the LCA of each component protein (see paper for details)
 
 #### Output files produced by make\_taxonomy\_table.py
 
@@ -187,7 +197,7 @@ If you want to use an external coverage table, use the --cov_table flag to speci
 In the above command, we are supplying Bacteria.fasta to Autometa, and also the taxonomy table (taxonomy.tab) produced in step 1. If we supply a taxonomy table, then this information is used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. We are using the default output directory of the current working directory (this can be set with the --output_dir flag), and by default the pipeline assumes we are looking at bacterial contigs (use --kingdom archaea otherwise). The script will do the following:
 
 1. Find single-copy marker genes in the input contigs with HMMER
-2. Generate two-dimensional BH-tSNE coordinates for each contig based on 5-mer frequencies
+2. Reduce the dimensions of 5-mer frequencies to two through [BH-tSNE](https://lvdmaaten.github.io/tsne/) for each contig
 3. Cluster contigs based on BH-tSNE coordinates, coverage and (optionally) taxonomy
 4. Accept clusters that are estimated to be over 20% complete and 90% pure based on single-copy marker genes
 5. Unclustered contigs leftover will be re-clustered until no more acceptable clusters are yielded
@@ -213,7 +223,7 @@ ML_recruitment.py --contig_tab recursive_dbscan_output.tab --recursive \
 	--k_mer_matrix k-mer_matrix --out_table ML_recruitment_output.tab
 ```
 
-In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. 
+In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and only if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. 
 
 The specified output file is a table with the following columns:
 
@@ -252,7 +262,7 @@ In the above command, the '--maketaxtable' flag tells run\_autometa.py to run ma
 Analysis of results
 -------------------
 
-At the end of the above process, you will have a master table which describes each contig in your metagenome, including which bin each was assigned to. However, this does not directly tell you much about each bin, so you can further process your data with the following command:
+At the end of the above process, you will have a master table (either recursive\_dbscan\_output.tab or ML\_recruitment\_output.tab) which describes each contig in your metagenome, including which bin each was assigned to. However, this does not directly tell you much about each bin, so you can further process your data with the following command:
 
 ```
 cluster_process.py --bin_table ML_recruitment_output.tab --column ML_expanded_clustering \
@@ -328,4 +338,4 @@ ggplot( data, aes( x = cov, y = gc, col = ML_expanded_clustering )) + \
 
 ![gc_cov_col_cluster](img/gc_cov_col_cluster.svg)
 
-In the above plot, the points are colored by cluster/bin again, and you can see that in this case, coverage is not much of a distinguishing feature. In other datasets, you may see closely related genomes at different coverages, which are separatable by Autometa.
+In the above plot, the points are colored by cluster/bin again, and you can see that in this case, coverage is not much of a distinguishing feature. In other datasets, you may see closely related genomes at different coverages, which will be separatable by Autometa.
