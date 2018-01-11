@@ -69,21 +69,18 @@ def Extract_blast(blast_file, bitscore_filter=0.9):
         blast_dict = dict()
         temp_orf_list = list()
         for line in blast_file:
-            match = re.search(r'(NODE_\d*_length_\d*_cov_\d*\.\d*_\d*)\s+(\S+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+\.\d)',line)
-            if match:
-                orf = match.group(1)
-                if orf in temp_orf_list:
-                    bitscore = float(match.group(3))
-                    if bitscore >= bitscore_filter*topbitscore:
-                        accession_num = match.group(2)
-                        blast_dict[orf].append(accession_num)
-                else:
-                    accession_num = match.group(2)
-                    bitscore = float(match.group(3))
-                    blast_dict[orf] = [accession_num]
-                    topbitscore = bitscore
-                    temp_orf_list = []
-                    temp_orf_list.append(orf)
+            line_list = line.rstrip().split('\t')
+            bitscore = float(line_list[11])
+            accession_num = line_list[1]
+            orf = line_list[0]
+
+            if orf in temp_orf_list:
+                if bitscore >= bitscore_filter * topbitscore:
+                    blast_dict[orf].append(accession_num)
+            else:
+                blast_dict[orf] = [accession_num]
+                topbitscore = bitscore
+                temp_orf_list = [orf]
     return(blast_dict)
 
 def Convert_accession2taxid(accession2taxid_dict, blast_dict):
