@@ -64,13 +64,13 @@ def Preprocess(level_array):
     return(sparse_table)
 
 def Extract_blast(blast_file, bitscore_filter=0.9):
-    "Returns a dictionary of accession numbers extracted from blast output file\ndefault bitscore filter takes orfs from >90% of top bitscore"
+    "Returns a dictionary of accession numbers extracted from BLAST std format outfile\ndefault bitscore filter takes orfs from >90% of top bitscore"
     with open(blast_file,"r") as blast_file:
         blast_dict = dict()
         temp_orf_list = list()
         for line in blast_file:
             line_list = line.rstrip().split('\t')
-            bitscore = float(line_list[11])
+            bitscore = float(line_list[-1])
             accession_num = line_list[1]
             orf = line_list[0]
 
