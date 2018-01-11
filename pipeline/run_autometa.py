@@ -12,7 +12,7 @@ import logging
 
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
-	print('calculate_read_coverage.py, run_command: ' + command_string)
+	logger.info('run_autometa.py, run_command: ' + command_string)
 	if stdout_path:
 		f = open(stdout_path, 'w')
 		exit_code = subprocess.call(command_string, stdout=f, shell=True)
@@ -47,14 +47,10 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 	# Note we don't have to supply the cov_table here because earlier in this script we already run make_contig_table.py
 	output_path = output_dir + '/taxonomy.tab'
 	if cov_table:
-		logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {} -v {}".\
-			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir, cov_table))
-		run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {} -v {}".\
+		run_command("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {} -v {}".\
 			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir, cov_table))
 	else:
-		logger.info("{}/make_taxonomy_table.py  -a {} -db {} -p {} -l {} -o {}".\
-			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
-		run_command_quiet("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {}".\
+		run_command("{}/make_taxonomy_table.py -a {} -db {} -p {} -l {} -o {}".\
 			format(pipeline_path, fasta, db_dir_path, processors, length_cutoff, output_dir))
 	return output_path
 
@@ -62,7 +58,6 @@ def length_trim(fasta,length_cutoff):
 	#will need to update path of this perl script
 	outfile_name = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + "_filtered.fasta"
 	output_path = output_dir + '/' + outfile_name
-	logger.info("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta, length_cutoff,output_path))
 	return output_path
 
@@ -71,10 +66,8 @@ def make_contig_table(fasta, coverage_table=None):
 	output_filename = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + '.tab'
 	output_path = output_dir + '/' + output_filename
 	if coverage_table:
-		logger.info("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
 		run_command("{}/make_contig_table.py -a {} -c {} -o {}".format(pipeline_path,fasta,coverage_table,output_path))
 	else:
-		logger.info("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path))
 		run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path,fasta,output_path))
 	return output_path
 
@@ -97,10 +90,7 @@ def make_marker_table(fasta):
 	else:
 		print "Making the marker table with prodigal and hmmscan. This could take a while..."
 		logger.info('Making the marker table with prodigal and hmmscan. This could take a while...')
-		logger.info("hmmpress -f {}".format(hmm_marker_path))
 		run_command_quiet("hmmpress -f {}".format(hmm_marker_path))
-		logger.info("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
-			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors))
 		run_command_quiet("{}/make_marker_table.py -a {} -m {} -c {} -o {} -p {}".\
 			format(pipeline_path,fasta, hmm_marker_path, hmm_cutoffs_path,output_path, processors))
 	return output_path
@@ -108,7 +98,6 @@ def make_marker_table(fasta):
 def recursive_dbscan(input_table, filtered_assembly, domain):
 	recursive_dbscan_output_path = output_dir + '/recursive_dbscan_output.tab'
 	k_mer_file = output_dir + '/k-mer_matrix'
-	logger.info("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain))
 	run_command("{}/recursive_dbscan.py -t {} -a {} -d {} -k {}".format(pipeline_path, input_table, filtered_assembly, output_dir, domain))
 
 	return recursive_dbscan_output_path, k_mer_file
@@ -149,7 +138,6 @@ def combine_tables(table1_path, table2_path):
 
 def ML_recruitment(input_table, matrix):
 	ML_recruitment_output_path = output_dir + '/ML_recruitment_output.tab'
-	logger.info("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
 	run_command("{}/ML_recruitment.py -t {} -p {} -r -m {} -o {}".format(pipeline_path, input_table, processors, matrix, ML_recruitment_output_path))
 
 	return ML_recruitment_output_path
