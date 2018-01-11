@@ -32,7 +32,8 @@ def run_BH_tSNE(table, do_pca=True):
 	# We make a submatrix, consisting of the contigs in the table
 	k_mer_counts_submatrix = list()
 	for i,row in table.iterrows():
-		k_mer_counts_submatrix.append(k_mer_counts[i])
+		contig = row['contig']
+		k_mer_counts_submatrix.append(k_mer_dict[contig])
 
 	normalized_k_mer_submatrix = normalizeKmers(k_mer_counts_submatrix)
 
@@ -456,10 +457,10 @@ contig_list = master_table['contig'].tolist()
 coverage_list = master_table['cov'].tolist()
 taxonomy_matrix = list()
 
-# Make normalized k-mer matrix
-k_mer_counts = list()
-for contig in contig_list:
-	k_mer_counts.append(k_mer_dict[contig])
+## Make normalized k-mer matrix
+#k_mer_counts = list()
+#for contig in contig_list:
+#	k_mer_counts.append(k_mer_dict[contig])
 
 #normalized_k_mer_matrix = normalizeKmers(k_mer_counts)
 
