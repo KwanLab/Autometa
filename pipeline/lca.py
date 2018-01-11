@@ -16,6 +16,7 @@ import os
 from functools import reduce
 from itertools import chain
 from sys import argv, exit
+import subprocess
 
 try:
     import lca_functions
@@ -45,7 +46,7 @@ epilog='''The LCA analysis output will be directed to run_taxonomy.py\n\n\
 
 NOTE:\nLCA analysis will produce best results when database files are up to date.\n\
 Database files can be automatically updated before performing LCA analysis by specifying:\n\
-\"lca.py [-f] [-fail_info] database_directory <path to database directory> -update <BLAST output>\"\n\n\
+\"lca.py [-f][-fail_info] database_directory <path to database directory> -update <BLAST output>\"\n\n\
 
 Up to date versions of nodes.dmp and names.dmp may be found at:\nftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz\n\n\
 prot.accession2taxid is updated weekly and may be found at:\nftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz''',
@@ -97,6 +98,17 @@ failure_tracking = args['fail_info']
 taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
 accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
 
+#Check if diamond view -a *daa -f tab -o <dmnd_out.tab> is infile
+check_blast_file_type = subprocess.check_output(['file', blast_file]).rstrip().split(":")[1].lstrip().lower()
+if check_blast_file_type != 'ascii text':
+    if check_blast_file_type == 'data':
+        print("You are supplying a diamond data file. (*daa)")
+        print("please specify the ascii formatted diamond output from \"diamond view -f tab -o <dmnd_out.tab>\"")
+        exit(1)
+    else:
+        print("Please supply the output from \"diamond view -f tab -o <dmnd_out.tab>\"")
+        exit(1)
+
 if args['update']:
     os.system('wget -v %s -O %s/taxdump.tar.gz' % (taxdump_url, taxdump_dir_path))
     os.system('tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp' % (taxdump_dir_path, taxdump_dir_path))
@@ -107,7 +119,7 @@ if args['update']:
     print("\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..." % taxdump_dir_path)
 
 start_time = time.time()
-output_filename = str(blast_file.split("/")[-1].rstrip(".tab"))
+output_filename = str(blast_file.split("/")[-1].split(".")[0])
 
 # Parse nodes file
 parents = dict()
@@ -223,13 +235,16 @@ Uses reduce and finds LCA from list of taxids from blast output
 failed_orfs = list()
 failed_taxids = list()
 lca_dict = dict()
+
 for orf, taxset in blast_taxids.iteritems():
     lca = False
     while lca == False:
+        #Need at least 2 nodes to perform reduction to lca
         if len(taxset) >= 2:
             try:
-                lca = reduce(lambda x,y: lca_functions.RangeMinQuery(node1=x, node2=y, tree=tour, sparse_table=sparse_table, level_array=level, first_occurrence_index=occurrence), taxset)
-                lca_dict[orf] = {'lca' : int(lca)}
+                #Finds the minimum in a range by providing two keys "node1=taxid1 and node2=taxid2"
+                lca = reduce(lambda taxid1, taxid2: lca_functions.RangeMinQuery(node1=taxid1, node2=taxid2, tree=tour, sparse_table=sparse_table, level_array=level, first_occurrence_index=occurrence), taxset)
+                lca_dict[orf] = {'lca':int(lca)}
             except KeyError as failed_taxid:
                 #Will raise KeyError if taxid not in tree
                 failed_taxid = str(failed_taxid)
@@ -242,10 +257,7 @@ for orf, taxset in blast_taxids.iteritems():
                 failed_orfs.append(failure_info)
                 lca = True
         elif len(taxset) == 1:
-            failed_taxid = int(taxset.pop())
-            failure_info = (orf, failed_taxid)
-            failed_taxids.append(failure_info)
-            lca = failed_taxid
+            lca = int(taxset.pop())
             lca_dict[orf] = {'lca' : lca}
         else:
             failed_taxid = taxset
@@ -255,25 +267,20 @@ for orf, taxset in blast_taxids.iteritems():
             #default lca to root
             lca = True
 
-"""
- and adds to failed_taxids list, then performs RMQ again
-When through tax ID list, it will test if LCA is given.
-(LCA Will always have at least a value of 1; breaking while loop)
-"""
-
 if failure_tracking:
     if failed_taxids:
-        with open(output_filename + "_failed_taxids.lca", "w") as failed_ids_outfile:
-            failed_ids_outfile.write('List of failed Taxids for LCA (orf\\\"t\"Tax ID)\n')
+        print("BLAST taxids do not exist in your db. please update your dbs")
+        with open(output_filename + "failed_taxids.txt", "w") as failed_ids_outfile:
             for orfs, ids in failed_taxids:
-                failed_ids_outfile.write('%s\t%s\n' % (orfs,ids))
+                failed_ids_outfile.write('%s,%s\n' % (orfs,ids))
     else:
         pass
 
     if failed_orfs:
-        with open(output_filename + "_failed_orfs.lca", "w") as failed_orfs_outfile:
+        print("BLAST taxids do not exist in your db. please update your dbs")
+        with open(output_filename + "_failed_orfs.tab", "w") as failed_orfs_outfile:
             for orfs, taxset in failed_orfs:
-                failed_orfs_outfile.write('%s\t%s\n' % (orfs, taxset))
+                failed_orfs_outfile.write('%s,%s\n' % (orfs, taxset))
     else:
         pass
 
