@@ -119,7 +119,7 @@ if args['update']:
     print("\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..." % taxdump_dir_path)
 
 start_time = time.time()
-output_filename = str(blast_file.split("/")[-1].split(".")[0])
+output_filename = str('.'.join(blast_file.split("/")[-1].split(".")[:-1]))
 
 # Parse nodes file
 parents = dict()

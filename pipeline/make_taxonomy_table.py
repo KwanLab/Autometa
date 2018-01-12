@@ -152,7 +152,7 @@ def run_blast2lca(input_file, taxdump_path):
 		print "{} file already exists!".format(output)
 		print "Continuing to next step..."
 	else:
-		run_command("{}/lca.py database_directory {} {} > {}".format(pipeline_path, db_dir_path, input_file, output))
+		run_command("{}/lca.py database_directory {} {}".format(pipeline_path, db_dir_path, input_file))
 	return output
 
 def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
