@@ -249,7 +249,7 @@ elif taxonomy_table_path and make_tax_table:
 			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
-	elif os.path.isfile(taxonomy_table_path and os.stat(taxonomy_table_path).st_size == 0):
+	elif os.path.isfile(taxonomy_table_path) and os.stat(taxonomy_table_path).st_size == 0:
 		print "{} file is empty, running make_taxonomy_table.py".format(taxonomy_table_path)
 		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(taxonomy_table_path))
 		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
