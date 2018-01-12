@@ -130,7 +130,7 @@ calculate_read_coverage.py --assembly ~/autometa/test_data/scaffolds.fasta --pro
 	--forward_reads reads_R1.fastq.gz --reverse_reads reads_R2.fastq.gz
 ```
 
-The above command will produce a table called coverage.tab, containing the coverages of each contig in the assembly file.
+The above command will produce a table called coverage.tab, containing the coverages of each contig in the assembly file. In tests, this took 4.4 hours with 16 CPUs and 127 million paired reads.
 
 Here we demonstrate the use of Autometa with the test dataset:
 
