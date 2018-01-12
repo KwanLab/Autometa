@@ -120,6 +120,7 @@ if args['update']:
 
 start_time = time.time()
 output_filename = str('.'.join(blast_file.split("/")[-1].split(".")[:-1]))
+output_dir = '/'.join(os.path.abspath(blast_file).split('/')[:-1])
 
 # Parse nodes file
 parents = dict()
@@ -315,7 +316,7 @@ for orf in lca_dict.iterkeys():
         lca_dict[orf]['rank'] = 'no rank'
         lca_dict[orf]['name'] = 'root'
 
-with open(output_filename + ".lca", "w") as lca_outfile:
+with open(output_dir + '/' + output_filename + ".lca", "w") as lca_outfile:
     for orf in lca_dict.keys():
         rank = lca_dict[orf]['rank']
         name = lca_dict[orf]['name']
