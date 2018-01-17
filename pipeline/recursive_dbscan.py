@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+#
+# This file is part of Autometa.
+#
+# Autometa is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Autometa is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from scipy import stats
@@ -18,8 +35,6 @@ import os
 #import statistics
 import argparse
 import logging
-import pdb
-
 
 def run_BH_tSNE(table, do_pca=True):
 
@@ -105,13 +120,12 @@ def runDBSCANs(table, dimensions, hmm_dictionary, domain, completeness_cutoff, p
 			current_median = np.median(completenessList)
 		else:
 			current_median = 0
-		#pdb.set_trace()
+
 		if current_median >= best_median:
 			best_median = current_median
 			best_table_so_far = dbscan_output_pd
 			best_cluster_info = cluster_info
-		#else:
-		#	break
+
 		logger.info('Median: ' + str(current_median))
 		logger.info('No. complete and pure: ' + str(len(completenessList)))
 
@@ -145,7 +159,6 @@ def runDBSCANs(table, dimensions, hmm_dictionary, domain, completeness_cutoff, p
 		if number_rounds_with_zero_clusters >= 10: # Give up if we've got up to eps 1.3 and still no complete and pure clusters
 			break
 
-	#pdb.set_trace()
 	logger.info('Best completeness median: ' + str(best_median))
 
 	complete_and_pure_clusters = {}

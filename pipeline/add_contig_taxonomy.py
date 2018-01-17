@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+#
+# This file is part of Autometa.
+#
+# Autometa is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Autometa is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 # Program that adds contig taxonomy information to a table made by make_contig_table.py
 # Uses protein taxonomy information to construct contig taxonomy
 # Algorithm:
@@ -14,7 +31,6 @@ from time import *
 from tqdm import *
 import subprocess
 import pprint
-import pdb
 pp = pprint.PrettyPrinter(indent=4)
 
 rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
@@ -239,8 +255,6 @@ with open(tax_table_path) as tax_table:
 		else:
 			number_of_proteins[contigName] = 1
 
-#pdb.set_trace()
-
 print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
 top_taxids = {}
 total_contigs = len(protein_classifications)
@@ -266,8 +280,6 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 
 	top_taxids[contig] = acceptedTaxid
 
-#pdb.set_trace()
-
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
 for contig in tqdm(top_taxids, total=total_contigs):
@@ -283,8 +295,6 @@ for contig in tqdm(top_taxids, total=total_contigs):
 	for rank in rank_priority:
 		if rank not in taxon_paths[contig]:
 			taxon_paths[contig][rank] = 'unclassified'
-
-#pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')

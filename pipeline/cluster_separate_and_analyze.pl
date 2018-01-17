@@ -1,5 +1,22 @@
 #!/usr/bin/perl
 
+# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+#
+# This file is part of Autometa.
+#
+# Autometa is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Autometa is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 # Program that takes a table with clustered contigs and outputs separate fastas
 # After making the separate fastas the program will then work out genome completeness
 # and create a table of results.

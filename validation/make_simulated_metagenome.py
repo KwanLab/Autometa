@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+#
+# This file is part of Autometa.
+#
+# Autometa is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Autometa is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 # Program to make a simulated lane of illumina reads from a certain number of random bacterial genomes
 # The number is expressed as the total length of bacterial genome
 # For example - 10,000 Mbp of bacterial genome will be represented in a 400,000,000 paired end 125 bp run

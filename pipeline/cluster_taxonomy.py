@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+#
+# This file is part of Autometa.
+#
+# Autometa is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Autometa is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 # Program that determines the taxonomy of clusters called by dbcan
 # Uses contig taxonomy information in the same way that add_contig_taxonomy.py uses protein taxonomy
 # (except this program uses contig length as weighting rather than 1 protein 1 vote)
@@ -15,7 +32,6 @@ from tqdm import *
 import subprocess
 import argparse
 import pprint
-import pdb
 pp = pprint.PrettyPrinter(indent=4)
 
 rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
@@ -255,8 +271,6 @@ if column_count['length'] > 1:
 if column_count['taxid'] > 1:
 	print 'Error, there is more than one "taxid" column in ' + contig_table_path
 
-#pdb.set_trace()
-
 for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 	if i > 0:
 		line_list = line.rstrip('\n').split('\t')
@@ -303,8 +317,6 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		else:
 			length_of_contigs[contig] = int(float(length))
 
-#pdb.set_trace()
-
 print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
 top_taxids = {}
 total_clusters = len(contig_classifications)
@@ -330,8 +342,6 @@ for cluster in tqdm(contig_classifications, total=total_clusters):
 
 	top_taxids[cluster] = acceptedTaxid
 
-#pdb.set_trace()
-
 print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
 taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
 for cluster in tqdm(top_taxids, total=len(top_taxids)):
@@ -347,8 +357,6 @@ for cluster in tqdm(top_taxids, total=len(top_taxids)):
 	for rank in rank_priority:
 		if rank not in taxon_paths[cluster]:
 			taxon_paths[cluster][rank] = 'unclassified'
-
-#pdb.set_trace()
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
