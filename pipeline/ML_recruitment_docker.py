@@ -118,7 +118,7 @@ if recursive:
 	ML_recruitment_command = ML_recruitment_command + ' --recursive'
 
 # Construct Docker run command
-docker_command = 'docker run --volume {}:/output:rw --detach=false --rm autometa:run'.format(output_dir)
+docker_command = 'docker run --volume {}:/output:rw --detach=false --rm jasonkwan/autometa:latest'.format(output_dir)
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + ML_recruitment_command

@@ -120,7 +120,7 @@ docker_command = 'docker run --volume {}:/output:rw --detach=false --rm'.format(
 if db_dir:
 	docker_command = docker_command + ' --volume {}:/databases:rw'.format(db_dir_absolute)
 
-docker_command = docker_command + ' autometa:run'
+docker_command = docker_command + ' jasonkwan/autometa:latest'
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + cluster_process_command

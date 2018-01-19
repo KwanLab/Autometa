@@ -150,7 +150,7 @@ docker_command = 'docker run --volume {}:/output:rw --detach=false --rm'.format(
 for host_path in read_directories:
 	docker_command = docker_command + ' --volume {}:{}:rw'.format(host_path, read_directories[host_path])
 
-docker_command = docker_command + ' autometa:run'
+docker_command = docker_command + ' jasonkwan/autometa:latest'
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + calculate_read_coverage_command

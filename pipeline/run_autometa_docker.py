@@ -158,7 +158,7 @@ docker_command = 'docker run --volume {}:/output:rw --detach=false --rm'.format(
 if db_dir_path:
 	docker_command = docker_command + ' --volume {}:/databases:rw'.format(db_dir_path_absolute)
 
-docker_command = docker_command + ' autometa:run'
+docker_command = docker_command + ' jasonkwan/autometa:latest'
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + autometa_command

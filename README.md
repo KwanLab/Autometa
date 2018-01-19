@@ -93,17 +93,16 @@ You should now add the autometa/pipeline directory to your $PATH environmental v
 
 ### Running with Docker
 
-As an alternative to doing all the above manually, we have provided a Dockerfile with which to make an Autometa Docker image. This will automate the installation of all dependencies. To build the image:
+As an alternative to doing all the above manually, we have provided an Autometa Docker image. First install [Docker](https://www.docker.com), then run the following commands:
 
 ```
 git clone https://bitbucket.org/jason_c_kwan/autometa
-cd autometa
-docker build -t "autometa:run" .
+docker pull jasonkwan/autometa:latest
 ```
 
-This will download a load of stuff and set up the image for you on your system (~3.5 GB). NOTE: the one thing you need to do before this is install [Docker](https://www.docker.com) on your system.
+This will download a load of stuff and set up the image for you on your system (~3.5 GB). 
 
-After you have built the Docker image, you can run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
+You will now be able to run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
 
 Normal script                | Docker version
 -----------------------------|---------------------------------

@@ -122,7 +122,7 @@ if update:
 	make_taxonomy_table_command = make_taxonomy_table_command + ' --update'
 
 # Construct Docker run command
-docker_command = 'docker run --volume {}:/output:rw --volume {}:/databases:rw --detach=false --rm autometa:run'.format(output_dir_absolute, db_dir_path_absolute)
+docker_command = 'docker run --volume {}:/output:rw --volume {}:/databases:rw --detach=false --rm jasonkwan/autometa:latest'.format(output_dir_absolute, db_dir_path_absolute)
 
 # Incorporate autometa command
 docker_command = docker_command + ' ' + make_taxonomy_table_command
