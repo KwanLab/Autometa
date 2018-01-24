@@ -173,7 +173,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
 	# If there is an error, attempt to rebuild NR
 	if error:
-		update(db_dir_path, 'nr')
+		update_dbs(db_dir_path, 'nr')
 		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
 
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
