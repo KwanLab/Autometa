@@ -41,6 +41,18 @@ def run_command(command_string, stdout_path = None):
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
 
+def run_command_return(command_string, stdout_path = None):
+	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
+	print('make_taxonomy_table.py, run_command: ' + command_string)
+	if stdout_path:
+		f = open(stdout_path, 'w')
+		exit_code = subprocess.call(command_string, stdout=f, shell=True)
+		f.close()
+	else:
+		exit_code = subprocess.call(command_string, shell=True)
+
+	return exit_code
+
 def cythonize_lca_functions():
 	print("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
 	current_dir = os.getcwd()
@@ -158,7 +170,12 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	tmp_dir_path = current_dir + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	# If there is an error, attempt to rebuild NR
+	if error:
+		update(db_dir_path, 'nr')
+		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 	return view_output
 
