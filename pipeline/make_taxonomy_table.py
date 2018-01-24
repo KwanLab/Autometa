@@ -228,6 +228,10 @@ if cov_table:
 		print("Error! Could not find coverage table at the following path: " + cov_table)
 		exit(1)
 
+# Check that output dir exists, and create it if it doesn't 
+if not os.path.isdir(output_dir):
+	os.makedirs(output_dir)
+
 if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 	cythonize_lca_functions()
 
