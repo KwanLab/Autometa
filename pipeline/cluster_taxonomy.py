@@ -158,12 +158,15 @@ parser.add_argument('-c','--cluster_column', help='Name of column for cluster', 
     default='cluster')
 parser.add_argument('-x','--taxdump_path', help='Path to taxdump directory (downloaded from NCBI taxonomy)', required=True)
 parser.add_argument('-o','--out_table', help='Output table path',required=True)
+parser.add_argument('-s','--single_genome', help='Specifies single genome mode', action='store_true')
+
 args = vars(parser.parse_args())
 
 contig_table_path = args['contig_tab']
 taxdump_dir_path = args['taxdump_path']
 output_file_path = args['out_table']
 cluster_column_name = args['cluster_column']
+single_genome_mode = args['single_genome']
 
 # Process NCBI taxdump files
 names_dmp_path = taxdump_dir_path + '/names.dmp'
@@ -250,7 +253,7 @@ for i,heading in enumerate(contig_table_first_line_list):
 if contig_index is None:
 	print 'Error, could not find a "contig" column in ' + contig_table_path
 	sys.exit(2)
-if cluster_index is None:
+if cluster_index is None and not single_genome_mode:
 	print 'Error, could not find a "cluster" column in ' + contig_table_path
 	sys.exit(2)
 if length_index is None:
@@ -275,7 +278,10 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 	if i > 0:
 		line_list = line.rstrip('\n').split('\t')
 		contig = line_list[contig_index]
-		cluster = line_list[cluster_index]
+		if single_genome_mode:
+			cluster = 'unclustered'
+		else:
+			cluster = line_list[cluster_index]
 		length = line_list[length_index]
 		taxid = int(float(line_list[taxid_index]))
 
@@ -360,7 +366,14 @@ for cluster in tqdm(top_taxids, total=len(top_taxids)):
 
 print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
 output_table = open(output_file_path, 'w')
-output_table.write('cluster\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n')
+if single_genome_mode:
+	output_table.write('kingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n')
+else:
+	output_table.write('cluster\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n')
+
 for cluster in taxon_paths:
-	output_table.write(str(cluster) + '\t' + str(taxon_paths[cluster]['superkingdom']) + '\t' + str(taxon_paths[cluster]['phylum']) + '\t' + str(taxon_paths[cluster]['class']) + '\t' + str(taxon_paths[cluster]['order']) + '\t' + str(taxon_paths[cluster]['family']) + '\t' + str(taxon_paths[cluster]['genus']) + '\t' + str(taxon_paths[cluster]['species']) + '\t' + str(top_taxids[cluster]) + '\n')
+	if single_genome_mode:
+		output_table.write(str(taxon_paths[cluster]['superkingdom']) + '\t' + str(taxon_paths[cluster]['phylum']) + '\t' + str(taxon_paths[cluster]['class']) + '\t' + str(taxon_paths[cluster]['order']) + '\t' + str(taxon_paths[cluster]['family']) + '\t' + str(taxon_paths[cluster]['genus']) + '\t' + str(taxon_paths[cluster]['species']) + '\t' + str(top_taxids[cluster]) + '\n')
+	else:
+		output_table.write(str(cluster) + '\t' + str(taxon_paths[cluster]['superkingdom']) + '\t' + str(taxon_paths[cluster]['phylum']) + '\t' + str(taxon_paths[cluster]['class']) + '\t' + str(taxon_paths[cluster]['order']) + '\t' + str(taxon_paths[cluster]['family']) + '\t' + str(taxon_paths[cluster]['genus']) + '\t' + str(taxon_paths[cluster]['species']) + '\t' + str(top_taxids[cluster]) + '\n')
 output_table.close

@@ -180,6 +180,8 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,cover
 	if not os.path.isfile(initial_table_path):
 		if coverage_table:
 			run_command("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table))
+		elif single_genome_mode:
+			run_command("{}/make_contig_table.py -a {} -o {} -n".format(pipeline_path, assembly_path, initial_table_path))
 		else:
 			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
 		
@@ -202,6 +204,7 @@ parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
+parser.add_argument('-s', '--single_genome', help='Specifies single genome mode', action='store_true')
 
 args = vars(parser.parse_args())
 
@@ -211,6 +214,7 @@ length_cutoff = args['length_cutoff']
 fasta_path = args['assembly']
 cov_table = args['cov_table']
 output_dir = args['output_dir']
+single_genome_mode = args['single_genome']
 
 fasta_filename = os.path.abspath(fasta_path).split('/')[-1]
 
