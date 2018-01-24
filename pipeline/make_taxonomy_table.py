@@ -310,9 +310,10 @@ for i, row in taxonomy_pd.iterrows():
 		categorized_seq_objects[kingdom] = [ all_seq_records[contig] ]
 
 # Now we write the component fasta files
-for kingdom in categorized_seq_objects:
-	seq_list = categorized_seq_objects[kingdom]
-	output_path = output_dir + '/' + kingdom + '.fasta'
-	SeqIO.write(seq_list, output_path, 'fasta')
+if not single_genome_mode:
+	for kingdom in categorized_seq_objects:
+		seq_list = categorized_seq_objects[kingdom]
+		output_path = output_dir + '/' + kingdom + '.fasta'
+		SeqIO.write(seq_list, output_path, 'fasta')
 
 print "Done!"
