@@ -265,7 +265,7 @@ if taxid_index is None:
 if column_count['contig'] > 1:
 	print 'Error, there is more than one "contig" column in ' + contig_table_path
 	sys.exit(2)
-if column_count['cluster'] > 1:
+if not single_genome_mode and column_count['cluster'] > 1:
 	print 'Error, there is more than one "cluster" column in ' + contig_table_path
 	sys.exit(2)
 if column_count['length'] > 1:
