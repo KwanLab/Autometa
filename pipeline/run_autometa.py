@@ -158,6 +158,11 @@ def ML_recruitment(input_table, matrix):
 
 	return ML_recruitment_output_path
 
+pipeline_path = sys.path[0]
+pathList = pipeline_path.split('/')
+pathList.pop()
+autometa_path = '/'.join(pathList)
+
 #argument parser
 parser = argparse.ArgumentParser(description="Script to run the Autometa pipeline.",\
  epilog="Please do not forget to cite us. Thank you for using Autometa!",\
@@ -173,7 +178,7 @@ parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directo
 parser.add_argument('-r', '--ML_recruitment', help='Use ML to further recruit unclassified contigs', action='store_true')
 parser.add_argument('-m', '--maketaxtable', action='store_true',\
 help='runs make_taxonomy_table.py before performing autometa binning. Must specify databases directory (-db)')
-parser.add_argument('-db', '--db_dir', metavar='<dir>', help="Path to directory with taxdump files. If this doesn't exist, the files will be automatically downloaded", required=False)
+parser.add_argument('-db', '--db_dir', metavar='<dir>', help="Path to directory with taxdump files. If this doesn't exist, the files will be automatically downloaded", required=False, default=autometa_path + '/databases')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 
 args = vars(parser.parse_args())
@@ -201,10 +206,7 @@ logger.setLevel(logging.DEBUG)
 #Check user CPUs
 user_CPU_number = multiprocessing.cpu_count()
 
-pipeline_path = sys.path[0]
-pathList = pipeline_path.split('/')
-pathList.pop()
-autometa_path = '/'.join(pathList)
+
 
 # Output current branch and commit
 branch_command = "git -C " + autometa_path + " branch | grep \* | sed 's/^..//'"
