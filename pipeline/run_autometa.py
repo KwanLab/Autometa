@@ -195,6 +195,10 @@ make_tax_table = args['maketaxtable']
 db_dir_path = args['db_dir']
 cov_table = args['cov_table']
 
+# Make output directory if it doesn't exist
+if not os.path.isdir(output_dir):
+	os.makedirs(output_dir)
+
 #logger
 logger = logging.getLogger(output_dir + '/run_autometa.py')
 hdlr = logging.FileHandler(output_dir + '/run_autometa.log')
@@ -227,10 +231,6 @@ if not os.path.isfile(fasta_assembly):
 	print "Could not find {}...".format(fasta_assembly)
 	logger.debug('Could not find {}...'.format(fasta_assembly))
 	exit(1)
-
-# Make output directory if it doesn't exist
-if not os.path.isdir(output_dir):
-	os.makedirs(output_dir)
 
 #if make_tax_table specified but taxonomy_table_path not defined
 if make_tax_table and not taxonomy_table_path:
