@@ -41,6 +41,18 @@ def run_command(command_string, stdout_path = None):
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
 
+def run_command_return(command_string, stdout_path = None):
+	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
+	print('make_taxonomy_table.py, run_command: ' + command_string)
+	if stdout_path:
+		f = open(stdout_path, 'w')
+		exit_code = subprocess.call(command_string, stdout=f, shell=True)
+		f.close()
+	else:
+		exit_code = subprocess.call(command_string, shell=True)
+
+	return exit_code
+
 def cythonize_lca_functions():
 	print("{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(pipeline_path))
 	current_dir = os.getcwd()
@@ -98,14 +110,12 @@ def update_dbs(database_path, db='all'):
 			download_file(database_path, nr_db_url, nr_db_md5_url)
 
 		# Now we make the diamond database
-		if not (os.path.isfile(database_path + '/nr.dmnd') and os.path.isfile(database_path + '/nr.dmnd.md5')):
-			print("building nr.dmnd database, this may take some time")
-			returnCode = subprocess.call("diamond makedb --in {} --db {}/nr -p {}".format(database_path+'/nr.gz', database_path, num_processors), shell = True)
-			if returnCode == 0: # i.e. job was successful
-			#Make an md5 file to signal that we have built the database successfully
-				run_command('md5sum ' + database_path + '/nr.dmnd', database_path + '/nr.dmnd.md5')
-				run_command('rm {}/nr.gz'.format(database_path))
-				print("nr.dmnd updated")
+		print("building nr.dmnd database, this may take some time")
+		returnCode = subprocess.call("diamond makedb --in {} --db {}/nr -p {}".format(database_path+'/nr.gz', database_path, num_processors), shell = True)
+		if returnCode == 0: # i.e. job was successful
+		#Make an md5 file to signal that we have built the database successfully
+			run_command('rm {}/nr.gz'.format(database_path))
+			print("nr.dmnd updated")
 	if db == 'all' or db == 'acc2taxid':
 		# Download prot.accession2taxid.gz only if the version we have is not current
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
@@ -158,7 +168,12 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	tmp_dir_path = current_dir + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	# If there is an error, attempt to rebuild NR
+	if error:
+		update_dbs(db_dir_path, 'nr')
+		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 	return view_output
 
@@ -180,6 +195,8 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,cover
 	if not os.path.isfile(initial_table_path):
 		if coverage_table:
 			run_command("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table))
+		elif single_genome_mode:
+			run_command("{}/make_contig_table.py -a {} -o {} -n".format(pipeline_path, assembly_path, initial_table_path))
 		else:
 			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
 		
@@ -202,6 +219,7 @@ parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
+parser.add_argument('-s', '--single_genome', help='Specifies single genome mode', action='store_true')
 
 args = vars(parser.parse_args())
 
@@ -211,6 +229,7 @@ length_cutoff = args['length_cutoff']
 fasta_path = args['assembly']
 cov_table = args['cov_table']
 output_dir = args['output_dir']
+single_genome_mode = args['single_genome']
 
 fasta_filename = os.path.abspath(fasta_path).split('/')[-1]
 
@@ -223,6 +242,10 @@ if cov_table:
 	if not os.path.isfile(cov_table):
 		print("Error! Could not find coverage table at the following path: " + cov_table)
 		exit(1)
+
+# Check that output dir exists, and create it if it doesn't 
+if not os.path.isdir(output_dir):
+	os.makedirs(output_dir)
 
 if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 	cythonize_lca_functions()
@@ -306,9 +329,10 @@ for i, row in taxonomy_pd.iterrows():
 		categorized_seq_objects[kingdom] = [ all_seq_records[contig] ]
 
 # Now we write the component fasta files
-for kingdom in categorized_seq_objects:
-	seq_list = categorized_seq_objects[kingdom]
-	output_path = output_dir + '/' + kingdom + '.fasta'
-	SeqIO.write(seq_list, output_path, 'fasta')
+if not single_genome_mode:
+	for kingdom in categorized_seq_objects:
+		seq_list = categorized_seq_objects[kingdom]
+		output_path = output_dir + '/' + kingdom + '.fasta'
+		SeqIO.write(seq_list, output_path, 'fasta')
 
 print "Done!"
