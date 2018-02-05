@@ -79,7 +79,7 @@ for seq_record in SeqIO.parse(fasta_assembly_path, 'fasta'):
 	else:
 		# Do a format check to make sure the contig name is right
 		contigList = contig.split('_')
-		if len(contigList) == 6 and contigList[0] == 'NODE' and contigList[2] == 'length' and contigList[4] == 'cov':
+		if contigList[0] == 'NODE' and contigList[2] == 'length' and contigList[4] == 'cov':
 			cov = str(contigList[5])
 		else:
 			print('Error, ' + contig + ' not the right format to extract coverage from sequence name')
