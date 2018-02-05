@@ -34,12 +34,14 @@ parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path t
 parser.add_argument('-c', '--coverage', metavar='<coverage.tab>', help='Path to coverage table made by calculate_read_coverage.py \
 	 [if not supplied coverage will be inferred from contig names]')
 parser.add_argument('-o', '--output', metavar='<output.tab>', help='Path to create output table', required=True)
+parser.add_argument('-n', '--no_coverage', help='Specifies not to try to add coverage to the table', action='store_true')
 
 args = vars(parser.parse_args())
 
 fasta_assembly_path = os.path.abspath(args['assembly'])
 coverage_table_path = args['coverage']
 output_table_path = args['output']
+no_coverage_mode = args['no_coverage']
 
 use_coverage_table = False
 
@@ -64,7 +66,10 @@ if coverage_table_path is not None:
 
 output = open( output_table_path, 'w' )
 
-output.write('contig\tlength\tgc\tcov\n')
+if no_coverage_mode:
+	output.write('contig\tlength\tgc\n')
+else:
+	output.write('contig\tlength\tgc\tcov\n')
 
 for seq_record in SeqIO.parse(fasta_assembly_path, 'fasta'):
 	length = str(len(seq_record))
@@ -76,6 +81,9 @@ for seq_record in SeqIO.parse(fasta_assembly_path, 'fasta'):
 		else:
 			print('Error, ' + contig + ' not found in the coverage table')
 			quit()
+		output.write(contig + '\t' + length + '\t' + gc + '\t' + str(cov) + '\n')
+	elif no_coverage_mode:
+		output.write(contig + '\t' + length + '\t' + gc + '\n')
 	else:
 		# Do a format check to make sure the contig name is right
 		contigList = contig.split('_')
@@ -84,6 +92,7 @@ for seq_record in SeqIO.parse(fasta_assembly_path, 'fasta'):
 		else:
 			print('Error, ' + contig + ' not the right format to extract coverage from sequence name')
 			quit()
-	output.write(contig + '\t' + length + '\t' + gc + '\t' + str(cov) + '\n')
+		output.write(contig + '\t' + length + '\t' + gc + '\t' + str(cov) + '\n')
+	
 
 output.close

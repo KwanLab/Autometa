@@ -56,6 +56,7 @@ parser.add_argument('-u', '--update', required=False, action='store_true',\
  help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
+parser.add_argument('-s', '--single_genome', help='Specifies single genome mode', action='store_true')
 
 args = vars(parser.parse_args())
 
@@ -71,6 +72,7 @@ filtered_assembly = fasta_assembly_prefix + "_filtered.fasta"
 cov_table = args['cov_table']
 update = args['update']
 output_dir = args['output_dir']
+single_genome_mode = args['single_genome']
 
 #check if fasta in path
 if not os.path.isfile(fasta_path):
@@ -121,6 +123,9 @@ if cov_table:
 if update:
 	make_taxonomy_table_command = make_taxonomy_table_command + ' --update'
 
+if single_genome_mode:
+	make_taxonomy_table_command = make_taxonomy_table_command + ' --single_genome'
+	
 # Construct Docker run command
 docker_command = 'docker run --volume {}:/output:rw --volume {}:/databases:rw --detach=false --rm jasonkwan/autometa:latest'.format(output_dir_absolute, db_dir_path_absolute)
 
