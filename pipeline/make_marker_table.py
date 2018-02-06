@@ -56,7 +56,8 @@ def run_hhmscan(path_to_prodigal_output,hmmdb):
 run_prodigal(assembly)
 run_hhmscan(assembly.split(".")[0] + '.orfs.faa',args['hmm'])
 
-hmm_table = args['out'] + '.hmm.tbl'
+hmm_table_path = args['out'] + '.hmm.tbl'
+hmm_table = pd.read_csv(hmm_table_path, sep='\s+', usecols = [1, 2, 5], skiprows = 3, header = None, index_col = False, engine = 'python')
 cutoffs_table = pd.read_csv(args['cutoffs'], sep = '\s', engine = 'python', header = None)
 
 #Search for contigs/ORFs that contain single copy PFAM domains that pass cutoff
