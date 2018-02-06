@@ -56,7 +56,7 @@ def run_hhmscan(path_to_prodigal_output,hmmdb):
 	subprocess.call("hmmscan --cpu {} --tblout {} {} {}".format(args['processors'],path_to_prodigal_output + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
 	return path_to_prodigal_output + '.hmm.tbl'
 
-output_dir = os.path.abspath(args['out']).split('/')[:-1]
+output_dir = '/'.join(os.path.abspath(args['out']).split('/')[:-1])
 
 prodigal_output = run_prodigal(assembly)
 hmm_table_path = run_hhmscan(prodigal_output,args['hmm'])
