@@ -96,7 +96,7 @@ def make_marker_table(fasta):
 		hmm_cutoffs_path = autometa_path + '/single-copy_markers/Archaea_single_copy_cutoffs.txt'
 
 	#need to add processors to this script
-	output_filename = '.'.join(os.path.abspath(fasta).split('/')[-1].split('.')[:-1]) + '_marker.tab'
+	output_filename = os.path.abspath(fasta).split('/')[-1] + '.marker.tab'
 	output_path = output_dir + '/' + output_filename
 	if os.path.isfile(output_path):
 		print "{} file already exists!".format(output_path)

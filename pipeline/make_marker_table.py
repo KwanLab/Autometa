@@ -20,7 +20,7 @@
 import pandas as pd
 import argparse
 import subprocess
-
+import os
 
 #argument parser
 parser = argparse.ArgumentParser(description='Script tabulate single copy markers \
@@ -32,7 +32,7 @@ parser.add_argument('-m','--hmm', help='Bacteria_single_copy_cutoffs.hmm. Defaul
 parser.add_argument('-o','--out', help='outfile.tab, three column table with contig, single copy PFAMS, and # of markers', required=False)
 args = vars(parser.parse_args())
 
-assembly = args['assembly']
+assembly = os.path.abspath(args['assembly'])
 
 def get_contig_list(path_to_assembly):
     #Get list of spades contigs
@@ -46,17 +46,21 @@ def get_contig_list(path_to_assembly):
     return contig_name_list
 
 def run_prodigal(path_to_assembly):
+	assembly_filename = path_to_assembly.split('/')[-1]
 	#When "shell = True", need to give one string, not a list
-	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + path_to_assembly.split(".")[0] +\
-	 '.orfs.faa','-p meta', '-m', '-o ' + path_to_assembly.split(".")[0] + '.txt']), shell = True)
+	subprocess.call(" ".join(['prodigal ','-i ' + path_to_assembly, '-a ' + output_dir + '/' + assembly_filename +\
+	 '.orfs.faa','-p meta', '-m', '-o ' + output_dir + '/' + assembly_filename + '.txt']), shell = True)
+	return output_dir + '/' + assembly_filename + '.orfs.faa'
 
 def run_hhmscan(path_to_prodigal_output,hmmdb):
-	subprocess.call("hmmscan --cpu {} --tblout {} {} {}".format(args['processors'],path_to_prodigal_output.split(".")[0] + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
+	subprocess.call("hmmscan --cpu {} --tblout {} {} {}".format(args['processors'],path_to_prodigal_output + ".hmm.tbl", hmmdb, path_to_prodigal_output),shell = True)
+	return path_to_prodigal_output + '.hmm.tbl'
 
-run_prodigal(assembly)
-run_hhmscan(assembly.split(".")[0] + '.orfs.faa',args['hmm'])
+output_dir = os.path.abspath(args['out']).split('/')[:-1]
 
-hmm_table_path = args['out'] + '.hmm.tbl'
+prodigal_output = run_prodigal(assembly)
+hmm_table_path = run_hhmscan(prodigal_output,args['hmm'])
+
 hmm_table = pd.read_csv(hmm_table_path, sep='\s+', usecols = [1, 2, 5], skiprows = 3, header = None, index_col = False, engine = 'python')
 cutoffs_table = pd.read_csv(args['cutoffs'], sep = '\s', engine = 'python', header = None)
 
@@ -83,7 +87,7 @@ for index,PFAM_cutoffs_id in enumerate(cutoffs_table[0]):
 if args['out'] != None:
 	outfile_handle = args['out']
 else:
-	outfile_handle = assembly.split(".")[0] + "_marker.tab"
+	outfile_handle = assembly + ".marker.tab"
 with open(outfile_handle, 'w') as outfile:
 	outfile.write("contig" + '\t'+ "single_copy_PFAMs" + '\t' + "num_single_copies" + '\n')
 	contig_dictionary = {}
