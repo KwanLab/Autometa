@@ -109,7 +109,10 @@ if not os.path.isdir(output_dir):
 master_table = pd.read_table(bin_table_path)
 
 # Format check for the table
-columns_to_check = [cluster_column_heading, 'contig', 'length', 'cov', 'taxid', 'single_copy_PFAMs']
+columns_to_check = [cluster_column_heading, 'contig', 'length', 'cov', 'single_copy_PFAMs']
+if do_taxonomy:
+	columns_to_check.append('taxid')
+
 for column in columns_to_check:
 	if column not in master_table.columns:
 		print('Error! Could not find a column called ' + column + ' in table ' + bin_table_path)
