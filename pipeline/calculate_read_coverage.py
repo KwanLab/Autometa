@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -128,9 +128,14 @@ if forward_read_path_list:
     concatenated_read_path_list = forward_read_path_list
 if reverse_read_path_list:
     concatenated_read_path_list = concatenated_read_path_list + reverse_read_path_list
-if single_read_path_list:
+if single_read_path_list and not reverse_read_path_list and not forward_read_path_list:
+    concatenated_read_path_list =  single_read_path_list
+    forward_read_path_list = []
+    reverse_read_path_list = []
+elif single_read_path_list:
     concatenated_read_path_list = concatenated_read_path_list + single_read_path_list
 for path in concatenated_read_path_list:
+    print(path)
     if not os.path.isfile(path):
         print('Error! Cannot find the read file: ' + path)
         exit(1)
@@ -138,6 +143,7 @@ for path in concatenated_read_path_list:
 # Check that the output dir exists
 if not os.path.isdir(output_dir):
     os.makedirs(output_dir)
+
 
 sam_file = run_bowtie2(assembly_file,forward_read_path_list,reverse_read_path_list,single_read_path_list,args['processors'])
 
