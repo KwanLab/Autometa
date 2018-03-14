@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -74,7 +74,9 @@ if forward_read_path_list:
 if reverse_read_path_list:
 	concatenated_read_path_list = concatenated_read_path_list + reverse_read_path_list
 if single_read_path_list:
-	concatenated_read_path_list = concatenated_read_path_list + single_read_path_list
+	concatenated_read_path_list = single_read_path_list
+	forward_read_path_list = []
+    reverse_read_path_list = []
 for path in concatenated_read_path_list:
     if not os.path.isfile(path):
         print('Error! Cannot find the read file: ' + path)
