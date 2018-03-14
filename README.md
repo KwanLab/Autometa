@@ -77,10 +77,8 @@ Install Python modules.
 
 ```
 conda install tqdm joblib biopython
-git clone https://github.com/danielfrg/tsne.git
 sudo apt-get install libatlas-base-dev
-cd tsne
-python setup.py install
+conda install -c maxibor tsne
 ```
 
 Now download Autometa.
@@ -100,7 +98,7 @@ git clone https://bitbucket.org/jason_c_kwan/autometa
 docker pull jasonkwan/autometa:latest
 ```
 
-This will download a load of stuff and set up the image for you on your system (~3.5 GB). 
+This will download a load of stuff and set up the image for you on your system (~3.5 GB).
 
 You will now be able to run the Docker versions of the following scripts using the same command line arguments shown under "Usage".
 
@@ -145,7 +143,7 @@ autometa/test_data/coverage.tab
 
 ### Step 1: Split data into kingdom bins [optional]
 
-We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive. 
+We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive.
 
 ```
 make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
@@ -222,7 +220,7 @@ ML_recruitment.py --contig_tab recursive_dbscan_output.tab --recursive \
 	--k_mer_matrix k-mer_matrix --out_table ML_recruitment_output.tab
 ```
 
-In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and only if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes. 
+In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). We also use the --recursive flag, specifying that the script will run recursively, adding contigs it classifies to the training set and re-classifying until 0 more classifications are yielded. By default, classifications are only made if 10 out of 10 repeat classifications agree, and only if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes.
 
 The specified output file is a table with the following columns:
 
@@ -282,7 +280,7 @@ Cluster\_summary\_table contains the following columns:
 
 Column          | Description
 ----------------|------------
-cluster         | The name of the cluster 
+cluster         | The name of the cluster
 size            | The size of the cluster in bp
 longest_contig  | The length in bp of the longest contig in the cluster
 n50             | The n50 of the contigs in the cluster
@@ -310,7 +308,7 @@ ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = ML_expanded_clustering ))
 
 ![colored_by_cluster](img/col_cluster.svg)
 
-In the above chart the points represent contigs. They are plotted on the two dimensions that result from dimension-reduction by BH-tSNE - you can think of the distance between points as being roughly proportional to their differences in 5-mer frequency. The points are also scaled in size according to the contig length, and they are colored by the assigned cluster/bin. You can see that there are some bins which are well-separated from others, but there are other bins that are close together. Cases like these might be worth investigating manually if you think, for instance, that multiple Autometa bins close together could actually be different parts of the same genome. If clusters are close together, there is also the possibility that contigs in the region have been misassigned. 
+In the above chart the points represent contigs. They are plotted on the two dimensions that result from dimension-reduction by BH-tSNE - you can think of the distance between points as being roughly proportional to their differences in 5-mer frequency. The points are also scaled in size according to the contig length, and they are colored by the assigned cluster/bin. You can see that there are some bins which are well-separated from others, but there are other bins that are close together. Cases like these might be worth investigating manually if you think, for instance, that multiple Autometa bins close together could actually be different parts of the same genome. If clusters are close together, there is also the possibility that contigs in the region have been misassigned.
 
 In addition to using nucleotide composition, Autometa uses coverage and can also use taxonomy to distinguish contigs with similar composition. We can also visualize these differences with R.
 
