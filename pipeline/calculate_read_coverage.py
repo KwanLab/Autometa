@@ -128,10 +128,12 @@ if forward_read_path_list:
     concatenated_read_path_list = forward_read_path_list
 if reverse_read_path_list:
     concatenated_read_path_list = concatenated_read_path_list + reverse_read_path_list
-if single_read_path_list:
+if single_read_path_list and not reverse_read_path_list and not forward_read_path_list:
     concatenated_read_path_list =  single_read_path_list
     forward_read_path_list = []
     reverse_read_path_list = []
+elif single_read_path_list:
+    concatenated_read_path_list = concatenated_read_path_list + single_read_path_list
 for path in concatenated_read_path_list:
     print(path)
     if not os.path.isfile(path):
