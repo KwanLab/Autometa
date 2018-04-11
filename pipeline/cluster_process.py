@@ -185,7 +185,7 @@ for cluster in cluster_sequences:
 		completness = 'unknown'
 	else:
 		completeness = (number_markers_found / total_markers) * 100
-	if number_of_markers_found == 0:
+	if number_markers_found == 0:
 		purity = 'unknown'
 	else:
 		purity = (number_unique_markers / number_markers_found) * 100
