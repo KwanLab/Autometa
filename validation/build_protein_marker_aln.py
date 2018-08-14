@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -19,7 +19,6 @@
 
 import glob
 import os
-import re
 import subprocess
 import pandas as pd
 from collections import Counter
@@ -44,15 +43,18 @@ args = vars(parser.parse_args())
 7. Build tree from alignment with FastTreeMP.
 """
 
+genome_list = []
+
 for fna in glob.glob("*" + args['extension']):
     basename = ".".join(fna.split(".")[:-1])
+    genome_list.append(basename)
     output_handle = basename + "_renamed.fasta"
     input_handle = open(fna)
     with open(output_handle,"w") as outfile:
         for count,line in enumerate(input_handle):
             if ">" in line:
-                seq_name = line.rstrip().lstrip(">")
-                outfile.write(">" + basename + "-" + str(count) + "\n")
+                seq_name = line.rstrip().lstrip(">").replace("-","_")
+                outfile.write(">" + basename + "_" + str(count) + "\n")
             else:
                 outfile.write(line)
     input_handle.close()
@@ -105,18 +107,10 @@ for aln in aln_list:
             if ">" in line:
                 skip_sequence = False
                 seq_name = line.rstrip().lstrip(">")
-                genome = seq_name.split("SENSE) ")[-1]
-                #m = re.search(r">[A-Z]+.*?-[0-9]",line.rstrip())
-                #m = re.search(r">cluster_DBSCAN_round.*?-",line.rstrip())
-                m = re.search(r">.*?-",line.rstrip())
-                if m:
-                    genome = m.group()[1:-1]
-                    #genome = genome_filename_dict[genome_basename]
-                else:
-                    print("No match found:\n{}\nExitting...".format(seq_name))
-                    print("Make sure to delete files before rerunning AMPHORA scripts...")
-                    bad_contig_list.append(seq_name)
-                    break
+
+                for genome_name in genome_list:
+                    if genome_name in line.rstrip():
+                        genome = genome_name
 
                 if genome not in genome_dict:
                     genome_dict[genome] = {}
