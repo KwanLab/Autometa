@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+# Copyright 2018 Ian J. Miller, Evan R. Rees, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
 #
@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -65,7 +65,7 @@ def download_file(destination_dir, file_url, md5_url):
 	md5name = md5_url.split('/')[-1]
 
 	md5check = False
-	
+
 	while md5check == False:
 		run_command('wget {} -O {}'.format(file_url, destination_dir + '/' + filename))
 		run_command('wget {} -O {}'.format(md5_url, destination_dir + '/' + md5name))
@@ -199,7 +199,7 @@ def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,cover
 			run_command("{}/make_contig_table.py -a {} -o {} -n".format(pipeline_path, assembly_path, initial_table_path))
 		else:
 			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
-		
+
 	run_command("{}/add_contig_taxonomy.py {} {} {} {}/taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path, output_dir))
 
 	return output_dir + '/' + 'taxonomy.tab'
@@ -214,16 +214,19 @@ parser = argparse.ArgumentParser(description="Script to generate the contig taxo
 parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
 parser.add_argument('-p', '--processors', metavar='<int>', help='Number of processors to use.', type=int, default=1)
 parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files. If this path does not exist, will create and download files.', required=False, default=autometa_path + '/databases')
+parser.add_argument('-udb', '--user_prot_db', metavar='<user_prot_db>', help='Replaces the default diamond database (nr.dmnd)', required=False)
 parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type = int)
-parser.add_argument('-u', '--update', required=False, action='store_true',\
- help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
 parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
 parser.add_argument('-s', '--single_genome', help='Specifies single genome mode', action='store_true')
+parser.add_argument('-u', '--update', required=False, action='store_true',\
+ help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
+
 
 args = vars(parser.parse_args())
 
 db_dir_path = args['db_dir'].rstrip('/')
+usr_prot_path = args['user_prot_db']
 num_processors = args['processors']
 length_cutoff = args['length_cutoff']
 fasta_path = args['assembly']
@@ -243,7 +246,7 @@ if cov_table:
 		print("Error! Could not find coverage table at the following path: " + cov_table)
 		exit(1)
 
-# Check that output dir exists, and create it if it doesn't 
+# Check that output dir exists, and create it if it doesn't
 if not os.path.isdir(output_dir):
 	os.makedirs(output_dir)
 
@@ -279,6 +282,18 @@ diamond_db_path = db_dir_path + '/nr.dmnd'
 current_taxdump_md5 = db_dir_path + '/taxdump.tar.gz.md5'
 current_acc2taxid_md5 = db_dir_path + '/prot.accession2taxid.gz.md5'
 current_nr_md5 = db_dir_path + '/nr.gz.md5'
+
+if usr_prot_path:
+	usr_prot_path = os.path.abspath(usr_prot_path)
+	if os.path.isdir(usr_prot_path):
+		print('You have provided a directory {}. \
+		--user_prot_db requires a file path.'.format(usr_prot_path))
+		exit(1)
+	elif not os.path.isfile(usr_prot_path):
+		print('{} is not a file.'.format(usr_prot_path))
+		exit(1)
+	else:
+		diamond_db_path = usr_prot_path
 
 if args['update']:
 	print("Checking database directory for updates")

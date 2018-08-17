@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -257,19 +257,17 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 	cluster_details = {} # Will hold completeness, purity
 
 	for cluster in marker_totals:
-		total_markers = len(marker_totals[cluster])
+		total_unique_markers = len(marker_totals[cluster])
 		total_marker_count = 0
-		total_unique = 0
 		for marker in marker_totals[cluster]:
 			total_marker_count += marker_totals[cluster][marker]
-			if marker_totals[cluster][marker] == 1:
-				total_unique += 1
-		completeness = (float(total_markers) / expected_number) * 100
+
+		completeness = (float(total_unique_markers) / expected_number) * 100
 		# Protect from divide by zero
-		if total_markers == 0:
+		if total_unique_markers == 0:
 			purity = 0
 		else:
-			purity = (float(total_unique) / total_markers) * 100
+			purity = (float(total_unique_markers) / total_marker_count) * 100
 
 		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
 
