@@ -162,19 +162,18 @@ def run_prodigal(path_to_assembly):
 	else:
 		run_command('prodigal -i {} -a {}/{}.orfs.faa -p meta -m -o {}/{}.txt'.format(path_to_assembly, output_dir, assembly_basename, output_dir, assembly_basename))
 
-def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
-	view_output = prodigal_output + ".tab"
+def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond):
+	view_output = prodigal_output + ".blastp"
 	current_dir = os.getcwd()
 	tmp_dir_path = current_dir + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --outfmt 6 --out {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_diamond,tmp_dir_path))
 	# If there is an error, attempt to rebuild NR
 	if error:
 		update_dbs(db_dir_path, 'nr')
-		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --outfmt 6 --out {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_diamond,tmp_dir_path))
 
-	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 	return view_output
 
 #blast2lca using accession numbers#
@@ -234,7 +233,7 @@ single_genome_mode = args['single_genome']
 fasta_filename = os.path.abspath(fasta_path).split('/')[-1]
 
 prodigal_output = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.orfs"
-prodigal_daa = prodigal_output + ".daa"
+prodigal_diamond = prodigal_output + ".blastp"
 filtered_assembly = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.fasta"
 
 # If cov_table defined, we need to check the file exists
@@ -290,14 +289,14 @@ if not os.path.isfile(prodigal_output + ".faa"):
 	length_trim(fasta_path, length_cutoff)
 	run_prodigal(filtered_assembly)
 
-if not os.path.isfile(prodigal_output + ".daa"):
-	print "Could not find {}. Running diamond blast... ".format(prodigal_output + ".daa")
-	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
-elif os.stat(prodigal_output + ".daa").st_size == 0:
-	print "{} file is empty. Re-running diamond blast...".format(prodigal_output + ".daa")
-	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
+if not os.path.isfile(prodigal_diamond):
+	print "Could not find {}. Running diamond blast... ".format(prodigal_diamond)
+	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond)
+elif os.stat(prodigal_diamond).st_size == 0:
+	print "{} file is empty. Re-running diamond blast...".format(prodigal_diamond)
+	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond)
 else:
-	diamond_output = prodigal_output + ".tab"
+	diamond_output = prodigal_diamond
 
 if not os.path.isfile(prodigal_output + ".lca"):
 	print "Could not find {}. Running lca...".format(prodigal_output + ".lca")
