@@ -263,17 +263,25 @@ elif not os.listdir(db_dir_path):
 	print('AutoMeta databases directory empty, populating with appropriate databases.\nThis may take some time...')
 	update_dbs(db_dir_path)
 
-if not (os.path.isfile(db_dir_path + '/nr.dmnd') or not os.path.isfile(db_dir_path + '/nr.dmnd.md5') or not os.path.isfile(db_dir_path + '/nr.gz.md5')):
-	print('NR database not found, downloading and building DIAMOND database.\nThis may take some time...')
-	update_dbs(db_dir_path, 'nr')
+nr_files = ['nr.dmnd', 'nr.dmnd.md5', 'nr.gz.md5']
+taxdmp_files = ['names.dmp', 'nodes.dmp', 'taxdump.tar.gz.md5']
+acc2taxid_files = ['prot.accession2taxid.gz.md5', 'prot.accession2taxid']
+db_files = os.listdir(db_dir_path)
 
-if not (os.path.isfile(db_dir_path + '/prot.accession2taxid') or not os.path.isfile(db_dir_path + '/prot.accession2taxid.gz.md5')):
-	print('acc2taxid files not found, downloading.\nThis may take some time...')
-	update_dbs(db_dir_path, 'acc2taxid')
+for fh in nr_files:
+	if fh not in db_files:
+		print('NR database not found, downloading/formatting NR for DIAMOND.\nThis may take some time...')
+		update_dbs(db_dir_path, 'nr')
 
-if not (os.path.isfile(db_dir_path + '/names.dmp') or not os.path.isfile(db_dir_path + '/nodes.dmp') or not os.path.isfile(db_dir_path + '/taxdump.tar.gz.md5')):
-	print('Taxdump files not found, downloading.\nThis may take some time...')
-	update_dbs(db_dir_path, 'taxdump')
+for fh in acc2taxid_files:
+	if fh not in db_files:
+		print('acc2taxid files not found, downloading.\nThis may take some time...')
+		update_dbs(db_dir_path, 'acc2taxid')
+
+for fh in taxdmp_files:
+	if fh not in db_files:
+		print('Taxdump files not found, downloading.\nThis may take some time...')
+		update_dbs(db_dir_path, 'taxdump')
 
 names_dmp_path = db_dir_path + '/names.dmp'
 nodes_dmp_path = db_dir_path + '/nodes.dmp'
