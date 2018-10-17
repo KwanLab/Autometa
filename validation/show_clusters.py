@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from bokeh.plotting import figure, show
 from bokeh.io import output_file, show
 from bokeh.models import ColumnDataSource, HoverTool, BoxSelectTool, LassoSelectTool, TapTool

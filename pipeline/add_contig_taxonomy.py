@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -46,8 +46,8 @@ canonical_ranks = {
 
 def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
 	# Function that determines for a given taxid, whether the majority of proteins
-	# in a contig, with rank equal to or above the given rank, are common ancestors of 
-	# the taxid.  If the majority are, this function returns True, otherwise it returns 
+	# in a contig, with rank equal to or above the given rank, are common ancestors of
+	# the taxid.  If the majority are, this function returns True, otherwise it returns
 	# False
 
 	# First we make a modified rank_priority list that only includes the current rank and above
@@ -150,6 +150,10 @@ def lowest_majority(contigDictionary, taxidDictionary):
 
 	# Just in case
 	return 1
+
+if not len(sys.argv) == 5:
+	print('Usage: add_contig_taxonomy.py <contig_table_path> <tax_table_path> <taxdump_dir_path> <output_file_path>')
+	exit()
 
 contig_table_path = sys.argv[1]
 tax_table_path = sys.argv[2]
@@ -272,7 +276,7 @@ for contig in tqdm(protein_classifications, total=total_contigs):
 				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
 					acceptedTaxid = taxid
 					break
-	
+
 	# If acceptedTaxid is still None at this point, there was some kind of draw, so we need to find the lowest taxonomic level where there is a
 	# majority
 	if acceptedTaxid is None:

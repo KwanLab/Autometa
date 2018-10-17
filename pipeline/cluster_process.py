@@ -38,7 +38,7 @@ def run_command(command_string, stdout_path = None):
 		exit_code = subprocess.call(command_string, shell=True)
 
 	if exit_code != 0:
-		print('ML_recruitment_docker.py: Error, the command:')
+		print('cluster_process.py: Error, the command:')
 		print(command_string)
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
@@ -93,14 +93,13 @@ if do_taxonomy:
 	if not os.path.isdir(db_dir):
 		print('Error! DB dir ' + db_dir + ' does not exist')
 		exit(1)
-	else:
-		if not os.path.isfile(db_dir + '/names.dmp'):
-			print('Error! Cannot find names.dmp in ' + db_dir)
-			exit(1)
+	if not os.path.isfile(db_dir + '/names.dmp'):
+		print('Error! Cannot find names.dmp in ' + db_dir)
+		exit(1)
 
-		if not os.path.isfile(db_dir + '/nodes.dmp'):
-			print('Error! Cannot find nodes.dmp in ' + db_dir)
-			exit(1)
+	if not os.path.isfile(db_dir + '/nodes.dmp'):
+		print('Error! Cannot find nodes.dmp in ' + db_dir)
+		exit(1)
 
 # Make output directory if it isn't already there
 if not os.path.isdir(output_dir):
