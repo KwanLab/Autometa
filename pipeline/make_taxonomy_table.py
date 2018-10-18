@@ -16,17 +16,18 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-
-import subprocess
-import argparse
-import os
-import pandas as pd
-from Bio import SeqIO
 import sys
 import urllib2
+import subprocess
+import os
+
+import pandas as pd
+from argparse import ArgumentParser
+from Bio import SeqIO
 
 def run_command(command_string, stdout_path = None):
-	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
+	# Function that checks if a command ran properly
+	# If it didn't, then print an error message then quit
 	print('make_taxonomy_table.py, run_command: ' + command_string)
 	if stdout_path:
 		f = open(stdout_path, 'w')
@@ -42,7 +43,8 @@ def run_command(command_string, stdout_path = None):
 		exit(1)
 
 def run_command_return(command_string, stdout_path = None):
-	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
+	# Function that checks if a command ran properly.
+	# If it didn't, then print an error message then quit
 	print('make_taxonomy_table.py, run_command: ' + command_string)
 	if stdout_path:
 		f = open(stdout_path, 'w')
@@ -111,7 +113,8 @@ def update_dbs(database_path, db='all'):
 
 		# Now we make the diamond database
 		print("building nr.dmnd database, this may take some time")
-		returnCode = subprocess.call("diamond makedb --in {} --db {}/nr -p {}".format(database_path+'/nr.gz', database_path, num_processors), shell = True)
+		returnCode = subprocess.call("diamond makedb --in {} --db {}/nr -p {}"\
+			.format(database_path+'/nr.gz', database_path, num_processors), shell = True)
 		if returnCode == 0: # i.e. job was successful
 		#Make an md5 file to signal that we have built the database successfully
 			run_command('rm {}/nr.gz'.format(database_path))
@@ -128,7 +131,8 @@ def update_dbs(database_path, db='all'):
 
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz'):
 			print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-			run_command('gunzip -9vNf {}'.format(database_path + '/prot.accession2taxid.gz'), database_path + '/prot.accession2taxid')
+			run_command('gunzip -9vNf {}'\
+				.format(database_path+'/prot.accession2taxid.gz'), database_path+'/prot.accession2taxid')
 			print("prot.accession2taxid updated")
 	if db == 'all' or db == 'taxdump':
 		# Download taxdump only if the version we have is not current
@@ -146,63 +150,78 @@ def update_dbs(database_path, db='all'):
 			print("nodes.dmp and names.dmp updated")
 
 def length_trim(fasta_path,length_cutoff):
-	input_filename = '.'.join(os.path.abspath(fasta_path).split('/')[-1].split('.')[:-1])
+	input_fname, ext = os.path.splitext(os.path.basename(fasta_path))
 	#Trim the length of fasta file
-	outfile_path = output_dir + '/' + input_filename + "_filtered.fasta"
-	run_command("{}/fasta_length_trim.pl {} {} {}".format(pipeline_path, fasta_path, length_cutoff, outfile_path))
+	outfile_path = output_dir + '/' + input_fname + ".filtered" + ext
+	run_command("{}/fasta_length_trim.pl {} {} {}"\
+	.format(pipeline_path, fasta_path, length_cutoff, outfile_path))
 	return outfile_path
 
 def run_prodigal(path_to_assembly):
-	assembly_filename = os.path.abspath(path_to_assembly).split('/')[-1]
-	assembly_basename = '.'.join(assembly_filename.split('.')[:-1])
-	output_path = output_dir + '/' + assembly_basename + '.orfs.faa'
+	assembly_fname, _ = os.path.splitext(os.path.basename(path_to_assembly))
+	output_path = output_dir + '/' + assembly_fname + '.orfs.faa'
 	if os.path.isfile(output_path):
 		print "{} file already exists!".format(output_path)
 		print "Continuing to next step..."
 	else:
-		run_command('prodigal -i {} -a {}/{}.orfs.faa -p meta -m -o {}/{}.txt'.format(path_to_assembly, output_dir, assembly_basename, output_dir, assembly_basename))
+		run_command('prodigal -i {} -a {}/{}.orfs.faa -p meta -m -o {}/{}.txt'\
+		.format(path_to_assembly, output_dir, assembly_fname, output_dir, assembly_fname))
 
 def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
-	current_dir = os.getcwd()
-	tmp_dir_path = current_dir + '/tmp'
+	tmp_dir_path = os.getcwd() + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
-	error = run_command_return("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+	error = run_command_return("diamond blastp --query {0}.faa --db {1} \
+	--evalue 1e-5 --max-target-seqs 200 -p {2} --daa {3} -t {4}"\
+	.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
 	# If there is an error, attempt to rebuild NR
 	if error:
 		update_dbs(db_dir_path, 'nr')
-		run_command("diamond blastp --query {}.faa --db {} --evalue 1e-5 --max-target-seqs 200 -p {} --daa {} -t {}".format(prodigal_output, diamond_db_path, num_processors, prodigal_daa,tmp_dir_path))
+		run_command("diamond blastp --query {0}.faa --db {1} --evalue 1e-5 \
+		--max-target-seqs 200 -p {2} --daa {3} -t {4}"\
+		.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
 
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 	return view_output
 
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
-	output = output_dir + '/' + '.'.join(os.path.abspath(input_file).split('/')[-1].split('.')[:-1]) + ".lca"
-	if os.path.isfile(output) and not os.stat(prodigal_output + ".lca").st_size == 0:
-		print "{} file already exists!".format(output)
-		print "Continuing to next step..."
+	fname = os.path.splitext(os.path.basename(input_file))[0] + ".lca"
+	output = '/'.join([output_dir, fname])
+	if os.path.isfile(output) and not os.stat(output).st_size == 0:
+		print "{} file already exists! Continuing to next step...".format(output)
 	else:
-		run_command("{}/lca.py database_directory {} {}".format(pipeline_path, db_dir_path, input_file))
+		run_command("{0}/lca.py database_directory {1} {2}"\
+			.format(pipeline_path, db_dir_path, input_file))
 	return output
 
-def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,coverage_table): #Have to update this
-	assembly_filename = assembly_path.split('/')[-1]
-	initial_table_path = output_dir + '/' + assembly_filename + '.tab'
+def run_taxonomy(pipeline_path, assembly_path, tax_table_path, db_dir_path,
+		coverage_table, bgcs_path=None, orfs_path=None): #Have to update this
+	assembly_fname, _ = os.path.splitext(os.path.basename(assembly_path))
+	initial_table_path = output_dir + '/' + assembly_fname + '.tab'
 
 	# Only make the contig table if it doesn't already exist
 	if not os.path.isfile(initial_table_path):
 		if coverage_table:
-			run_command("{}/make_contig_table.py -a {} -o {} -c {}".format(pipeline_path, assembly_path, initial_table_path,coverage_table))
+			run_command("{}/make_contig_table.py -a {} -o {} -c {}"\
+			.format(pipeline_path, assembly_path, initial_table_path, coverage_table))
 		elif single_genome_mode:
-			run_command("{}/make_contig_table.py -a {} -o {} -n".format(pipeline_path, assembly_path, initial_table_path))
+			run_command("{}/make_contig_table.py -a {} -o {} -n"\
+			.format(pipeline_path, assembly_path, initial_table_path))
 		else:
-			run_command("{}/make_contig_table.py -a {} -o {}".format(pipeline_path, assembly_path, initial_table_path))
+			run_command("{}/make_contig_table.py -a {} -o {}"\
+			.format(pipeline_path, assembly_path, initial_table_path))
+	if bgcs_path:
+		run_command("{}/mask_bgcs.py2.7 --bgc {} --orfs {} --lca {}"
+		.format(pipeline_path, bgcs_path, orfs_path, tax_table_path))
+		unmasked_fname = os.path.basename(tax_table_path).replace('.lca', '.unmasked.tsv')
+		tax_table_path = '{}/{}'.format(output_dir, unmasked_fname)
+	#two_files_generated: *.masked.tsv, *.unmasked.tsv
+	run_command("{}/add_contig_taxonomy.py {} {} {} {}/taxonomy.tab"\
+	.format(pipeline_path, initial_table_path, tax_table_path, db_dir_path, output_dir))
 
-	run_command("{}/add_contig_taxonomy.py {} {} {} {}/taxonomy.tab".format(pipeline_path, initial_table_path, tax_table_path, db_dir_path, output_dir))
-
-	return output_dir + '/' + 'taxonomy.tab'
+	return output_dir + '/taxonomy.tab'
 
 pipeline_path = sys.path[0]
 pathList = pipeline_path.split('/')
@@ -210,22 +229,36 @@ pathList.pop()
 autometa_path = '/'.join(pathList)
 
 #argument parser
-parser = argparse.ArgumentParser(description="Script to generate the contig taxonomy table.", epilog="Output will be directed to recursive_dbscan_output.tab")
-parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>', help='Path to metagenomic assembly fasta', required=True)
-parser.add_argument('-p', '--processors', metavar='<int>', help='Number of processors to use.', type=int, default=1)
-parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump, protein accessions and diamond (NR) protein files. If this path does not exist, will create and download files.', required=False, default=autometa_path + '/databases')
-parser.add_argument('-udb', '--user_prot_db', metavar='<user_prot_db>', help='Replaces the default diamond database (nr.dmnd)', required=False)
-parser.add_argument('-l', '--length_cutoff', metavar='<int>', help='Contig length cutoff to consider for binning in bp', default=10000, type = int)
-parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>', help="Path to coverage table made by calculate_read_coverage.py. If this is not specified then coverage information will be extracted from contig names (SPAdes format)", required=False)
-parser.add_argument('-o', '--output_dir', metavar='<dir>', help='Path to directory to store output files', default='.')
-parser.add_argument('-s', '--single_genome', help='Specifies single genome mode', action='store_true')
-parser.add_argument('-u', '--update', required=False, action='store_true',\
- help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
-
+parser = ArgumentParser(description="Script to generate the contig taxonomy table.",
+	epilog="Output will be directed to recursive_dbscan_output.tab")
+parser.add_argument('-a', '--assembly', metavar='<assembly.fasta>',
+	help='Path to metagenomic assembly fasta', required=True)
+parser.add_argument('-p', '--processors', metavar='<int>',
+	help='Number of processors to use.', type=int, default=1)
+parser.add_argument('-db', '--db_dir', metavar='<dir>',
+	help='Path to directory with taxdump, protein accessions and diamond (NR) \
+	protein files. If this path does not exist, will create and download files.',
+	required=False, default=autometa_path + '/databases')
+parser.add_argument('-udb', '--user_prot_db', metavar='<user_prot_db>',
+	help='Replaces the default diamond database (nr.dmnd)', required=False)
+parser.add_argument('-l', '--length_cutoff', metavar='<int>',
+	help='Contig length cutoff to consider for binning in bp', default=10000, type=int)
+parser.add_argument('-v', '--cov_table', metavar='<coverage.tab>',
+	help="Path to coverage table made by calculate_read_coverage.py. If this is \
+	not specified then coverage information will be extracted from contig names (SPAdes format)",
+	required=False)
+parser.add_argument('-o', '--output_dir', metavar='<dir>',
+	help='Path to directory to store output files', default='.')
+parser.add_argument('-bgc', '--bgcs_dir', metavar='<dir>',
+	help='Path to directory of biosynthetic gene clusters. Masks BGCs')
+parser.add_argument('-s', '--single_genome', help='Specifies single genome mode',
+	action='store_true')
+parser.add_argument('-u', '--update', required=False, action='store_true',
+	help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
 
 args = vars(parser.parse_args())
 
-db_dir_path = args['db_dir'].rstrip('/')
+db_dir_path = os.path.abspath(args['db_dir'])
 usr_prot_path = args['user_prot_db']
 num_processors = args['processors']
 length_cutoff = args['length_cutoff']
@@ -233,12 +266,10 @@ fasta_path = args['assembly']
 cov_table = args['cov_table']
 output_dir = args['output_dir']
 single_genome_mode = args['single_genome']
-
-fasta_filename = os.path.abspath(fasta_path).split('/')[-1]
-
-prodigal_output = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.orfs"
+bgcs_dir = args['bgcs_dir']
+fasta_fname, _ = os.path.splitext(os.path.basename(fasta_path))
+prodigal_output = '/'.join([output_dir, fasta_fname + ".filtered.orfs"])
 prodigal_daa = prodigal_output + ".daa"
-filtered_assembly = output_dir + '/' + '.'.join(fasta_filename.split('.')[:-1]) + "_filtered.fasta"
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -255,25 +286,29 @@ if not os.path.isfile(pipeline_path+"/lca_functions.so"):
 
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
-	print('No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...')
+	print('No databases directory found, creating and populating AutoMeta databases directory\n\
+	This may take some time...')
 	run_command('mkdir {}'.format(db_dir_path))
 	update_dbs(db_dir_path)
 elif not os.listdir(db_dir_path):
 	#The 'Autometa databases' directory is empty
-	print('AutoMeta databases directory empty, populating with appropriate databases.\nThis may take some time...')
+	print('AutoMeta databases directory empty, populating with appropriate databases.\n\
+	This may take some time...')
 	update_dbs(db_dir_path)
 
-if not (os.path.isfile(db_dir_path + '/nr.dmnd') or not os.path.isfile(db_dir_path + '/nr.dmnd.md5') or not os.path.isfile(db_dir_path + '/nr.gz.md5')):
-	print('NR database not found, downloading and building DIAMOND database.\nThis may take some time...')
-	update_dbs(db_dir_path, 'nr')
+db_dict = {
+	'nr': ['nr.dmnd','nr.dmnd.md5','nr.gz.md5'],
+	'acc2taxid': ['prot.accession2taxid.gz.md5','prot.accession2taxid'],
+	'taxdump': ['names.dmp','nodes.dmp','taxdump.tar.gz.md5']
+	}
 
-if not (os.path.isfile(db_dir_path + '/prot.accession2taxid') or not os.path.isfile(db_dir_path + '/prot.accession2taxid.gz.md5')):
-	print('acc2taxid files not found, downloading.\nThis may take some time...')
-	update_dbs(db_dir_path, 'acc2taxid')
-
-if not (os.path.isfile(db_dir_path + '/names.dmp') or not os.path.isfile(db_dir_path + '/nodes.dmp') or not os.path.isfile(db_dir_path + '/taxdump.tar.gz.md5')):
-	print('Taxdump files not found, downloading.\nThis may take some time...')
-	update_dbs(db_dir_path, 'taxdump')
+db_files = os.listdir(db_dir_path)
+for db in db_dict:
+	for fh in db_dict[db]:
+		if fh not in db_files:
+			print('{0} database not found, downloading/formatting.\n\
+			This may take some time...'.format(db))
+			update_dbs(db_dir_path, db)
 
 names_dmp_path = db_dir_path + '/names.dmp'
 nodes_dmp_path = db_dir_path + '/nodes.dmp'
@@ -299,17 +334,20 @@ if args['update']:
 	print("Checking database directory for updates")
 	update_dbs(db_dir_path, 'all')
 
+filtered_assembly = output_dir + '/' + fasta_fname + ".filtered.fasta"
+if not os.path.isfile(filtered_assembly):
+	filtered_assembly = length_trim(fasta_path, length_cutoff)
+
 if not os.path.isfile(prodigal_output + ".faa"):
 	print "Prodigal output not found. Running prodigal..."
 	#Check for file and if it doesn't exist run make_marker_table
-	length_trim(fasta_path, length_cutoff)
 	run_prodigal(filtered_assembly)
 
-if not os.path.isfile(prodigal_output + ".daa"):
-	print "Could not find {}. Running diamond blast... ".format(prodigal_output + ".daa")
+if not os.path.isfile(prodigal_daa):
+	print "Could not find {}. Running diamond blast... ".format(prodigal_daa)
 	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
 elif os.stat(prodigal_output + ".daa").st_size == 0:
-	print "{} file is empty. Re-running diamond blast...".format(prodigal_output + ".daa")
+	print "{} file is empty. Re-running diamond blast...".format(prodigal_daa)
 	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
 else:
 	diamond_output = prodigal_output + ".tab"
@@ -323,8 +361,25 @@ elif os.stat(prodigal_output + ".lca").st_size == 0:
 else:
 	blast2lca_output = prodigal_output + ".lca"
 
-print "Running add_contig_taxonomy.py... "
-taxonomy_table = run_taxonomy(pipeline_path, filtered_assembly, blast2lca_output, db_dir_path, cov_table)
+taxonomy_table = output_dir + '/taxonomy.tab'
+if not os.path.isfile(taxonomy_table) or os.stat(taxonomy_table).st_size == 0:
+	print "Running add_contig_taxonomy.py... "
+	if bgcs_dir:
+		taxonomy_table = run_taxonomy(pipeline_path=pipeline_path,
+			assembly_path=filtered_assembly,
+			tax_table_path=blast2lca_output,
+			db_dir_path=db_dir_path,
+			coverage_table=cov_table,
+			bgcs_path=bgcs_dir,
+			orfs_path=prodigal_output + '.faa')
+	else:
+		taxonomy_table = run_taxonomy(pipeline_path=pipeline_path,
+			assembly_path=filtered_assembly,
+			tax_table_path=blast2lca_output,
+			db_dir_path=db_dir_path,
+			coverage_table=cov_table)
+else:
+	print('taxonomy.tab exists... Splitting original contigs into kingdoms')
 
 # Split the original contigs into sets for each kingdom
 taxonomy_pd = pd.read_table(taxonomy_table)
@@ -338,6 +393,10 @@ for seq_record in SeqIO.parse(filtered_assembly, 'fasta'):
 for i, row in taxonomy_pd.iterrows():
 	kingdom = row['kingdom']
 	contig = row['contig']
+	if contig not in all_seq_records:
+		#Using filtered assembly, taxonomy.tab contains contigs not filtered
+		print('{0} below length filter, skipping.'.format(contig))
+		continue
 	if kingdom in categorized_seq_objects:
 		categorized_seq_objects[kingdom].append(all_seq_records[contig])
 	else:
