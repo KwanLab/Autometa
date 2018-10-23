@@ -63,8 +63,8 @@ def cythonize_lca_functions():
 	os.chdir(current_dir)
 
 def download_file(destination_dir, file_url, md5_url):
-	filename = file_url.split('/')[-1]
-	md5name = md5_url.split('/')[-1]
+	filename = os.path.basename(file_url)
+	md5name = os.path.basename(md5_url)
 
 	md5check = False
 
@@ -117,7 +117,7 @@ def update_dbs(database_path, db='all'):
 			.format(database_path+'/nr.gz', database_path, num_processors), shell = True)
 		if returnCode == 0: # i.e. job was successful
 		#Make an md5 file to signal that we have built the database successfully
-			run_command('rm {}/nr.gz'.format(database_path))
+			os.remove('{}/nr.gz'.format(database_path))
 			print("nr.dmnd updated")
 	if db == 'all' or db == 'acc2taxid':
 		# Download prot.accession2taxid.gz only if the version we have is not current
@@ -146,8 +146,33 @@ def update_dbs(database_path, db='all'):
 
 		if os.path.isfile(database_path + '/taxdump.tar.gz'):
 			run_command('tar -xzf {}/taxdump.tar.gz -C {} names.dmp nodes.dmp'.format(database_path, database_path))
-			run_command('rm {}/taxdump.tar.gz'.format(database_path))
+			os.remove('{}/taxdump.tar.gz'.format(database_path))
 			print("nodes.dmp and names.dmp updated")
+
+def check_dbs(db_path):
+	'''
+	Determines what files need to be downloaded/updated depending on
+	what database path was specified
+	'''
+	if db_path == autometa_path + '/databases':
+		db_dict = {
+			'nr': ['nr.dmnd','nr.dmnd.md5','nr.gz.md5'],
+			'acc2taxid': ['prot.accession2taxid.gz.md5','prot.accession2taxid'],
+			'taxdump': ['names.dmp','nodes.dmp','taxdump.tar.gz.md5']
+			}
+	else:
+		db_dict = {
+			'nr': ['nr.dmnd'],
+			'acc2taxid': ['prot.accession2taxid'],
+			'taxdump': ['names.dmp','nodes.dmp']
+			}
+	db_files = os.listdir(db_path)
+	for db in db_dict:
+		for fh in db_dict[db]:
+			if fh not in db_files:
+				print('{0} database not found, downloading/formatting.\n\
+				This may take some time...'.format(db))
+				update_dbs(db_path, db)
 
 def length_trim(fasta_path,length_cutoff):
 	input_fname, ext = os.path.splitext(os.path.basename(fasta_path))
@@ -176,7 +201,11 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	--evalue 1e-5 --max-target-seqs 200 -p {2} --daa {3} -t {4}"\
 	.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
 	# If there is an error, attempt to rebuild NR
+	if error == 134:
+		print('Fatal: Not enough disk space for diamond alignment archive!')
+		exit(1)
 	if error:
+		print('Error when performing diamond blastp:\n{}\nAttempting to correct by rebuilding nr...'.format(error))
 		update_dbs(db_dir_path, 'nr')
 		run_command("diamond blastp --query {0}.faa --db {1} --evalue 1e-5 \
 		--max-target-seqs 200 -p {2} --daa {3} -t {4}"\
@@ -288,27 +317,15 @@ if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
 	print('No databases directory found, creating and populating AutoMeta databases directory\n\
 	This may take some time...')
-	run_command('mkdir {}'.format(db_dir_path))
+	os.mkdir(db_dir_path)
 	update_dbs(db_dir_path)
 elif not os.listdir(db_dir_path):
 	#The 'Autometa databases' directory is empty
 	print('AutoMeta databases directory empty, populating with appropriate databases.\n\
 	This may take some time...')
 	update_dbs(db_dir_path)
-
-db_dict = {
-	'nr': ['nr.dmnd','nr.dmnd.md5','nr.gz.md5'],
-	'acc2taxid': ['prot.accession2taxid.gz.md5','prot.accession2taxid'],
-	'taxdump': ['names.dmp','nodes.dmp','taxdump.tar.gz.md5']
-	}
-
-db_files = os.listdir(db_dir_path)
-for db in db_dict:
-	for fh in db_dict[db]:
-		if fh not in db_files:
-			print('{0} database not found, downloading/formatting.\n\
-			This may take some time...'.format(db))
-			update_dbs(db_dir_path, db)
+else:
+	check_dbs(db_dir_path)
 
 names_dmp_path = db_dir_path + '/names.dmp'
 nodes_dmp_path = db_dir_path + '/nodes.dmp'
