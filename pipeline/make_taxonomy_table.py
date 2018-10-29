@@ -37,7 +37,7 @@ def run_command(command_string, stdout_path = None):
 		exit_code = subprocess.call(command_string, shell=True)
 
 	if exit_code != 0:
-		print('Make_taxonomy_table.py: Error, the command:')
+		print('make_taxonomy_table.py: Error, the command:')
 		print(command_string)
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
@@ -66,9 +66,7 @@ def download_file(destination_dir, file_url, md5_url):
 	filename = os.path.basename(file_url)
 	md5name = os.path.basename(md5_url)
 
-	md5check = False
-
-	while md5check == False:
+	while True:
 		run_command('wget {} -O {}'.format(file_url, destination_dir + '/' + filename))
 		run_command('wget {} -O {}'.format(md5_url, destination_dir + '/' + md5name))
 
@@ -78,7 +76,10 @@ def download_file(destination_dir, file_url, md5_url):
 			check_md5 = check_md5_file.readline().split(' ')[0]
 
 		if downloaded_md5 == check_md5:
-			md5check = True
+			print('md5 checksum successful. Continuing...')
+			break
+		else:
+			print('md5 checksum unsuccessful. Retrying...')
 
 def md5IsCurrent(local_md5_path, remote_md5_url):
 	remote_md5_handle = urllib2.urlopen(remote_md5_url)
@@ -105,7 +106,7 @@ def update_dbs(database_path, db='all'):
 		# First download nr if we don't yet have it OR it is not up to date
 		if os.path.isfile(database_path + '/nr.gz.md5'):
 			if not md5IsCurrent(database_path + '/nr.gz.md5', nr_db_md5_url):
-				print("updating nr.dmnd")
+				print("md5 is not current. Updating nr.dmnd")
 				download_file(database_path, nr_db_url, nr_db_md5_url)
 		else:
 			print("updating nr.dmnd")
@@ -123,7 +124,7 @@ def update_dbs(database_path, db='all'):
 		# Download prot.accession2taxid.gz only if the version we have is not current
 		if os.path.isfile(database_path + '/prot.accession2taxid.gz.md5'):
 			if not md5IsCurrent(database_path + '/prot.accession2taxid.gz.md5', accession2taxid_md5_url):
-				print("updating prot.accession2taxid")
+				print("md5 is not current. Updating prot.accession2taxid")
 				download_file(database_path, accession2taxid_url, accession2taxid_md5_url)
 		else:
 			print("updating prot.accession2taxid")
@@ -194,14 +195,14 @@ def run_prodigal(path_to_assembly):
 
 def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	view_output = prodigal_output + ".tab"
-	tmp_dir_path = os.getcwd() + '/tmp'
+	tmp_dir_path = os.path.dirname(prodigal_output) + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
 	error = run_command_return("diamond blastp --query {0}.faa --db {1} \
 	--evalue 1e-5 --max-target-seqs 200 -p {2} --daa {3} -t {4}"\
 	.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
 	# If there is an error, attempt to rebuild NR
-	if error == 134:
+	if error == 134 or error == str(134):
 		print('Fatal: Not enough disk space for diamond alignment archive!')
 		exit(1)
 	if error:
@@ -212,6 +213,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 		.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
 
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
+
 	return view_output
 
 #blast2lca using accession numbers#
@@ -366,6 +368,13 @@ if not os.path.isfile(prodigal_daa):
 elif os.stat(prodigal_output + ".daa").st_size == 0:
 	print "{} file is empty. Re-running diamond blast...".format(prodigal_daa)
 	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
+elif not os.path.isfile(prodigal_output + ".tab"):
+	print "{0} not found. The diamond alignment archive ({2}) may be invalid.\n\
+Please remove or provide a different DAA file or manually construct {1} with\
+ \ncmd:\n\tdiamond view -a {3} -f tab -o {1}\nExiting..."\
+ 	.format(prodigal_output + ".tab", os.path.basename(prodigal_output) + ".tab",
+  		prodigal_daa, os.path.basename(prodigal_daa))
+	exit(1)
 else:
 	diamond_output = prodigal_output + ".tab"
 
