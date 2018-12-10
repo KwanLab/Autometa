@@ -258,16 +258,19 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 
 	for cluster in marker_totals:
 		total_unique_markers = len(marker_totals[cluster])
-		total_marker_count = 0
+		# total_marker_count = 0
+		num_single_copy_markers = 0
 		for marker in marker_totals[cluster]:
-			total_marker_count += marker_totals[cluster][marker]
+			# total_marker_count += marker_totals[cluster][marker]
+			if marker_totals[cluster][marker] == 1:
+				num_single_copy_markers += 1
 
 		completeness = (float(total_unique_markers) / expected_number) * 100
 		# Protect from divide by zero
 		if total_unique_markers == 0:
 			purity = 0
 		else:
-			purity = (float(total_unique_markers) / total_marker_count) * 100
+			purity = (float(num_single_copy_markers) / total_unique_markers) * 100
 
 		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
 
