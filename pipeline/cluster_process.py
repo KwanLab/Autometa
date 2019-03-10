@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -38,7 +38,7 @@ def run_command(command_string, stdout_path = None):
 		exit_code = subprocess.call(command_string, shell=True)
 
 	if exit_code != 0:
-		print('ML_recruitment_docker.py: Error, the command:')
+		print('cluster_process.py: Error, the command:')
 		print(command_string)
 		print('failed, with exit code ' + str(exit_code))
 		exit(1)
@@ -93,14 +93,13 @@ if do_taxonomy:
 	if not os.path.isdir(db_dir):
 		print('Error! DB dir ' + db_dir + ' does not exist')
 		exit(1)
-	else:
-		if not os.path.isfile(db_dir + '/names.dmp'):
-			print('Error! Cannot find names.dmp in ' + db_dir)
-			exit(1)
+	if not os.path.isfile(db_dir + '/names.dmp'):
+		print('Error! Cannot find names.dmp in ' + db_dir)
+		exit(1)
 
-		if not os.path.isfile(db_dir + '/nodes.dmp'):
-			print('Error! Cannot find nodes.dmp in ' + db_dir)
-			exit(1)
+	if not os.path.isfile(db_dir + '/nodes.dmp'):
+		print('Error! Cannot find nodes.dmp in ' + db_dir)
+		exit(1)
 
 # Make output directory if it isn't already there
 if not os.path.isdir(output_dir):
@@ -166,7 +165,7 @@ summary_table = open(summary_table_path, 'w')
 summary_table.write('cluster\tsize\tlongest_contig\tn50\tnumber_contigs\tcompleteness\tpurity\tav_cov\tav_gc\n')
 
 for cluster in cluster_sequences:
-	attributes = assess_assembly(cluster_sequences[cluster]) 
+	attributes = assess_assembly(cluster_sequences[cluster])
 	total_size = attributes['size']
 	longest_contig = attributes['largest_sequence']
 	n50 = attributes['n50']
@@ -177,17 +176,16 @@ for cluster in cluster_sequences:
 	elif kingdom == 'archaea':
 		total_markers = 162
 
-	number_unique_markers = 0
-	number_markers_found = len(markers_in_cluster[cluster])
+	number_markers_found = 0
+	number_unique_markers = len(markers_in_cluster[cluster])
 	for pfam in markers_in_cluster[cluster]:
-		if markers_in_cluster[cluster][pfam] == 1:
-			number_unique_markers += 1
+		number_markers_found += markers_in_cluster[cluster][pfam]
 
 	# The following protects for the edge case where a cluster has zero marker genes
-	if total_markers == 0:
+	if number_unique_markers == 0:
 		completness = 'unknown'
 	else:
-		completeness = (number_markers_found / total_markers) * 100
+		completeness = (number_unique_markers / total_markers) * 100
 	if number_markers_found == 0:
 		purity = 'unknown'
 	else:

@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -338,5 +338,6 @@ with open(output_dir + '/' + output_filename + ".lca", "w") as lca_outfile:
     for orf in lca_dict.keys():
         rank = lca_dict[orf]['rank']
         name = lca_dict[orf]['name']
-        #lca = lca_dict[orf]['lca']
-        lca_outfile.write('%s\t%s\t%s\n' % (orf, name, rank))
+        lca = lca_dict[orf]['lca']
+        lca_outfile.write('%s\t%s\t%s\t%s\n' % (orf, name, rank, lca))
+        #lca_outfile.write('%s\t%s\t%s\n' % (orf, name, rank))
