@@ -193,14 +193,15 @@ def run_prodigal(path_to_assembly):
 		run_command('prodigal -i {} -a {}/{}.orfs.faa -p meta -m -o {}/{}.txt'\
 		.format(path_to_assembly, output_dir, assembly_fname, output_dir, assembly_fname))
 
-def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
-	view_output = prodigal_output + ".tab"
+def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond):
+	view_output = prodigal_output + ".blastp"
 	tmp_dir_path = os.path.dirname(prodigal_output) + '/tmp'
 	if not os.path.isdir(tmp_dir_path):
 		os.makedirs(tmp_dir_path) # This will give an error if the path exists but is a file instead of a dir
 	error = run_command_return("diamond blastp --query {0}.faa --db {1} \
-	--evalue 1e-5 --max-target-seqs 200 -p {2} --daa {3} -t {4}"\
-	.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
+	--evalue 1e-5 --max-target-seqs 200 -p {2} --outfmt 6 --out {3} -t {4}"\
+	.format(prodigal_output, diamond_db_path, num_processors, prodigal_diamond, tmp_dir_path))
+
 	# If there is an error, attempt to rebuild NR
 	if error == 134 or error == str(134):
 		print('Fatal: Not enough disk space for diamond alignment archive!')
@@ -208,9 +209,10 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa):
 	if error:
 		print('Error when performing diamond blastp:\n{}\nAttempting to correct by rebuilding nr...'.format(error))
 		update_dbs(db_dir_path, 'nr')
+
 		run_command("diamond blastp --query {0}.faa --db {1} --evalue 1e-5 \
-		--max-target-seqs 200 -p {2} --daa {3} -t {4}"\
-		.format(prodigal_output, diamond_db_path, num_processors, prodigal_daa, tmp_dir_path))
+		--max-target-seqs 200 -p {2} --outfmt 6 --out {3} -t {4}"\
+		.format(prodigal_output, diamond_db_path, num_processors, prodigal_diamond, tmp_dir_path))
 
 	run_command("diamond view -a {} -f tab -o {}".format(prodigal_daa, view_output))
 
@@ -297,10 +299,11 @@ fasta_path = args['assembly']
 cov_table = args['cov_table']
 output_dir = args['output_dir']
 single_genome_mode = args['single_genome']
+
 bgcs_dir = args['bgcs_dir']
 fasta_fname, _ = os.path.splitext(os.path.basename(fasta_path))
 prodigal_output = '/'.join([output_dir, fasta_fname + ".filtered.orfs"])
-prodigal_daa = prodigal_output + ".daa"
+prodigal_diamond = prodigal_output + ".blastp"
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -362,21 +365,18 @@ if not os.path.isfile(prodigal_output + ".faa"):
 	#Check for file and if it doesn't exist run make_marker_table
 	run_prodigal(filtered_assembly)
 
-if not os.path.isfile(prodigal_daa):
-	print "Could not find {}. Running diamond blast... ".format(prodigal_daa)
-	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
-elif os.stat(prodigal_output + ".daa").st_size == 0:
-	print "{} file is empty. Re-running diamond blast...".format(prodigal_daa)
-	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_daa)
-elif not os.path.isfile(prodigal_output + ".tab"):
-	print "{0} not found. The diamond alignment archive ({2}) may be invalid.\n\
-Please remove or provide a different DAA file or manually construct {1} with\
- \ncmd:\n\tdiamond view -a {3} -f tab -o {1}\nExiting..."\
- 	.format(prodigal_output + ".tab", os.path.basename(prodigal_output) + ".tab",
-  		prodigal_daa, os.path.basename(prodigal_daa))
+if not os.path.isfile(prodigal_diamond):
+	print "Could not find {}. Running diamond blast... ".format(prodigal_diamond)
+	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond)
+elif os.stat(prodigal_diamond).st_size == 0:
+	print "{} file is empty. Re-running diamond blast...".format(prodigal_diamond)
+	diamond_output = run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamond)
+elif not os.path.isfile(prodigal_diamond):
+	print "{0} not found. \nExiting..."\
+ 	.format(prodigal_diamond)
 	exit(1)
 else:
-	diamond_output = prodigal_output + ".tab"
+	diamond_output = prodigal_diamond
 
 if not os.path.isfile(prodigal_output + ".lca"):
 	print "Could not find {}. Running lca...".format(prodigal_output + ".lca")
