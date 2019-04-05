@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 # Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
 #
@@ -35,6 +35,7 @@ from functools import reduce
 from itertools import chain
 from sys import argv, exit
 import subprocess
+import gzip
 
 try:
     import lca_functions
@@ -104,11 +105,15 @@ if args['parser_databasefiles']:
     names_path = args['names.dmp']
     accession2taxid_file = args['accession2taxid']
 elif args['parser_databasedirectory']:
-    taxdump_dir_path = args['path_to_database_directory'].rstrip('/')
-    accession2taxid_path = taxdump_dir_path + '/prot.accession2taxid'
-    names_path = taxdump_dir_path + '/names.dmp'
-    nodes_path = taxdump_dir_path + '/nodes.dmp'
-    accession2taxid_file = accession2taxid_path
+    taxdump_dir_path = os.path.abspath(args['path_to_database_directory'])
+    accession2taxid_path = os.path.join(taxdump_dir_path, 'prot.accession2taxid')
+    names_path = os.path.join(taxdump_dir_path,'names.dmp')
+    nodes_path = os.path.join(taxdump_dir_path,'nodes.dmp')
+    for f in ['prot.accession2taxid','prot.accession2taxid.gz']:
+        acc2taxid_fpath = os.path.join(taxdump_dir_path, f)
+        if os.path.isfile(acc2taxid_fpath):
+            accession2taxid_file = acc2taxid_fpath
+            break
 
 blast_file = args['blast']
 bitscore_filter = args['f']
@@ -117,15 +122,15 @@ taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
 accession2taxid_url = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"
 
 #Check if diamond view -a *daa -f tab -o <dmnd_out.tab> is infile
-check_blast_file_type = subprocess.check_output(['file', blast_file]).rstrip().split(":")[1].lstrip().lower()
-if check_blast_file_type != 'ascii text':
-    if check_blast_file_type == 'data':
-        print("You are supplying a diamond data file. (*daa)")
-        print("please specify the ascii formatted diamond output from \"diamond view -f tab -o <dmnd_out.tab>\"")
-        exit(1)
-    else:
-        print("Please supply the output from \"diamond view -f tab -o <dmnd_out.tab>\"")
-        exit(1)
+# check_blast_file_type = subprocess.check_output(['file', blast_file]).rstrip().split(":")[1].lstrip().lower()
+# if check_blast_file_type != 'ascii text':
+#     if check_blast_file_type == 'data':
+#         print("You are supplying a diamond data file. (*daa)")
+#         print("please specify the ascii formatted diamond output from \"diamond view -f tab -o <dmnd_out.tab>\"")
+#         exit(1)
+#     else:
+#         print("Please supply the output from \"diamond view -f tab -o <dmnd_out.tab>\"")
+#         exit(1)
 
 if args['update']:
     os.system('wget -v %s -O %s/taxdump.tar.gz' % (taxdump_url, taxdump_dir_path))
@@ -136,10 +141,12 @@ if args['update']:
     os.system('gunzip -9vNf %s.gz > %s' % (accession2taxid_path, accession2taxid_path))
     print("\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..." % taxdump_dir_path)
 
-start_time = time.time()
+
+start_time = time.strftime('%H:%M:%S', time.gmtime(time.time()))
+t0 = time.time()
 output_filename = str('.'.join(blast_file.split("/")[-1].split(".")[:-1]))
 output_dir = '/'.join(os.path.abspath(blast_file).split('/')[:-1])
-
+print('{}: Beginning LCA'.format(start_time))
 # Parse nodes file
 parents = dict()
 children = dict()
@@ -220,6 +227,8 @@ for index, node in enumerate(tour):
     else:
         pass
 
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished building tree'.format(t))
 
 """
 Next Module: Constructs Sparse Table (Preprocessing for RMQ and LCA)
@@ -233,6 +242,8 @@ Constructs dictionary of {'ORF1': [accession number/accession number.version, ..
 taking accession numbers for (default 90% of) topbitscore and above
 Operating under the assumption bitscore is descending from highest to lowest for each gene
 """
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished constructing sparse table'.format(t))
 
 blast_orfs = lca_functions.Extract_blast(blast_file, bitscore_filter)
 
@@ -240,11 +251,18 @@ blast_orfs = lca_functions.Extract_blast(blast_file, bitscore_filter)
 Next Module: Reads in Genbank accession2taxid_file
 Converts accession numbers from blast output to tax ids in preparation for LCA algorithm
 """
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished extracting blastp orfs. parsing prot.acc2taxid DB'.format(t))
 
 accession2taxid_dict = lca_functions.Process_accession2taxid_file(accession2taxid_file, blast_orfs)
 
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished acc2taxid translation dict'.format(t))
 
 blast_taxids = lca_functions.Convert_accession2taxid(accession2taxid_dict, blast_orfs)
+
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished acc2taxid conversion'.format(t))
 
 """
 Next Module: Performs LCA algorithm on taxids from converted BLAST accession numbers
@@ -302,6 +320,9 @@ if failure_tracking:
                 failed_orfs_outfile.write('%s,%s\n' % (orfs, taxset))
     else:
         pass
+
+t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
+print('{}: Finished LCA query'.format(t))
 
 reference_taxids = dict() # {taxid:{'name':'scientific name','parent':'parent taxid', 'rank':'given rank'}, taxid2:{...},...}
 
