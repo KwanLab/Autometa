@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 from bokeh.plotting import figure, show
 from bokeh.io import output_file, show
