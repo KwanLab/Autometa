@@ -9,23 +9,23 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Name: Lowest Common Ancestor Script (LCA)
-Function: Cython compiled functions for LCA analysis of contigs from BLAST query output file
-Usage: lca.py {taxid reference table} {blast.tab output} {genbank prot.accession_num2taxid}
-Author: Evan R. Rees
-Date: {\} TBD (Launch date)
-"""
+# Name: Lowest Common Ancestor Script (LCA)
+# Function: Cython compiled functions for LCA analysis of contigs from BLAST query output file
+# Usage: lca.py <taxid_reference_table> <blast.outfmt6.tab> <prot.accession_num2taxid>
+# __Author__: Evan R. Rees
+
+
 import re
 import numpy as np
 from subprocess import check_output
 from itertools import chain
+import gzip
 
 class countcalls(object):
    "Decorator that keeps track of the number of times a function is called."
@@ -100,33 +100,37 @@ def Extract_blast(blast_file, bitscore_filter=0.9):
                 temp_orf_list = [orf]
     return(blast_dict)
 
-def Convert_accession2taxid(accession2taxid_dict, blast_dict):
+def Convert_accession2taxid(acc2taxid_dict, blast_dict):
     "Returns dictionary of orfs with set of their associated tax ids converted from accesssion numbers and accession.version numbers"
     blast_taxids = dict()
     for orf in blast_dict.iterkeys():
         blast_taxids[orf]=set()
         for accession_number in blast_dict[orf].__iter__():
-            if accession_number in accession2taxid_dict.viewkeys():
-                blast_taxids[orf].add(int(accession2taxid_dict.get(accession_number)))
+            if accession_number in acc2taxid_dict.viewkeys():
+                blast_taxids[orf].add(int(acc2taxid_dict.get(accession_number)))
     return(blast_taxids)
 
-def Process_accession2taxid_file(accession2taxid_file, blast_dict):
+def Process_accession2taxid_file(acc2taxid_fpath, blast_dict):
     "Returns dictionary of accession numbers and accession.version with their associated tax ids"
-    accession2taxid_dict = dict()
+    acc2taxid_dict = dict()
     accession_set = set(chain.from_iterable(blast_dict.values()))
-    with open(accession2taxid_file,"r") as accession2taxid_file:
-        for line in accession2taxid_file:
-            pattern = re.search(r'(\S+)\s+(\S+)\s+(\d+)\s+\S+', line)
-            if pattern:
-                accession_number = pattern.group(1)
-                accession_version = pattern.group(2)
-                if accession_number in accession_set:
-                    taxid = int(pattern.group(3))
-                    accession2taxid_dict[accession_number]=taxid
-                elif accession_version in accession_set:
-                    taxid = int(pattern.group(3))
-                    accession2taxid_dict[accession_version]=taxid
-    return(accession2taxid_dict)
+
+    if acc2taxid_fpath.endswith('.gz'):
+        fh = gzip.open(acc2taxid_fpath)
+    else:
+        fh = open(acc2taxid_fpath)
+    header = fh.readline()
+    for line in fh:
+        acc_num, acc_ver, taxid, _ = line.split('\t')
+        taxid = int(taxid)
+        if acc_num in accession_set:
+            acc2taxid_dict.update({acc_num:taxid})
+            # acc2taxid_dict[acc_num]=taxid
+        elif acc_ver in accession_set:
+            acc2taxid_dict.update({acc_ver:taxid})
+            # acc2taxid_dict[acc_ver]=taxid
+    fh.close()
+    return(acc2taxid_dict)
 
 #Empty data structures used for RangeMinQuery
 tour=list()
@@ -138,11 +142,16 @@ occurrence=dict()
 def RangeMinQuery(node1, node2, tree=tour, sparse_table=sparse_table, level_array=level, first_occurrence_index=occurrence):
     "Returns LCA by performing Range Minimum Query b/w 2 tax ids\nRequires:euler tree, sparse table, level array, occurrence dictionary"
     if node1 == node2:
-        #If after performing previous RMQs the reduced input is the same tax ID as the next input tax ID, no RMQ is needed, thus the same tax ID will be returned.
+        # If after performing previous RMQs the reduced input is the same tax ID
+        # as the next input tax ID, no RMQ is needed, thus the same tax ID will
+        # be returned.
         return(node1)
     elif first_occurrence_index[node1] < first_occurrence_index[node2]:
-        #From tax IDs converted from filtered BLAST output accession numbers, will find the tax ID in the first occurrence dictionary and evaluate position in tour
-        #Want the tax ID that occurs first to be the low. This 'if,else' statement will appropriate tax IDs to corrrect assignment for range query.
+        # From tax IDs converted from filtered BLAST output accession numbers,
+        # will find the tax ID in the first occurrence dictionary and evaluate
+        # position in tour. Want the tax ID that occurs first to be the low.
+        # This 'if,else' statement will appropriate tax IDs to corrrect
+        # assignment for range query.
         low = first_occurrence_index[node1]
         high = first_occurrence_index[node2]
     else:
@@ -153,9 +162,9 @@ def RangeMinQuery(node1, node2, tree=tour, sparse_table=sparse_table, level_arra
     #This allows for equipartitionining of the range b/w both nodes.
     if level_array[int(sparse_table[low, cutoff_range])] <= level_array[int(sparse_table[(high-(2**cutoff_range)+1), cutoff_range])]:
         #If the level at the index in the sparse table lower range is less than or equal to the level at index in the upper range...
-        return(tree[level_array.index(level_array[int( sparse_table[low, cutoff_range] ) ], low, high)][1])
+        return(tree[level_array.index(level_array[int(sparse_table[low, cutoff_range])], low, high)][1])
         #LCA is minimum in lower range
     else:
         #If the level at the index in the sparse table lower range is greater than the level at index in the upper range...
-        return(tree[level_array.index(level_array[int( sparse_table[(high-(2**cutoff_range)+1), cutoff_range] ) ], low, high)][1])
+        return(tree[level_array.index(level_array[int(sparse_table[(high-(2**cutoff_range)+1), cutoff_range])], low, high)][1])
         #LCA is minimum in upper range

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 # Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
 #
@@ -25,299 +25,341 @@
 #        If classification shares common ancestry with majority of other proteins, accept result
 #    If no result, move up to next taxonomic level
 # Uses output from program blast2lca (https://github.com/emepyc/Blast2lca)
+# Updated version uses output from lca.py in Autometa pipeline
+
 
 import sys
-from time import *
-from tqdm import *
 import subprocess
 import pprint
-pp = pprint.PrettyPrinter(indent=4)
+import os
 
-rank_priority = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom', 'root']
-canonical_ranks = {
-	'superkingdom': 1,
-	'phylum': 1,
-	'class': 1,
-	'order': 1,
-	'family': 1,
-	'genus': 1,
-	'species': 1
-}
+from time import *
+from tqdm import tqdm
 
-def isConsistentWithOtherOrfs(taxid, rank, contigDictionary, taxidDictionary):
-	# Function that determines for a given taxid, whether the majority of proteins
-	# in a contig, with rank equal to or above the given rank, are common ancestors of
-	# the taxid.  If the majority are, this function returns True, otherwise it returns
-	# False
+def isConsistentWithOtherOrfs(taxid, rank, ctg_lcas, nodes_dict):
+    """
+    Function that determines for a given taxid, whether the majority of proteins
+    in a contig, with rank equal to or above the given rank, are common
+    ancestors of the taxid.  If the majority are, this function returns True,
+    otherwise it returns False
+    """
+    # ctg_lcas = {ctg:{canonical_rank:{taxid:num_hits,...},...},ctg2:{...},...}
+    # First we make a modified rank_priority list that only includes the current rank and above
+    rank_index = rank_priority.index(rank)
+    ranks_to_consider = rank_priority[rank_index:]
 
-	# First we make a modified rank_priority list that only includes the current rank and above
-	ranks_to_consider = None
-	for i, rankName in enumerate(rank_priority):
-		if rankName == rank:
-			ranks_to_consider = rank_priority[i:]
-			break
+    # Now we total up the consistent and inconsistent ORFs
+    consistent = 0
+    inconsistent = 0
 
-	# Now we total up the consistent and inconsistent ORFs
+    for rankName in ranks_to_consider:
+        if rankName not in ctg_lcas:
+            continue
+        for ctg_lca in ctg_lcas[rankName]:
+            if isCommonAncestor(ctg_lca, taxid, nodes_dict):
+                consistent += ctg_lcas[rankName][ctg_lca]
+            else:
+                inconsistent += ctg_lcas[rankName][ctg_lca]
 
-	consistentTotal = 0
-	inconsistentTotal = 0
+    if consistent > inconsistent:
+        return True
+    else:
+        return False
 
-	for rankName in ranks_to_consider:
-		if rankName in contigDictionary:
-			for current_taxid in contigDictionary[rankName]:
-				if isCommonAncestor(current_taxid, taxid, taxidDictionary):
-					consistentTotal += contigDictionary[rankName][current_taxid]
-				else:
-					inconsistentTotal += contigDictionary[rankName][current_taxid]
+def isCommonAncestor(parent_taxid, child_taxid, nodes_dict):
+    ancestor_taxid = child_taxid
+    while ancestor_taxid != 1:
+        if parent_taxid == ancestor_taxid:
+            return True
+        ancestor_taxid = nodes_dict[ancestor_taxid]['parent']
+    return False
 
-	if consistentTotal > inconsistentTotal:
-		return True
-	else:
-		return False
+def lowest_majority(ctg_lcas, nodes_dict):
+    # ctg_lcas = {canonical_rank:{taxid:num_hits, taxid2:#,...},rank2:{...},...}
+    taxid_totals = {}
 
-def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
-	current_taxid = childTaxid
-	while int(current_taxid) != 1:
-		if potentialParentTaxid == current_taxid:
-			return True
-		current_taxid = taxidDictionary[current_taxid]['parent']
-	return False
+    for rank in rank_priority:
+        if rank not in ctg_lcas:
+            continue
 
-def lowest_majority(contigDictionary, taxidDictionary):
-	taxid_totals = {} # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
+        rank_index = rank_priority.index(rank)
+        ranks_to_consider = rank_priority[rank_index:]
 
-	for rank in rank_priority:
-		if rank in contigDictionary:
-			ranks_to_consider = None
-			for i, rankName in enumerate(rank_priority):
-				if rankName == rank:
-					ranks_to_consider = rank_priority[i:]
-					break
+        for taxid in ctg_lcas[rank]:
+            # Make a dictionary to total the number of canonical ranks hit
+            # while traversing the path so that we can add 'unclassified' to
+            # any that don't exist. Later we need to make sure that
+            # 'unclassified' doesn't ever win
+            ranks_in_path = {rank_to_consider:0 for rank_to_consider in ranks_to_consider}
 
-			for taxid in contigDictionary[rank]:
-				# Make a dictionary to total the number of canonical ranks hit while traversing the path
-				# - so that we can add 'unclassified' to any that don't exist
-				# Later we need to make sure that 'unclassified' doesn't ever win
-				ranks_in_path = {}
-				for rank_to_consider in ranks_to_consider:
-					ranks_in_path[rank_to_consider] = 0
+            # We need to add to taxid_totals for each taxid in the tax_path
+            current_taxid = taxid
+            current_rank = rank
+            while current_taxid != 1:
+                if current_rank not in set(rank_priority):
+                    current_taxid = nodes_dict[current_taxid]['parent']
+                    current_rank = nodes_dict[current_taxid]['rank']
+                    continue
 
-				# We need to add to taxid_totals for each taxid in the tax_path
-				current_taxid = taxid
-				current_rank = rank
-				while int(current_taxid) != 1:
-					if current_rank in canonical_ranks:
-						ranks_in_path[current_rank] += 1
-						if current_rank in taxid_totals:
-							if current_taxid in taxid_totals[current_rank]:
-								taxid_totals[current_rank][current_taxid] += 1
-							else:
-								taxid_totals[current_rank][current_taxid] = 1
-						else:
-							taxid_totals[current_rank] = { current_taxid: 1 }
-					current_taxid = taxidDictionary[current_taxid]['parent']
-					current_rank = taxidDictionary[current_taxid]['rank']
+                ranks_in_path[current_rank] += 1
 
-				# Now go through ranks_in_path. Where total = 0, add 'unclassified'
-				for rank_to_consider in ranks_to_consider:
-					if ranks_in_path[rank_to_consider] == 0:
-						if rank_to_consider in taxid_totals:
-							if 'unclassified' in taxid_totals[rank_to_consider]:
-								taxid_totals[rank_to_consider]['unclassified'] += 1
-							else:
-								taxid_totals[rank_to_consider]['unclassified'] = 1
-						else:
-							taxid_totals[rank_to_consider] = { 'unclassified': 1 }
+                if current_rank not in taxid_totals:
+                    taxid_totals.update({current_rank:{current_taxid:1}})
+                    current_taxid = nodes_dict[current_taxid]['parent']
+                    current_rank = nodes_dict[current_taxid]['rank']
+                    continue
 
-	# If there are any gaps in the taxonomy paths for any of the proteins in the contig,
-	# we need to add 'unclassified' to the relevant canonical taxonomic rank.
-	# However, we must never allow 'unclassified' to win! (That just won't really tell us anything)
+                if current_taxid in taxid_totals[current_rank]:
+                    taxid_totals[current_rank][current_taxid] += 1
+                else:
+                    taxid_totals[current_rank][current_taxid] = 1
 
-	# Now we need to determine which is the first level to have a majority
-	for rank in rank_priority:
-		total_votes = 0
-		taxid_leader = None
-		taxid_leader_votes = 0
-		if rank in taxid_totals:
-			for taxid in taxid_totals[rank]:
-				total_votes += taxid_totals[rank][taxid]
-				if taxid_totals[rank][taxid] > taxid_leader_votes:
-					taxid_leader = taxid
-					taxid_leader_votes = taxid_totals[rank][taxid]
-			majority_threshold = float(total_votes)/2
-			if taxid_leader_votes > majority_threshold and taxid_leader != 'unclassified':
-				return taxid_leader
+                current_taxid = nodes_dict[current_taxid]['parent']
+                current_rank = nodes_dict[current_taxid]['rank']
 
-	# Just in case
-	return 1
+            # Now go through ranks_in_path. Where total = 0, add 'unclassified'
+            for rank_to_consider in ranks_to_consider:
+                if ranks_in_path[rank_to_consider] == 0:
+                    if rank_to_consider not in taxid_totals:
+                        taxid_totals[rank_to_consider] = {'unclassified':1}
+                        continue
+                    if 'unclassified' in taxid_totals[rank_to_consider]:
+                        taxid_totals[rank_to_consider]['unclassified'] += 1
+                    else:
+                        taxid_totals[rank_to_consider]['unclassified'] = 1
+
+
+    # If there are any gaps in the taxonomy paths for any of the proteins in the contig,
+    # we need to add 'unclassified' to the relevant canonical taxonomic rank.
+    # However, we must never allow 'unclassified' to win! (That just won't really tell us anything)
+
+    # Now we need to determine which is the first level to have a majority
+    for rank in rank_priority:
+        total_votes = 0
+        taxid_leader = None
+        taxid_leader_votes = 0
+        if not rank in taxid_totals:
+            continue
+        for taxid in taxid_totals[rank]:
+            taxid_votes = taxid_totals[rank][taxid]
+            total_votes += taxid_votes
+            if taxid_votes > taxid_leader_votes:
+                taxid_leader = taxid
+                taxid_leader_votes = taxid_votes
+        majority_threshold = float(total_votes)/2
+        if taxid_leader_votes > majority_threshold and taxid_leader != 'unclassified':
+            return taxid_leader
+    # Just in case
+    return 1
+
+def parse_names(names_dmp_path):
+    names = {}
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid names')
+    wc_output = subprocess.check_output(['wc', '-l', names_dmp_path])
+    wc_list = wc_output.split()
+    number_of_lines = int(wc_list[0])
+    with open(names_dmp_path) as names_dmp:
+        for line in tqdm(names_dmp, total=number_of_lines):
+            taxid, name, _, classification = line.strip('\t|\n').split('\t|\t')[:4]
+            taxid = int(taxid)
+            # Only add scientific name entries
+            scientific = classification == 'scientific name'
+            if scientific:
+                # line_list[1] = line_list[1].replace(' ', '_')
+                names.update({taxid:name})
+    return(names)
+
+def parse_nodes(nodes_dmp_path):
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid nodes')
+    wc_output = subprocess.check_output(['wc', '-l', nodes_dmp_path])
+    wc_list = wc_output.split()
+    number_of_lines = int(wc_list[0])
+    nodes_dmp = open(nodes_dmp_path)
+    root_line = nodes_dmp.readline()
+    nodes = {}
+    nodes.update({1:{'parent':1, 'rank':'root'}})
+    for line in tqdm(nodes_dmp, total=number_of_lines):
+        child, parent, rank = line.split('\t|\t')[:3]
+        parent, child = map(int,[parent, child])
+        nodes.update({child:{'parent':parent, 'rank':rank}})
+    nodes_dmp.close()
+    return(nodes)
+
+def parse_lca(lca_fpath):
+    print( strftime("%Y-%m-%d %H:%M:%S") + ' Parsing lca taxonomy table')
+    # Work out number of lines in file
+    wc_output = subprocess.check_output(['wc', '-l', lca_fpath])
+    wc_list = wc_output.split()
+    number_of_lines = int(wc_list[0])
+    number_of_proteins = {}
+    lca_hits = {}
+    # lca_hits[contig][rank][taxid] (running total of each thing)
+    fh = open(lca_fpath)
+    for line in tqdm(fh, total=number_of_lines):
+        orf, name, rank, taxid = line.strip().split('\t')
+        contig, orf_num = orf.rsplit('_', 1)
+        taxid = int(taxid)
+        if taxid != 1:
+            while rank not in set(rank_priority):
+                taxid = nodes[taxid]['parent']
+                rank = nodes[taxid]['rank']
+        # Count number of proteins per contig
+        if contig in number_of_proteins:
+            number_of_proteins[contig] += 1
+        else:
+            number_of_proteins[contig] = 1
+
+        # Keep running total of taxids for each contig
+        if contig not in lca_hits:
+            lca_hits.update({contig:{rank:{taxid:1}}})
+            continue
+
+        if rank not in lca_hits[contig]:
+            lca_hits[contig].update({rank:{taxid:1}})
+            continue
+
+        if taxid not in lca_hits[contig][rank]:
+            lca_hits[contig][rank].update({taxid:1})
+        else:
+            lca_hits[contig][rank][taxid] += 1
+    fh.close()
+    return(lca_hits)
+
+def rank_taxids(ctg_lcas):
+
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids')
+    n_contigs = len(ctg_lcas)
+    top_taxids = {}
+    for contig in tqdm(ctg_lcas, total=n_contigs):
+        acceptedTaxid = None
+        for rank in rank_priority:
+            if acceptedTaxid is not None:
+                break
+            # Order in descending order of votes
+            if rank in ctg_lcas[contig]:
+                ordered_taxids = sorted(ctg_lcas[contig][rank], key=lambda tid:ctg_lcas[contig][rank][tid], reverse=True)
+                #sys.exit()
+                for taxid in ordered_taxids:
+                    if isConsistentWithOtherOrfs(taxid, rank, ctg_lcas[contig], nodes):
+                        acceptedTaxid = taxid
+                        break
+
+        # If acceptedTaxid is still None at this point, there was some kind of
+        # draw, so we need to find the lowest taxonomic level where there is a
+        # majority
+        if acceptedTaxid is None:
+            acceptedTaxid = lowest_majority(ctg_lcas[contig], nodes)
+
+        top_taxids[contig] = acceptedTaxid
+    return(top_taxids)
+
+def resolve_taxon_paths(ctg2taxid):
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths')
+    contig_paths = {}
+    # {contig:{rank1:name1,rank2,name2},contig2:{rank1:name1,rank2:name2,...},...}
+    n_contigs = len(ctg2taxid)
+    for contig in tqdm(ctg2taxid, total=n_contigs):
+        taxid = ctg2taxid[contig]
+        if taxid == 1:
+            contig_paths.update({contig:{'root':names[taxid]}})
+        while taxid != 1:
+            current_rank = nodes[taxid]['rank']
+            if current_rank not in set(rank_priority):
+                taxid = nodes[taxid]['parent']
+                continue
+
+            name = names[taxid]
+
+            if contig not in contig_paths:
+                contig_paths.update({contig:{current_rank:name}})
+            else:
+                contig_paths[contig][current_rank] = name
+            taxid = nodes[taxid]['parent']
+
+        for rank in rank_priority:
+            if rank not in contig_paths[contig]:
+                contig_paths[contig][rank] = 'unclassified'
+
+    for contig in contig_paths:
+        contig_paths[contig].pop('root')
+        contig_paths[contig]['taxid'] = ctg2taxid[contig]
+
+    return(contig_paths)
+
+def write_taxa(ranked_ctgs, contig_table_fpath, outfpath):
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Writing table')
+    outfile = open(outfpath, 'w')
+    fh = open(contig_table_fpath)
+    header = fh.readline().rstrip('\n')
+    header += '\t'.join([
+        '','kingdom','phylum','class','order','family','genus','species','taxid'
+        ]) + '\n'
+    outfile.write(header)
+
+    for line in fh:
+        original_line = line.rstrip('\n')
+        line_list = original_line.split('\t')
+        ctg = line_list[0]
+        if ctg not in ranked_ctgs:
+            # In this case we fill up the record with 'unclassified'
+            # - probably this results from the contig having no blast hits
+            ranked_ctgs[ctg] = {}
+            for rank in rank_priority:
+                ranked_ctgs[ctg][rank] = 'unclassified'
+                ranked_ctgs[ctg]['taxid'] = 'unclassified'
+
+        new_line = [ranked_ctgs[ctg][rank] for rank in reversed(rank_priority)]
+        new_line.insert(0, original_line)
+        new_line.append(str(ranked_ctgs[ctg]['taxid']))
+
+        outline = '\t'.join(map(str, new_line)) + '\n'
+        outfile.write(outline)
+    outfile.close()
+
+
 
 if not len(sys.argv) == 5:
-	print('Usage: add_contig_taxonomy.py <contig_table_path> <tax_table_path> <taxdump_dir_path> <output_file_path>')
-	exit()
+    usage = 'Usage: add_contig_taxonomy.py <contig_table_path> <tax_table_path> <taxdump_dir_path> <output_file_path>'
+    exit(usage)
 
-contig_table_path = sys.argv[1]
+contig_tab_path = sys.argv[1]
 tax_table_path = sys.argv[2]
-taxdump_dir_path = sys.argv[3]
+taxdump_dir_path = os.path.abspath(sys.argv[3])
 output_file_path = sys.argv[4]
 
 # Process NCBI taxdump files
-names_dmp_path = taxdump_dir_path + '/names.dmp'
-nodes_dmp_path = taxdump_dir_path + '/nodes.dmp'
+name_fpath = os.path.join(taxdump_dir_path, 'names.dmp')
+nodes_fpath = os.path.join(taxdump_dir_path, 'nodes.dmp')
 
-taxids = {}
-print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid names'
-wc_output = subprocess.check_output(['wc', '-l', names_dmp_path])
-wc_list = wc_output.split()
-number_of_lines = int(wc_list[0])
+pp = pprint.PrettyPrinter(indent=4)
 
-with open(names_dmp_path) as names_dmp:
-	for line in tqdm(names_dmp, total=number_of_lines):
-		line_list = line.rstrip('\n').split('|')
-		# Remove trailing and leading spaces
-		for i,value in enumerate(line_list):
-			line_list[i] = value.strip()
+# Build taxid tree structure with associated canoncial ranks and names
+names = parse_names(name_fpath)
+nodes = parse_nodes(nodes_fpath)
 
-		# Only add scientific name entries
-		if line_list[3] == 'scientific name':
-			# line_list[1] = line_list[1].replace(' ', '_')
-			taxids[line_list[0]] = { 'name': line_list[1] }
+rank_priority = [
+    'species',
+    'genus',
+    'family',
+    'order',
+    'class',
+    'phylum',
+    'superkingdom',
+    'root']
 
-print strftime("%Y-%m-%d %H:%M:%S") + ' Processing taxid nodes'
-wc_output = subprocess.check_output(['wc', '-l', nodes_dmp_path])
-wc_list = wc_output.split()
-number_of_lines = int(wc_list[0])
+# retrieve lca taxids for each contig
+classifications = parse_lca(tax_table_path)
 
-with open(nodes_dmp_path) as nodes_dmp:
-	for line in tqdm(nodes_dmp, total=number_of_lines):
-		line_list = line.rstrip('\n').split('|')
-		# Remove trailing and leading spaces
-		for i,value in enumerate(line_list):
-			line_list[i] = value.strip()
+# Vote for majority lca taxid from contig lca taxids
+contigs_to_taxid = rank_taxids(classifications)
 
-		taxids[ line_list[0] ][ 'parent' ] = line_list[1]
-		taxids[ line_list[0] ][ 'rank' ] = line_list[2]
+# Add all corresponding canonical ranks from voted taxid
+ranked_contigs = resolve_taxon_paths(contigs_to_taxid)
 
-name_lookup = {} # Dictionary of dictionaries, keyed by rank then name
-for taxid in taxids:
-	rank = taxids[taxid]['rank']
-	name = taxids[taxid]['name']
-	if rank in name_lookup:
-		name_lookup[rank][name] = taxid
-	else:
-		name_lookup[rank] = { name: taxid }
+# Removing root for writing columns to table
+rank_priority.remove('root')
 
-print strftime("%Y-%m-%d %H:%M:%S") + ' Parsing taxonomy table'
-protein_classifications = {} # protein_classifications[contig][rank][taxid] (running total of each thing)
-number_of_proteins = {}
+# Add assigned canonical ranks and voted taxid to contig table
+write_taxa(ranked_contigs, contig_tab_path, output_file_path)
 
-# Work out number of lines in file
-wc_output = subprocess.check_output(['wc', '-l', tax_table_path])
-wc_list = wc_output.split()
-number_of_lines = int(wc_list[0])
-
-with open(tax_table_path) as tax_table:
-	for line in tqdm(tax_table, total=number_of_lines):
-
-		line_list = line.rstrip('\n').split('\t')
-		seqNameList = line_list[0].split('_')
-		seqNameList.pop()
-		contigName = ('_').join(seqNameList)
-
-		# Get taxid
-		taxName = line_list[1]
-		taxRank = line_list[2]
-		taxid = None
-		if taxRank in name_lookup.keys() and taxName in name_lookup[taxRank].keys():
-			taxid = name_lookup[taxRank][taxName]
-		else:
-			taxid = 1 # Treat unknowns as root
-
-		# Now get the taxid of the next canonical rank (if applicable)
-		if taxRank == 'no rank':
-			taxid = 1
-			taxRank = 'root'
-
-		if taxid != 1:
-			while taxRank not in rank_priority:
-				taxid = taxids[taxid]['parent']
-				taxRank = taxids[taxid]['rank']
-
-		# Keep running total of taxids for each contig
-		if contigName not in protein_classifications:
-			protein_classifications[contigName] = {}
-		if taxRank not in protein_classifications[contigName]:
-			protein_classifications[contigName][taxRank] = {}
-
-		if taxid not in protein_classifications[contigName][taxRank]:
-			protein_classifications[contigName][taxRank][taxid] = 1
-		else:
-			protein_classifications[contigName][taxRank][taxid] += 1
-
-		# Count number of proteins per contig
-		if contigName in number_of_proteins:
-			number_of_proteins[contigName] += 1
-		else:
-			number_of_proteins[contigName] = 1
-
-print strftime("%Y-%m-%d %H:%M:%S") + ' Ranking taxids'
-top_taxids = {}
-total_contigs = len(protein_classifications)
-
-for contig in tqdm(protein_classifications, total=total_contigs):
-	acceptedTaxid = None
-	for rank in rank_priority:
-		if acceptedTaxid is not None:
-			break
-		# Order in descending order of votes
-		if rank in protein_classifications[contig]:
-			ordered_taxids = sorted(protein_classifications[contig][rank], key=protein_classifications[contig][rank].__getitem__, reverse=True)
-			#sys.exit()
-			for taxid in ordered_taxids:
-				if isConsistentWithOtherOrfs(taxid, rank, protein_classifications[contig], taxids):
-					acceptedTaxid = taxid
-					break
-
-	# If acceptedTaxid is still None at this point, there was some kind of draw, so we need to find the lowest taxonomic level where there is a
-	# majority
-	if acceptedTaxid is None:
-		acceptedTaxid = lowest_majority(protein_classifications[contig], taxids)
-
-	top_taxids[contig] = acceptedTaxid
-
-print strftime("%Y-%m-%d %H:%M:%S") + ' Resolving taxon paths'
-taxon_paths = {} # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
-for contig in tqdm(top_taxids, total=total_contigs):
-	taxon_paths[contig] = {}
-	current_taxid = top_taxids[contig]
-
-	while int(current_taxid) != 1:
-		current_rank = taxids[current_taxid]['rank']
-		if current_rank in canonical_ranks:
-			taxon_paths[contig][current_rank] = taxids[current_taxid]['name']
-		current_taxid = taxids[current_taxid]['parent']
-
-	for rank in rank_priority:
-		if rank not in taxon_paths[contig]:
-			taxon_paths[contig][rank] = 'unclassified'
-
-print strftime("%Y-%m-%d %H:%M:%S") + ' Writing table'
-output_table = open(output_file_path, 'w')
-with open(contig_table_path) as contig_table:
-	for i,line in enumerate(contig_table):
-		if i == 0:
-			original_line = line.rstrip('\n')
-			new_header = original_line + '\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\ttaxid\n'
-			output_table.write(new_header)
-		else:
-			original_line = line.rstrip('\n')
-			line_list = original_line.split('\t')
-			contig_name = line_list[0]
-			if contig_name not in taxon_paths:
-				# In this case we fill up the record with 'unclassified' - probably this results from the contig having no blast hits
-				taxon_paths[contig_name] = {}
-				for rank in rank_priority:
-					taxon_paths[contig_name][rank] = 'unclassified'
-					top_taxids[contig_name] = 'unclassified'
-			new_line = str(original_line) + '\t' + str(taxon_paths[contig_name]['superkingdom']) + '\t' + str(taxon_paths[contig_name]['phylum']) + '\t' + str(taxon_paths[contig_name]['class']) + '\t' + str(taxon_paths[contig_name]['order']) + '\t' + str(taxon_paths[contig_name]['family']) + '\t' + str(taxon_paths[contig_name]['genus']) + '\t' + str(taxon_paths[contig_name]['species']) + '\t' + str(top_taxids[contig_name]) + '\n'
-			output_table.write(new_line)
-output_table.close
+print('written: {}'.format(os.path.abspath(output_file_path)))
