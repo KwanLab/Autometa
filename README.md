@@ -1,5 +1,5 @@
 Autometa
-========
+=========
 
 An automated binning pipeline for single metagenomes, in particular host-associated and highly complex ones. Autometa is copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller and Jason C. Kwan, and is released under the GNU Affero General Public License v3 (see LICENSE.txt). If you find Autometa useful to your work, please cite:
 
