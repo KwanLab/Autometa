@@ -214,9 +214,7 @@ def run_diamond(prodigal_output, diamond_db_path, num_processors, prodigal_diamo
 		--max-target-seqs 200 -p {2} --outfmt 6 --out {3} -t {4}"\
 		.format(prodigal_output, diamond_db_path, num_processors, prodigal_diamond, tmp_dir_path))
 
-	run_command("diamond view -a {} -f tab -o {}".format(prodigal_diamond, view_output))
-
-	return view_output
+	return prodigal_diamond
 
 #blast2lca using accession numbers#
 def run_blast2lca(input_file, taxdump_path):
