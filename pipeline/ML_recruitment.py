@@ -11,7 +11,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -210,7 +210,7 @@ def calculateClusterStats(pandas_table,cluster_column,life_domain="bacteria"):
 
     #Now calculate completeness and purity for each cluster
     for cluster,PFAM_dict in cluster_dict.items():
-        PFAM_list = PFAM_dict.values()[0]
+        PFAM_list = list(PFAM_dict.values())[0]
         counter = collections.Counter(PFAM_list)
         completeness = len(counter)/expected_number*100
 
@@ -396,7 +396,7 @@ while num_markers_classifed > 0:
             ML_recruitment_list.append(cluster)
 
     #START - Multiprocess subroutine
-    multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstrap_replicates)(features, bootstrap_iterations) for features in unclustered_contig_feature_list)
+    multiprocessed_output = Parallel(n_jobs = processors)(delayed(calculate_bootstrap_replicates)(features, bootstrap_iterations) for unclustered_features in unclustered_contig_feature_list)
     #END - Multiprocess subroutine
     for count,output_tuple in enumerate(multiprocessed_output):
         #Assuming index (from multiprocessing) is preserved
@@ -418,7 +418,6 @@ while num_markers_classifed > 0:
             #Update contig table, so that any markers added to the cluster will
             #be considered in the next check of marker redundancy
             temp_contig_table[cluster_column_name].iloc[count] = ML_prediction
-            contig_table[cluster_column_name].iloc[global_contig_index] = ML_prediction #NOTE: Think this may be source of error
 
             #Update training data with any confident and non-redundant marker contig classifications
             if is_marker_contig:
