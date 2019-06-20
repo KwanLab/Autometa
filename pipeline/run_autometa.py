@@ -22,6 +22,8 @@ import subprocess
 import time
 import logging
 import os
+import platform
+import shutil
 
 from multiprocessing import cpu_count
 from argparse import ArgumentParser
@@ -65,6 +67,7 @@ def init_logger(autom_path, db_path, out_path):
 	for fpath in db_fpaths:
 		logger.info('DB (fname, size): {} {}'.format(fpath, os.stat(db_path+'/'+fpath).st_size))
 	return logger
+	
 def run_command(command_string, stdout_path = None):
 	# Function that checks if a command ran properly. If it didn't, then print an error message then quit
 	logger.info('run_autometa.py, run_command: ' + command_string)
@@ -96,6 +99,39 @@ def cythonize_lca_functions():
 	os.chdir(pipeline_path)
 	run_command("python setup_lca_functions.py build_ext --inplace")
 	os.chdir(current_dir)
+
+def creation_date(path_to_file):
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    """
+    if platform.system() == 'Windows':
+        return os.path.getctime(path_to_file)
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return stat.st_birthtime
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return stat.st_mtime
+
+def lca_compilation_check():
+	lca_funcs_so = os.path.join(pipeline_path, 'lca_functions.so')
+	lca_fp = os.path.join(pipeline_path, 'lca.py')
+	if not os.path.isfile(lca_funcs_so):
+		cythonize_lca_functions()
+	elif creation_date(lca_funcs_so) < creation_date(lca_fp):
+		print('lca.py updated. Recompiling lca functions.')
+		build_dir = os.path.join(pipeline_path, 'build')
+		lca_funcs_c = lca_funcs_so.replace('.so','.c')
+		os.remove(lca_funcs_c)
+		os.remove(lca_funcs_so)
+		shutil.rmtree(build_dir)
+		cythonize_lca_functions()
+	else:
+		print('lca_functions up-to-date')
 
 def run_make_taxonomy_tab(fasta, length_cutoff):
 	"""Runs make_taxonomy_table.py and directs output to taxonomy.tab for run_autometa.py"""
@@ -270,6 +306,9 @@ else:
 	contig_table = make_contig_table(filtered_assembly)
 marker_tab_path = make_marker_table(filtered_assembly)
 
+# Ensure lca functions are compiled and up-to-date
+lca_compilation_check()
+
 # Make combined table
 if taxonomy_table_path and not make_tax_table:
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
@@ -277,23 +316,17 @@ elif taxonomy_table_path and make_tax_table:
 	if not os.path.isfile(taxonomy_table_path):
 		print "Could not find {}, running make_taxonomy_table.py".format(taxonomy_table_path)
 		logger.debug('Could not find {}, running make_taxonomy_table.py'.format(taxonomy_table_path))
-		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
-			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	elif os.path.isfile(taxonomy_table_path) and os.stat(taxonomy_table_path).st_size == 0:
 		print "{} file is empty, running make_taxonomy_table.py".format(taxonomy_table_path)
 		logger.debug('{} file is empty, running make_taxonomy_table.py'.format(taxonomy_table_path))
-		if not os.path.isfile(pipeline_path+"/lca_functions.so"):
-			cythonize_lca_functions()
 		taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 	else:
 		print "{} already exists, not performing make_taxonomy_table.py".format(taxonomy_table_path)
 		combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 elif not taxonomy_table_path and make_tax_table:
-	if not os.path.isfile(pipeline_path+"/lca_functions.so"):
-		cythonize_lca_functions()
 	taxonomy_table_path = run_make_taxonomy_tab(fasta_assembly, length_cutoff)
 	combined_table_path = combine_tables(taxonomy_table_path, marker_tab_path)
 else:

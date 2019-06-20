@@ -20,6 +20,8 @@ import sys
 import urllib2
 import subprocess
 import os
+import platform
+import shutil
 
 import pandas as pd
 from argparse import ArgumentParser
@@ -61,6 +63,39 @@ def cythonize_lca_functions():
 	os.chdir(pipeline_path)
 	run_command("python setup_lca_functions.py build_ext --inplace")
 	os.chdir(current_dir)
+
+def creation_date(path_to_file):
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    """
+    if platform.system() == 'Windows':
+        return os.path.getctime(path_to_file)
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return stat.st_birthtime
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return stat.st_mtime
+
+def lca_compilation_check():
+	lca_funcs_so = os.path.join(pipeline_path, 'lca_functions.so')
+	lca_fp = os.path.join(pipeline_path, 'lca.py')
+	if not os.path.isfile(lca_funcs_so):
+		cythonize_lca_functions()
+	elif creation_date(lca_funcs_so) < creation_date(lca_fp):
+		print('lca.py updated. Recompiling lca functions.')
+		build_dir = os.path.join(pipeline_path, 'build')
+		lca_funcs_c = lca_funcs_so.replace('.so','.c')
+		os.remove(lca_funcs_c)
+		os.remove(lca_funcs_so)
+		shutil.rmtree(build_dir)
+		cythonize_lca_functions()
+	else:
+		print('lca_functions up-to-date')
 
 def download_file(destination_dir, file_url, md5_url):
 	filename = os.path.basename(file_url)
@@ -313,8 +348,7 @@ if cov_table:
 if not os.path.isdir(output_dir):
 	os.makedirs(output_dir)
 
-if not os.path.isfile(pipeline_path+"/lca_functions.so"):
-	cythonize_lca_functions()
+lca_compilation_check()
 
 if not os.path.isdir(db_dir_path):
 	#Verify the 'Autometa databases' directory exists
