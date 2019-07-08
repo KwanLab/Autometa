@@ -213,9 +213,9 @@ def dbscan_simple(table, eps, dimensions):
 
 	# Make a matrix
 	if dimensions == 2:
-		X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y'])
+		X = table_copy[['bh_tsne_x', 'bh_tsne_y']].values
 	elif dimensions == 3:
-		X = table_copy.as_matrix(columns=['bh_tsne_x', 'bh_tsne_y', 'cov'])
+		X = table_copy[['bh_tsne_x', 'bh_tsne_y', 'cov']].values
 	db = DBSCAN(eps=eps, min_samples=1).fit(X)
 
 	table_copy['db_cluster'] = db.labels_
@@ -365,7 +365,7 @@ console.setFormatter(formatter)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(console)
 
-input_master_table = pd.read_table(input_table_path)
+input_master_table = pd.read_csv(input_table_path, sep='\t')
 input_master_table['bh_tsne_x'] = 0
 input_master_table['bh_tsne_y'] = 0
 
@@ -486,7 +486,7 @@ if os.path.isfile(BH_tSNE_output_file):
 	logger.info("Continuing to next step...")
 
 	# Now we load the file
-	master_table = pd.read_table(BH_tSNE_output_file)
+	master_table = pd.read_csv(BH_tSNE_output_file, sep='\t')
 	master_table['cluster'] = 'unclustered'
 else:
 	run_BH_tSNE(master_table)
@@ -498,20 +498,20 @@ else:
 
 contig_markers = {}
 for i, row in master_table.iterrows():
-    contig = row['contig']
-    pfamString = row['single_copy_PFAMs']
-    if pfamString == 'NA' or (isinstance(pfamString, numbers.Number) and math.isnan(pfamString)):
-        continue
-    pfamList = pfamString.split(',')
-    # Note: we assume here that each contig only occurs on one line in the table
-    for pfam in pfamList:
-    	if contig in contig_markers:
-    		if pfam in contig_markers[contig]:
-    			contig_markers[contig][pfam] += 1
-    		else:
-    			contig_markers[contig][pfam] = 1
-    	else:
-    		contig_markers[contig] = { pfam: 1 }
+	contig = row['contig']
+	pfamString = row['single_copy_PFAMs']
+	if pfamString == 'NA' or (isinstance(pfamString, numbers.Number) and math.isnan(pfamString)):
+		continue
+	pfamList = pfamString.split(',')
+	# Note: we assume here that each contig only occurs on one line in the table
+	for pfam in pfamList:
+		if contig in contig_markers:
+			if pfam in contig_markers[contig]:
+				contig_markers[contig][pfam] += 1
+			else:
+				contig_markers[contig][pfam] = 1
+		else:
+			contig_markers[contig] = { pfam: 1 }
 
 
 
@@ -572,7 +572,8 @@ if has_taxonomy_info and data_size > 50:
 					for contig in contig_cluster_dictionary:
 						new_cluster_name = 'DBSCAN'+ '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
 						table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
-						master_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+						master_table.at[table_indices[0], 'cluster'] = new_cluster_name
+
 
 				# Add unclustered_table to combined unclustered dataframe
 				unclustered_table = unclustered_table.append(local_unclustered_table)
@@ -582,26 +583,26 @@ if has_taxonomy_info and data_size > 50:
 else:
 	for dimensions in [2, 3]:
 		while True:
-		    round_counter += 1
-		    logger.info('Running DBSCAN round ' + str(round_counter))
+			round_counter += 1
+			logger.info('Running DBSCAN round ' + str(round_counter))
 
-		    #db_tables = runDBSCANs(local_current_table, dimensions)
-		    cluster_information, contig_cluster_dictionary, unclustered_table = runDBSCANs(local_current_table, dimensions, contig_markers, domain, completeness_cutoff, purity_cutoff)
+			#db_tables = runDBSCANs(local_current_table, dimensions)
+			cluster_information, contig_cluster_dictionary, unclustered_table = runDBSCANs(local_current_table, dimensions, contig_markers, domain, completeness_cutoff, purity_cutoff)
 
-		    if not cluster_information:
-		        break
+			if not cluster_information:
+				break
 
-		    # Populate the global data structures
-		    for	cluster in cluster_information:
-		        new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
-		        global_cluster_info[new_cluster_name] = cluster_information[cluster]
+			# Populate the global data structures
+			for	cluster in cluster_information:
+				new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(cluster)
+				global_cluster_info[new_cluster_name] = cluster_information[cluster]
 
-		    for contig in contig_cluster_dictionary:
-		        new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
-		        table_indices = master_table[master_table['contig'] == contig].index.tolist()
-		        master_table.set_value(table_indices[0], 'cluster', new_cluster_name)
+			for contig in contig_cluster_dictionary:
+				new_cluster_name = 'DBSCAN' + '_round' + str(round_counter) + '_' + str(contig_cluster_dictionary[contig])
+				table_indices = master_table[master_table['contig'] == contig].index.tolist()
+				master_table.at[table_indices[0], 'cluster'] = new_cluster_name
 
-		    local_current_table = unclustered_table
+			local_current_table = unclustered_table
 
 # Output table
 master_table.to_csv(path_or_buf=output_table_path, sep='\t', index=False, quoting=csv.QUOTE_NONE)
