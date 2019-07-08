@@ -54,7 +54,7 @@ def run_BH_tSNE(table, do_pca=True):
 
 	# PCA
 
-	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
+	if (len(normalized_k_mer_submatrix) > pca_dimensions) and (do_pca == True):
 		logger.info('run_BH_tSNE: Principal component analysis')
 		pca = decomposition.PCA(n_components=pca_dimensions)
 		pca_matrix = pca.fit_transform(normalized_k_mer_submatrix)
@@ -72,7 +72,7 @@ def run_BH_tSNE(table, do_pca=True):
 	logger.info(str(len(normalized_k_mer_submatrix)) + ' data points')
 	logger.info(str(len(normalized_k_mer_submatrix[0])) + ' dimensions')
 
-	if (len(normalized_k_mer_submatrix[0]) > pca_dimensions) and (do_pca == True):
+	if (len(normalized_k_mer_submatrix) > pca_dimensions) and (do_pca == True):
 		X = np.array(pca_matrix)
 	else:
 		X = np.array(normalized_k_mer_submatrix)
