@@ -25,7 +25,7 @@ import os
 import pandas as pd
 import itertools
 import gzip
-
+import pdb
 def getGraph(graph_file, paths_file):
 	# Load graph file into memory
 	S_lines = list()
@@ -81,14 +81,14 @@ def getGraph(graph_file, paths_file):
 				# This is the start of a scaffold
 				record = True
 				current_scaffold = line.rstrip()
-				scaffolds.add(current_scaffold)
+				scaffolds.append(current_scaffold)
 				current_seg_list = list()
 			elif len(line) > 5 and line[0:5] == 'NODE_' and line.rstrip()[-1] == "'":
 				record = False
 			else:
 				if record == True:
 					clean_line = line.rstrip(';\n')
-					initial_path_list = line_list[2].split(',')
+					initial_path_list = clean_line.split(',')
 					for segment_string in initial_path_list:
 						segment = int(segment_string[:-1])
 						orientation = segment_string[-1]
@@ -97,7 +97,7 @@ def getGraph(graph_file, paths_file):
 		# Record last path list
 		scaffold_paths[current_scaffold] = current_seg_list
 
-		paths_file.close()
+		paths.close()
 	else:
 		# In this case we get the paths directly from the gfa file
 		for line in P_lines:
@@ -130,27 +130,29 @@ def getGraph(graph_file, paths_file):
 			for i in range(0, len(scaffold_path_list)):
 				if length_traversed < 100:
 					if scaffold_path_list[1][1] == '+':
-						seg_ends.append(scaffold_path_list[i][0] + 's')
+						seg_ends.append(str(scaffold_path_list[i][0]) + 's')
 					else:
-						seg_ends.append(scaffold_path_list[i][0] + 'e')
+						seg_ends.append(str(scaffold_path_list[i][0]) + 'e')
 					scaffold_ends.append(scaffold_name + 's')
 				else:
 					break
-
-				length_traversed += scaffold_lengths[scaffold_path_list[i][0]]
+				try:
+					length_traversed += segment_lengths[scaffold_path_list[i][0]]
+				except:
+					pdb.set_trace()
 
 			length_traversed = 0
 			for i in reversed(range(0, len(scaffold_path_list))):
 				if length_traversed < 100:
 					if segment_lengths[scaffold_path_list[i][1]] == '+':
-						seg_ends.append(scaffold_path_list[i][0] + 'e')
+						seg_ends.append(str(scaffold_path_list[i][0]) + 'e')
 					else:
-						seg_ends.append(scaffold_path_list[i][0] + 's')
+						seg_ends.append(str(scaffold_path_list[i][0]) + 's')
 					scaffold_ends.append(scaffold_name + 'e')
 				else:
 					break
 
-				length_traversed += scaffold_lengths[scaffold_path_list[i][0]]
+				length_traversed += segment_lengths[scaffold_path_list[i][0]]
 
 		for i in range(len(seg_ends)):
 			if seg_ends[i] in end_segments:
@@ -283,7 +285,7 @@ if paths_file_path and not os.path.isfile(paths_file_path):
 	exit(1)
 
 graph_filename = graph_file_path.split('/')[-1]
-if !(graph_filename == 'assembly_graph.gfa' or graph_filename == 'assembly_graph.gfa.gz') and !(graph_filename == 'assembly_graph_with_scaffolds.gfa' or graph_filename == 'assembly_graph_with_scaffolds.gfa.gz'):
+if not (graph_filename == 'assembly_graph.gfa' or graph_filename == 'assembly_graph.gfa.gz') and not(graph_filename == 'assembly_graph_with_scaffolds.gfa' or graph_filename == 'assembly_graph_with_scaffolds.gfa.gz'):
 	print('Error! You must provide either the file assembly_graph.gfa or assembly_graph_with_scaffolds.gfa as the graph file')
 	exit(1)
 
