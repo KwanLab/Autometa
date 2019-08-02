@@ -111,7 +111,7 @@ def getGraph(graph_file, paths_file):
 				orientation = segment_string[-1]
 				segment_tuple = (segment, orientation)
 				scaffold_path_list.append(segment_tuple)
-			if scaffold name in scaffold_paths:
+			if scaffold_name in scaffold_paths:
 				scaffold_paths[scaffold_name].extend(scaffold_path_list)
 			else:
 				scaffold_paths[scaffold_name] = scaffold_path_list
@@ -283,12 +283,12 @@ if paths_file_path and not os.path.isfile(paths_file_path):
 	exit(1)
 
 graph_filename = graph_file_path.split('/')[-1]
-if graph_filename != 'assembly_graph.gfa' and graph_filename != 'assembly_graph_with_scaffolds.gfa':
+if (graph_filename != 'assembly_graph.gfa' or graph_filename != 'assembly_graph.gfa.gz') and (graph_filename != 'assembly_graph_with_scaffolds.gfa' or graph_filename != 'assembly_graph_with_scaffolds.gfa.gz'):
 	print('Error! You must provide either the file assembly_graph.gfa or assembly_graph_with_scaffolds.gfa as the graph file')
 	exit(1)
 
 # Check that a paths file is supplied if the graph file is assembly_graph.gfa
-if graph_filename == 'assembly_graph.gfa' and paths_file_path is None:
+if (graph_filename == 'assembly_graph.gfa' or graph_filename == 'assembly_graph.gfa.gz') and paths_file_path is None:
 	print('Error! If you provide the file assembly_graph.gfa, you must also provide scaffolds.paths')
 	exit(1)
 
