@@ -283,7 +283,7 @@ if paths_file_path and not os.path.isfile(paths_file_path):
 	exit(1)
 
 graph_filename = graph_file_path.split('/')[-1]
-if (graph_filename != 'assembly_graph.gfa' or graph_filename != 'assembly_graph.gfa.gz') and (graph_filename != 'assembly_graph_with_scaffolds.gfa' or graph_filename != 'assembly_graph_with_scaffolds.gfa.gz'):
+if !(graph_filename == 'assembly_graph.gfa' or graph_filename == 'assembly_graph.gfa.gz') and !(graph_filename == 'assembly_graph_with_scaffolds.gfa' or graph_filename == 'assembly_graph_with_scaffolds.gfa.gz'):
 	print('Error! You must provide either the file assembly_graph.gfa or assembly_graph_with_scaffolds.gfa as the graph file')
 	exit(1)
 
