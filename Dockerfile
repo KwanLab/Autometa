@@ -18,6 +18,8 @@ MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
+SHELL ["/bin/bash", "-c"]
+ENV PATH="/opt/conda/bin:$PATH"
 RUN apt-get update
 RUN apt-get install -y prodigal hmmer build-essential zlib1g-dev bowtie2 bedtools libatlas-base-dev libncurses5-dev libncursesw5-dev libbz2-dev liblzma-dev
 RUN conda install -y tqdm joblib biopython
