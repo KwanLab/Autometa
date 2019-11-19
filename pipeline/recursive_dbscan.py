@@ -29,7 +29,8 @@ import csv
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
-from tsne import bh_sne
+from sklearn.manifold import TSNE
+# from tsne import bh_sne
 from sklearn import decomposition
 import os
 #import statistics
@@ -76,7 +77,11 @@ def run_BH_tSNE(table, do_pca=True):
 		X = np.array(pca_matrix)
 	else:
 		X = np.array(normalized_k_mer_submatrix)
-	bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
+	# bh_tsne_matrix = bh_sne(X, d=2, perplexity=perplexity, theta=0.5)
+	bh_tsne_matrix = TSNE(
+		n_components=2,
+		perplexity=perplexity,
+		random_state=0).fit_transform(X)
 
 	# We will add bh_tsne_x and bh_tsne_y columns to the contig table
 
@@ -223,15 +228,7 @@ def dbscan_simple(table, eps, dimensions):
 	return table_copy
 
 def countClusters(pandas_table):
-	clusters = {}
-	for i, row in pandas_table.iterrows():
-		cluster = row['db_cluster']
-		if cluster not in clusters:
-			clusters[cluster] = 1
-		else:
-			clusters[cluster] += 1
-	number_of_clusters = len(list(clusters.keys()))
-	return number_of_clusters
+	return pandas_table['db_cluster'].nunique()
 
 def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 	marker_totals = {}
@@ -272,21 +269,19 @@ def getClusterInfo(pandas_table, hmm_dictionary, life_domain):
 		else:
 			purity = (float(num_single_copy_markers) / total_unique_markers) * 100
 
-		cluster_details[cluster] = { 'completeness': completeness, 'purity': purity }
+		cluster_details[cluster] = {'completeness':completeness, 'purity':purity}
 
 	return cluster_details
 
 
-def revcomp( string ):
-	trans_dict = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }
+def revcomp(string):
+	trans_dict = {'A':'T','T':'A','C':'G','G':'C'}
 	complement_list = list()
-
-	for i in range(0, len(string) ):
+	for i in range(0, len(string)):
 		if string[i] in trans_dict:
 			complement_list.append(trans_dict[string[i]])
 		else:
 			return -1
-
 	return ''.join(reversed(complement_list))
 
 def normalizeKmers(count_matrix): # list of lists, not a np matrix
@@ -298,11 +293,8 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 		for j in range(0, len(count_matrix)):
 			if count_matrix[j][i] > 1:
 				non_zero_counts += 1
-
 		if non_zero_counts == 0:
 			columns_to_delete[i] = 1
-
-
 	filtered_contig_k_mer_counts = list()
 	for i in range(0, len(count_matrix)):
 		new_row = list()
@@ -310,12 +302,9 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 			if j not in columns_to_delete:
 				new_row.append(count_matrix[i][j])
 		filtered_contig_k_mer_counts.append(new_row)
-
 	# 3. Normalization
 	logger.info('Normalizing counts')
-
 	k_mer_frequency_matrix = list()
-
 	for count_list in filtered_contig_k_mer_counts:
 		total_count = 0
 		for count in count_list:
@@ -340,10 +329,10 @@ def normalizeKmers(count_matrix): # list of lists, not a np matrix
 	return k_mer_frequency_matrix
 
 parser = argparse.ArgumentParser(description="Perform initial clustering via BH-tSNE and DBSCAN.")
-parser.add_argument('-t','--input_table', help='Master contig table. Optionally can contain taxonomy data', required=True)
-parser.add_argument('-a','--assembly_fasta', help='Assembly fasta', required=True)
+parser.add_argument('-t','--input-table', help='Master contig table. Optionally can contain taxonomy data', required=True)
+parser.add_argument('-a','--assembly-fasta', help='Assembly fasta', required=True)
 #parser.add_argument('-o','--output_table', help='Path to output table', required=True)
-parser.add_argument('-d','--output_dir', help='Path to output directory', default='.')
+parser.add_argument('-d','--output-dir', help='Path to output directory', default='.')
 parser.add_argument('-k','--kingdom', help='Kingdom to consider (archaea|bacteria)', choices=['bacteria','archaea'], default = 'bacteria')
 
 args = vars(parser.parse_args())

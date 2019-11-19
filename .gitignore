@@ -1,0 +1,15 @@
+*log
+*.c
+*.so
+build/
+tests/
+__pycache__/
+.ipynb_checkpoints/
+databases/ncbi/*.pkl
+databases/ncbi/*.dmnd
+databases/ncbi/*.tgz
+databases/ncbi/*.txt
+databases/ncbi/*.dmp
+databases/ncbi/*.prt
+databases/markers/*.h3*
+autometa/test/data/*/

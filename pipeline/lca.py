@@ -162,15 +162,11 @@ with open(nodes_path) as nodes:
 
             # Add information to datastructures
             taxids[child] = 1
-
             parents[child] = parent
-
             if parent in children:
                 children[parent].add(child)
             else:
                 children[parent] = set([child])
-
-
 #data structures for tree traversal w/ distance from root and first occurrence attributes
 tour = list()
 first_node = (0, 1, 'b')
@@ -224,8 +220,6 @@ for index, node in enumerate(tour):
     child = node[1]
     if child not in occurrence:
         occurrence[child]=int(index)
-    else:
-        pass
 
 t = time.strftime('%H:%M:%S', time.gmtime(round((time.time()-t0),2)))
 print('{}: Finished building tree'.format(t))
