@@ -12,4 +12,5 @@ databases/ncbi/*.txt
 databases/ncbi/*.dmp
 databases/ncbi/*.prt
 databases/markers/*.h3*
+autometa/test/data/demo.o*
 autometa/test/data/*/
