@@ -18,19 +18,25 @@ MAINTAINER Evan R. Rees "evan.rees@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-conda install -c bioconda python=3.7 -y \
+conda install -c bioconda -c conda-forge --yes \
     biopython \
     pandas \
     tqdm \
     numpy \
     scikit-learn \
     samtools \
+    bedtools \
     bowtie2 \
     hmmer \
     prodigal \
     diamond \
-    ipython -y \
-    && conda clean -a -y
+    ipython \
+    ndcctools \
+    parallel \
+    requests \
+    hdbscan \
+    umap-learn \
+    && conda clean --all --yes
 
 COPY autometa autometa/
 # RUN git clone https://bitbucket.org/jason_c_kwan/autometa
