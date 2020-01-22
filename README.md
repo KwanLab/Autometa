@@ -39,10 +39,10 @@ Database Dependencies
 
 #### Markers:
 
-- bacteria single-copy-markers - [link]()
-- bacteria single-copy-markers cutoffs - [link]()
-- archaea single-copy-markers - [link]()
-- archaea single-copy-markers cutoffs - [link]()
+- bacteria single-copy-markers - [link](https://github.com/WiscEvan/Autometa/raw/dev/databases/markers/bacteria.single_copy.hmm)
+- bacteria single-copy-markers cutoffs - [link](https://raw.githubusercontent.com/WiscEvan/Autometa/dev/databases/markers/bacteria.single_copy.cutoffs?token=AGF3KQVL3J4STDT4TJQVDBS6GG5FE)
+- archaea single-copy-markers - [link](https://github.com/WiscEvan/Autometa/raw/dev/databases/markers/archaea.single_copy.hmm)
+- archaea single-copy-markers cutoffs - [link](https://raw.githubusercontent.com/WiscEvan/Autometa/dev/databases/markers/archaea.single_copy.cutoffs?token=AGF3KQXVUDFIH6ECVTYMZQS6GG5KO)
 
 Running Autometa
 ==================
@@ -58,7 +58,7 @@ I.e. `python -m autometa.common.kmers -h`
 ### Metagenome Job Submission(s):
 
 An Autometa metagenome job submission file is provided in the `projects/tests` directory.
-you may also find it [here]() and below.
+you may also find it [here](https://github.com/WiscEvan/Autometa/blob/dev/projects/tests/test_metagenome.config) and below.
 
 After you have filled out the job submission form, you may run the job via the command:
 
