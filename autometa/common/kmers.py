@@ -86,7 +86,7 @@ def load(kmers_fpath):
 def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
     pool = mp.Pool(nproc)
     args = [(record,ref_kmers) for record in SeqIO.parse(assembly, 'fasta')]
-    logger.debug(f'Pool counter (nproc={nproc}): counting {len(args)} records k-mer frequencies')
+    logger.debug(f'Pool counter (nproc={nproc}): counting {len(args):,} records k-mer frequencies')
     results = pool.map(kmer_counter, args)
     pool.close()
     pool.join()

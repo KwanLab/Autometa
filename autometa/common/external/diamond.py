@@ -149,7 +149,7 @@ def blast(fasta, database, outfpath, blast_type='blastp', evalue=float('1e-5'),
     if blast_type not in ['blastp','blastx']:
         raise ValueError(f'blast_type must be blastp or blastx. Given: {blast_type}')
     if verbose:
-        logger.info(f'Diamond{blast_type.title()} {fasta} against {database}')
+        logger.debug(f'Diamond{blast_type.title()} {fasta} against {database}')
     cmd = [
         'diamond',
         'blastp',
@@ -171,7 +171,7 @@ def blast(fasta, database, outfpath, blast_type='blastp', evalue=float('1e-5'),
         tmpdir]
     cmd = [str(c) for c in cmd]
     if verbose:
-        logger.info(f'RunningDiamond: {" ".join(cmd)}')
+        logger.debug(f'RunningDiamond: {" ".join(cmd)}')
     with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
         proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
     if proc.returncode:
@@ -204,7 +204,7 @@ def parse(results, top_pct=0.9, verbose=False):
     # boolean toggle --> keeping above vs. below because I think this is more readable.
     # disable = not verbose
     if verbose:
-        logger.info(f'Parsing accessions from {results}')
+        logger.debug(f'Parsing accessions from {os.path.basename(results)}')
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
@@ -308,7 +308,7 @@ def add_taxids(hits, database, verbose=True):
     fh = gzip.open(database) if database.endswith('.gz') else open(database)
     __ = fh.readline()
     if verbose:
-        logger.info(f'Searching for {len(accessions)} accessions in {os.path.basename(database)}. This may take a while...')
+        logger.debug(f'Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while...')
     is_gzipped = True if database.endswith('.gz') else False
     n_lines = file_length(database) if verbose else None
     desc = f'Parsing {os.path.basename(database)}'
@@ -354,7 +354,7 @@ def main(args):
     hits_fname = '.'.join([fname, 'pkl.gz'])
     hits_fpath = os.path.join(dirpath, hits_fname)
     pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
-    logger.info(f'{len(hits)} diamond hits serialized to {pickled_fpath}')
+    logger.debug(f'{len(hits)} diamond hits serialized to {pickled_fpath}')
 
 if __name__ == '__main__':
     import argparse

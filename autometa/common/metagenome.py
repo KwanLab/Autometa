@@ -444,7 +444,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         """
         if not self.taxonomy_assigned:
-            self.assign_taxonomy(method=self.taxon_method, **kwargs)
+            self.taxonomy = self.assign_taxonomy(method=self.taxon_method, **kwargs)
         if self.taxonomy.shape[1] <= 2:
             # taxonomy_fp should only contain contig and taxid columns from voting method
             ncbi = NCBI(kwargs.get('ncbi',NCBI_DIR))
