@@ -16,6 +16,7 @@ from Bio import SeqUtils
 
 from autometa.common.markers import Markers,MARKERS_DIR
 from autometa.common import kmers
+from autometa.common.utilities import timeit
 from autometa.binning import recursive_dbscan
 
 
@@ -142,6 +143,7 @@ Prot. ORFs called: {self.prot_orfs_exist}
     def split_nucleotides(self, ):
         raise NotImplementedError()
 
+    @timeit
     def get_binning(self, method='recursive_dbscan', **kwargs):
         """Retrieve binning results from provided `method`.
 
@@ -208,6 +210,7 @@ Prot. ORFs called: {self.prot_orfs_exist}
             )
         raise NotImplementedError(f'{method} not yet implemented')
 
+    @timeit
     def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False):
         orfs_fp = os.path.join(self.outdir, f'{kingdom.lower()}.orfs.faa')
         if (not os.path.exists(orfs_fp)) or (os.path.exists(orfs_fp) and force):
@@ -226,14 +229,13 @@ Prot. ORFs called: {self.prot_orfs_exist}
 def main(args):
     mag = MAG(args.assembly, args.contigs)
 
-    print(mag)
     mag.get_binning(
         method='recursive_dbscan',
         kmers=args.kmers,
         domain=args.domain,
         taxonomy=args.taxonomy,
         coverage=args.coverage)
-    mag.split_nucleotides()
+    # mag.split_nucleotides()
 
 if __name__ == '__main__':
     import argparse

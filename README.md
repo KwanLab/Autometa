@@ -5,7 +5,7 @@ Installation
 ------------
 
 ```bash
-conda create -n autometa python=3 --yes
+conda create -n autometa "python>=3.7" --yes
 conda install -n autometa -c bioconda -c conda-forge --yes \
     biopython \
     pandas \

@@ -21,7 +21,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from umap import UMAP
 
-from autometa.common.utilities import gunzip,timeit
+from autometa.common.utilities import gunzip
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +150,6 @@ def seq_counter(assembly, ref_kmers, verbose=True):
         kmer_counts.update({record.id:contig_kmer_counts})
     return kmer_counts
 
-@timeit
 def count(assembly, kmer_size=5, normalized=False, verbose=True, multiprocess=True,
     nproc=mp.cpu_count()):
     """Counts k-mer frequencies for provided assembly file
@@ -232,7 +231,7 @@ def normalize(df):
         .transform(lambda x: np.log(x / gmean(x)), axis='columns')
 
 
-def embed(kmers=None, embedded=None, do_pca=True, pca_dimensions=50, method='TSNE', perplexity=30, **kwargs):
+def embed(kmers=None, embedded=None, n_components=3, do_pca=True, pca_dimensions=50, method='TSNE', perplexity=30, **kwargs):
     """Embed k-mers using provided `method`.
 
     Parameters
@@ -241,6 +240,8 @@ def embed(kmers=None, embedded=None, do_pca=True, pca_dimensions=50, method='TSN
         Description of parameter `kmers` (the default is None).
     embedded : str
         Description of parameter `embedded` (the default is None).
+    n_components : int
+        `n_components` to embed k-mer frequencies (the default is 3).
     do_pca : bool
         Perform PCA decomposition prior to embedding (the default is True).
     pca_dimensions : int
@@ -287,30 +288,30 @@ def embed(kmers=None, embedded=None, do_pca=True, pca_dimensions=50, method='TSN
     if method not in ['UMAP','TSNE']:
         raise ValueError(f'{method} not in embedding methods. Choices: TSNE, UMAP')
     # PCA
-    n_samples, n_components = df.shape
+    n_samples, n_dims = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
     df.dropna(how='all', inplace=True)
     X = df.to_numpy()
-    if n_components > pca_dimensions and do_pca:
-        logger.debug(f'Performing decomposition with PCA: {n_components} to {pca_dimensions} dims')
+    if n_dims > pca_dimensions and do_pca:
+        logger.debug(f'Performing decomposition with PCA: {n_dims} to {pca_dimensions} dims')
         X = PCA(n_components=pca_dimensions).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
-        n_samples, n_components = X.shape
+        n_samples, n_dims = X.shape
 
-    logger.debug(f'{method}: {n_samples} data points and {n_components} dimensions')
+    logger.debug(f'{method}: {n_samples} data points and {n_dims} dimensions')
     # Adjust perplexity according to the number of data points
     n_rows = n_samples-1
     scaler = 3.0
     if n_rows < (scaler*perplexity):
         perplexity = (n_rows/scaler) - 1
 
-    def do_TSNE(perplexity=perplexity, n_components=3):
+    def do_TSNE(perplexity=perplexity, n_components=n_components):
         return TSNE(
             n_components=n_components,
             perplexity=perplexity,
             random_state=0).fit_transform(X)
 
-    def do_UMAP(n_neighbors=15, n_components=3, metric='euclidean'):
+    def do_UMAP(n_neighbors=15, n_components=n_components, metric='euclidean'):
         return UMAP(
             n_neighbors=n_neighbors,
             n_components=n_components,
@@ -319,7 +320,12 @@ def embed(kmers=None, embedded=None, do_pca=True, pca_dimensions=50, method='TSN
     dispatcher = {'TSNE':do_TSNE, 'UMAP':do_UMAP}
     logger.debug(f'Performing embedding with {method}')
     X = dispatcher[method](**kwargs)
-    embedded_df = pd.DataFrame(X, columns=['x','y','z'], index=df.index)
+    if n_components == 3:
+        embedded_df = pd.DataFrame(X, columns=['x','y','z'], index=df.index)
+    elif n_components == 2:
+        embedded_df = pd.DataFrame(X, columns=['x','y'], index=df.index)
+    else:
+        embedded_df = pd.DataFrame(X, index=df.index)
     if embedded:
         embedded_df.to_csv(embedded, sep='\t', index=True, header=True)
         logger.debug(f'embedded.shape {embedded_df.shape} : Written {embedded}')

@@ -43,8 +43,8 @@ def format_nr(config, dryrun, nproc=2):
     nr = config.get('ncbi','nr')
     formatted_nr = os.path.splitext(os.path.basename(nr))[0]
     outfpath = os.path.join(outdir, formatted_nr)
-    if not dryrun:
-        diamond.makedatabase(fasta=nr, database=outfpath, nproc=nrpoc)
+    if not dryrun and not os.path.exists(outfpath):
+        diamond.makedatabase(fasta=nr, database=outfpath, nproc=nproc)
     config.set('ncbi','nr',outfpath)
     logger.debug(f'set ncbi nr to {outfpath}')
     return config
@@ -72,10 +72,14 @@ def extract_taxdump(config, dryrun):
     """
     outdir = config.get('databases','ncbi')
     taxdump = config.get('ncbi','taxdump')
-    extraction_files = [('nodes','nodes.dmp'),('names','names.dmp'),('merged','merged.dmp')]
-    for option,fname in extraction_files:
+    taxdump_files = [
+        ('nodes','nodes.dmp'),
+        ('names','names.dmp'),
+        ('merged','merged.dmp'),
+    ]
+    for option,fname in taxdump_files:
         outfp = os.path.join(outdir,fname)
-        if not dryrun:
+        if not dryrun and not os.path.exists(outfp):
             outfp = untar(taxdump, outdir, fname)
         logger.debug(f'update ncbi : {option} : {outfp}')
         config.set('ncbi',option,outfp)
@@ -113,42 +117,31 @@ def update_ncbi(config, options, dryrun, nproc=2):
     else:
         outdir = config.get('databases',section)
     host = DEFAULT_CONFIG.get(section,'host')
-    if dryrun:
-        for option in options:
-            ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
-            ftp_fpath = ftp_fullpath.split(host)[-1]
-            if config.has_option(section, option):
-                outfpath = config.get(section, option)
-            else:
-                outfname = os.path.basename(ftp_fpath)
-                outfpath = os.path.join(outdir, outfname)
-            logger.debug(f'update {section} : {option} : {outfpath}')
-            config.set(section, option, outfpath)
-            continue
-        return extract_taxdump(config, dryrun)
-    with FTP(host) as ftp:
-        ftp.login()
-        for option in options:
-            ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
-            ftp_fpath = ftp_fullpath.split(host)[-1]
-            if config.has_option(section, option):
-                outfpath = config.get(section, option)
-            else:
-                outfname = os.path.basename(ftp_fpath)
-                outfpath = os.path.join(outdir, outfname)
-            logger.debug(f'starting {option} download')
-            with open(outfpath, 'wb') as fp:
+    for option in options:
+        ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
+        ftp_fpath = ftp_fullpath.split(host)[-1]
+        if config.has_option(section, option):
+            outfpath = config.get(section, option)
+        else:
+            outfname = os.path.basename(ftp_fpath)
+            outfpath = os.path.join(outdir, outfname)
+        download_success  = True
+        if not dryrun and not os.path.exists(outfpath):
+            with FTP(host) as ftp, open(outfpath, 'wb') as fp:
+                ftp.login()
+                logger.debug(f'starting {option} download')
                 result = ftp.retrbinary(f'RETR {ftp_fpath}', fp.write)
-                success = True if result.startswith('226 Transfer complete') else False
-            if success:
-                config.set(section, option, outfpath)
-            logger.debug(f'{option} download successful : {success}')
-        ftp.quit()
+                download_success = True if result.startswith('226 Transfer complete') else False
+                logger.debug(f'{option} download successful : {download_success}')
+                ftp.quit()
+        logger.debug(f'update {section} : {option} : {outfpath}')
+        config.set(section, option, outfpath)
+
     config = extract_taxdump(config, dryrun)
     return format_nr(config, dryrun, nproc)
 
 def update_markers(config, options, dryrun):
-    """Short summary.
+    """Update single-copy markers hmms and cutoffs.
 
     Parameters
     ----------
@@ -240,14 +233,14 @@ def update_missing(config, section, dryrun, options=None, nproc=2):
     section : str
         Description of parameter `section` (the default is None).
     options : iterable
-        Description of parameter `options` (the default is None).
+        Options to be updated in section. Default will retrieve all required for section.
     dryrun : bool
-        Description of parameter `dryrun`.
+        Do not perform retrieval/formatting of databases.
 
     Returns
     -------
-    type
-        Description of returned object.
+    configparser.ConfigParser
+        config updated with required missing sections.
 
     Raises
     -------
@@ -299,7 +292,7 @@ def check_format(config, dryrun, nproc=2):
         missing = set(options) - set(config.options(section))
         if missing:
             logger.warning(f'Missing options : {", ".join(missing)}')
-            config = update_missing(config, section=section, options=missing, dryrun=dryrun)
+            config = update_missing(config, section=section, options=missing, dryrun=dryrun, nproc=nproc)
 
     return config
 

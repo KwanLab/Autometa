@@ -12,12 +12,13 @@ import sys
 from autometa.config.user import AutometaUser
 from autometa.config import PROJECTS_DIR
 from autometa.config import parse_config
+from autometa.common.utilities import timeit
 from autometa.common.metagenome import Metagenome
 
 
 logger = logging.getLogger(__name__)
 
-
+@timeit
 def run(mgargs):
     """Run autometa.
 
@@ -47,9 +48,8 @@ def run(mgargs):
         fwd_reads=mgargs.files.fwd_reads,
         rev_reads=mgargs.files.rev_reads,
         taxon_method=mgargs.parameters.taxon_method)
-
-    # Original (raw) file should not be manipulated so return new object
     try:
+    # Original (raw) file should not be manipulated so return new object
         mg = mg.length_filter(
             out=mgargs.files.length_filtered,
             cutoff=mgargs.parameters.length_cutoff)
@@ -63,8 +63,7 @@ def run(mgargs):
             taxonomy_fpath=mgargs.files.taxonomy,
             fwd_reads=mgargs.files.fwd_reads,
             rev_reads=mgargs.files.rev_reads,
-            taxon_method=mgargs.parameters.taxon_method,
-        )
+            taxon_method=mgargs.parameters.taxon_method)
     # I.e. asynchronous execution here (work-queue tasks)
     mg.get_kmers(
         kmer_size=mgargs.parameters.kmer_size,
@@ -147,11 +146,11 @@ def main(args):
 if __name__ == '__main__':
     import argparse
     import logging as logger
-    # TODO: Based on args verbosity... Switch logging level here...
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
+
     ###############################
     # AutometaUser Project(s) API #
     ###############################

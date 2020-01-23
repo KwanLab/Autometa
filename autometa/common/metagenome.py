@@ -14,10 +14,12 @@ import pandas as pd
 from Bio import SeqIO
 from Bio import SeqUtils
 
-from autometa.common.external import prodigal
 from autometa.common import kmers
 from autometa.common import coverage
+from autometa.common.external import prodigal
 from autometa.common.mag import MAG
+from autometa.common.utilities import timeit
+from autometa.common.utilities import gunzip
 from autometa.taxonomy.majority_vote import majority_vote
 from autometa.taxonomy.ncbi import NCBI,NCBI_DIR
 
@@ -202,6 +204,7 @@ Taxonomy assigned: {self.taxonomy_assigned}
 Taxonomy filepath: {self.taxonomy_fpath}
 """)
 
+    @timeit
     def length_filter(self, out, cutoff=3000):
         """Filters sequences by length with provided cutoff.
 
@@ -234,6 +237,13 @@ Taxonomy filepath: {self.taxonomy_fpath}
             raise ValueError(f'cutoff: {cutoff} must be a positive real number')
         if os.path.exists(out):
             raise FileExistsError(out)
+        outdir = os.path.dirname(out)
+        gunzipped_fname = os.path.basename(self.assembly.rstrip('.gz'))
+        gunzipped_fpath = os.path.join(outdir, gunzipped_fname)
+        if self.assembly.endswith('.gz'):
+            if not os.path.exists(gunzipped_fpath):
+                gunzip(self.assembly, gunzipped_fpath)
+            self.assembly = gunzipped_fpath
         records = [seq for seq in self.sequences if len(seq) >= cutoff]
         SeqIO.write(records, out, 'fasta')
         return Metagenome(
@@ -317,6 +327,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
         orfs_fpath = self.prot_orfs_fpath if orf_type == 'prot' else self.nucl_orfs_fpath
         return [orf for orf in SeqIO.parse(orfs_fpath, 'fasta')]
 
+    @timeit
     def get_kmers(self, kmer_size=5, multiprocess=True, out=None, normalized=None,
         force=False, nproc=1):
         """Counts k-mer frequencies using provided `kmer_size`.
@@ -365,6 +376,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             return normalized_df
         return kmers_df
 
+    @timeit
     def get_coverages(self, out, from_spades=True):
         if from_spades:
             return coverage.from_spades_names(self.sequences)
@@ -374,6 +386,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             rev_reads=self.rev_reads,
             out=out)
 
+    @timeit
     def assign_taxonomy(self, method, force=False, *args, **kwargs):
         """Assign taxonomy to each sequence in assembly.
 
@@ -409,7 +422,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
         else:
             raise NotImplementedError(
                 f'method: {method}\nargs:{args}\nkwargs: {kwargs}')
-
+    @timeit
     def get_kingdoms(self, **kwargs):
         """Separate sequences by kingdom using supplied taxon assignment method.
 
