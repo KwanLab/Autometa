@@ -427,10 +427,10 @@ Taxonomy filepath: {self.taxonomy_fpath}
                 votes_fname=self.taxonomy_fname,
                 *args,
                 **kwargs)
-            return pd.read_csv(self.taxonomy_fpath,sep='\t',index_col='contig')
         else:
-            raise NotImplementedError(
-                f'method: {method}\nargs:{args}\nkwargs: {kwargs}')
+            raise NotImplementedError(f'method: {method}\nargs:{args}\nkwargs: {kwargs}')
+        return pd.read_csv(self.taxonomy_fpath,sep='\t',index_col='contig')
+
     @timeit
     def get_kingdoms(self, **kwargs):
         """Separate sequences by kingdom using supplied taxon assignment method.

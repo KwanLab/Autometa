@@ -153,7 +153,7 @@ def lowest_majority(ctg_lcas, ncbi):
     # Just in case
     return 1
 
-def rank_taxids(ctg_lcas, ncbi_dir, verbose=True):
+def rank_taxids(ctg_lcas, ncbi_dir, verbose=False):
     """Majority Voting Algorithm
 
     Votes for taxids based on modified majority vote system where if a majority
@@ -166,7 +166,7 @@ def rank_taxids(ctg_lcas, ncbi_dir, verbose=True):
     ncbi_dir : str
         </path/to/ncbi/dir>
     verbose : bool
-        Description of parameter `verbose` (the default is True).
+        Description of parameter `verbose` (the default is False).
 
     Returns
     -------
@@ -180,7 +180,7 @@ def rank_taxids(ctg_lcas, ncbi_dir, verbose=True):
 
     """
     ncbi = NCBI(ncbi_dir, verbose=verbose)
-    logging.info('Ranking taxids')
+    logging.debug('Ranking taxids')
     n_contigs = len(ctg_lcas) if verbose else None
     disable = False if verbose else True
     desc = 'Ranking taxids' if verbose else None
