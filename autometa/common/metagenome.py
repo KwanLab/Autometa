@@ -377,14 +377,19 @@ Taxonomy filepath: {self.taxonomy_fpath}
         return kmers_df
 
     @timeit
-    def get_coverages(self, out, from_spades=True):
+    def get_coverages(self, out, from_spades=True, **kwargs):
         if from_spades:
             return coverage.from_spades_names(self.sequences)
         return coverage.get(
             fasta=self.assembly,
+            out=out,
             fwd_reads=self.fwd_reads,
             rev_reads=self.rev_reads,
-            out=out)
+            sam=kwargs.get('sam'),
+            bam=kwargs.get('bam'),
+            lengths=kwargs.get('lengths'),
+            bed=kwargs.get('bed'),
+        )
 
     @timeit
     def assign_taxonomy(self, method, force=False, *args, **kwargs):

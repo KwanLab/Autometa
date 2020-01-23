@@ -94,16 +94,6 @@ def parse(bed, out=None):
         logger.debug(f'{out} written')
     logger.debug(f'{os.path.basename(out)} shape: {dff.shape}')
     return dff['coverage']
-    # dff = df.groupby('contig')[['depth','bases']].sum()
-    # dff.rename(columns={'depth':'total_depth','bases':'total_bases'}, inplace=True)
-    # df = pd.merge(df, dff, how='left', left_index=True, right_index=True)
-    # df = df.assign(
-    #     cov_depth=lambda x: x.total_depth/x.length,
-    #     cov_breadth=lambda x: x.total_bases/x.length
-    # )
-    # outcols=['contig','length','total_depth','total_bases','cov_depth','cov_breadth']
-    # out_df = df.reset_index().drop_duplicates('contig')[outcols]
-    # out_df.to_csv(covout, sep='\t', index=False, header=True)
 
 def main(args):
     genomecov(ibam=args.ibam, lengths=args.lengths, out=args.bed)

@@ -75,7 +75,11 @@ def run(mgargs):
 
     coverages = mg.get_coverages(
         out=mgargs.files.coverages,
-        from_spades=mgargs.parameters.cov_from_spades)
+        from_spades=mgargs.parameters.cov_from_spades,
+        sam=mgargs.files.sam,
+        bam=mgargs.files.bam,
+        lengths=mgargs.files.lengths,
+        bed=mgargs.files.bed)
     # Filter by Kingdom
     binning_kingdoms = ['bacteria','archaea']
     kingdoms = mg.get_kingdoms(
