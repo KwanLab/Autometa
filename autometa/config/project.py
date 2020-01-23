@@ -65,7 +65,7 @@ def setup_project(config):
     Parameters
     ----------
     config : configparser.ConfigParser
-        Description of parameter `config`.
+        project config required sections: ['parameters']
 
     Returns
     -------

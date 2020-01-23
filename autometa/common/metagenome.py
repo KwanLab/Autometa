@@ -273,7 +273,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
         Returns
         ----------
         2-tuple
-            (</path/to/nucls.orfs.fna>, </path/to/prots.orfs.fna>)
+            (</path/to/nucls.orfs.fna>, </path/to/prots.orfs.faa>)
         Raises
         -------
         TypeError
@@ -301,7 +301,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             logger.exception(error)
         return nucls_fp, prots_fp
 
-    def orfs(self, orf_type='prot'):
+    def orfs(self, orf_type='prot', cpus=0):
         """Retrieves ORFs after being called from self.call_orfs.
 
         Parameters
@@ -321,7 +321,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             Invalid `orf_type`. Choices=['prot','nucl']
         """
         if not self.orfs_called:
-            self.call_orfs()
+            self.call_orfs(cpus=cpus)
         if orf_type not in {'prot','nucl'}:
             raise ValueError('orf_type must be \'prot\' or \'nucl\'!')
         orfs_fpath = self.prot_orfs_fpath if orf_type == 'prot' else self.nucl_orfs_fpath
@@ -406,7 +406,11 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         """
         if not self.orfs_called:
-            self.call_orfs(force=force)
+            cpus = kwargs.get('cpus',0)
+            try:
+                self.call_orfs(force=force, cpus=cpus)
+            except FileExistsError as err:
+                logger.warning(err)
         if self.taxonomy_assigned and not force:
             logger.debug(f'FileExistsError: {self.taxonomy_fpath}. Use force to overwrite. skipping...')
             return pd.read_csv(self.taxonomy_fpath, sep='\t', index_col='contig')

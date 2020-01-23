@@ -354,7 +354,7 @@ def main(args):
     hits_fname = '.'.join([fname, 'pkl.gz'])
     hits_fpath = os.path.join(dirpath, hits_fname)
     pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
-    logger.debug(f'{len(hits)} diamond hits serialized to {pickled_fpath}')
+    logger.debug(f'{len(hits):,} diamond hits serialized to {pickled_fpath}')
 
 if __name__ == '__main__':
     import argparse

@@ -119,9 +119,10 @@ def main(args):
         user = AutometaUser(args.config, dryrun=args.dryrun)
     else:
         user = AutometaUser(dryrun=args.dryrun)
-    # Configure environ and databases
+    # Configure environment and databases
     user.configure(nproc=args.cpus)
     # Workflow control...
+    # TODO: WorkQueue handling. to process multiple metagenomes at once.
     if args.resume:
         mg_configs = user.get_mgargs(
             projects_dir=args.projects,
@@ -154,6 +155,7 @@ if __name__ == '__main__':
     ###############################
     # AutometaUser Project(s) API #
     ###############################
+
     parser = argparse.ArgumentParser('Main script to run Autometa')
     parser.add_argument('--projects',
         help=f'</path/autometa/projects/dir> (Default is {PROJECTS_DIR}).',
@@ -173,17 +175,17 @@ if __name__ == '__main__':
         help='whether to perform database updating/construction',
         action='store_true',
         default=False)
+
     #######################
     # Autometa Parameters #
     #######################
+
     parser.add_argument('metagenomes', nargs='*')
     parser.add_argument('--length-cutoff', default=3000, type=int)
     parser.add_argument('--cov-from-spades',
         help='retrieve coverage from spades headers. (Only may be used when SPAdes assemblies are provided)',
         action='store_true',
         default=False)
-
-    # TODO: Need to add handling of reads specific for each metagenome.
     parser.add_argument(
         '--kmer-size',
         help='size of k-mer to calculate frequencies.',
@@ -217,8 +219,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true', default=False)
     parser.add_argument('--force', action='store_true', default=False)
     parser.add_argument('--usepickle', action='store_true', default=False)
-    parser.add_argument('--noparallel', help="Disable GNU parallel",
-        action='store_false', default=True)
+    parser.add_argument('--parallel', help="Use GNU parallel",
+        action='store_true', default=False)
     parser.add_argument('--cpus',default=1, type=int)
     parser.add_argument('--config',help='user defined config file')
     args = parser.parse_args()

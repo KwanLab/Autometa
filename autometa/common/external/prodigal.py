@@ -41,6 +41,8 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
 
     Raises
     -------
+    FileExistsError
+        `nucls_out` or `prots_out` already exists
     OSError
         Prodigal Failed
     """
@@ -55,7 +57,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         with open(assembly,'w') as fh:
             fh.write(lines)
     for fpath in [nucls_out, prots_out]:
-        if os.path.exists(nucls_out) and not force:
+        if os.path.exists(fpath) and not force:
             raise FileExistsError(f'{fpath} To overwrite use --force')
     if parallel:
         outdir = os.path.dirname(os.path.realpath(nucls_out))
@@ -72,10 +74,8 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         jobs = f'-j{cpus}'
         cmd = [
             'parallel',
-            '--retries',
-            '4',
-            '--joblog',
-            log,
+            '--retries','4',
+            '--joblog',log,
             jobs,
             '--pipe',
             '--recstart',
@@ -88,6 +88,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
             '-p','meta',
             '-o',os.devnull,
             '<',assembly,
+            '2>',os.devnull,
         ]
     else:
         cmd = [
@@ -142,7 +143,7 @@ def main(args):
         prots_out=args.prots_out,
         force=args.force,
         cpus=args.cpus,
-        parallel=args.noparallel)
+        parallel=args.parallel)
     logger.info(f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
 
 if __name__ == '__main__':
@@ -159,8 +160,8 @@ if __name__ == '__main__':
     parser.add_argument('--force', help="force overwrite of ORFs out filepaths",
         action='store_true')
     parser.add_argument('--cpus', help='num cpus to use', default=0)
-    parser.add_argument('--noparallel', help="Disable GNU parallel",
-        action='store_false', default=True)
+    parser.add_argument('--parallel', help="Enable GNU parallel",
+        action='store_true', default=False)
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
     main(args)

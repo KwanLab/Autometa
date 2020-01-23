@@ -55,7 +55,7 @@ parameters = {
      'verbose':bool,
      'force':bool,
      'usepickle':bool,
-     'noparallel':bool,
+     'parallel':bool,
      'cpus':int,
      'config':str,
      'resume':bool,
