@@ -100,7 +100,7 @@ def setup_project(config):
     return config_fp
 
 def setup_metagenome(config):
-    """Setup automeat metagenome directory given a config file of metagenome
+    """Setup Autometa metagenome directory given a config file of metagenome
     Submission [files] and [parameters] sections.
 
     Parameters
@@ -124,7 +124,8 @@ def setup_metagenome(config):
     mg_config = copy.deepcopy(config)
     # Determine what project metagenome belongs...
     projects_dirpath = mg_config.get('parameters','projects')
-    project_dname = f"project_{mg_config.getint('parameters','project'):03d}"
+    project_num = mg_config.getint('parameters','project')
+    project_dname = f"project_{project_num:03d}"
     project_dirpath = os.path.join(projects_dirpath,project_dname)
     if not os.path.exists(project_dirpath):
         raise FileNotFoundError(f'ProjectDirectoryNotFound: {project_dirpath}')
@@ -145,9 +146,10 @@ def setup_metagenome(config):
     proj_config.set('metagenomes', metagenome_dirname, metagenome_fpath)
     put_config(proj_config, project_config_fpath)
     for section in ['databases','environ']:
-        mg_config.add_section(section)
+        if not mg_config.has_section(section):
+            mg_config.add_section(section)
         for option,value in proj_config.items(section):
-            mg_config.set('databases',option,value)
+            mg_config.set(section,option,value)
     #Remove project config sections/options if project.config was provided.
     # Change mg config section and parameters to suit respective directory.
     if mg_config.has_section('metagenomes'):

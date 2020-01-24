@@ -18,7 +18,6 @@ from autometa.config import put_config
 
 logger = logging.getLogger(__name__)
 
-SECTION = 'environ'
 EXECUTABLES = [
     'diamond',
     'hmmsearch',
@@ -26,6 +25,8 @@ EXECUTABLES = [
     'hmmscan',
     'prodigal',
     'bowtie2',
+    'samtools',
+    'bedtools',
 ]
 
 
@@ -71,20 +72,20 @@ def find_executables():
 
 def update_config(config):
     executables = find_executables()
-    if not config.has_section(SECTION):
-        config.add_section(SECTION)
+    if not config.has_section('environ'):
+        config.add_section('environ')
     satisfied = True
     for executable,found in executables.items():
-        if not config.has_option(SECTION, executable) and not found:
+        if not config.has_option('environ', executable) and not found:
             satisfied = False
             logger.warning(f'executable not found: {executable}')
-        elif not config.has_option(SECTION, executable):
+        elif not config.has_option('environ', executable):
             logger.debug(f'Updated executable: {executable} : {found}')
-            config.set(SECTION, executable, found)
-        user_executable = config.get(SECTION, executable)
+            config.set('environ', executable, found)
+        user_executable = config.get('environ', executable)
         if not which(user_executable):
             logger.debug(f'Updated executable: {executable} : {found}')
-            config.set(SECTION, executable, found)
+            config.set('environ', executable, found)
     logger.debug(f'Executable dependencies satisfied : {satisfied}')
     return config
 

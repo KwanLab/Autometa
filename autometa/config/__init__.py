@@ -37,7 +37,7 @@ DEFAULT_CONFIG = get_config(fpath=DEFAULT_FPATH)
 parameters = {
      'projects':str,
      'project':int,
-     'add-metagenome':str,
+     'kingdoms':list,
      'resume':int,
      'length_cutoff':float,
      'cov_from_spades':bool,
@@ -100,5 +100,8 @@ def parse_config(fpath=None):
                     value = config.getint(section, key)
                 elif parameters.get(key) is float:
                     value = config.getfloat(section,key)
+                elif parameters.get(key) is list:
+                    value = value.split(',')
+
             namespace.__dict__[section].__dict__[key] = value
     return namespace

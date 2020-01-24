@@ -65,7 +65,8 @@ class AutometaUser:
         """
         proj_config = project.configure(self.config, args)
         metagenomes_configs = project.setup_metagenomes(get_config(proj_config))
-        return {'project':proj_config, 'metagenomes':metagenomes_configs}
+        mgargs = {mg:parse_config(mg_config) for mg,mg_config in metagenomes_configs.items()}
+        return {'project':proj_config, 'metagenomes':mgargs}
 
     def add_metagenomes(self, metagenomes_configs):
         mg_configs = {}

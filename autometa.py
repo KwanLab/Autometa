@@ -38,7 +38,6 @@ def run(mgargs):
         Why the exception is raised.
 
     """
-
     mg = Metagenome(
         assembly=mgargs.files.metagenome,
         outdir=mgargs.parameters.outdir,
@@ -81,7 +80,6 @@ def run(mgargs):
         lengths=mgargs.files.lengths,
         bed=mgargs.files.bed)
     # Filter by Kingdom
-    binning_kingdoms = ['bacteria','archaea']
     kingdoms = mg.get_kingdoms(
         ncbi=mgargs.databases.ncbi,
         usepickle=mgargs.parameters.usepickle,
@@ -89,29 +87,30 @@ def run(mgargs):
         hits=mgargs.files.blastp_hits,
         force=mgargs.parameters.force,
         cpus=mgargs.parameters.cpus)
-    for kingdom,mag in kingdoms.items():
-        # Get markers to be used for bin assessment.
-        if kingdom not in binning_kingdoms:
-            continue
-        # markers = mag.markers(kingdom)
-        bins_df = mag.get_binning(
-            method=mgargs.parameters.binning_method,
-            kmers=mgargs.files.kmer_counts,
-            embedded=mgargs.files.kmer_embedded,
-            do_pca=mgargs.parameters.do_pca,
-            pca_dims=mgargs.parameters.pca_dims,
-            embedding_method=mgargs.parameters.embedding_method,
-            coverage=coverages,
-            domain=kingdom,
-            taxonomy=mgargs.files.taxonomy,
-            reverse=mgargs.parameters.reversed,
-        )
-        binning_cols = ['cluster','completeness','purity']
-        bins_df[binning_cols].to_csv(
-            mgargs.files.binning,
-            sep='\t',
-            index=True,
-            header=True)
+
+    if not mgargs.parameters.kingdom in kingdoms:
+        raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {", ".join(kingdoms.keys())}')
+    mag = kingdoms.get(mgargs.parameters.kingdom)
+    # Get markers to be used for bin assessment.
+    # markers = mag.markers(kingdom)
+    bins_df = mag.get_binning(
+        method=mgargs.parameters.binning_method,
+        kmers=mgargs.files.kmer_counts,
+        embedded=mgargs.files.kmer_embedded,
+        do_pca=mgargs.parameters.do_pca,
+        pca_dims=mgargs.parameters.pca_dims,
+        embedding_method=mgargs.parameters.embedding_method,
+        coverage=coverages,
+        domain=mgargs.parameters.kingdom,
+        taxonomy=mgargs.files.taxonomy,
+        reverse=mgargs.parameters.reversed,
+    )
+    binning_cols = ['cluster','completeness','purity']
+    bins_df[binning_cols].to_csv(
+        mgargs.files.binning,
+        sep='\t',
+        index=True,
+        header=True)
         # TODO: Refine bins by connection mapping, taxon, or other methods
         # mag.refine(by='connections')
         # mag.refine(by='taxa')
@@ -214,6 +213,7 @@ if __name__ == '__main__':
         default='UMAP',
         choices=['TSNE','UMAP'])
     parser.add_argument('--taxon-method', default='majority_vote', choices=['majority_vote'])
+    parser.add_argument('--kingdom',default='bacteria',choices=['bacteria','archaea'])
     parser.add_argument('--reversed', help='Reverse order at which taxonomic ranks are clustered', default=True, action='store_false')
     parser.add_argument('--binning-method',
         default='recursive_dbscan',
