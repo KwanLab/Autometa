@@ -80,7 +80,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
             hmmdb,
             '-',
             '<',orfs,
-            '>',os.devnull,
+            '2>',os.devnull,
         ]
         if log:
             cmd.insert(3,log)
