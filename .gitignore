@@ -130,7 +130,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Autometa specifics
+## Autometa specifics
 *log
 *.c
 autometa/*.pyc
@@ -140,3 +140,11 @@ databases/markers/*.h3*
 # databases / testing
 databases/ncbi/
 tests/data/
+
+# visualStudioCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
