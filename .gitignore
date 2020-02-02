@@ -1,10 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Environments
+.env
+
 *log
 *.c
-*.so
 autometa/*.pyc
 autometa/taxonomy/*.pyc
-__pycache__/
-.ipynb_checkpoints/
-databases/ncbi/*
 databases/markers/*.h3*
-tests/data/*
+
+# databases / testing
+databases/ncbi/
+tests/data/
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
