@@ -1,10 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
-    <h1>Startpage</h1>
-</body>
-</html>
+{% extends 'startpage/base.html' %}
+{% block content %}
+    {% for post in posts %}
+        <h1>
+            {{ post.title }}</h1>
+        <p>
+            {{ post.author }}
+            on
+            {{ post.date_posted}}
+        </p>
+        <p>
+            {{ post.content }}
+        </p>
+    {% endfor %}
+{% endblock content %}
