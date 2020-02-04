@@ -22,4 +22,4 @@ def startpage(request):
 
 
 def about(request):
-    return render(request, 'startpage/about.html')
+    return render(request, 'startpage/about.html', context={'title': 'about autometa'})
