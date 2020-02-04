@@ -1,23 +1,23 @@
 from django.shortcuts import render
 
-posts = [
+jobs = [
     {
-        'author': 'CoreyMS',
-        'title': 'Blog Post 1',
-        'content': 'First post content',
-        'date_posted': 'August 27, 2018'
+        'user': 'schanana',
+        'title': 'Job 1',
+        'parameters': [1, 2, 3, 'four'],
+        'date_run': 'August 27, 2018'
     },
     {
-        'author': 'Jane Doe',
-        'title': 'Blog Post 2',
-        'content': 'Second post content',
-        'date_posted': 'August 28, 2018'
+        'user': 'test',
+        'title': 'Job 2',
+        'parameters': [5, 6, 7, 'eight'],
+        'date_run': 'November 29, 2018'
     }
 ]
 
 
 def startpage(request):
-    context = {'posts': posts}
+    context = {'jobs': jobs}
     return render(request, 'startpage/home.html', context)
 
 
