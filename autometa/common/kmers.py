@@ -24,8 +24,7 @@ from umap import UMAP
 from autometa.common.utilities import gunzip
 
 logger = logging.getLogger(__name__)
-# TODO: Silence UMAP DEBUG logger (numba)
-# logger = logging.getLogger(UMAP.__name__).setLevel(logging.WARNING)
+
 
 def revcomp(string):
     complement = {'A':'T','T':'A','C':'G','G':'C'}
