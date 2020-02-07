@@ -32,8 +32,6 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'startpage.apps.StartpageConfig',
-    'users.apps.UsersConfig',
-    'crispy_forms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -121,9 +119,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
-# for crispy forms app
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
-
-# default redirect url once user logs in
-LOGIN_REDIRECT_URL = 'startpage-home'
