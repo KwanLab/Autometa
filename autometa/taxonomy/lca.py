@@ -259,7 +259,7 @@ class LCA(NCBI):
         """
         lcas = {}
         n_qseqids = len(hits)
-        desc = f'Determining {n_qseqids:,} qseqids\' lowest common ancestors'
+        desc = f'Determining {n_qseqids} qseqids\' lowest common ancestors'
         # not_found = ''
         for qseqid,hit in tqdm(hits.items(), disable=self.disable, total=n_qseqids, desc=desc, leave=False):
             taxids = set()

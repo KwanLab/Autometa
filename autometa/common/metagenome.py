@@ -287,6 +287,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             raise TypeError(f'parallel:({parallel}) must be a boolean. I.e. True|False')
         if type(cpus) is not int:
             raise TypeError(f'cpus:({cpus}) must be an integer')
+        # OPTIMIZE: Should not need to call ORFs on contigs below length cutoff
         try:
             nucls_fp, prots_fp = prodigal.run(
                 assembly=self.assembly,
