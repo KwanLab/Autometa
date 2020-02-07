@@ -11,11 +11,11 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
     integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'startpage/main.css' %}">
-    {% if title %}
-  <title>Autometa - {{ title }}</title>
-    {% else %}
-  <title>Autometa</title>
-    {% endif %}
+  {% if title %}
+      <title>Autometa - {{ title }}</title>
+  {% else %}
+      <title>Autometa</title>
+  {% endif %}
 
 </head>
 
@@ -54,7 +54,7 @@
           <h3>Our Sidebar</h3>
           <p class='text-muted'>You can put any information here you'd like.
             <ul class="list-group">
-              <li class="list-group-item list-group-item-light">Recent</li>
+              <li class="list-group-item list-group-item-light">Recent Jobs</li>
               <li class="list-group-item list-group-item-light">Announcements</li>
               <li class="list-group-item list-group-item-light">Calendars</li>
               <li class="list-group-item list-group-item-light">Miscellaneous</li>
