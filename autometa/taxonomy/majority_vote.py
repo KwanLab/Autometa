@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Modified majority vote algorithm (Autometa V1.0)
 """
@@ -253,7 +253,7 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         outdir=outdir,
         usepickle=kwargs.get('usepickle',True),
         verbose=kwargs.get('verbose',True),
-        cpus=kwargs.get('cpus',)
+        cpus=kwargs.get('cpus',0)
     )
     if not lca_fname:
         fname, ext = os.path.splitext(os.path.basename(fasta))

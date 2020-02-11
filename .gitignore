@@ -138,8 +138,8 @@ autometa/taxonomy/*.pyc
 databases/markers/*.h3*
 
 # databases / testing
-databases/ncbi/
-tests/data/
+tests/data/*
+!tests/data/metagenome.fna
 
 # visualStudioCode
 .vscode/*

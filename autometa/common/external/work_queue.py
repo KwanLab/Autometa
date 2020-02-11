@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Uses Work Queue as a task-manager to run different tasks within the autometa pipeline on a scalable computing system.

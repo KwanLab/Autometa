@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Functions related to running hmmer on metagenome sequences
@@ -176,16 +176,20 @@ def main(args):
     if args.verbose:
         logger.setLevel(logger.DEBUG)
 
-    result = hmmscan(
-        orfs=args.orfs,
-        hmmdb=args.hmmdb,
-        outfpath=args.out,
-        cpus=args.cpus,
-        force=args.force,
-        parallel=args.noparallel,
-        log=args.log)
+    try:
+        result = hmmscan(
+            orfs=args.orfs,
+            hmmdb=args.hmmdb,
+            outfpath=args.hmmscan,
+            cpus=args.cpus,
+            force=args.force,
+            parallel=args.noparallel,
+            log=args.log)
+    except FileExistsError as err:
+        logger.debug(err)
+        result = args.hmmscan
 
-    result = filter_markers(infpath=result,outfpath=result,cutoffs=args.cutoffs)
+    result = filter_markers(infpath=result,outfpath=args.markers,cutoffs=args.cutoffs)
 
 
 if __name__ == '__main__':
@@ -199,6 +203,8 @@ if __name__ == '__main__':
     parser.add_argument('hmmdb', help='</path/to/hmmpressed/hmmdb>')
     parser.add_argument('cutoffs', help='</path/to/hmm/cutoffs.tsv>')
     parser.add_argument('out', help='</path/to/hmmscan.out>')
+    parser.add_argument('hmmscan', help='</path/to/hmmscan.out>')
+    parser.add_argument('markers', help='</path/to/markers.tsv>')
     parser.add_argument('--log', help='</path/to/parallel.log>')
     parser.add_argument('--force', help="force overwrite of out filepath",
         action='store_true')

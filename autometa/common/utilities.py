@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 File containing common utilities functions to be used by Autometa scripts.
 """
