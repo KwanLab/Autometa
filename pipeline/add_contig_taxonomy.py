@@ -185,6 +185,19 @@ def parse_nodes(nodes_dmp_path):
     nodes_dmp.close()
     return(nodes)
 
+def parse_merged(fpath):
+    print(strftime("%Y-%m-%d %H:%M:%S") + ' Processing merged taxid nodes')
+    wc_output = subprocess.check_output(['wc', '-l', fpath])
+    wc_list = wc_output.split()
+    number_of_lines = int(wc_list[0])
+    fh = open(fpath)
+    merged = {}
+    for line in tqdm(fh, desc='parsing merged', total=number_of_lines, leave=False):
+        old_taxid, new_taxid = [int(taxid) for taxid in line.strip('\t|\n').split('\t|\t')]
+        merged.update({old_taxid:new_taxid})
+    fh.close()
+    return(merged)
+
 def parse_lca(lca_fpath):
     print( strftime("%Y-%m-%d %H:%M:%S") + ' Parsing lca taxonomy table')
     # Work out number of lines in file
@@ -199,6 +212,9 @@ def parse_lca(lca_fpath):
         orf, name, rank, taxid = line.strip().split('\t')
         contig, orf_num = orf.rsplit('_', 1)
         taxid = int(taxid)
+        # Convert any nodes that were recently suppressed/deprecated
+        # to their new node taxid. Otherwise keep the same taxid
+        taxid = merged.get(taxid, taxid)
         if taxid != 1:
             while rank not in set(rank_priority):
                 taxid = nodes[taxid]['parent']
@@ -336,6 +352,7 @@ pp = pprint.PrettyPrinter(indent=4)
 # Build taxid tree structure with associated canoncial ranks and names
 names = parse_names(name_fpath)
 nodes = parse_nodes(nodes_fpath)
+merged = parse_merged(merged_fpath)
 
 rank_priority = [
     'species',
