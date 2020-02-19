@@ -346,7 +346,7 @@ output_file_path = sys.argv[4]
 # Process NCBI taxdump files
 name_fpath = os.path.join(taxdump_dir_path, 'names.dmp')
 nodes_fpath = os.path.join(taxdump_dir_path, 'nodes.dmp')
-nodes_fpath = os.path.join(taxdump_dir_path, 'merged.dmp')
+merged_fpath = os.path.join(taxdump_dir_path, 'merged.dmp')
 
 pp = pprint.PrettyPrinter(indent=4)
 
