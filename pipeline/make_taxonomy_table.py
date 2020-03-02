@@ -164,7 +164,7 @@ def update_dbs(database_path, db='all'):
 			download_file(database_path, taxdump_url, taxdump_md5_url)
 
 		if os.path.isfile(database_path + '/taxdump.tar.gz'):
-			run_command('tar -xzf {}/taxdump.tar.gz -C {} names.dmp nodes.dmp'.format(database_path, database_path))
+			run_command('tar -xzf {}/taxdump.tar.gz -C {} names.dmp nodes.dmp merged.dmp'.format(database_path, database_path))
 			os.remove('{}/taxdump.tar.gz'.format(database_path))
 			print("nodes.dmp and names.dmp updated")
 
@@ -183,7 +183,7 @@ def check_dbs(db_path):
 		db_dict = {
 			'nr': ['nr.dmnd'],
 			'acc2taxid': ['prot.accession2taxid'],
-			'taxdump': ['names.dmp','nodes.dmp']
+			'taxdump': ['names.dmp','nodes.dmp', 'merged.dmp']
 			}
 	db_files = os.listdir(db_path)
 	for db in db_dict:
@@ -303,7 +303,7 @@ parser.add_argument('-bgc', '--bgcs_dir', metavar='<dir>',
 parser.add_argument('-s', '--single_genome', help='Specifies single genome mode',
 	action='store_true')
 parser.add_argument('-u', '--update', required=False, action='store_true',
-	help='Checks/Adds/Updates: nodes.dmp, names.dmp, accession2taxid, nr.dmnd files within specified directory.')
+	help='Checks/Adds/Updates: nodes.dmp, names.dmp, merged.dmp, accession2taxid, nr.dmnd files within specified directory.')
 
 args = vars(parser.parse_args())
 
