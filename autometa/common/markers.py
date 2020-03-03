@@ -20,35 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 class Markers:
-    """docstring for Autometa Markers class.
+    f"""docstring for Autometa Markers class.
 
     Parameters
     ----------
-    orfs_fpath : type
+    orfs_fpath : str
         Description of parameter `orfs_fpath`.
-    kingdom : type
+    kingdom : str
         Description of parameter `kingdom` (the default is 'bacteria').
-    dbdir : type
-        Description of parameter `dbdir` (the default is MARKERS_DIR).
+    dbdir : str
+        Description of parameter `dbdir` (the default is {MARKERS_DIR}).
 
     Attributes
     ----------
-    hmmdb : type
+    hmmdb : str
         Description of attribute `hmmdb`.
-    cutoffs : type
+    cutoffs : str
         Description of attribute `cutoffs`.
-    markers_fn : type
-        Description of attribute `markers_fn`.
-    markers_fp : type
-        Description of attribute `markers_fp`.
-    hmmscan_fn : type
-        Description of attribute `hmmscan_fn`.
-    hmmscan_fp : type
-        Description of attribute `hmmscan_fp`.
-    orfs_fpath
-    kingdom
-    dbdir
-
+    hmmscan_fn : str
+        <`kingdom`.hmmscan.tsv>
+    hmmscan_fp : str
+        </path/to/`kingdom`.hmmscan.tsv>
+    markers_fn : str
+        <`kingdom`.markers.tsv>
+    markers_fp : str
+        </path/to/`kingdom`.markers.tsv>
     """
     def __init__(self, orfs_fpath, kingdom='bacteria', dbdir=MARKERS_DIR):
         self.orfs_fpath = os.path.realpath(orfs_fpath)
@@ -56,10 +52,10 @@ class Markers:
         self.dbdir = dbdir
         self.hmmdb = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.hmm')
         self.cutoffs = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
-        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
-        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
         self.hmmscan_fn = '.'.join([self.kingdom,'hmmscan.tsv'])
         self.hmmscan_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.hmmscan_fn)
+        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
+        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
 
     @property
     def searched(self):
@@ -176,7 +172,11 @@ class Markers:
         if not self.searched:
             hmmer.hmmscan(self.orfs_fpath, self.hmmdb, self.hmmscan_fp, **kwargs)
         if not self.found:
-            hmmer.filter_markers(self.hmmscan_fp, self.markers_fp, self.cutoffs)
+            hmmer.filter_markers(
+                infpath=self.hmmscan_fp,
+                outfpath=self.markers_fp,
+                cutoffs=self.cutoffs,
+                prodigal_annotations=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
 def main(args):
