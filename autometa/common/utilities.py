@@ -3,7 +3,9 @@
 File containing common utilities functions to be used by Autometa scripts.
 """
 
+
 import gzip
+import hashlib
 import logging
 import os
 import pickle
@@ -232,33 +234,162 @@ def file_length(fpath):
     fh.close()
     return i+1
 
-def checkpoint(func, checkpoint_num=1):
-    """Short summary.
+def get_checksum(fpath):
+    """Retrieve sha256 checksums from provided `args`.
 
     See:
-        https://www.geeksforgeeks.org/decorators-with-parameters-in-python/
+        https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+
     Parameters
     ----------
-    returning_func : type
-        Description of parameter `returning_func`.
+    fpath : str
+        </path/to/file>
 
     Returns
     -------
-    type
-        Description of returned object.
+    str
+        hexdigest of `fpath` using sha256
 
     Raises
     -------
-    ExceptionName
-        Why the exception is raised.
-
+    FileNotFoundError
+        Provided `fpath` does not exist
+    TypeError
+        `fpath` is not a string
     """
-    raise NotImplementedError
-    # @wraps(func)
-    # def wrapper(*args, **kwds):
-    #     return func(*args, **kwds)
-    # make_pickle(obj=wrapper(*args, **kwds), outfpath=str(checkpoint_num))
-    # return wrapper
+    def sha(block):
+        hasher = hashlib.sha256()
+        for bytes in block:
+            hasher.update(bytes)
+        return hasher.hexdigest()
+
+    def blockiter(fh, blocksize=65536):
+        with fh:
+            block = fh.read(blocksize)
+            while len(block) > 0:
+                yield block
+                block = fh.read(blocksize)
+
+    if type(fpath) != str:
+        raise TypeError(type(fpath))
+    if not os.path.exists(fpath):
+        raise FileNotFoundError(fpath)
+    fh = open(fpath, 'rb')
+    cksum = sha(blockiter(fh))
+    fh.close()
+    return cksum
+
+def valid_checkpoint(checkpoint_fp, fpath):
+    """Validate `fpath` is the same checksum as in `checkpoint_fp`.
+
+    Parameters
+    ----------
+    checkpoint_fp : str
+        </path/to/checkpoints.tsv>
+    fpath : str
+        </path/to/file>
+
+    Returns
+    -------
+    bool
+        True if same else False
+
+    Raises
+    -------
+    FileNotFoundError
+        Either `fpath` or `checkpoint_fp` does not exist
+    TypeError
+        Either `fpath` or `checkpoint_fp` is not a string
+    """
+    for fp in [checkpoint_fp, fpath]:
+        if not type(fp) is str:
+            raise TypeError(f'{fp} is type: {type(fp)}')
+        if not os.path.exists(fp):
+            raise FileNotFoundError(fp)
+    with open(checkpoint_fp) as fh:
+        for line in fh:
+            prev_chksum, fp = line.split('\t')
+            fp = fp.strip()
+            if os.path.basename(fp) == os.path.basename(fpath):
+                # If filepaths never match, prev_chksum and new_chksum will not match.
+                # Giving expected result.
+                break
+    new_chksum = get_checksum(fpath)
+    return True if new_chksum == prev_chksum else False
+
+def get_checkpoints(checkpoint_fp, fpaths=None):
+    """Get checkpoints from `checkpoint_fp`.
+
+    `checkpoint_fp` will be written and populate with `fpaths` if it does not exist.
+
+    Parameters
+    ----------
+    checkpoint_fp : str
+        </path/to/checkpoints.tsv>
+    fpaths : [str, ...]
+        [</path/to/file>, ...]
+
+    Returns
+    -------
+    dict
+        {fpath:checksum, ...}
+
+    Raises
+    -------
+    ValueError
+        When `checkpoint_fp` first being written, will not populate an empty checkpoints file.
+        Raises an error if the `fpaths` list is empty or None
+    """
+    if not os.path.exists(checkpoint_fp):
+        logger.debug(f'{checkpoint_fp} not found... Writing')
+        if not fpaths:
+            raise ValueError(f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
+        outlines = ''
+        for fpath in fpaths:
+            try:
+                checksum = get_checksum(fpath)
+            except FileNotFoundError as err:
+                checksum = ''
+            outlines += f'{checksum}\t{fpath}\n'
+        with open(checkpoint_fp, 'w') as fh:
+            fh.write(outlines)
+        logger.debug(f'Written: {checkpoint_fp}')
+    checkpoints = {}
+    with open(checkpoint_fp) as fh:
+        for line in fh:
+            chk,fp = line.split('\t')
+            fp = fp.strip()
+            checkpoints.update({fp:chk})
+    return checkpoints
+
+def update_checkpoints(checkpoint_fp, fpath):
+    """Update `checkpoints_fp` with `fpath`. If `fpath` already exists in `checkpoint_fp`
+    and the hash is the same, no update will take place.
+
+    Parameters
+    ----------
+    checkpoint_fp : str
+        </path/to/checkpoints.tsv>
+    fpath : str
+        </path/to/file>
+
+    Returns
+    -------
+    dict
+        {fp:checksum, ...}
+    """
+    checkpoints = get_checkpoints(checkpoint_fp)
+    if valid_checkpoint(checkpoint_fp, fpath):
+        return checkpoints
+    new_checksum = get_checksum(fpath)
+    checkpoints.update({fpath:new_checksum})
+    outlines = ''
+    for fp,chk in checkpoints.items():
+        outlines += f'{chk}\t{fp}\n'
+    with open(checkpoint_fp, 'w') as fh:
+        fh.write(outlines)
+    logger.debug(f'Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}')
+    return checkpoints
 
 def timeit(func):
     """Time function run time (to be used as a decorator). I.e. when defining a
@@ -291,18 +422,6 @@ def timeit(func):
         # runlogger.info(f'func={func.__name__} : {time_taken} seconds')
         return obj
     return wrapper
-
-
-class AutometaParameters:
-    """docstring for AutometaParameters."""
-
-    def __init__(self, force=False, verbose=True, gzip=True, pickle=True, parallel=False):
-        self.force = force
-        self.verbose = verbose
-        self.gzip = gzip
-        self.pickle = pickle
-        self.parallel = parallel
-
 
 if __name__ == '__main__':
     print('file containing utilities functions for Autometa pipeline')

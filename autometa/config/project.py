@@ -88,7 +88,7 @@ def setup_project(config):
                 n_projects += 1
         project_num = n_projects + 1
     config.set('parameters','project',str(project_num))
-    project_dirname = f"project_{project_num:03d}"
+    project_dirname = f'project_{project_num:03d}'
     project_dirpath = os.path.join(projects_dp, project_dirname)
     if not os.path.exists(project_dirpath):
         os.makedirs(project_dirpath)
@@ -115,8 +115,8 @@ def setup_metagenome(config):
 
     Raises
     -------
-    ExceptionName
-        Why the exception is raised.
+    FileNotFoundError
+        project directory or project config does not exist.
 
     """
     if type(config) is str and os.path.exists(config):

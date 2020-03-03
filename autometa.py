@@ -91,8 +91,6 @@ def run(mgargs):
     if not mgargs.parameters.kingdom in kingdoms:
         raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {", ".join(kingdoms.keys())}')
     mag = kingdoms.get(mgargs.parameters.kingdom)
-    # Get markers to be used for bin assessment.
-    # markers = mag.markers(kingdom)
     bins_df = mag.get_binning(
         method=mgargs.parameters.binning_method,
         kmers=mgargs.files.kmer_counts,

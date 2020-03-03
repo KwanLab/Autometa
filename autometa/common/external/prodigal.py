@@ -11,7 +11,7 @@ import subprocess
 import shutil
 
 from glob import glob
-
+from Bio import SeqIO
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +133,36 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         if not os.path.exists(fp):
             raise OSError(f'{fp} not written')
     return nucls_out, prots_out
+
+def get_orf_translations(fpath):
+    """Translate Prodigal ORF ID to contig ID using prodigal assigned ID from
+    description.
+
+    i.e. : record.description
+        'k119_1383959_3495691_2 # 688 # 1446 # 1 # ID=3495691_2;partial=01;start_type=ATG;rbs_motif=None;rbs_spacer=None'
+                                                      ^       ^
+    Parameters
+    ----------
+    fpath : str
+        </path/to/prodigal/called/orfs.fasta>
+
+    Returns
+    -------
+    dict
+        contigs translated from prodigal ORF description.  {orf_id:contig_id, ...}
+
+    Raises
+    -------
+    ExceptionName
+        Why the exception is raised.
+
+    """
+    translations = {}
+    for record in SeqIO.parse(fpath, 'fasta'):
+        orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
+        contig_id = record.id.replace(f'_{orf_id}', '')
+        translations.update({record.id:contig_id})
+    return translations
 
 def main(args):
     if args.verbose:

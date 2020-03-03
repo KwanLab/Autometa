@@ -17,7 +17,7 @@ from Bio import SeqUtils
 from autometa.common import kmers
 from autometa.common import coverage
 from autometa.common.external import prodigal
-from autometa.common.mag import MAG
+from autometa.common.mag import Mag
 from autometa.common.utilities import timeit
 from autometa.common.utilities import gunzip
 from autometa.taxonomy.majority_vote import majority_vote
@@ -445,8 +445,8 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         Returns
         -------
-        type
-            Description of returned object.
+        dict
+            {'bacteria':MAG, ...}
 
         Raises
         -------

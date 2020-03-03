@@ -380,11 +380,12 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
+    skip_desc = '(will skip if file exists)'
     parser = argparse.ArgumentParser('Count k-mers')
     parser.add_argument('--fasta', help='</path/to/sequences.fna>', required=True)
-    parser.add_argument('--kmers', help='</path/to/kmers.tsv>', required=True)
+    parser.add_argument('--kmers', help=f'</path/to/output/kmers.tsv> {skip_desc}', required=True)
     parser.add_argument('--size', help='k-mer size', default=5, type=int)
-    parser.add_argument('--normalized', help='</path/to/kmers.normalized.tsv>')
+    parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
     parser.add_argument('--embedded', help='</path/to/kmers.embedded.tsv>')
     parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
     parser.add_argument('--n-components', help='<num components of lower dimension manifold>',

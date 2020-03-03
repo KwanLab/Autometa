@@ -326,8 +326,10 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
 
     # Use taxonomy method
     if reverse:
+        # superkingdom, phylum, class, order, family, genus, species
         ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
     else:
+        # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in NCBI.CANONICAL_RANKS]
     ranks.remove('root')
     clustered_contigs = set()

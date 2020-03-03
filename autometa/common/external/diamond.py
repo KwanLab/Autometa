@@ -15,6 +15,7 @@ from itertools import chain
 from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle,file_length
+from autometa.common.external import prodigal
 
 logger = logging.getLogger(__name__)
 
@@ -30,38 +31,26 @@ class DiamondResult:
     def __init__(self, qseqid, sseqid, pident, length, mismatch, gapopen,
         qstart, qend, sstart, send, evalue, bitscore):
         self.qseqid = qseqid
-        self.sseqid = sseqid
-        self.pident = float(pident)
-        self.length = int(length)
-        self.mismatch = int(mismatch)
-        self.gapopen = int(gapopen)
-        self.qstart = int(qstart)
-        self.qend = int(qend)
-        self.sstart = int(sstart)
-        self.send = int(send)
-        self.evalue = float(evalue)
-        self.bitscore = float(bitscore)
-        self.sseqids = {self.sseqid:{
-            'pident':self.pident,
-            'length':self.length,
-            'mismatch':self.mismatch,
-            'gapopen':self.gapopen,
-            'qstart':self.qstart,
-            'qend':self.qend,
-            'sstart':self.sstart,
-            'send':self.send,
-            'evalue':self.evalue,
-            'bitscore':self.bitscore,
-        }}
+        self.sseqids = {
+            sseqid:{
+                'pident':float(pident),
+                'length':int(length),
+                'mismatch':int(mismatch),
+                'gapopen':int(gapopen),
+                'qstart':int(qstart),
+                'qend':int(qend),
+                'sstart':int(sstart),
+                'send':int(send),
+                'evalue':float(evalue),
+                'bitscore':float(bitscore),
+            }
+        }
 
     # def __repr__(self):
     #     return str(self)
 
     def __str__(self):
-        return f'''{self.qseqid}
-Num. sseqids: {len(self.sseqids)}
-Top sseqid: {self.get_top_hit()}
-'''
+        return f"{self.qseqid}; {len(self.sseqids)} sseqids; top hit by bitscore: {self.get_top_hit()}"
 
     def __eq__(self, other_hit):
         if self.qseqid == other_hit.qseqid:
@@ -81,8 +70,9 @@ Top sseqid: {self.get_top_hit()}
 
     def get_top_hit(self):
         top_bitscore = float('-Inf')
+        top_hit = None
         for sseqid,attrs in self.sseqids.items():
-            if attrs.get('bitscore') >= top_bitscore:
+            if attrs.get('bitscore', float('-Inf')) >= top_bitscore:
                 top_bitscore = attrs.get('bitscore')
                 top_hit = sseqid
         return top_hit
@@ -247,10 +237,10 @@ def parse(results, top_pct=0.9, verbose=False):
                 bitscore=bitscore)
             if hit.qseqid not in temp:
                 hits.update({hit.qseqid:hit})
-                topbitscore = hit.bitscore
+                topbitscore = bitscore
                 temp = set([hit.qseqid])
                 continue
-            if hit.bitscore >= top_pct * topbitscore:
+            if bitscore >= top_pct * topbitscore:
                 hits[hit.qseqid] += hit
     return hits
 
