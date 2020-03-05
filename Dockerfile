@@ -1,9 +1,10 @@
 FROM continuumio/anaconda
-MAINTAINER Evan R. Rees "evan.rees@wisc.edu"
+MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
 
-# Copyright 2019 Evan Rees, Jason C. Kwan
+# Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+# Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
-# This file is part of Autometa v2.
+# This file is part of Autometa.
 #
 # Autometa is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -38,5 +39,4 @@ conda install -c bioconda -c conda-forge --yes \
     umap-learn \
     && conda clean --all --yes
 
-COPY autometa autometa/
-# RUN git clone https://bitbucket.org/jason_c_kwan/autometa
+RUN git clone https://github.com/KwanLab/Autometa
