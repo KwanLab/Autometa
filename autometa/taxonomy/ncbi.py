@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Utilities file containing functions useful for handling NCBI taxonomy databases
 """

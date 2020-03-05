@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Autometa Bin Class
@@ -23,8 +23,8 @@ from autometa.binning import recursive_dbscan
 logger = logging.getLogger(__name__)
 
 
-class MAG:
-    """docstring for Autometa MAG class."""
+class Mag:
+    """docstring for Autometa Mag class."""
 
     def __init__(self, assembly, contigs, outdir=None):
         self.assembly = os.path.realpath(assembly)
@@ -76,13 +76,13 @@ class MAG:
     @property
     def nnucls(self):
         if not self.nucl_orfs_exist:
-            return 'N/A'
+            return np.nan
         return len(self.get_orfs('nucl'))
 
     @property
     def nprots(self):
         if not self.prot_orfs_exist:
-            return 'N/A'
+            return np.nan
         return len(self.get_orfs('prot'))
 
     def prepared(self, fpath):
@@ -107,7 +107,7 @@ class MAG:
         Parameters
         ----------
         all : bool
-            Gets all sequences from assembly if True else sequences for MAG
+            Gets all sequences from assembly if True else sequences for Mag
             (the default is False).
 
         Returns
@@ -121,9 +121,9 @@ class MAG:
         return [seq for seq in SeqIO.parse(self.assembly, 'fasta')
             if seq.id in self.contigs]
 
-    def describe(self):
+    def describe(self, autometa_details=True):
         print(f'''
-MAG Details
+M.A.G. Details
 ________________________
 Num. Contigs: {self.nseqs:,} / {self.nallseqs:,} ({self.seqs_pct:4.2f}% of total metagenome)
 Num. Nucl. ORFs: {self.nnucls:,}
@@ -131,14 +131,16 @@ Num. Prot. ORFs: {self.nprots:,}
 Size: {self.size:,}bp / {self.totalsize:,}bp ({self.size_pct:4.2f}% of total metagenome)
 Mean GC content: {self.gc_content:4.2f}%
 ________________________
-Autometa Details
-________________________
-Metagenome: {self.assembly}
-Nucl. ORFs filepath: {self.nucl_orfs_fpath}
-Prot. ORFs filepath: {self.prot_orfs_fpath}
-Nucl. ORFs called: {self.nucl_orfs_exist}
-Prot. ORFs called: {self.prot_orfs_exist}
 ''')
+        if autometa_details:
+            print(f'''
+            Autometa Details
+            ________________________
+            Metagenome: {self.assembly}
+            Nucl. ORFs filepath: {self.nucl_orfs_fpath}
+            Prot. ORFs filepath: {self.prot_orfs_fpath}
+            Nucl. ORFs called: {self.nucl_orfs_exist}
+            Prot. ORFs called: {self.prot_orfs_exist}''')
 
     def split_nucleotides(self, ):
         raise NotImplementedError()

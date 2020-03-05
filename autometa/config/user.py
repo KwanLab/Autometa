@@ -16,6 +16,7 @@ from autometa.config import AUTOMETA_DIR
 from autometa.config import databases
 from autometa.config import environ
 from autometa.config import project
+from autometa.common.utilities import get_checkpoints
 
 
 logger = logging.getLogger(__name__)
@@ -74,13 +75,15 @@ class AutometaUser:
             mg_config_fpath = project.setup_metagenome(metagenome_config)
             mg_name = os.path.basename(mg_config_fpath).strip('.config')
             mgargs = parse_config(mg_config_fpath)
+            fpaths = list(vars(mgargs.files).values())
+            __ = get_checkpoints(mgargs.files.checkpoints, fpaths)
             mg_configs.update({mg_name:mgargs})
         return mg_configs
 
     def get_mgargs(self, projects_dir, project_num, metagenome_num):
         for arg in [project_num, metagenome_num]:
             if type(arg) is not int:
-                raise TypeError(f'{args} is type: {type(arg)}')
+                raise TypeError(f'{arg} is type: {type(arg)}')
         if project_num <= 0:
             raise ValueError(f'project num: {project_num} is invalid')
         if metagenome_num <= 0:

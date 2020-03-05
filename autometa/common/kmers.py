@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 File containing functions to count, retrieve, k-mers given sequences
@@ -24,7 +24,8 @@ from umap import UMAP
 from autometa.common.utilities import gunzip
 
 logger = logging.getLogger(__name__)
-
+# Suppress numba logger debug output
+numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
 
 def revcomp(string):
     complement = {'A':'T','T':'A','C':'G','G':'C'}
@@ -231,7 +232,7 @@ def normalize(df):
         .transform(lambda x: np.log(x / gmean(x)), axis='columns')
 
 
-def embed(kmers=None, embedded=None, n_components=3, do_pca=True, pca_dimensions=50, method='TSNE', perplexity=30, **kwargs):
+def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions=50, method='TSNE', perplexity=30, **kwargs):
     """Embed k-mers using provided `method`.
 
     Parameters
@@ -360,16 +361,17 @@ def main(args):
 
     if args.normalized:
         logger.debug(f'Embedding {args.normalized}')
-        embedded_df = embed(
-            kmers=args.normalized,
-            embedded=args.embedded,
-            method=args.method)
     else:
         logger.debug(f'Embedding {args.kmers}')
-        embedded_df = embed(
-            kmers=args.kmers,
-            embedded=args.embedded,
-            method=args.method)
+
+    kmers_fp = args.normalized if args.normalized else args.kmers
+    embedded_df = embed(
+        kmers=kmers_fp,
+        embedded=args.embedded,
+        method=args.method,
+        n_components=args.n_components,
+        do_pca=args.do_pca,
+        pca_dimensions=args.pca_dimensions)
 
 if __name__ == '__main__':
     import argparse
@@ -378,13 +380,20 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
+    skip_desc = '(will skip if file exists)'
     parser = argparse.ArgumentParser('Count k-mers')
     parser.add_argument('--fasta', help='</path/to/sequences.fna>', required=True)
-    parser.add_argument('--kmers', help='</path/to/kmers.tsv>', required=True)
+    parser.add_argument('--kmers', help=f'</path/to/output/kmers.tsv> {skip_desc}', required=True)
     parser.add_argument('--size', help='k-mer size', default=5, type=int)
-    parser.add_argument('--normalized', help='</path/to/kmers.normalized.tsv>')
+    parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
     parser.add_argument('--embedded', help='</path/to/kmers.embedded.tsv>')
     parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
+    parser.add_argument('--n-components', help='<num components of lower dimension manifold>',
+        type=int, default=2)
+    parser.add_argument('--do-pca', help='Whether to perform PCA prior to manifold learning',
+        action='store_true', default=False)
+    parser.add_argument('--pca-dimensions', help='<num components to reduce to PCA feature space',
+        type=int, default=50)
     parser.add_argument('--multiprocess', help='count k-mers using multiprocessing',
         action='store_true', default=False)
     parser.add_argument('--nproc', help='num. processors to use if multiprocess is selected',
