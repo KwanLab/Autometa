@@ -20,18 +20,19 @@ along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 """
 
 
+import logging
 import os
 
 from argparse import Namespace
 
-
 from configparser import ConfigParser
 from configparser import ExtendedInterpolation
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), 'default.config')
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-PROJECTS_DIR = os.path.join(AUTOMETA_DIR, 'projects')
-
+WORKSPACE = os.path.join(AUTOMETA_DIR, 'workspace')
 
 
 def get_config(fpath):
@@ -54,34 +55,6 @@ def update_config(fpath, section, option, value):
 
 DEFAULT_CONFIG = get_config(fpath=DEFAULT_FPATH)
 
-parameters = {
-     'projects':str,
-     'project':int,
-     'kingdoms':list,
-     'resume':int,
-     'length_cutoff':float,
-     'cov_from_spades':bool,
-     'kmer_size':int,
-     'kmer_multiprocess':bool,
-     'kmer_normalize':bool,
-     'do_pca':bool,
-     'pca_dims':int,
-     'embedding_method':str,
-     'taxon_method':str,
-     'reversed':bool,
-     'completeness':float,
-     'purity':float,
-     'binning_method':str,
-     'verbose':bool,
-     'force':bool,
-     'usepickle':bool,
-     'parallel':bool,
-     'cpus':int,
-     'config':str,
-     'resume':bool,
-}
-
-
 def parse_config(fpath=None):
     """Generate argparse namespace (args) from config file.
 
@@ -101,6 +74,32 @@ def parse_config(fpath=None):
         provided `fpath` does not exist.
 
     """
+    parameters = {
+         'workspace':str,
+         'project':int,
+         'kingdoms':list,
+         'metagenome_num':int,
+         'length_cutoff':float,
+         'cov_from_spades':bool,
+         'kmer_size':int,
+         'kmer_multiprocess':bool,
+         'kmer_normalize':bool,
+         'do_pca':bool,
+         'pca_dims':int,
+         'embedding_method':str,
+         'taxon_method':str,
+         'reversed':bool,
+         'completeness':float,
+         'purity':float,
+         'binning_method':str,
+         'verbose':bool,
+         'force':bool,
+         'usepickle':bool,
+         'parallel':bool,
+         'cpus':int,
+         'config':str,
+         'resume':bool,
+    }
     if fpath and (not os.path.exists(fpath) or os.stat(fpath).st_size == 0):
         raise FileNotFoundError(fpath)
     config = get_config(fpath) if fpath else DEFAULT_CONFIG
@@ -122,6 +121,5 @@ def parse_config(fpath=None):
                     value = config.getfloat(section,key)
                 elif parameters.get(key) is list:
                     value = value.split(',')
-
             namespace.__dict__[section].__dict__[key] = value
     return namespace

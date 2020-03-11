@@ -331,7 +331,7 @@ class LCA(NCBI):
             `outfpath`
         """
         if self.verbose:
-            logger.info(f'Running BLAST to LCA for {fasta}')
+            logger.debug(f'Running BLAST to LCA for {fasta}')
         if os.path.exists(outfpath) and not force:
             logger.warning(f'FileAlreadyExists {outfpath}')
             return outfpath
@@ -422,8 +422,8 @@ class LCA(NCBI):
             raise FileNotFoundError(prodigal_annotations)
 
         if prodigal_annotations:
-            logger.debug('Retrieving ORF->contig translations from ORF Caller')
-            translations = prodigal.get_orf_translations(prodigal_annotations)
+            logger.debug('getting contig headers from prodigal ORFs')
+            translations = prodigal.contigs_from_headers(prodigal_annotations)
 
         fname = os.path.basename(lca_fpath)
         n_lines = file_length(lca_fpath) if self.verbose else None

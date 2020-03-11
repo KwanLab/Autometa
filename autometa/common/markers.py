@@ -159,6 +159,7 @@ class Markers:
         else:
             params = ['wide','long','list','counts']
             err_msg = f'{format} is not a supported format.\n\tSupported formats: {params}'
+            # TODO: Write Marker specific AutometaException
             raise ValueError(err_msg)
 
     def get_markers(self, format='wide', **kwargs):

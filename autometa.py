@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
@@ -27,14 +27,73 @@ import logging
 import os
 import sys
 
+import multiprocessing as mp
+
 from autometa.config.user import AutometaUser
-from autometa.config import PROJECTS_DIR
-from autometa.config import parse_config
 from autometa.common.utilities import timeit
 from autometa.common.metagenome import Metagenome
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('autometa')
+
+
+def init_logger(fpath=None, level=None):
+    """Initialize logger.
+
+    By default will initialize streaming logger with DEBUG level messages.
+    If `fpath` is provided, will write DEBUG level messages to `fpath` and
+    set streaming messages to INFO.
+
+    Parameters
+    ----------
+    fpath : str
+        </path/to/file.log>
+    level : int
+        Overwrite default logging level behavior with provided `level`.
+        This must be a constant from logging levels.
+        See https://docs.python.org/3/library/logging.html#levels for details.
+        i.e. logging.DEBUG, logging.INFO, etc. translates to 0,10, etc...
+
+    Returns
+    -------
+    logging.Logger
+        logging's Logger object to emit messages via methods:
+        'warn','info','debug','error','exception','critical','fatal'
+
+    Raises
+    -------
+    ValueError
+        `level` must be int and one of 0, 10, 20, 30, 40, 50
+    """
+    levels = {
+        logging.NOTSET,
+        logging.DEBUG,
+        logging.INFO,
+        logging.WARNING,
+        logging.ERROR,
+        logging.CRITICAL}
+    if level and type(level) is not int:
+        raise ValueError(f'{level} must be an int! {type(level)}')
+    if level and level not in levels:
+        raise ValueError(f'{level} not in levels: {levels}!')
+    formatter = logging.Formatter(
+        fmt='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p')
+    # Construct file/stream logging handlers
+    streamhandler = logging.StreamHandler()
+    streamhandler.setFormatter(formatter)
+    if fpath:
+        filehandler = logging.FileHandler(fpath)
+        filehandler.setFormatter(formatter)
+        logger.addHandler(filehandler)
+        lvl = level if level else logging.INFO
+    else:
+        lvl = level if level else logging.DEBUG
+
+    streamhandler.setLevel(lvl)
+    logger.addHandler(streamhandler)
+    logger.setLevel(logging.DEBUG)
+    return logger
 
 @timeit
 def run(mgargs):
@@ -47,14 +106,13 @@ def run(mgargs):
 
     Returns
     -------
-    None
-        Description of returned object.
+    NoneType
 
     Raises
     -------
-    ExceptionName
-        Why the exception is raised.
-
+    TODO: Need to enumerate all exceptions raised from within binning pipeline.
+    I.e. Demarkate new exception (not yet handled) vs. handled exception.
+    Subclassing an AutometaException class may be most appropriate use case here.
     """
     mg = Metagenome(
         assembly=mgargs.files.metagenome,
@@ -127,121 +185,45 @@ def run(mgargs):
         sep='\t',
         index=True,
         header=True)
-        # TODO: Refine bins by connection mapping, taxon, or other methods
-        # mag.refine(by='connections')
-        # mag.refine(by='taxa')
 
 def main(args):
-    if not args.metagenomes_configs and not args.metagenomes and not args.resume:
-        raise ValueError('Must provide metagenomes-configs or metagenomes')
-    if args.config:
-        user = AutometaUser(args.config, dryrun=args.dryrun)
-    else:
-        user = AutometaUser(dryrun=args.dryrun)
-    # Configure environment and databases
-    user.configure(nproc=args.cpus)
-    # Workflow control...
-    # TODO: WorkQueue handling. to process multiple metagenomes at once.
-    if args.resume:
-        mg_configs = user.get_mgargs(
-            projects_dir=args.projects,
-            project_num=args.project,
-            metagenome_num=args.resume)
-    elif args.metagenomes_configs:
-        try:
-            mg_configs = user.add_metagenomes(args.metagenomes_configs)
-        except FileNotFoundError as err:
-            project_configs = user.new_project(args)
-            mg_configs = user.add_metagenomes(args.metagenomes_configs)
-    else:
-        project_configs = user.new_project(args)
-        mg_configs =  project_configs.get('metagenomes')
-    # Run autometa on workflow metagenome args...
-    for metagenome,mgargs in mg_configs.items():
+    user = AutometaUser(dryrun=args.dryrun, nproc=args.cpus)
+    for config in args.config:
+        mgargs = user.prepare_run(config)
         run(mgargs)
-    # user.bin_metagenome(metagenome_config)
+        # cluster process -> mgargs.files.binning
+        # TODO: Refine bins by connection mapping, taxon, or other methods
     # TODO: Construct pangenomes from multiple datasets
     # get_pangenomes()
 
 if __name__ == '__main__':
     import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-
-    ###############################
-    # AutometaUser Project(s) API #
-    ###############################
-
+    import time
+    cpus = mp.cpu_count()
     parser = argparse.ArgumentParser('Main script to run Autometa')
-    parser.add_argument('--projects',
-        help=f'</path/autometa/projects/dir> (Default is {PROJECTS_DIR}).',
-        default=PROJECTS_DIR,
-        required=False)
-    parser.add_argument('--project',
-        help='project number for which to resume autometa binning (required with `--resume` and --add-metagenome).',
-        type=int)
-    parser.add_argument('--resume',
-        help='metagenome number for which to resume autometa binning (`--project` num is required).',
-        type=int,
-        default=0)
-    parser.add_argument('--metagenomes-configs',
+    parser.add_argument('config',
         help='</path/to/metagenome.config>',
         nargs='*')
     parser.add_argument('--dryrun',
         help='whether to perform database updating/construction',
         action='store_true',
         default=False)
-
-    #######################
-    # Autometa Parameters #
-    #######################
-
-    parser.add_argument('metagenomes', nargs='*')
-    parser.add_argument('--length-cutoff', default=3000, type=int)
-    parser.add_argument('--cov-from-spades',
-        help='retrieve coverage from spades headers. (Only may be used when SPAdes assemblies are provided)',
-        action='store_true',
-        default=False)
-    parser.add_argument(
-        '--kmer-size',
-        help='size of k-mer to calculate frequencies.',
-        default=5, type=int)
-    parser.add_argument(
-        '--kmer-multiprocess',
-        help='use multiprocessing to count k-mers.',
-        action='store_true', default=False)
-    parser.add_argument(
-        '--kmer-normalize',
-        help='Perform CLR transform on k-mer frequencies.',
-        action='store_true', default=False)
-    parser.add_argument('--do-pca',
-        help='Perform PCA prior to running embedding method', default=False, action='store_true')
-    parser.add_argument(
-        '--pca-dims',
-        help='Number of dimesions to reduce k-mer frequencies using PCA',
-        default=50, type=int)
-    parser.add_argument(
-        '--embedding-method',
-        help='Embedding method for dimension reduction of contig k-mer frequencies',
-        default='UMAP',
-        choices=['TSNE','UMAP'])
-    parser.add_argument('--taxon-method', default='majority_vote', choices=['majority_vote'])
-    parser.add_argument('--kingdom',default='bacteria',choices=['bacteria','archaea'])
-    parser.add_argument('--reversed', help='Reverse order at which taxonomic ranks are clustered', default=True, action='store_false')
-    parser.add_argument('--binning-method',
-        default='recursive_dbscan',
-        choices=['recursive_dbscan'])
-    parser.add_argument('--completeness', type=float, default=20.)
-    parser.add_argument('--purity', type=float, default=90.)
-    parser.add_argument('--verbose', action='store_true', default=False)
-    parser.add_argument('--force', action='store_true', default=False)
-    parser.add_argument('--usepickle', action='store_true', default=False)
-    parser.add_argument('--parallel', help="Use GNU parallel",
-        action='store_true', default=False)
-    parser.add_argument('--cpus',default=1, type=int)
-    parser.add_argument('--config',help='user defined config file')
+    parser.add_argument('--cpus',
+        help=f'Num. cpus to use when updating/constructing databases (default: {cpus} cpus)',
+        type=int,
+        default=cpus)
     args = parser.parse_args()
-    main(args)
+    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
+    logger = init_logger(f'{timestamp}_autometa.log')
+    try:
+        main(args)
+    except Exception as err:
+        issue_request = '''
+        An error was encountered!
+
+        Please help us fix your problem!
+
+        You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
+        '''
+        logger.exception(err)
+        print(issue_request)

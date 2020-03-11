@@ -44,6 +44,7 @@ DB_SECTIONS = {
     'ncbi':[
         'nodes',
         'names',
+        'merged',
         'accession2taxid',
         'nr',
     ],
@@ -68,11 +69,11 @@ def format_nr(config, dryrun, nproc=2):
     return config
 
 def extract_taxdump(config, dryrun):
-    """Short summary.
+    """Extract autometa required files from ncbi taxdump directory.
 
     Parameters
     ----------
-    config : type
+    config: configparser.ConfigParser
         Description of parameter `config`.
     dryrun : type
         Description of parameter `dryrun`.
@@ -104,11 +105,11 @@ def extract_taxdump(config, dryrun):
     return config
 
 def update_ncbi(config, options, dryrun, nproc=2):
-    """Update NCBI database.
+    """Update NCBI database files (taxdump.tar.gz and nr.gz).
 
     Parameters
     ----------
-    config : type
+    config: configparser.ConfigParser
         Description of parameter `config`.
     options : type
         Description of parameter `options`.
@@ -163,7 +164,7 @@ def update_markers(config, options, dryrun):
 
     Parameters
     ----------
-    config : type
+    config: configparser.ConfigParser
         Description of parameter `config`.
     options : type
         Description of parameter `options`.
@@ -215,7 +216,7 @@ def validate_fpaths(config, section):
 
     Parameters
     ----------
-    config : type
+    config: configparser.ConfigParser
         Description of parameter `config`.
     section : type
         Description of parameter `section`.
@@ -267,12 +268,13 @@ def update_missing(config, section, dryrun, options=None, nproc=2):
 
     """
     if section not in DB_SECTIONS:
-        raise KeyError(f'section not in DB_SECTIONS : {section}')
+        raise KeyError(f'section ({section}) not in DB_SECTIONS ({DB_SECTIONS.keys()})')
     options = set(options) if options else set(DB_SECTIONS.get(section))
     if section == 'ncbi':
-        if 'nodes' in options or 'names' in options:
+        if 'nodes' in options or 'names' in options or 'merged' in options:
             options.discard('nodes')
             options.discard('names')
+            options.discard('merged')
             options.add('taxdump')
         config = update_ncbi(config, options, dryrun, nproc)
     if section == 'markers':
@@ -280,18 +282,18 @@ def update_missing(config, section, dryrun, options=None, nproc=2):
     return config
 
 def check_format(config, dryrun, nproc=2):
-    """Short summary.
+    """Checks database files
 
     Parameters
     ----------
-    config : type
+    config : configparser.ConfigParser
         Description of parameter `config`.
     dryrun : bool
         Description of parameter `dryrun`.
 
     Returns
     -------
-    type
+    configparser.ConfigParser
         Description of returned object.
 
     Raises
@@ -304,14 +306,23 @@ def check_format(config, dryrun, nproc=2):
         if not config.has_section(section):
             logger.warning(f'Missing section : {section}')
             config.add_section(section)
-            config = update_missing(config, section=section, dryrun=dryrun, nproc=nproc)
+            config = update_missing(
+                config=config,
+                section=section,
+                options=None,
+                dryrun=dryrun,
+                nproc=nproc)
             continue
         config = validate_fpaths(config, section)
         missing = set(options) - set(config.options(section))
         if missing:
             logger.warning(f'Missing options : {", ".join(missing)}')
-            config = update_missing(config, section=section, options=missing, dryrun=dryrun, nproc=nproc)
-
+            config = update_missing(
+                config=config,
+                section=section,
+                options=missing,
+                dryrun=dryrun,
+                nproc=nproc)
     return config
 
 def configure(config=DEFAULT_CONFIG, dryrun=True, nproc=2):

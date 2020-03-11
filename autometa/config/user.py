@@ -19,7 +19,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-Autometa User Configuration Class
+AutometaUser configuration class
 """
 
 
@@ -28,14 +28,17 @@ import os
 
 import argparse
 
+# TODO: Refactor autometa.config later as AutometaConfigUtils lib or something
 from autometa.config import get_config
+from autometa.config import put_config
 from autometa.config import parse_config
-from autometa.config import DEFAULT_CONFIG
 from autometa.config import AUTOMETA_DIR
+from autometa.config import DEFAULT_CONFIG
+from autometa.config import DEFAULT_FPATH
 from autometa.config import databases
 from autometa.config import environ
-from autometa.config import project
-from autometa.common.utilities import get_checkpoints
+from autometa.config.project import Project
+from autometa.common import utilities
 
 
 logger = logging.getLogger(__name__)
@@ -44,38 +47,32 @@ logger = logging.getLogger(__name__)
 class AutometaUser:
     """docstring for AutometaUser."""
 
-    def __init__(self, config_fpath=None, dryrun=True):
+    def __init__(self, config_fpath=None, dryrun=True, nproc=2):
         self.dryrun= dryrun
+        self.nproc = nproc
         self.config_fp = config_fpath
         self.config = get_config(self.config_fp) if self.config_fp else DEFAULT_CONFIG
         if not self.config.has_section('common'):
             self.config.add_section('common')
         self.config.set('common','home_dir', AUTOMETA_DIR)
 
-    def configure(self, configure_environ=True, configure_databases=True, nproc=2):
+    def configure(self, configure_environ=True, configure_databases=True):
         if configure_environ:
             self.config = environ.configure(self.config)
         if configure_databases:
-            self.config = databases.configure(self.config, dryrun=self.dryrun, nproc=nproc)
+            self.config = databases.configure(self.config, dryrun=self.dryrun, nproc=self.nproc)
 
-    def new_project(self, args):
-        """Configure new project with input args.
+    def new_workspace(self, fpath):
+        """Configure new project at `outdir`.
 
         Parameters
         ----------
-        args : argparse.Namespace
-            Description of parameter `args`.
+        fpath : str
+            </path/to/workspace/project_<num>/project.config>
 
         Returns
         -------
-        dict
-            {'project':</path/to/projects/project_num/project.config>,
-            'metagenomes':{
-                    'metagenome_num':'</path/to/projects/project_num/metagenome_num/metagenome_num.config>',
-                    'metagenome_num':'</path/to/projects/project_num/metagenome_num/metagenome_num.config>',
-                    ...
-                },
-            }
+        autometa.config.project.Project object
 
         Raises
         -------
@@ -83,35 +80,77 @@ class AutometaUser:
             Why the exception is raised.
 
         """
-        proj_config = project.configure(self.config, args)
-        metagenomes_configs = project.setup_metagenomes(get_config(proj_config))
-        mgargs = {mg:parse_config(mg_config) for mg,mg_config in metagenomes_configs.items()}
-        return {'project':proj_config, 'metagenomes':mgargs}
+        # 1. configure project from default config and provided config file
+        self.configure()
+        dpath = os.path.dirname(fpath)
+        if not os.path.exists(dpath):
+            os.makedirs(dpath)
+        put_config(self.config, fpath)
+        return Project(fpath)
 
-    def add_metagenomes(self, metagenomes_configs):
-        mg_configs = {}
-        for metagenome_config in metagenomes_configs:
-            mg_config_fpath = project.setup_metagenome(metagenome_config)
-            mg_name = os.path.basename(mg_config_fpath).strip('.config')
-            mgargs = parse_config(mg_config_fpath)
-            fpaths = list(vars(mgargs.files).values())
-            __ = get_checkpoints(mgargs.files.checkpoints, fpaths)
-            mg_configs.update({mg_name:mgargs})
-        return mg_configs
+    def prepare_run(self, config_fpath):
+        """Prepares metagenome binning run using provided `config_fpath`.
 
-    def get_mgargs(self, projects_dir, project_num, metagenome_num):
-        for arg in [project_num, metagenome_num]:
-            if type(arg) is not int:
-                raise TypeError(f'{arg} is type: {type(arg)}')
-        if project_num <= 0:
-            raise ValueError(f'project num: {project_num} is invalid')
-        if metagenome_num <= 0:
-            raise ValueError(f'metagenome_num {metagenome_num} is invalid')
-        project_name = f'project_{project_num:03d}'
-        metagenome_dirname = f'metagenome_{metagenome_num:03d}'
-        metagenome_fname = f'{metagenome_dirname}.config'
-        metagenome_config = os.path.join(projects_dir, project_name, metagenome_dirname, metagenome_fname)
-        return {metagenome_dirname:parse_config(metagenome_config)}
+        This method performs a number of configuration checks to ensure the
+        binning run will perform without conflicts.
+        1. workspace check: Will construct workspace directory if provided does not
+        exist.
+        2. Project check: Will configure a new project if project number is not
+        found in workspace directory.
+        3. Metagenome check: Will update if existing with edits or resume
+        if existing without edits. Otherwise will add new metagenome to project.
+
+        Parameters
+        ----------
+        config_fpath : str
+            </path/to/metagenome.config>
+
+        Returns
+        -------
+        argparse.Namespace
+            access to parameters and files from config via syntax...
+            i.e.
+            generate namespace:
+                mgargs = prepare_run(mg_config)
+            access namespace:
+                mgargs.files.<file>
+                mgargs.parameters.<parameter>
+
+        Raises
+        -------
+        ExceptionName
+            Why the exception is raised.
+
+        """
+        mgargs = parse_config(config_fpath)
+        # 1 check workspace exists
+        workspace = os.path.realpath(mgargs.parameters.workspace)
+        if not os.path.exists(workspace):
+            os.makedirs(workspace)
+        # 2 check project exists
+        proj_name = f'project_{mgargs.parameters.project:03d}'
+        project_dirpath = os.path.realpath(os.path.join(workspace,proj_name))
+        project_config_fp = os.path.join(project_dirpath, 'project.config')
+        if not os.path.exists(project_dirpath) or not os.path.exists(project_config_fp):
+            project = self.new_workspace(project_config_fp)
+        else:
+            project = Project(project_config_fp)
+        # 3 check whether existing or new run with metagenome_num
+        metagenome = f'metagenome_{mgargs.parameters.metagenome_num:03d}'
+        if metagenome not in project.metagenomes:
+            mgargs = project.add(config_fpath)
+            project.save()
+            return mgargs
+        # If resuming existing metagenome run. Check whether config file has changed.
+        old_config_fp = project.metagenomes.get(metagenome)
+        old_chksum = utilities.get_checksum(old_config_fp)
+        new_chksum = utilities.get_checksum(config_fpath)
+        if old_chksum != new_chksum:
+            mgargs = project.update(
+                metagenome_num=mgargs.parameters.metagenome_num,
+                fpath=config_fpath)
+        project.save()
+        return mgargs
 
 def main(args):
     logger.info(args.user)

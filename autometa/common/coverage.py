@@ -117,6 +117,11 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, sam=None, bam=None, lengths=
     pd.DataFrame
         index=contig cols=['coverage']
     """
+    if os.path.exists(out) and os.stat(out).st_size > 0:
+        # COMBAK: checksum comparison [checkpoint]
+        logger.debug(f'coverage ({out}) already exists. skipping...')
+        cols = ['contig','coverage']
+        return pd.read_csv(out, sep='\t', usecols=cols, index_col='contig')
     try:
         outdir = os.path.dirname(out)
         tempdir = tempfile.mkdtemp(suffix=None, prefix='cov-alignments', dir=outdir)

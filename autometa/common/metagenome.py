@@ -430,6 +430,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             Why the exception is raised.
 
         """
+        logger.debug(f'assigning taxonomy via {method}')
         if not self.orfs_called:
             cpus = kwargs.get('cpus',0)
             try:
@@ -473,6 +474,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         """
         if not self.taxonomy_assigned:
+            logger.info('Assigning taxonomy. This may take a while...')
             self.taxonomy = self.assign_taxonomy(method=self.taxon_method, **kwargs)
         if self.taxonomy.shape[1] <= 2:
             # taxonomy_fp should only contain contig and taxid columns from voting method

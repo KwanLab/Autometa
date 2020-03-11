@@ -35,6 +35,7 @@ from Bio import SeqUtils
 from autometa.common.markers import Markers,MARKERS_DIR
 from autometa.common import kmers
 from autometa.common.utilities import timeit
+from autometa.common.external import prodigal
 from autometa.binning import recursive_dbscan
 
 
@@ -108,16 +109,42 @@ class MAG:
             return True
         return False
 
-    def get_orfs(self, orf_type='prot'):
+    def get_orfs(self, orf_type='prot', prodigal_fpath=None):
+        """Retrieve ORFs corresponding to MAG.
+
+        Parameters
+        ----------
+        orf_type : str
+            Type of ORF to retrieve (the default is 'prot'). Amino acid or nucleotide
+            choices = ['prot','nucl']
+        prodigal_fpath : str
+            </path/to/prodigal/annotated/orfs.fasta (the default is None).
+
+        Returns
+        -------
+        list
+            [SeqIO.SeqRecord, ...]
+
+        Raises
+        -------
+        FileNotFoundError
+            Why the exception is raised.
+
+        """
         orfs_fpaths = {'prot':self.prot_orfs_fpath, 'nucl':self.nucl_orfs_fpath}
         orfs_fpath = orfs_fpaths.get(orf_type, 'prot')
         if not self.prepared(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
+        if prodigal_fpath:
+            return prodigal.orf_records_from_contigs(
+                contigs=self.contigs,
+                fpath=prodigal_fpath)
         return [rec for rec in SeqIO.parse(orfs_fpath, 'fasta')
             if rec.id.rsplit('_',1)[0] in self.contigs]
 
-    def write_orfs(self, fpath, orf_type='prot'):
-        SeqIO.write(self.get_orfs(orf_type), fpath, 'fasta')
+    def write_orfs(self, fpath, orf_type='prot', prodigal_fpath=None):
+        records = self.get_orfs(orf_type, prodigal_fpath)
+        SeqIO.write(records, fpath, 'fasta')
 
     def get_seqs(self, all=False):
         """Retrieve sequences from assembly.
@@ -186,7 +213,6 @@ ________________________
             Why the exception is raised.
 
         """
-        # self.kmers_exist
         if method == 'recursive_dbscan':
             try:
                 embedded_df = kmers.embed(
@@ -218,9 +244,11 @@ ________________________
                     right_index=True)
             master_df = self.subset_df(master_df)
             use_taxonomy = True if 'taxid' in master_df else False
+            markers = self.markers(kwargs.get('domain','bacteria'))
+            logger.info(f'Binning {kwargs.get("domain")} with {method}')
             return recursive_dbscan.binning(
                 master=master_df,
-                markers=self.markers(kwargs.get('domain','bacteria')),
+                markers=markers,
                 domain=kwargs.get('domain','bacteria'),
                 completeness=kwargs.get('completeness',20.),
                 purity=kwargs.get('purity',90.),
@@ -231,10 +259,42 @@ ________________________
         raise NotImplementedError(f'{method} not yet implemented')
 
     @timeit
-    def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False):
+    def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False, orf_caller='prodigal'):
+        """Retrieve Markers dataframe using orfs called from `orf_caller` and
+        annotated belonging to provided `kingdom`.
+
+        Parameters
+        ----------
+        kingdom : str
+            Domain specific markers to retrieve (the default is 'bacteria').
+        dbdir : str
+            </path/to/markers/database/directory> (the default is MARKERS_DIR).
+            Should contain pressed hmms and cutoffs table.
+        force : bool
+            Will overwrite existing marker annotations (the default is False).
+        orf_caller : str
+            Will use `orf_caller` to connect ORFs with contigs and contigs with
+            their respective ORFs (the default is 'prodigal').
+
+        Returns
+        -------
+        pd.DataFrame
+            wide format - index_col='contig', columns=[PFAM,...]
+
+        Raises
+        -------
+        ExceptionName
+            Why the exception is raised.
+
+        """
+
+        logger.debug(f'Retrieving markers for {kingdom} kingdom')
         orfs_fp = os.path.join(self.outdir, f'{kingdom.lower()}.orfs.faa')
         if (not os.path.exists(orfs_fp)) or (os.path.exists(orfs_fp) and force):
-            self.write_orfs(orfs_fp)
+            if orf_caller == 'prodigal':
+                self.write_orfs(orfs_fp, prodigal_fpath=self.prot_orfs_fpath)
+            else:
+                self.write_orfs(orfs_fp)
         return Markers(orfs_fp, kingdom=kingdom, dbdir=dbdir).get_markers()
 
     def subset_df(self, df):

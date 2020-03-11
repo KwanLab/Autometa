@@ -30,6 +30,7 @@ from hdbscan import HDBSCAN
 
 from autometa.common.markers import Markers
 from autometa.common import kmers
+from autometa.common.exceptions import RecursiveDBSCANError
 # TODO: This should be
 # from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
@@ -331,7 +332,16 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     pd.DataFrame
         master with ['cluster','completeness','purity'] columns added
 
+    Raises
+    -------
+    RecursiveDBSCANError
+        No marker information is availble for contigs to be binned.
     """
+    # First check needs to ensure we have markers available to check binning quality...
+    if master.loc[master.index.isin(markers.index)].empty:
+        err = 'No markers for contigs in table. Unable to assess binning quality'
+        raise RecursiveDBSCANError(err)
+
     if not taxonomy:
         return get_clusters(
             master,
@@ -356,6 +366,9 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
         unclassified_filter = master[rank] != 'unclassified'
+        n_contigs_in_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().sum()
+        n_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().index.nunique()
+        logger.info(f'Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)')
         # Group contigs by rank and find best clusters within subset
         for rank_name_txt, dff in master.loc[unclassified_filter].groupby(rank):
             if dff.empty:
@@ -390,7 +403,6 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
             clustered.cluster = clustered.cluster.map(rename_cluster)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
-
     clustered_df = pd.concat(clusters, sort=True)
     unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
     unclustered_df.loc[:,'cluster'] = pd.np.nan

@@ -192,7 +192,7 @@ def filter_markers(infpath, outfpath, cutoffs, prodigal_annotations=None, force=
     mdf = mdf[cols]
     if prodigal_annotations:
         logger.debug('Retrieving ORF->contig translations from ORF Caller')
-        translations = prodigal.get_orf_translations(prodigal_annotations)
+        translations = prodigal.contigs_from_headers(prodigal_annotations)
         translater = lambda x: translations.get(x, x.rsplit('_',1)[0])
     else:
         translater = lambda x: x.rsplit('_',1)[0]
