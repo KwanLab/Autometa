@@ -53,14 +53,38 @@ class Project:
 
     @property
     def metagenomes(self):
-        """retrieve metagenomes from project.config
+        """retrieve metagenome configs from project.config
 
         Returns
         -------
         dict
             {metagenome_num:</path/to/metagenome.config>, ...}
         """
-        return {k:v for k,v in self.config.items('metagenomes')}
+        return {int(k.strip('metagenome_')):v for k,v in self.config.items('metagenomes') if os.path.exists(v)}
+
+    def new_metagenome_num(self):
+        """Retrieve new minimum metagenome num from metagenomes in project.
+
+        Returns
+        -------
+        int
+            Description of returned object.
+
+        Raises
+        -------
+        ExceptionName
+            Why the exception is raised.
+
+        """
+        max_num = max(self.metagenomes)
+        if max_num == self.n_metagenomes:
+            return self.n_metagenomes + 1
+        # Otherwise metagenome_num in between max and others has been removed
+        # Therefore new metagenome may be inserted.
+        for mg_num in range(1, max_num):
+            if mg_num in self.metagenomes:
+                continue
+            return mg_num
 
     def save(self):
         put_config(self.config, self.config_fpath)
@@ -79,19 +103,28 @@ class Project:
 
         Raises
         -------
+        FileNotFoundError
+            Directory found but metagenome.config not present
         FileExistsError
             metagenome.config already exists in project
-
         """
-        metagenome_num = 1 + self.n_metagenomes
+        # metagenome_num = 1 + self.n_metagenomes
+        metagenome_num = self.new_metagenome_num()
         metagenome_name = f'metagenome_{metagenome_num:03d}'
         metagenome_dirpath = os.path.join(self.dirpath, metagenome_name)
-        if os.path.exists(metagenome_dirpath):
+        mg_config_fpath = os.path.join(metagenome_dirpath, f'{metagenome_name}.config')
+        # Check presence of metagenome directory and config
+        mg_config_present = os.path.exists(mg_config_fpath)
+        mg_dir_present = os.path.exists(metagenome_dirpath)
+        if not mg_config_present and mg_dir_present:
+            raise FileNotFoundError(f'{mg_config_fpath} is not present but the directory exists! Either remove the directory or locate the config file before continuing.')
+        if mg_dir_present:
             raise FileExistsError(metagenome_dirpath)
+
         os.makedirs(metagenome_dirpath)
         mg_config = get_config(fpath)
         # Add database and env for debugging individual metagenome binning runs.
-        for section in ['databases','environ']:
+        for section in ['databases','environ','versions']:
             if not mg_config.has_section(section):
                 mg_config.add_section(section)
             for option,value in self.config.items(section):

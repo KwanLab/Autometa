@@ -212,11 +212,19 @@ if __name__ == '__main__':
         help=f'Num. cpus to use when updating/constructing databases (default: {cpus} cpus)',
         type=int,
         default=cpus)
+    parser.add_argument('--debug',
+        help=f'Stream debugging information to terminal',
+        action='store_true',
+        default=False)
     args = parser.parse_args()
     timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
-    logger = init_logger(f'{timestamp}_autometa.log')
+    level = logging.DEBUG if args.debug else None
+    logger = init_logger(fpath=f'{timestamp}_autometa.log', level=level)
     try:
         main(args)
+    except KeyboardInterrupt as err:
+        logger.info('User cancelled run. Exiting...')
+        sys.exit(1)
     except Exception as err:
         issue_request = '''
         An error was encountered!

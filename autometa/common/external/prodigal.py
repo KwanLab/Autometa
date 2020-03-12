@@ -31,6 +31,9 @@ import shutil
 from glob import glob
 from Bio import SeqIO
 
+from autometa.config.environ import get_versions
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -185,10 +188,15 @@ def contigs_from_headers(fpath):
         Why the exception is raised.
 
     """
+    version = get_versions('prodigal').get('prodigal')
+    if version.count('.') >= 2:
+        version = float('.'.join(version.split('.')[:2]))
+    else:
+        version = float(version)
     translations = {}
     for record in SeqIO.parse(fpath, 'fasta'):
-        orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
-        if orf_id in record.id:
+        if version < 2.6:
+            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
             contig_id = record.id.replace(f'_{orf_id}', '')
         else:
             contig_id = record.id.rsplit('_',1)[0]
@@ -217,10 +225,16 @@ def orf_records_from_contigs(contigs, fpath):
         Why the exception is raised.
 
     """
+    version = get_versions('prodigal').get('prodigal')
+    if version.count('.') >= 2:
+        version = float('.'.join(version.split('.')[:2]))
+    else:
+        version = float(version)
+
     records = []
     for record in SeqIO.parse(fpath, 'fasta'):
-        orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
-        if orf_id in record.id:
+        if version < 2.6:
+            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
             contig_id = record.id.replace(f'_{orf_id}', '')
         else:
             contig_id = record.id.rsplit('_',1)[0]

@@ -62,7 +62,7 @@ class AutometaUser:
         if configure_databases:
             self.config = databases.configure(self.config, dryrun=self.dryrun, nproc=self.nproc)
 
-    def new_workspace(self, fpath):
+    def new_project(self, fpath):
         """Configure new project at `outdir`.
 
         Parameters
@@ -132,7 +132,7 @@ class AutometaUser:
         project_dirpath = os.path.realpath(os.path.join(workspace,proj_name))
         project_config_fp = os.path.join(project_dirpath, 'project.config')
         if not os.path.exists(project_dirpath) or not os.path.exists(project_config_fp):
-            project = self.new_workspace(project_config_fp)
+            project = self.new_project(project_config_fp)
         else:
             project = Project(project_config_fp)
         # 3 check whether existing or new run with metagenome_num
