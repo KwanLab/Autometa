@@ -105,8 +105,8 @@ class Project:
         -------
         FileNotFoundError
             Directory found but metagenome.config not present
-        FileExistsError
-            metagenome.config already exists in project
+        IsADirectoryError
+            Metagenome output directory already exists
         """
         # metagenome_num = 1 + self.n_metagenomes
         metagenome_num = self.new_metagenome_num()
@@ -119,7 +119,7 @@ class Project:
         if not mg_config_present and mg_dir_present:
             raise FileNotFoundError(f'{mg_config_fpath} is not present but the directory exists! Either remove the directory or locate the config file before continuing.')
         if mg_dir_present:
-            raise FileExistsError(metagenome_dirpath)
+            raise IsADirectoryError(metagenome_dirpath)
 
         os.makedirs(metagenome_dirpath)
         mg_config = get_config(fpath)

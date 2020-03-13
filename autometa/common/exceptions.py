@@ -24,6 +24,10 @@ File containing customized AutometaExceptions for more specific exception handli
 
 class AutometaException(Exception):
     """docstring for AutometaException."""
+
+    def __init__(self, value):
+        self.value = value
+
     issue_request = '''
     An error was encountered!
 
@@ -31,20 +35,21 @@ class AutometaException(Exception):
 
     You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
     '''
-    pass
+    def __str__(self):
+        return f'{self.value}\n\n{issue_request}'
 
-
-class KmerFormatError(Exception):
+class KmerFormatError(AutometaException):
     """KmerFormatError exception class."""
 
     def __init__(self, fpath):
+        super(AutometaException, self).__init__(fpath)
         self.fpath = fpath
 
     def __str__(self):
         return f'{self.fpath} does not contain a \"contig\" column. '\
         'Ensure the k-mer matrix was properly generated.'
 
-class KmerEmbeddingError(Exception):
+class KmerEmbeddingError(AutometaException):
     """KmerEmbeddingError exception class."""
 
     def __init__(self, value):
@@ -53,7 +58,7 @@ class KmerEmbeddingError(Exception):
     def __str__(self):
         return self.value
 
-class RecursiveDBSCANError(Exception):
+class RecursiveDBSCANError(AutometaException):
     """RecursiveDBSCANError exception class."""
 
     def __init__(self, value):

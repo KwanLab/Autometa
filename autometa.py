@@ -30,14 +30,11 @@ import sys
 import multiprocessing as mp
 
 from autometa.config.user import AutometaUser
-from autometa.common.utilities import timeit
-from autometa.common.metagenome import Metagenome
-
 
 logger = logging.getLogger('autometa')
 
 
-def init_logger(fpath=None, level=None):
+def init_logger(fpath=None, level=logging.INFO):
     """Initialize logger.
 
     By default will initialize streaming logger with DEBUG level messages.
@@ -62,8 +59,10 @@ def init_logger(fpath=None, level=None):
 
     Raises
     -------
+    TypeError
+        `level` must be an int
     ValueError
-        `level` must be int and one of 0, 10, 20, 30, 40, 50
+        `level` must be one of 0, 10, 20, 30, 40, 50
     """
     levels = {
         logging.NOTSET,
@@ -72,8 +71,8 @@ def init_logger(fpath=None, level=None):
         logging.WARNING,
         logging.ERROR,
         logging.CRITICAL}
-    if level and type(level) is not int:
-        raise ValueError(f'{level} must be an int! {type(level)}')
+    if type(level) is not int:
+        raise TypeError(f'{level} must be an int! {type(level)}')
     if level and level not in levels:
         raise ValueError(f'{level} not in levels: {levels}!')
     formatter = logging.Formatter(
@@ -86,115 +85,31 @@ def init_logger(fpath=None, level=None):
         filehandler = logging.FileHandler(fpath)
         filehandler.setFormatter(formatter)
         logger.addHandler(filehandler)
-        lvl = level if level else logging.INFO
-    else:
-        lvl = level if level else logging.DEBUG
 
-    streamhandler.setLevel(lvl)
+    streamhandler.setLevel(level)
     logger.addHandler(streamhandler)
     logger.setLevel(logging.DEBUG)
     return logger
 
-@timeit
-def run(mgargs):
-    """Run autometa.
-
-    Parameters
-    ----------
-    mgargs : argparse.Namespace
-        metagenome args
-
-    Returns
-    -------
-    NoneType
-
-    Raises
-    -------
-    TODO: Need to enumerate all exceptions raised from within binning pipeline.
-    I.e. Demarkate new exception (not yet handled) vs. handled exception.
-    Subclassing an AutometaException class may be most appropriate use case here.
-    """
-    mg = Metagenome(
-        assembly=mgargs.files.metagenome,
-        outdir=mgargs.parameters.outdir,
-        nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
-        prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-        taxonomy_fpath=mgargs.files.taxonomy,
-        fwd_reads=mgargs.files.fwd_reads,
-        rev_reads=mgargs.files.rev_reads,
-        taxon_method=mgargs.parameters.taxon_method)
-    try:
-    # Original (raw) file should not be manipulated so return new object
-        mg = mg.length_filter(
-            out=mgargs.files.length_filtered,
-            cutoff=mgargs.parameters.length_cutoff)
-    except FileExistsError as err:
-        logger.debug(f'{mgargs.files.length_filtered} already exists. Continuing..')
-        mg = Metagenome(
-            assembly=mgargs.files.length_filtered,
-            outdir=mgargs.parameters.outdir,
-            nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
-            prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-            taxonomy_fpath=mgargs.files.taxonomy,
-            fwd_reads=mgargs.files.fwd_reads,
-            rev_reads=mgargs.files.rev_reads,
-            taxon_method=mgargs.parameters.taxon_method)
-    # I.e. asynchronous execution here (work-queue tasks)
-    mg.get_kmers(
-        kmer_size=mgargs.parameters.kmer_size,
-        normalized=mgargs.files.kmer_normalized,
-        out=mgargs.files.kmer_counts,
-        multiprocess=mgargs.parameters.kmer_multiprocess,
-        nproc=mgargs.parameters.cpus,
-        force=mgargs.parameters.force)
-
-    coverages = mg.get_coverages(
-        out=mgargs.files.coverages,
-        from_spades=mgargs.parameters.cov_from_spades,
-        sam=mgargs.files.sam,
-        bam=mgargs.files.bam,
-        lengths=mgargs.files.lengths,
-        bed=mgargs.files.bed)
-    # Filter by Kingdom
-    kingdoms = mg.get_kingdoms(
-        ncbi=mgargs.databases.ncbi,
-        usepickle=mgargs.parameters.usepickle,
-        blast=mgargs.files.blastp,
-        hits=mgargs.files.blastp_hits,
-        force=mgargs.parameters.force,
-        cpus=mgargs.parameters.cpus)
-
-    if not mgargs.parameters.kingdom in kingdoms:
-        raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {", ".join(kingdoms.keys())}')
-    mag = kingdoms.get(mgargs.parameters.kingdom)
-    bins_df = mag.get_binning(
-        method=mgargs.parameters.binning_method,
-        kmers=mgargs.files.kmer_counts,
-        embedded=mgargs.files.kmer_embedded,
-        do_pca=mgargs.parameters.do_pca,
-        pca_dims=mgargs.parameters.pca_dims,
-        embedding_method=mgargs.parameters.embedding_method,
-        coverage=coverages,
-        domain=mgargs.parameters.kingdom,
-        taxonomy=mgargs.files.taxonomy,
-        reverse=mgargs.parameters.reversed,
-    )
-    binning_cols = ['cluster','completeness','purity']
-    bins_df[binning_cols].to_csv(
-        mgargs.files.binning,
-        sep='\t',
-        index=True,
-        header=True)
-
 def main(args):
-    user = AutometaUser(dryrun=args.dryrun, nproc=args.cpus)
+    # Setup logger
+    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
+    log_fpath = args.log if args.log else f'{timestamp}_autometa.log'
+    if args.debug:
+        logger = init_logger(fpath=log_fpath, level=logging.DEBUG)
+    else:
+        logger = init_logger(fpath=log_fpath)
+    # Configure AutometaUser
+    # TODO: master from WorkQueue is AutometaUser
+    user = AutometaUser(dryrun=args.check_dependencies, nproc=args.cpus)
+
     for config in args.config:
-        mgargs = user.prepare_run(config)
-        run(mgargs)
-        # cluster process -> mgargs.files.binning
-        # TODO: Refine bins by connection mapping, taxon, or other methods
-    # TODO: Construct pangenomes from multiple datasets
-    # get_pangenomes()
+        # TODO: Add directions to master from WorkQueue
+        mgargs = user.prepare_binning_args(config)
+        user.run_binning(mgargs)
+        # user.refine_binning()
+        # user.process_binning()
+    # user.get_pangenomes()
 
 if __name__ == '__main__':
     import argparse
@@ -204,34 +119,32 @@ if __name__ == '__main__':
     parser.add_argument('config',
         help='</path/to/metagenome.config>',
         nargs='*')
-    parser.add_argument('--dryrun',
-        help='whether to perform database updating/construction',
-        action='store_true',
-        default=False)
     parser.add_argument('--cpus',
         help=f'Num. cpus to use when updating/constructing databases (default: {cpus} cpus)',
         type=int,
         default=cpus)
     parser.add_argument('--debug',
-        help=f'Stream debugging information to terminal',
+        help='Stream debugging information to terminal',
+        action='store_true',
+        default=False)
+    parser.add_argument('--log', help='</path/to/autometa.log>', type=str)
+    parser.add_argument('--check-dependencies',
+        help='Check user executables and databases accessible to Autometa and exit.',
         action='store_true',
         default=False)
     args = parser.parse_args()
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
-    level = logging.DEBUG if args.debug else None
-    logger = init_logger(fpath=f'{timestamp}_autometa.log', level=level)
     try:
         main(args)
-    except KeyboardInterrupt as err:
+    except KeyboardInterrupt:
         logger.info('User cancelled run. Exiting...')
         sys.exit(1)
     except Exception as err:
         issue_request = '''
-        An error was encountered!
 
         Please help us fix your problem!
 
         You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
         '''
+        err.issue_request = issue_request
         logger.exception(err)
-        print(issue_request)
+        logger.info(err.issue_request)

@@ -301,16 +301,14 @@ def configure(config=DEFAULT_CONFIG):
 
     Returns
     -------
-    configparser.ConfigParser
+    2-tuple
+        (config, satisfied)
         config updated with executables details
         Details:
         1. location of executable
         2. version of executable
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
+        config : configparser.ConfigParser
+        satisfied : bool
 
     """
     if not config.has_section('environ'):
@@ -326,22 +324,21 @@ def configure(config=DEFAULT_CONFIG):
             satisfied = False
             logger.warning(f'executable not found: {executable}')
         elif not config.has_option('environ', executable):
-            logger.debug(f'Updated executable: {executable} : {found}')
+            logger.debug(f'Updated executable {executable}: {found}')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         user_executable = config.get('environ', executable)
         if not which(user_executable):
-            logger.debug(f'Updated executable: {executable} : {found}')
+            logger.debug(f'Updated executable {executable}: {found}')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         else:
             version = get_versions(user_executable).get(user_executable)
-            config.set('versions',user_executable, version)
-    logger.debug(f'Executable dependencies satisfied : {satisfied}')
-    return config
+            config.set('versions', user_executable, version)
+    return config, satisfied
 
 def main(args):
-    config = configure(infpath=args.infpath)
+    config,satisfied = configure(infpath=args.infpath)
     if not args.out:
         import sys;sys.exit(0)
     put_config(config, args.out)

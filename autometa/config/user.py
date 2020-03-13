@@ -28,18 +28,14 @@ import os
 
 import argparse
 
-# TODO: Refactor autometa.config later as AutometaConfigUtils lib or something
-from autometa.config import get_config
-from autometa.config import put_config
-from autometa.config import parse_config
-from autometa.config import AUTOMETA_DIR
-from autometa.config import DEFAULT_CONFIG
-from autometa.config import DEFAULT_FPATH
-from autometa.config import databases
+from autometa import config
 from autometa.config import environ
-from autometa.config.project import Project
 from autometa.common import utilities
 
+from autometa.common.metagenome import Metagenome
+from autometa.config.databases import Databases
+from autometa.config.project import Project
+from autometa.common.utilities import timeit
 
 logger = logging.getLogger(__name__)
 
@@ -51,16 +47,37 @@ class AutometaUser:
         self.dryrun= dryrun
         self.nproc = nproc
         self.config_fp = config_fpath
-        self.config = get_config(self.config_fp) if self.config_fp else DEFAULT_CONFIG
+        self.config = config.get_config(self.config_fp) if self.config_fp else config.DEFAULT_CONFIG
         if not self.config.has_section('common'):
             self.config.add_section('common')
-        self.config.set('common','home_dir', AUTOMETA_DIR)
+        self.config.set('common','home_dir', config.AUTOMETA_DIR)
 
-    def configure(self, configure_environ=True, configure_databases=True):
-        if configure_environ:
-            self.config = environ.configure(self.config)
-        if configure_databases:
-            self.config = databases.configure(self.config, dryrun=self.dryrun, nproc=self.nproc)
+        if self.dryrun:
+            self.configure()
+            import sys;sys.exit(1)
+
+    def configure(self):
+        """Configure user execution environment and databases.
+
+        Returns
+        -------
+        NoteType
+
+        """
+        # Execution env
+        self.config, exe_satisfied = environ.configure(self.config)
+        if self.dryrun:
+            logger.info(f'Executable dependencies satisfied: {exe_satisfied}')
+        # Database env
+        dbs = Databases(self.config, dryrun=self.dryrun, nproc=self.nproc)
+        self.config, db_satisfied = dbs.configure()
+        if self.dryrun:
+            logger.info(f'Database dependencies satisfied: {db_satisfied}')
+
+        if not db_satisfied:
+            raise LookupError('Database dependencies not satisfied!')
+        if not exe_satisfied:
+            raise LookupError('Executable dependencies not satisfied!')
 
     def new_project(self, fpath):
         """Configure new project at `outdir`.
@@ -80,15 +97,13 @@ class AutometaUser:
             Why the exception is raised.
 
         """
-        # 1. configure project from default config and provided config file
-        self.configure()
         dpath = os.path.dirname(fpath)
         if not os.path.exists(dpath):
             os.makedirs(dpath)
-        put_config(self.config, fpath)
+        config.put_config(self.config, fpath)
         return Project(fpath)
 
-    def prepare_run(self, config_fpath):
+    def prepare_binning_args(self, config_fpath):
         """Prepares metagenome binning run using provided `config_fpath`.
 
         This method performs a number of configuration checks to ensure the
@@ -122,12 +137,14 @@ class AutometaUser:
             Why the exception is raised.
 
         """
-        mgargs = parse_config(config_fpath)
-        # 1 check workspace exists
+        # 1. configure user environment
+        self.configure()
+        # 2. check workspace exists
+        mgargs = config.parse_config(config_fpath)
         workspace = os.path.realpath(mgargs.parameters.workspace)
         if not os.path.exists(workspace):
             os.makedirs(workspace)
-        # 2 check project exists
+        # 3. check project exists
         proj_name = f'project_{mgargs.parameters.project:03d}'
         project_dirpath = os.path.realpath(os.path.join(workspace,proj_name))
         project_config_fp = os.path.join(project_dirpath, 'project.config')
@@ -135,7 +152,7 @@ class AutometaUser:
             project = self.new_project(project_config_fp)
         else:
             project = Project(project_config_fp)
-        # 3 check whether existing or new run with metagenome_num
+        # 4. check whether existing or new run with metagenome_num
         metagenome = f'metagenome_{mgargs.parameters.metagenome_num:03d}'
         if metagenome not in project.metagenomes:
             mgargs = project.add(config_fpath)
@@ -152,6 +169,98 @@ class AutometaUser:
         project.save()
         return mgargs
 
+    @utilities.timeit
+    def run_binning(self, mgargs):
+        """Run autometa.
+
+        Parameters
+        ----------
+        mgargs : argparse.Namespace
+            metagenome args
+
+        Returns
+        -------
+        NoneType
+
+        Raises
+        -------
+        TODO: Need to enumerate all exceptions raised from within binning pipeline.
+        I.e. Demarkate new exception (not yet handled) vs. handled exception.
+        Subclassing an AutometaException class may be most appropriate use case here.
+        """
+        mg = Metagenome(
+            assembly=mgargs.files.metagenome,
+            outdir=mgargs.parameters.outdir,
+            nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
+            prot_orfs_fpath=mgargs.files.amino_acid_orfs,
+            taxonomy_fpath=mgargs.files.taxonomy,
+            fwd_reads=mgargs.files.fwd_reads,
+            rev_reads=mgargs.files.rev_reads,
+            taxon_method=mgargs.parameters.taxon_method)
+        try:
+        # Original (raw) file should not be manipulated so return new object
+            mg = mg.length_filter(
+                out=mgargs.files.length_filtered,
+                cutoff=mgargs.parameters.length_cutoff)
+        except FileExistsError as err:
+            logger.debug(f'{mgargs.files.length_filtered} already exists. Continuing..')
+            mg = Metagenome(
+                assembly=mgargs.files.length_filtered,
+                outdir=mgargs.parameters.outdir,
+                nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
+                prot_orfs_fpath=mgargs.files.amino_acid_orfs,
+                taxonomy_fpath=mgargs.files.taxonomy,
+                fwd_reads=mgargs.files.fwd_reads,
+                rev_reads=mgargs.files.rev_reads,
+                taxon_method=mgargs.parameters.taxon_method)
+        # I.e. asynchronous execution here (work-queue tasks)
+        mg.get_kmers(
+            kmer_size=mgargs.parameters.kmer_size,
+            normalized=mgargs.files.kmer_normalized,
+            out=mgargs.files.kmer_counts,
+            multiprocess=mgargs.parameters.kmer_multiprocess,
+            nproc=mgargs.parameters.cpus,
+            force=mgargs.parameters.force)
+
+        coverages = mg.get_coverages(
+            out=mgargs.files.coverages,
+            from_spades=mgargs.parameters.cov_from_spades,
+            sam=mgargs.files.sam,
+            bam=mgargs.files.bam,
+            lengths=mgargs.files.lengths,
+            bed=mgargs.files.bed)
+        # Filter by Kingdom
+        kingdoms = mg.get_kingdoms(
+            ncbi=mgargs.databases.ncbi,
+            usepickle=mgargs.parameters.usepickle,
+            blast=mgargs.files.blastp,
+            hits=mgargs.files.blastp_hits,
+            force=mgargs.parameters.force,
+            cpus=mgargs.parameters.cpus)
+
+        if not mgargs.parameters.kingdom in kingdoms:
+            raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {", ".join(kingdoms.keys())}')
+
+        mag = kingdoms.get(mgargs.parameters.kingdom)
+        bins_df = mag.get_binning(
+            method=mgargs.parameters.binning_method,
+            kmers=mgargs.files.kmer_counts,
+            embedded=mgargs.files.kmer_embedded,
+            do_pca=mgargs.parameters.do_pca,
+            pca_dims=mgargs.parameters.pca_dims,
+            embedding_method=mgargs.parameters.embedding_method,
+            coverage=coverages,
+            domain=mgargs.parameters.kingdom,
+            taxonomy=mgargs.files.taxonomy,
+            reverse=mgargs.parameters.reversed,
+        )
+        binning_cols = ['cluster','completeness','purity']
+        bins_df[binning_cols].to_csv(
+            mgargs.files.binning,
+            sep='\t',
+            index=True,
+            header=True)
+
 def main(args):
     logger.info(args.user)
 
@@ -163,6 +272,6 @@ if __name__ == '__main__':
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser('Concise Functional Description of Script')
-    parser.add_argument('user',help='</path/to/user.config>')
+    parser.add_argument('user', help='</path/to/user.config>')
     args = parser.parse_args()
     main(args)
