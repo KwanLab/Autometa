@@ -324,12 +324,12 @@ def configure(config=DEFAULT_CONFIG):
             satisfied = False
             logger.warning(f'executable not found: {executable}')
         elif not config.has_option('environ', executable):
-            logger.debug(f'Updated executable {executable}: {found}')
+            logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         user_executable = config.get('environ', executable)
         if not which(user_executable):
-            logger.debug(f'Updated executable {executable}: {found}')
+            logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         else:

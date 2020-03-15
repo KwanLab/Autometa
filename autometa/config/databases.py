@@ -235,6 +235,7 @@ class Databases:
                 fpath = self.config.get(section,option)
                 if os.path.exists(fpath) and os.stat(fpath).st_size >= 0:
                     # TODO: [Checkpoint validation]
+                    logger.debug(f'({section},{option}): {fpath}')
                     continue
                 if validate:
                     return False
@@ -242,6 +243,9 @@ class Databases:
                     missing[section].add(option)
                 else:
                     missing.update({section:set([option])})
+        for section,opts in missing.items():
+            for opt in opts:
+                logger.debug(f'MISSING: ({section},{opt})')
         return True if validate else missing
 
     def update_missing(self):
@@ -271,12 +275,8 @@ class Databases:
 
         Returns
         -------
-        2-tuple
-            i.e. (config, satisfied)
-            config : configparser.ConfigParser
-                - config with updated options in respective databases sections.
-            satisfied : bool
-                - whether all required Autometa databases are available.
+        configparser.ConfigParser
+            config with updated options in respective databases sections.
 
         Raises
         -------
@@ -285,7 +285,7 @@ class Databases:
 
         """
         self.update_missing()
-        return self.config, self.satisfied
+        return self.config
 
 def main(args):
     dbs = Databases(config=args.config, dryrun=args.dryrun, nproc=args.nproc)

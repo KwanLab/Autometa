@@ -70,11 +70,12 @@ class AutometaUser:
             logger.info(f'Executable dependencies satisfied: {exe_satisfied}')
         # Database env
         dbs = Databases(self.config, dryrun=self.dryrun, nproc=self.nproc)
-        self.config, db_satisfied = dbs.configure()
+        self.config = dbs.configure()
         if self.dryrun:
-            logger.info(f'Database dependencies satisfied: {db_satisfied}')
+            logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
+            return
 
-        if not db_satisfied:
+        if not dbs.satisfied:
             raise LookupError('Database dependencies not satisfied!')
         if not exe_satisfied:
             raise LookupError('Executable dependencies not satisfied!')
