@@ -188,7 +188,7 @@ def contigs_from_headers(fpath):
         Why the exception is raised.
 
     """
-    version = get_versions('prodigal').get('prodigal')
+    version = get_versions('prodigal')
     if version.count('.') >= 2:
         version = float('.'.join(version.split('.')[:2]))
     else:
@@ -225,7 +225,7 @@ def orf_records_from_contigs(contigs, fpath):
         Why the exception is raised.
 
     """
-    version = get_versions('prodigal').get('prodigal')
+    version = get_versions('prodigal')
     if version.count('.') >= 2:
         version = float('.'.join(version.split('.')[:2]))
     else:

@@ -249,8 +249,9 @@ def get_versions(program=None):
 
     Returns
     -------
-    dict
-        {program:version, ...}
+    dict or str
+        if program is None: dict - {program:version, ...}
+        if program: str - version
 
     Raises
     -------
@@ -276,7 +277,7 @@ def get_versions(program=None):
             raise ValueError(f'program is not string. given:{type(program)}')
         if program not in dispatcher:
             raise KeyError(f'{program} not in executables')
-        return {program:dispatcher[program]()}
+        return dispatcher[program]()
     versions = {}
     executables = find_executables()
     for exe,found in executables.items():
@@ -333,7 +334,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         else:
-            version = get_versions(user_executable).get(user_executable)
+            version = get_versions(user_executable)
             config.set('versions', user_executable, version)
     return config, satisfied
 
