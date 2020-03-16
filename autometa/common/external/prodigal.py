@@ -64,7 +64,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     -------
     FileExistsError
         `nucls_out` or `prots_out` already exists
-    OSError
+    ChildProcessError
         Prodigal Failed
     """
     if not os.path.exists(assembly):
@@ -159,7 +159,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         # COMBAK: Check all possible return codes for GNU parallel
     for fp in [nucls_out, prots_out]:
         if not os.path.exists(fp):
-            raise OSError(f'{fp} not written')
+            raise ChildProcessError(f'{fp} not written')
     return nucls_out, prots_out
 
 def contigs_from_headers(fpath):
