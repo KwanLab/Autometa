@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2018 Ian J. Miller, Evan R. Rees, Izaak Miller, Jason C. Kwan
 #
