@@ -115,7 +115,7 @@ if __name__ == '__main__':
     import argparse
     import time
     cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser('Main script to run Autometa')
+    parser = argparse.ArgumentParser(description='Main script to run Autometa pipeline.')
     parser.add_argument('config',
         help='</path/to/metagenome.config>',
         nargs='*')
