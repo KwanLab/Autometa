@@ -62,25 +62,26 @@ def run(cmd):
         logger.warning(f'args:{cmd} retcode:{retcode}')
         return False
 
-def sort(sam, out, nproc=mp.cpu_count()):
+def sort(sam, bam, nproc=mp.cpu_count()):
     """
     Views the sam file and then sorts the alighnments by leftmost coordinates.
+    Ouputs the sorted alighnments in the specified bam file.
     
     Parameters
     ----------
     sam : str
         </path/to/alignment.sam>
-    out : str
-        </path/to/output/file
+    bam : str
+        </path/to/output/file.bam>
     nproc : int, optional
         Number of processors to be used. By default uses all the processors of the system. 
 
     """
-    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {out}'
+    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {bam}'
     run(cmd)
 
 def main(args):
-    sort(args.sam, args.out, args.nproc)
+    sort(args.sam, args.bam, args.nproc)
 
 if __name__ == '__main__':
     import argparse
@@ -88,9 +89,9 @@ if __name__ == '__main__':
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--sam', help='</path/to/alignment.sam>')
-    parser.add_argument('--out', help='</path/to/output/file')
+    parser = argparse.ArgumentParser(description = "Takes a sam file, sorts it and returns the output to a bam file")
+    parser.add_argument('--sam', help='</path/to/alignment.sam>', type=str)
+    parser.add_argument('--bam', help='</path/to/output/file.bam>', type=str)
     parser.add_argument('--nproc', help='Number of processors to use', default=mp.cpu_count(), type=int)
     args = parser.parse_args()
     main(args)
