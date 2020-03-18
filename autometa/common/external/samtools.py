@@ -28,7 +28,6 @@ import os
 import subprocess
 
 import pandas as pd
-import multiprocessing as mp
 
 logger = logging.getLogger(__name__)
 
@@ -56,32 +55,23 @@ def run(cmd):
     logger.debug(f'cmd: {cmd}')
     with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
         retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-    if not retcode:
-        return True
-    else:
+    if retcode:
         logger.warning(f'args:{cmd} retcode:{retcode}')
         return False
-    
-def sort(sam, out, nproc=mp.cpu_count()):
-    """
-    Views the sam file and then sorts the alighnments by leftmost coordinates.
-    
-    Parameters
-    ----------
-    sam : str
-        </path/to/alignment.sam>
-    out : str
-        </path/to/output/file>
-    nproc : int, optional
-        Number of processors to be used, by default uses the number os cpu's in the system.
+    return True
 
-    """
+def sort(sam, out, nproc=0):
     cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {out}'
     run(cmd)
 
+def depth(bam, records):
+    cmds = [f'samtools depth -r {record.id} {bam}' for record in records]
+    raise NotImplementedError
+
 def main(args):
-    sort(args.sam, args.out, args.nproc)
-    
+    sort(args.sam)
+    depth(args.bam, args.seqs)
+
 if __name__ == '__main__':
     import argparse
     import logging as logger
@@ -89,8 +79,8 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sam', help='</path/to/alignment.sam>')
-    parser.add_argument('--out', help='</path/to/output/file')
-    parser.add_argument('--nproc', help='Num processors to use.', default=mp.cpu_count(), type=int)
+    parser.add_argument('--bam')
+    parser.add_argument('--sam')
+    parser.add_argument('--seqs')
     args = parser.parse_args()
     main(args)
