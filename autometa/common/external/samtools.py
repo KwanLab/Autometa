@@ -64,8 +64,7 @@ def run(cmd):
 
 def sort(sam, bam, nproc=mp.cpu_count()):
     """
-    Views the sam file and then sorts the alighnments by leftmost coordinates.
-    Ouputs the sorted alighnments in the specified bam file.
+    Views then sorts sam file by leftmost coordinates and outputs to bam.
     
     Parameters
     ----------
