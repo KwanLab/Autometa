@@ -90,7 +90,7 @@ if __name__ == '__main__':
         datefmt='%m/%d/%Y %I:%M:%S %p')
     parser = argparse.ArgumentParser(description = "Takes a sam file, sorts it and returns the output to a bam file")
     parser.add_argument('--sam', help='</path/to/alignment.sam>', type=str)
-    parser.add_argument('--bam', help='</path/to/output/file.bam>', type=str)
+    parser.add_argument('--bam', help='</path/to/alignment.bam>', type=str)
     parser.add_argument('--nproc', help='Number of processors to use', default=mp.cpu_count(), type=int)
     args = parser.parse_args()
     main(args)
