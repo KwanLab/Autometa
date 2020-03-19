@@ -1,0 +1,44 @@
+Diamond
+========
+
+File containing class and functions related to running diamond on metagenome sequences
+
+**Running the script as stand alone module**
+While in the Autometa directory and with the conda environment activated, run:
+``python3 -m autometa.common.external.diamond <path/to/input/file.faa> </path/to/diamond/formatted/database> </path/to/ncbi/prot.accession2taxid.gz> </path/to/diamond/output/file> <blastp or blastx> --[options]``
+
+**Inputs** : Protein file (faa format)
+
+**Returns** : A dictionary of Blastp hits, with key = qseqid and value = Diamond result
+
+**Usage and Command line options:**
+
+.. code-block:: bash
+
+    python -m autometa.common.external.diamond -h
+
+    Usage: Retrieves blastp hits with provided input assembly [-h] [--evalue EVALUE] [--maxtargetseqs MAXTARGETSEQS]
+                                                              [--cpus CPUS] [--tmpdir TMPDIR] [--tmpdir TMPDIR]
+                                                              [--top-pct TOP_PCT] [--force] [--verbose] fasta database
+                                                              acc2taxids outfile {blastp,blastx}
+
+    Positional arguments:
+    fasta                               </path/to/input/faa/file>
+    database                            </path/to/diamond/formatted/database>
+    acc2taxids                          </path/to/ncbi/prot.accession2taxid.gz>
+    outfile                             </path/to/diamond/output/file>
+    blast type {blastp,blastx}          [blastp]: protein -> protein or [blastx]: Nucleic acid -> protein
+
+    Optional arguments:
+    -h, --help                          show this help message and exit
+    --evalue EVALUE                     diamond evalue threshold
+    --maxtargetseqs MAXTARGETSEQS       max target sequences to retrieve per query
+    --cpus CPUS                         number of cpus to use
+    --tmpdir TMPDIR                     </path/to/tmp/directory>
+    --top-pct TOP_PCT                   top percentage of hits to retrieve
+    --force                             force overwrite of diamond output table
+    --verbose                           add verbosity
+
+.. automodule:: diamond
+    :members:
+    :show-inheritance:
