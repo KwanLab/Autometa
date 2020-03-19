@@ -1,9 +1,11 @@
 Install
-=========
+=======
 
-Currently installation is supported by constructing a conda_ environment
 
-conda environment creation
+Currently installation is supported by constructing a conda_ environment. You need to be running 
+a conda_ package (eg. miniconda, anaconda, etc) to install autometa.
+
+Conda environment creation:
 
 .. code-block:: bash
 
@@ -30,3 +32,11 @@ conda environment creation
 
 
 .. _conda: https://docs.conda.io/en/latest/
+
+You can now activate the conda environment using
+    ``conda activate autometa``
+
+Now download autometa to your desired directory using:
+    ``git clone https://github.com/KwanLab/Autometa.git``
+
+You should now add the Autometa directory to your $PATH environmental variable

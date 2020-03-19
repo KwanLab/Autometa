@@ -1,5 +1,5 @@
 REST API
-=========================================
+========
 
 Autometa User Registry Service Usage
 
