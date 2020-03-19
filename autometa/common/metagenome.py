@@ -417,7 +417,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         Parameters
         ----------
-        force : bool
+        force : bool, optional
             overwrite existing voting method's file (the default is False).
         *args : type
             Description of parameter `*args`.

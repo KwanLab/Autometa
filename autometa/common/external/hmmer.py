@@ -50,13 +50,13 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         </path/to/hmmpressed/database.hmm>
     outfpath : str
         </path/to/output.hmmscan.tsv>
-    cpus : int
+    cpus : int, optional
         Num. cpus to use. 0 will run as many cpus as possible (the default is 0).
-    force : bool
+    force : bool, optional
         Overwrite existing `outfpath` (the default is False).
-    parallel : bool
+    parallel : bool, optional
         Will parallelize hmmscan using GNU parallel (the default is True).
-    log : str
+    log : str, optional
         </path/to/parallel.log> (the default is None). If provided will write
         parallel log to `log`.
 
@@ -133,7 +133,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         raise OSError(f'{outfpath} not written.')
     return outfpath
 
-def filter_markers(infpath, outfpath, cutoffs, prodigal_annotations=None, force=False):
+def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     """Filter markers from hmmscan output table that are above cutoff values.
 
     Parameters
@@ -144,10 +144,10 @@ def filter_markers(infpath, outfpath, cutoffs, prodigal_annotations=None, force=
         </path/to/output.markers.tsv>
     cutoffs : str
         </path/to/cutoffs.tsv>
-    prodigal_annotations : str
+    orfs : str, optional
         Default will attempt to translate recovered qseqids to contigs
         </path/to/prodigal/called/orfs.fasta>
-    force : bool
+    force : bool, optional
         Overwrite existing `outfpath` (the default is False).
 
     Returns
@@ -190,12 +190,8 @@ def filter_markers(infpath, outfpath, cutoffs, prodigal_annotations=None, force=
         raise AssertionError(f'No markers in {infpath} pass cutoff thresholds')
     cols = ['orf','sacc','sname','score','cutoff']
     mdf = mdf[cols]
-    if prodigal_annotations:
-        logger.debug('Retrieving ORF->contig translations from ORF Caller')
-        translations = prodigal.contigs_from_headers(prodigal_annotations)
-        translater = lambda x: translations.get(x, x.rsplit('_',1)[0])
-    else:
-        translater = lambda x: x.rsplit('_',1)[0]
+    translations = prodigal.contigs_from_headers(orfs)
+    translater = lambda x: translations.get(x, x.rsplit('_',1)[0])
     mdf['contig'] = mdf['orf'].map(translater)
     mdf.set_index('contig', inplace=True)
     mdf.to_csv(outfpath, sep='\t', index=True, header=True)
@@ -212,7 +208,7 @@ def main(args):
             outfpath=args.hmmscan,
             cpus=args.cpus,
             force=args.force,
-            parallel=args.noparallel,
+            parallel=args.parallel,
             log=args.log)
     except FileExistsError as err:
         logger.debug(err)
@@ -222,7 +218,7 @@ def main(args):
         infpath=result,
         outfpath=args.markers,
         cutoffs=args.cutoffs,
-        prodigal_annotations=args.orfs,
+        orfs=args.orfs,
         force=args.force)
 
 
@@ -241,8 +237,8 @@ if __name__ == '__main__':
     parser.add_argument('--log', help='</path/to/parallel.log>')
     parser.add_argument('--force', help="force overwrite of out filepath",
         action='store_true')
-    parser.add_argument('--cpus', help='num cpus to use',default=0)
-    parser.add_argument('--noparallel',help="Disable GNU parallel", action='store_false')
+    parser.add_argument('--cpus', help='num cpus to use',default=0, type=int)
+    parser.add_argument('--parallel',help="Enable GNU parallel", action='store_true')
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
     main(args)
