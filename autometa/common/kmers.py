@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -21,7 +22,7 @@ along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 
 File containing functions to count, retrieve, k-mers given sequences
-
+COPYRIGHT
 TODO: Separate file to handle parallel,work-queue processing
 """
 
