@@ -9,7 +9,7 @@ Scripts_2
    main
    Binning/binning
    Common/common
-   config
+   Config/config
    datasets
-   taxonomy
-   validation
+   Taxonomy/taxonomy
+   Validation/validation

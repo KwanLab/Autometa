@@ -21,7 +21,7 @@ Guide
 -----
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :numbered:
    :caption: Table of Contents
    :glob:
@@ -42,10 +42,8 @@ offfff, and I forgot EVAN.
 
 Contact
 -------
-For suggestions, queries or appreciation feel free to contact _Jason Kwan
-
-.. _Jason Kwan: jason.kwan@wisc.edu
-
+For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_ 
+at jason.kwan@wisc.edu 
 
 
 Indices and tables

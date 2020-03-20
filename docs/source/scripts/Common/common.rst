@@ -7,7 +7,7 @@ Common
 
    External/external
    coverage
-   exceptions
+   exception
    kmers
    mag
    markers
