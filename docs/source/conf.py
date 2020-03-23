@@ -9,18 +9,30 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import os
 import sys
 from sphinx.ext.autodoc import between
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/common'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/config'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/binning'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/datasets'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/validation'))
-sys.path.insert(0, os.path.abspath('/home/siddharth/Autometa/autometa/common/external'))
 
+
+sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../autometa/common'))
+sys.path.insert(0, os.path.abspath('../../autometa/config'))
+sys.path.insert(0, os.path.abspath('../../autometa/binning'))
+sys.path.insert(0, os.path.abspath('../../autometa/datasets'))
+sys.path.insert(0, os.path.abspath('../../autometa/validation'))
+sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
+
+""" sys.path.insert(0, sys.path.append('../..'))
+sys.path.insert(0, sys.path.append('../autometa'))
+sys.path.insert(0, sys.path.append('../autometa/common'))
+sys.path.insert(0, sys.path.append('../autometa/config'))
+sys.path.insert(0, sys.path.append('../autometa/binning'))
+sys.path.insert(0, sys.path.append('../autometa/datasets'))
+sys.path.insert(0, sys.path.append('../autometa/validation'))
+sys.path.insert(0, sys.path.append('../autometa/common/external'))
+sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
+ """
 # -- Project information -----------------------------------------------------
 
 project = 'Autometa'
@@ -36,8 +48,8 @@ release = '2.0.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc','sphinx.ext.autodoc', 'sphinx.ext.coverage',
-'sphinx_rtd_theme'] 
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage',
+'sphinx_rtd_theme', 'sphinx.ext.napoleon'] 
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
