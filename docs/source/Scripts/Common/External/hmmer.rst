@@ -1,0 +1,6 @@
+=====
+Hmmer
+=====
+
+.. automodule:: hmmer
+    :members:

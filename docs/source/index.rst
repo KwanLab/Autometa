@@ -1,3 +1,4 @@
+======================
 Autometa documentation
 ======================
 
@@ -11,14 +12,14 @@ If you find Autometa useful to your work, please cite our Autometa_ paper.
 
 
 Quickstart
-----------
+==========
 
 Run with below code::
 
     python autometa.py metagenome.config
 
 Guide
------
+=====
 
 .. toctree::
    :maxdepth: 1
@@ -30,15 +31,14 @@ Guide
    databases
    running-autometa
    examining-results
-   scripts_file
-   scripts/scripts_2
+   Scripts/scripts
+   contribution-guidelines
    api
    license
 
 Acknowledgments
 ---------------
-Evan evan and evan. 
-offfff, and I forgot EVAN.
+Dr.Miller, Mr. Rees, Mr.India, Mr.India_2, Mr.Wolf, Prof.Kwan
 
 Contact
 -------
@@ -47,7 +47,7 @@ at jason.kwan@wisc.edu
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

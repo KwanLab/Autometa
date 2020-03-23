@@ -1,3 +1,4 @@
+================
 Running Autometa
 ================
 
@@ -10,7 +11,7 @@ Before running anything make sure you
 4. If you are running the main autometa.py make sure that the Autometa directory is in your $PATH environmental variable
 
 Running modules
----------------
+===============
 
 Many of the Autometa modules may be run standalone.
 
@@ -20,7 +21,7 @@ running an Autometa *module*.
 I.e. ``python -m autometa.common.kmers -h``
 
 Running functions
------------------
+=================
 
 Many of the Autometa functions may be run standalone as well. It is same as importing any other python
 function.
@@ -34,7 +35,7 @@ function.
 
 
 Data preparation
------------------
+================
 
 Before you run Autometa, you need to have assembled your shotgun metagenome. 
 We recommend using MetaSPAdes (part of the SPAdes_ package) after removing Illumina 
@@ -49,7 +50,7 @@ Fortunately, Autometa can construct this table for you with: ``python -m automet
 
 
 Metagenome Job Submission(s)
-----------------------------
+============================
 
 An Autometa metagenome job submission file is provided in the `projects/tests` directory.
 You may also find it `here <https://github.com/WiscEvan/Autometa/blob/dev/tests/metagenome.config>`_.
