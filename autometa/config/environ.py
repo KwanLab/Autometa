@@ -51,7 +51,7 @@ EXECUTABLES = [
 def which(program):
     """Finds the full path for an executable and checks read permissions exist.
 
-    See: https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+    See: https://stackoverflow.com/a/377028
 
     Returns:
         The path if it was valid or None if not
@@ -86,17 +86,12 @@ def which(program):
     return ''
 
 def find_executables():
-    """Short summary.
+    """Retrieves executable file paths by looking in Autometa dependent executables.
 
     Returns
     -------
-    type
-        Description of returned object.
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
+    dict
+        {executable:</path/to/executable>, ...}
 
     """
     return {exe:which(exe) for exe in EXECUTABLES}
@@ -108,6 +103,7 @@ def diamond():
     -------
     str
         version of diamond
+
     """
     exe = which('diamond')
     proc = subprocess.Popen(

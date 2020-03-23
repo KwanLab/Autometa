@@ -54,11 +54,6 @@ def from_spades_names(records):
     pd.Series
         index=contig, name='coverage', dtype=float
 
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
-
     """
     logger.info(f'Retrieving coverages from contig ID in {args.assembly}')
     coverages = pd.Series(
@@ -224,7 +219,7 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Constuct contig coverage table given an input assembly and reads.')
+    parser = argparse.ArgumentParser(description='Construct contig coverage table given an input assembly and reads.')
     parser.add_argument('-f','--assembly', help='</path/to/metagenome.fasta>', required=True)
     parser.add_argument('-1', '--fwd-reads', help='</path/to/forwards-reads.fastq>')
     parser.add_argument('-2', '--rev-reads', help='</path/to/reverse-reads.fastq>')

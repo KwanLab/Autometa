@@ -110,14 +110,14 @@ def parse(bed, out=None, force=False):
             raise ValueError(f'InvalidTableFormat: {out}')
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
-    names = ['contig','depth','bases','length','breadth']
+    names = ['contig','depth','bases','length','depth_fraction']
     df = pd.read_csv(bed, sep='\t', names=names, index_col='contig')
     criterion1 = df.depth != 0
     criterion2 = df.index != 'genome'
     df = df[criterion1 & criterion2]
-    df = df.assign(total_breadth=lambda x: x.depth * x.bases)
-    dff = df.groupby('contig')['total_breadth', 'bases'].sum()
-    dff = dff.assign(coverage=lambda x: x.total_breadth/x.bases)
+    df = df.assign(depth_product=lambda x: x.depth * x.bases)
+    dff = df.groupby('contig')['depth_product', 'bases'].sum()
+    dff = dff.assign(coverage=lambda x: x.depth_product/x.bases)
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep='\t', index=True, header=True)
         logger.debug(f'{out} written')

@@ -238,6 +238,7 @@ ________________________
                     left_index=True,
                     right_index=True)
             master_df = self.subset_df(master_df)
+            master_df = master_df.convert_dtypes()
             use_taxonomy = True if 'taxid' in master_df else False
             markers = self.markers(kwargs.get('domain','bacteria'))
             logger.info(f'Binning {kwargs.get("domain")} with {method}')

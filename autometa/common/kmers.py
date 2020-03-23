@@ -49,7 +49,7 @@ numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 def revcomp(string):
-    """Revers complement the provided `string`.
+    """Reverse complement the provided `string`.
 
     Parameters
     ----------
@@ -96,6 +96,7 @@ def init_kmers(kmer_size=5):
             for char in dna_letters:
                 new_list.append(current_seq + char)
         all_kmers = new_list
+    # subset uniq_kmers by removing any reverse complements
     for kmer in all_kmers:
         kmer_reverse = revcomp(kmer)
         if type(kmer_reverse) is int:
@@ -123,7 +124,8 @@ def load(kmers_fpath):
     -------
     FileNotFoundError
         `kmers_fpath` does not exist or is empty
-
+    KmerFormatError
+        `kmers_fpath` file format is invalid
     """
     if not os.path.exists(kmers_fpath) or os.stat(kmers_fpath).st_size == 0:
         raise FileNotFoundError(kmers_fpath)
@@ -189,7 +191,7 @@ def record_counter(args):
     max_length = record_length - kmer_size
     if max_length <= 0:
         logger.warning(f'{record.id} can not be counted! k-mer size exceeds length. {record_length}')
-        contig_kmer_counts = [pd.np.nan] * n_uniq_kmers
+        contig_kmer_counts = [pd.NA] * n_uniq_kmers
         return {record.id:contig_kmer_counts}
     for i in range(max_length):
         kmer = record.seq[i:i+kmer_size]
@@ -203,7 +205,7 @@ def record_counter(args):
         else:
             index = ref_kmers[kmer_revcomp]
         contig_kmer_counts[index] += 1
-    contig_kmer_counts = [c if c != 0 else pd.np.nan for c in contig_kmer_counts]
+    contig_kmer_counts = [c if c != 0 else pd.NA for c in contig_kmer_counts]
     return {record.id:contig_kmer_counts}
 
 def seq_counter(assembly, ref_kmers, verbose=True):
@@ -242,7 +244,7 @@ def seq_counter(assembly, ref_kmers, verbose=True):
         max_length = len(record.seq) - kmer_size
         if max_length <= 0:
             logger.warning(f'{record.id} can not be counted! k-mer size exceeds length. {len(record.seq)}')
-            contig_kmer_counts = [pd.np.nan] * n_uniq_kmers
+            contig_kmer_counts = [pd.NA] * n_uniq_kmers
             kmer_counts.update({record.id:contig_kmer_counts})
             continue
         for i in range(max_length):
@@ -257,7 +259,7 @@ def seq_counter(assembly, ref_kmers, verbose=True):
             else:
                 index = ref_kmers[kmer_revcomp]
             contig_kmer_counts[index] += 1
-        contig_kmer_counts = [c if c != 0 else pd.np.nan for c in contig_kmer_counts]
+        contig_kmer_counts = [c if c != 0 else pd.NA for c in contig_kmer_counts]
         kmer_counts.update({record.id:contig_kmer_counts})
     return kmer_counts
 
