@@ -491,7 +491,7 @@ def main(args):
         logger.debug(f'Wrote {len(df)} normalized k-mer freqs. to {args.normalized}.')
 
     if not args.embedded:
-        import sys;sys.exit(0)
+        return
 
     if args.normalized:
         logger.debug(f'Embedding {args.normalized}')
