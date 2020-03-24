@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
-# Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-# Shaurya Chanana, Izaak Miller, Jason C. Kwan
-#
-# This file is part of Autometa.
-#
-# Autometa is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Autometa is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
+Cluster contigs recursively searching for bins with highest completeness and purity.
+"""
 
 import logging
 import os
@@ -30,15 +33,14 @@ from hdbscan import HDBSCAN
 
 from autometa.common.markers import Markers
 from autometa.common import kmers
-from autometa.common.exceptions import RecursiveDBSCANError
-# TODO: This should be
-# from autometa.common.kmers import Kmers
+# TODO: This should be from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
+from autometa.common.exceptions import RecursiveDBSCANError
 from autometa.taxonomy.ncbi import NCBI
 
 pd.set_option('mode.chained_assignment',None)
 
-#logger
+
 logger = logging.getLogger(__name__)
 
 

@@ -48,28 +48,21 @@ from autometa.common.exceptions import KmerEmbeddingError
 numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
-def revcomp(string):
+def _revcomp(string):
     """Reverse complement the provided `string`.
 
     Parameters
     ----------
     string : str
-        Description of parameter `string`.
+        A k-mer string generated from `init_kmers`
 
     Returns
     -------
-    str or int(-1)
+    str
         reverse complemented string.
-        Note: If any weird letters are encountered, int value of -1 is returned.
     """
     complement = {'A':'T','T':'A','C':'G','G':'C'}
-    complements = []
-    for i in range(len(string)):
-        if string[i] in complement:
-            complements.append(complement[string[i]])
-        else:
-            return -1
-    return ''.join(reversed(complements))
+    return ''.join(complement.get(char) for char in reversed(string))
 
 def init_kmers(kmer_size=5):
     """Initialize k-mers from `kmer_size`. Respective reverse complements will
@@ -77,7 +70,7 @@ def init_kmers(kmer_size=5):
 
     Parameters
     ----------
-    kmer_size : int
+    kmer_size : int, optional
         pattern size of k-mer to intialize dict (the default is 5).
 
     Returns
@@ -98,10 +91,7 @@ def init_kmers(kmer_size=5):
         all_kmers = new_list
     # subset uniq_kmers by removing any reverse complements
     for kmer in all_kmers:
-        kmer_reverse = revcomp(kmer)
-        if type(kmer_reverse) is int:
-            logger.warning(f'Encountered non-standard string: {kmer}. skipping...')
-            continue
+        kmer_reverse = _revcomp(kmer)
         if (kmer not in uniq_kmers) and (kmer_reverse not in uniq_kmers):
             uniq_kmers[kmer] = index
             index += 1
@@ -144,7 +134,7 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
         </path/to/assembly.fasta> (nucleotides)
     ref_kmers : dict
         {kmer:index, ...}
-    nproc : int
+    nproc : int, optional
         Number of cpus to use. (the default will use all available).
 
     Returns
@@ -217,7 +207,7 @@ def seq_counter(assembly, ref_kmers, verbose=True):
         </path/to/assembly.fasta> (nucleotides)
     ref_kmers : dict
         {kmer:index, ...}
-    verbose : bool
+    verbose : bool, optional
         enable progress bar `verbose` (the default is True).
 
     Returns
@@ -275,10 +265,16 @@ def count(assembly, kmer_size=5, normalized=False, verbose=True, multiprocess=Tr
     ----------
     assembly : str
         Description of parameter `assembly`.
-    kmer_size : int
+    kmer_size : int, optional
         length of k-mer to count `kmer_size` (the default is 5).
-    normalized : bool
+    normalized : bool, optional
         Whether to return the CLR normalized dataframe (the default is True).
+    verbose : bool, optional
+        Enable progress bar `verbose` (the default is True).
+    multiprocess : bool, optional
+        Use multiple cores to count k-mer frequencies (the default is True).
+    nproc : int, optional
+        Number of cpus to use. (the default will use all available).
 
     Returns
     -------
@@ -327,6 +323,7 @@ def normalize(df):
         K-mers Dataframe where index_col='contig' and column values are k-mer
         frequencies.
 
+    # TODO: Place these references in readthedocs documentation and remove from def.
     References:
     - Aitchison, J. The Statistical Analysis of Compositional Data (1986)
     - Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
@@ -357,23 +354,23 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
     ----------
     kmers : str or pd.DataFrame
         </path/to/input/kmers.normalized.tsv>
-    embedded : str
-        </path/to/output/kmers.embedded.tsv> [optional] If provided will write to `embedded`.
-    n_components : int
+    embedded : str, optional
+        </path/to/output/kmers.embedded.tsv> If provided will write to `embedded`.
+    n_components : int, optional
         `n_components` to embed k-mer frequencies (the default is 2).
-    do_pca : bool
+    do_pca : bool, optional
         Perform PCA decomposition prior to embedding (the default is True).
-    pca_dimensions : int
+    pca_dimensions : int, optional
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
         If None, will estimate based on
-    method : str
+    method : str, optional
         embedding method to use (the default is 'UMAP').
-    perplexity : float
+    perplexity : float, optional
         hyperparameter used to tune TSNE (the default is 30.0).
         See below for details:
+            # COMBAK: Insert link to readthedocs documentation
             https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE
-
-    **kwargs : dict
+    **kwargs : dict, optional
         Other keyword arguments to be supplied to respective `method`.
 
     Returns
@@ -393,7 +390,8 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         `kmers` type must be a pd.DataFrame or filepath.
     """
     if not kmers and not embedded:
-        raise KmerEmbeddingError('kmers or embedded is required')
+        msg = f'`kmers` (given: {kmers}) or `embedded` (given: {embedded}) is required'
+        raise KmerEmbeddingError(msg)
     df = None
     if kmers and type(kmers) is str and os.path.exists(kmers) and os.stat(kmers).st_size >0:
         try:
@@ -435,6 +433,7 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
 
     def do_TSNE(perplexity=perplexity, n_components=n_components):
         # Adjust perplexity according to the number of data points
+        # COMBAK: Insert link to readthedocs discussion on python2.7 vs. python3 TSNE implementations
         n_rows = n_samples-1
         scaler = 3.0
         if n_rows < (scaler*perplexity):
@@ -532,7 +531,8 @@ if __name__ == '__main__':
         type=int, default=50)
     parser.add_argument('--multiprocess', help='count k-mers using multiprocessing',
         action='store_true', default=False)
-    parser.add_argument('--nproc', help=f'num. processors to use if multiprocess is selected. (default = {cpus})',
+    parser.add_argument('--nproc',
+        help=f'num. processors to use if multiprocess is selected. (default = {cpus})',
         default=cpus, type=int)
     args = parser.parse_args()
     main(args)

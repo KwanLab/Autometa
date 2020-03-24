@@ -197,6 +197,7 @@ class AutometaUser:
             taxonomy_fpath=mgargs.files.taxonomy,
             fwd_reads=mgargs.files.fwd_reads,
             rev_reads=mgargs.files.rev_reads,
+            se_reads=mgargs.files.se_reads,
             taxon_method=mgargs.parameters.taxon_method)
         try:
         # Original (raw) file should not be manipulated so return new object
@@ -213,6 +214,7 @@ class AutometaUser:
                 taxonomy_fpath=mgargs.files.taxonomy,
                 fwd_reads=mgargs.files.fwd_reads,
                 rev_reads=mgargs.files.rev_reads,
+                se_reads=mgargs.files.se_reads,
                 taxon_method=mgargs.parameters.taxon_method)
         # I.e. asynchronous execution here (work-queue tasks)
         mg.get_kmers(

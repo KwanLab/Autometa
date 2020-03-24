@@ -19,7 +19,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-Autometa Coverage
+Construct contig coverage table given an input assembly and reads or alignments.
 """
 
 
@@ -84,12 +84,12 @@ def make_length_table(fasta, out):
     lengths.to_csv(out, sep='\t', index=True, header=True)
     return out
 
-def get(fasta, out, fwd_reads=None, rev_reads=None, sam=None, bam=None, lengths=None,
-    bed=None, nproc=1):
+def get(fasta, out, fwd_reads=None, rev_reads=None, se_reads=None, sam=None,
+    bam=None, lengths=None, bed=None, nproc=1):
     """Get coverages for assembly `fasta` file using provided files:
 
     Either:
-        `fwd_reads` and `rev_reads`
+        `fwd_reads` and `rev_reads` and/or `se_reads`
     or:
         `sam`
     or:
@@ -102,7 +102,7 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, sam=None, bam=None, lengths=
         1. `bed`
         2. `bam`
         3. `sam`
-        4. `fwd_reads` and `rev_reads`
+        4. `fwd_reads` and `rev_reads` and `se_reads`
 
     Event sequence to calculate contig coverages:
     1. align paired-end reads to generate alignment.sam
@@ -117,10 +117,12 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, sam=None, bam=None, lengths=
         </path/to/assembly.fasta>
     out : str
         </path/to/output/coverage.tsv>
-    fwd_reads : str
-        </path/to/fwd_reads.fastq>
-    rev_reads : str
-        </path/to/rev_reads.fastq>
+    fwd_reads : list, optional
+        [</path/to/forward_reads.fastq>, ...]
+    rev_reads : list, optional
+        [</path/to/reverse_reads.fastq>, ...]
+    se_reads : list, optional
+        [</path/to/single_end_reads.fastq>, ...]
     sam : str
         </path/to/alignments.sam>
     bam : str
@@ -160,15 +162,16 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, sam=None, bam=None, lengths=
         def sort_samfile(sam=sam,bam=bam,nproc=nproc):
             samtools.sort(sam, bam, nproc=nproc)
 
-        def align_pe_reads(fasta=fasta,db=db,sam=sam,fwd_reads=fwd_reads,rev_reads=rev_reads,nproc=nproc):
+        def align_reads(fasta=fasta,db=db,sam=sam,fwd_reads=fwd_reads,
+            rev_reads=rev_reads, se_reads=se_reads, nproc=nproc):
             bowtie.build(fasta, db)
-            bowtie.align(db, sam, fwd_reads, rev_reads, nproc=nproc)
+            bowtie.align(db, sam, fwd_reads, rev_reads, se_reads, nproc=nproc)
         # Setup of coverage calculation sequence depending on file(s) provided
         calculation_sequence = {
             'bed_exists':[parse_bed],
             'bam_exists':[make_bed, parse_bed],
             'sam_exists':[sort_samfile, make_bed, parse_bed],
-            'full':[align_pe_reads, sort_samfile, make_bed, parse_bed]}
+            'full':[align_reads, sort_samfile, make_bed, parse_bed]}
         # Now need to determine which point to start calculation...
         for fp,argname in zip([bed,bam,sam],['bed','bam','sam']):
             step = 'full'
@@ -221,8 +224,9 @@ if __name__ == '__main__':
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(description='Construct contig coverage table given an input assembly and reads.')
     parser.add_argument('-f','--assembly', help='</path/to/metagenome.fasta>', required=True)
-    parser.add_argument('-1', '--fwd-reads', help='</path/to/forwards-reads.fastq>')
-    parser.add_argument('-2', '--rev-reads', help='</path/to/reverse-reads.fastq>')
+    parser.add_argument('-1', '--fwd-reads', help='</path/to/forwards-reads.fastq>', nargs='*')
+    parser.add_argument('-2', '--rev-reads', help='</path/to/reverse-reads.fastq>', nargs='*')
+    parser.add_argument('-U', '--se-reads', help='</path/to/single-end-reads.fastq>', nargs='*')
     parser.add_argument('--sam', help='</path/to/alignments.sam>')
     parser.add_argument('--bam', help='</path/to/alignments.bam>')
     parser.add_argument('--lengths', help='</path/to/lengths.tsv>')
