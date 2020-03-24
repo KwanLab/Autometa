@@ -51,11 +51,13 @@ def sort(sam, bam, nproc=mp.cpu_count()):
     
     """
 
-    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {bam}'
+    samtools_out_dir = os.path.dirname(os.path.abspath(bam))
+    outfile_tail = os.path.basename(bam)
+    tempdir = tempfile.mkdtemp(suffix = None, prefix = 'samtools', dir = samtools_out_dir)
+    samtools_outfile_tail = os.path.join(samtools_out_dir, outfile_tail)
+    temp_outfile_tail = os.path.join(tempdir, outfile_tail)
+    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile_tail}'
     logger.debug(f'cmd: {cmd}')
-    samtools_out_dir = os.path.dirname(bam)
-    tempdir = tempfile.mkdtemp(suffix=None, prefix='samtools', dir=samtools_out_dir)
-    os.chdir(tempdir)
     samtools_err = os.path.join(samtools_out_dir, 'samtools.err')
     samtools_out = os.path.join(samtools_out_dir, 'samtools.out')
     with open(samtools_out, 'w') as stdout, open(samtools_err, 'w') as stderr:
@@ -63,12 +65,15 @@ def sort(sam, bam, nproc=mp.cpu_count()):
             retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
             if retcode != 0:
                 raise ChildProcessError(f'Samtools not successfully run, retcode: {retcode}')
+            else:
+                shutil.move(temp_outfile_tail, samtools_outfile_tail)
         except ChildProcessError as err:
             raise err     
         finally:
             shutil.rmtree(tempdir, ignore_errors=True)
     os.remove(samtools_err)
     os.remove(samtools_out)
+    logger.debug(f'Samtools run successfully ! bam output in {samtools_out_dir}')
           
 def main(args):
     sort(args.sam, args.bam, args.nproc)
