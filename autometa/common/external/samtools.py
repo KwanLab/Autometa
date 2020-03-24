@@ -46,34 +46,33 @@ def sort(sam, bam, nproc=mp.cpu_count()):
     
     Raises
     ------
+    TypeError
+        nproc must be an interger greater than zero
     ChildProcessError
-        Samtools did not run successfully, returns retcode.
-    
+        Samtools did not run successfully, returns the return code from subprocessing call
     """
 
+    if type(nproc) is not int or nproc == 0:
+        raise TypeError(f'nproc must be an integer greater than zero! Given: {nproc}')
     samtools_out_dir = os.path.dirname(os.path.abspath(bam))
-    outfile_tail = os.path.basename(bam)
+    outfile = os.path.basename(bam)
     tempdir = tempfile.mkdtemp(suffix = None, prefix = 'samtools', dir = samtools_out_dir)
-    samtools_outfile_tail = os.path.join(samtools_out_dir, outfile_tail)
-    temp_outfile_tail = os.path.join(tempdir, outfile_tail)
-    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile_tail}'
+    samtools_outfile = os.path.join(samtools_out_dir, outfile)
+    temp_outfile = os.path.join(tempdir, outfile)
+    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile}'
     logger.debug(f'cmd: {cmd}')
     samtools_err = os.path.join(samtools_out_dir, 'samtools.err')
     samtools_out = os.path.join(samtools_out_dir, 'samtools.out')
     with open(samtools_out, 'w') as stdout, open(samtools_err, 'w') as stderr:
-        try:
-            retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-            if retcode != 0:
-                raise ChildProcessError(f'Samtools not successfully run, retcode: {retcode}')
-            else:
-                shutil.move(temp_outfile_tail, samtools_outfile_tail)
-        except ChildProcessError as err:
-            raise err     
-        finally:
+        retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
+        if retcode != 0:
+            shutil.rmtree(tempdir, ignore_errors=True)
+            raise ChildProcessError(f'Sort failed, retcode: {retcode}')
+        else:
+            shutil.move(temp_outfile, samtools_outfile)
             shutil.rmtree(tempdir, ignore_errors=True)
     os.remove(samtools_err)
     os.remove(samtools_out)
-    logger.debug(f'Samtools run successfully ! bam output in {samtools_out_dir}')
           
 def main(args):
     sort(args.sam, args.bam, args.nproc)
