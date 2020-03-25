@@ -1,4 +1,4 @@
-Matplotlib documentation
+Autometa documentation
 ========================
 
 Building the documentation
@@ -6,3 +6,14 @@ Building the documentation
 
 This file will detail how to download the docs and contribute to them.
 What files to install and how to run
+
+Installation
+------------
+
+```bash
+conda install -c anaconda sphinx_rtd_theme
+```
+
+
+
+
