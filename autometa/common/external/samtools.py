@@ -47,32 +47,30 @@ def sort(sam, bam, nproc=mp.cpu_count()):
     Raises
     ------
     TypeError
-        nproc must be an interger greater than zero
+        nproc must be an integer greater than zero
     ChildProcessError
         Samtools did not run successfully, returns the return code from subprocessing call
     """
 
-    if type(nproc) is not int or nproc == 0:
+    if type(nproc) is not int or nproc <= 0:
         raise TypeError(f'nproc must be an integer greater than zero! Given: {nproc}')
     samtools_out_dir = os.path.dirname(os.path.abspath(bam))
-    outfile = os.path.basename(bam)
-    tempdir = tempfile.mkdtemp(suffix = None, prefix = 'samtools', dir = samtools_out_dir)
-    samtools_outfile = os.path.join(samtools_out_dir, outfile)
-    temp_outfile = os.path.join(tempdir, outfile)
-    cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile}'
-    logger.debug(f'cmd: {cmd}')
     samtools_err = os.path.join(samtools_out_dir, 'samtools.err')
     samtools_out = os.path.join(samtools_out_dir, 'samtools.out')
-    with open(samtools_out, 'w') as stdout, open(samtools_err, 'w') as stderr:
-        retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-        if retcode != 0:
-            shutil.rmtree(tempdir, ignore_errors=True)
-            raise ChildProcessError(f'Sort failed, retcode: {retcode}')
-        else:
-            shutil.move(temp_outfile, samtools_outfile)
-            shutil.rmtree(tempdir, ignore_errors=True)
-    os.remove(samtools_err)
-    os.remove(samtools_out)
+    outfile = os.path.basename(bam)
+    samtools_outfile = os.path.join(samtools_out_dir, outfile)
+    with tempfile.TemporaryDirectory(suffix = None, prefix = 'samtools', dir = samtools_out_dir) as tempdir:    
+        temp_outfile = os.path.join(tempdir, outfile)
+        cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile}'
+        logger.debug(f'cmd: {cmd}')
+        with open(samtools_out, 'w') as stdout, open(samtools_err, 'w') as stderr:
+            retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
+            if retcode != 0:
+                raise ChildProcessError(f'Sort failed, retcode: {retcode}')
+            else:
+                shutil.move(temp_outfile, samtools_outfile)
+        os.remove(samtools_err)
+        os.remove(samtools_out)
           
 def main(args):
     sort(args.sam, args.bam, args.nproc)
