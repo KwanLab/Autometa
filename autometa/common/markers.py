@@ -44,9 +44,9 @@ class Markers:
     ----------
     orfs_fpath : str
         Description of parameter `orfs_fpath`.
-    kingdom : str
+    kingdom : str, optional
         Description of parameter `kingdom` (the default is 'bacteria').
-    dbdir : str
+    dbdir : str, optional
         Description of parameter `dbdir` (the default is {MARKERS_DIR}).
 
     Attributes
@@ -159,9 +159,10 @@ class Markers:
         else:
             params = ['wide','long','list','counts']
             err_msg = f'{format} is not a supported format.\n\tSupported formats: {params}'
+            # TODO: Write Marker specific AutometaException
             raise ValueError(err_msg)
 
-    def get_markers(self, format='wide', **kwargs):
+    def get(self, format='wide', **kwargs):
         """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
         Parameters
@@ -188,18 +189,22 @@ class Markers:
             Why the exception is raised.
         """
         if not self.searched:
-            hmmer.hmmscan(self.orfs_fpath, self.hmmdb, self.hmmscan_fp, **kwargs)
+            hmmer.hmmscan(
+                orfs=self.orfs_fpath,
+                hmmdb=self.hmmdb,
+                outfpath=self.hmmscan_fp,
+                **kwargs)
         if not self.found:
             hmmer.filter_markers(
                 infpath=self.hmmscan_fp,
                 outfpath=self.markers_fp,
                 cutoffs=self.cutoffs,
-                prodigal_annotations=self.orfs_fpath)
+                orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
 def main(args):
     markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
-    markers.get_markers()
+    markers.get()
 
 if __name__ == '__main__':
     import argparse

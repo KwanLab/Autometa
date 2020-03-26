@@ -237,8 +237,8 @@ def parse(results, top_pct=0.9, verbose=False):
             qend = llist[7]
             sstart = llist[8]
             send = llist[9]
-            evalue = llist[10]
-            bitscore = llist[11]
+            evalue = float(llist[10])
+            bitscore = float(llist[11])
             hit = DiamondResult(
                 qseqid=qseqid,
                 sseqid=sseqid,

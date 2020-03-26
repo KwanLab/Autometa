@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
-# Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-# Shaurya Chanana, Izaak Miller, Jason C. Kwan
-#
-# This file is part of Autometa.
-#
-# Autometa is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Autometa is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
+Cluster contigs recursively searching for bins with highest completeness and purity.
+"""
 
 import logging
 import os
@@ -30,14 +33,14 @@ from hdbscan import HDBSCAN
 
 from autometa.common.markers import Markers
 from autometa.common import kmers
-# TODO: This should be
-# from autometa.common.kmers import Kmers
+# TODO: This should be from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
+from autometa.common.exceptions import RecursiveDBSCANError
 from autometa.taxonomy.ncbi import NCBI
 
 pd.set_option('mode.chained_assignment',None)
 
-#logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -165,7 +168,7 @@ def run_dbscan(df, eps, dropcols=['cluster','purity','completeness'], usecols=['
     """
     n_samples = df.shape[0]
     if n_samples == 1:
-        clusters = pd.Series([pd.np.nan], index=df.index, name='cluster')
+        clusters = pd.Series([pd.NA], index=df.index, name='cluster')
         return pd.merge(df, clusters, how='left', left_index=True, right_index=True)
     for col in dropcols:
         if col in df.columns:
@@ -219,7 +222,7 @@ def add_metrics(df, markers_df, domain='bacteria'):
         completeness = nunique_markers / expected_number * 100
         # Protect from divide by zero
         if nunique_markers == 0:
-            purity = pd.np.nan
+            purity = pd.NA
         else:
             purity = num_single_copy_markers / nunique_markers * 100
         metrics['completeness'].update({cluster:completeness})
@@ -271,7 +274,7 @@ def get_clusters(master_df, markers_df, domain='bacteria', completeness=20., pur
         # No contigs can be clustered, label as unclustered and add the final df
         # of (unclustered) contigs
         if clustered_df.empty:
-            unclustered_df = unclustered_df.assign(cluster=pd.np.nan)
+            unclustered_df = unclustered_df.assign(cluster=pd.NA)
             clusters.append(unclustered_df)
             break
 
@@ -331,7 +334,16 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     pd.DataFrame
         master with ['cluster','completeness','purity'] columns added
 
+    Raises
+    -------
+    RecursiveDBSCANError
+        No marker information is availble for contigs to be binned.
     """
+    # First check needs to ensure we have markers available to check binning quality...
+    if master.loc[master.index.isin(markers.index)].empty:
+        err = 'No markers for contigs in table. Unable to assess binning quality'
+        raise RecursiveDBSCANError(err)
+
     if not taxonomy:
         return get_clusters(
             master,
@@ -356,6 +368,9 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
         unclassified_filter = master[rank] != 'unclassified'
+        n_contigs_in_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().sum()
+        n_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().index.nunique()
+        logger.info(f'Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)')
         # Group contigs by rank and find best clusters within subset
         for rank_name_txt, dff in master.loc[unclassified_filter].groupby(rank):
             if dff.empty:
@@ -390,10 +405,9 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
             clustered.cluster = clustered.cluster.map(rename_cluster)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
-
     clustered_df = pd.concat(clusters, sort=True)
     unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
-    unclustered_df.loc[:,'cluster'] = pd.np.nan
+    unclustered_df.loc[:,'cluster'] = pd.NA
     return pd.concat([clustered_df,unclustered_df], sort=True)
 
 def main(args):
@@ -403,20 +417,24 @@ def main(args):
         embedded=args.embedded_kmers,
         method=args.embedding_method)
 
-    markers_df = Markers.load(args.markers)
+    cov_df = pd.read_csv(args.coverage, sep='\t', index_col='contig')
+    master_df = pd.merge(kmers_df, cov_df[['coverage']], how='left', left_index=True, right_index=True)
 
+    markers_df = Markers.load(args.markers)
+    markers_df = markers_df.convert_dtypes()
     # Taxonomy.load()
-    master_df = kmers_df
     if args.taxonomy:
         taxa_df = pd.read_csv(args.taxonomy, sep='\t', index_col='contig')
+        taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
         master_df = pd.merge(
             left=master_df,
             right=taxa_df,
-            how='left',
+            how='inner',
             left_index=True,
             right_index=True)
 
     taxa_present = True if 'taxid' in master_df else False
+    master_df = master_df.convert_dtypes()
     logger.debug(f'master_df shape: {master_df.shape}')
     master_out = binning(
         master=master_df,
@@ -443,6 +461,7 @@ if __name__ == '__main__':
         description="Perform decomposition/embedding/clustering via PCA/[TSNE|UMAP]/DBSCAN."
     )
     parser.add_argument('kmers', help='</path/to/kmers.tsv>')
+    parser.add_argument('coverage', help='</path/to/coverages.tsv>')
     parser.add_argument('markers', help='</path/to/markers.tsv>')
     parser.add_argument('out', help='</path/to/output.tsv>')
     parser.add_argument('--embedded-kmers',help='</path/to/embedded_kmers.tsv>')

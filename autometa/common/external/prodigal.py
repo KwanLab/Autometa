@@ -30,6 +30,10 @@ import shutil
 
 from glob import glob
 from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
+
+from autometa.config.environ import get_versions
+
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +52,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     force : bool
         overwrite outfpath if it already exists (the default is False).
     cpus : int
-        num `cpus` to use. By default will run as many `cpus` as possible
+        num `cpus` to use. **Default (cpus=0) will run as many `cpus` as possible**
     parallel : bool
         Will parallelize prodigal using GNU parallel (the default is True).
 
@@ -61,7 +65,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     -------
     FileExistsError
         `nucls_out` or `prots_out` already exists
-    OSError
+    ChildProcessError
         Prodigal Failed
     """
     if not os.path.exists(assembly):
@@ -104,6 +108,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
             '-d',tmpnucl_fpath,
             '-q',
             '-p','meta',
+            '-m',
             '-o',os.devnull,
             '<',assembly,
             '2>',os.devnull,
@@ -121,40 +126,55 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     cmd = [str(arg) for arg in cmd]
     logger.debug(f'cmd: {" ".join(cmd)}')
     if parallel:
-        returncode = subprocess.call(" ".join(cmd), shell=True)
-        tmpfpaths = glob(os.path.join(tmpdir,'*.faa'))
-        lines = ''
-        for fp in tmpfpaths:
-            with open(fp) as fh:
-                for line in fh:
-                    lines += line
-        out = open(prots_out, 'w')
-        out.write(lines)
-        out.close()
-        tmpfpaths = glob(os.path.join(tmpdir, '*.fna'))
-        lines = ''
-        for fp in tmpfpaths:
-            with open(fp) as fh:
-                for line in fh:
-                    lines += line
-        out = open(nucls_out, 'w')
-        out.write(lines)
-        out.close()
-        shutil.rmtree(tmpdir)
+        try:
+            returncode = subprocess.call(" ".join(cmd), shell=True)
+            tmpfpaths = glob(os.path.join(tmpdir,'*.faa'))
+            lines = ''
+            for fp in tmpfpaths:
+                with open(fp) as fh:
+                    for line in fh:
+                        lines += line
+            out = open(prots_out, 'w')
+            out.write(lines)
+            out.close()
+            tmpfpaths = glob(os.path.join(tmpdir, '*.fna'))
+            lines = ''
+            for fp in tmpfpaths:
+                with open(fp) as fh:
+                    for line in fh:
+                        lines += line
+            out = open(nucls_out, 'w')
+            out.write(lines)
+            out.close()
+        except Exception as err:
+            # COMBAK: Should probably be more descriptive as to what errors could occur here.
+            logger.exception(err)
+        finally:
+            shutil.rmtree(tmpdir)
     else:
         with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
             proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
             returncode = proc.returncode
     if returncode:
         logger.warning(f'Args:{cmd} ReturnCode:{returncode}')
+        # COMBAK: Check all possible return codes for GNU parallel
     for fp in [nucls_out, prots_out]:
-        if not os.path.exists(fp):
-            raise OSError(f'{fp} not written')
+        if not os.path.exists(fp) or os.stat(fp).st_size == 0:
+            raise ChildProcessError(f'{fp} not written')
+        try:
+            with open(fp) as fh:
+                for _ in SimpleFastaParser(fh):
+                    pass
+        except (IOError, ValueError):
+            raise IOError(f'InvalidFileFormat: {fp}')
     return nucls_out, prots_out
 
-def get_orf_translations(fpath):
-    """Translate Prodigal ORF ID to contig ID using prodigal assigned ID from
+def contigs_from_headers(fpath):
+    """Get ORF id to contig id translations using prodigal assigned ID from
     description.
+
+    First determines if all of ID=3495691_2 from description is in header.
+    "3495691_2" represents the 3,495,691st gene in the 2nd sequence.
 
     i.e. : record.description
         'k119_1383959_3495691_2 # 688 # 1446 # 1 # ID=3495691_2;partial=01;start_type=ATG;rbs_motif=None;rbs_spacer=None'
@@ -175,12 +195,60 @@ def get_orf_translations(fpath):
         Why the exception is raised.
 
     """
+    version = get_versions('prodigal')
+    if version.count('.') >= 2:
+        version = float('.'.join(version.split('.')[:2]))
+    else:
+        version = float(version)
     translations = {}
     for record in SeqIO.parse(fpath, 'fasta'):
-        orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
-        contig_id = record.id.replace(f'_{orf_id}', '')
+        if version < 2.6:
+            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
+            contig_id = record.id.replace(f'_{orf_id}', '')
+        else:
+            contig_id = record.id.rsplit('_',1)[0]
         translations.update({record.id:contig_id})
     return translations
+
+def orf_records_from_contigs(contigs, fpath):
+    """Retrieve list of *ORFs headers* from `contigs`. Prodigal annotated ORFs
+    are required as the input `fpath`.
+
+    Parameters
+    ----------
+    contigs: iterable
+        iterable of contigs from which to retrieve ORFs
+    fpath : str
+        </path/to/prodigal/called/orfs.fasta>
+
+    Returns
+    -------
+    list
+        ORF SeqIO.SeqRecords from provided `contigs`. i.e. [SeqRecord, ...]
+
+    Raises
+    -------
+    ExceptionName
+        Why the exception is raised.
+
+    """
+    version = get_versions('prodigal')
+    if version.count('.') >= 2:
+        version = float('.'.join(version.split('.')[:2]))
+    else:
+        version = float(version)
+
+    records = []
+    for record in SeqIO.parse(fpath, 'fasta'):
+        if version < 2.6:
+            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
+            contig_id = record.id.replace(f'_{orf_id}', '')
+        else:
+            contig_id = record.id.rsplit('_',1)[0]
+        if contig_id not in contigs:
+            continue
+        records.append(record)
+    return records
 
 def main(args):
     if args.verbose:
@@ -202,12 +270,12 @@ if __name__ == '__main__':
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser('Calls ORFs with provided input assembly')
-    parser.add_argument('assembly', help='</path/to/assembly>')
-    parser.add_argument('nucls_out', help='</path/to/nucls.out>')
-    parser.add_argument('prots_out', help='</path/to/prots.out>')
+    parser.add_argument('assembly', help='</path/to/assembly>', type=str)
+    parser.add_argument('nucls_out', help='</path/to/nucls.out>', type=str)
+    parser.add_argument('prots_out', help='</path/to/prots.out>', type=str)
     parser.add_argument('--force', help="force overwrite of ORFs out filepaths",
         action='store_true')
-    parser.add_argument('--cpus', help='num cpus to use', default=0)
+    parser.add_argument('--cpus', help='num cpus to use', type=int, default=0)
     parser.add_argument('--parallel', help="Enable GNU parallel",
         action='store_true', default=False)
     parser.add_argument('--verbose', help="add verbosity", action='store_true')

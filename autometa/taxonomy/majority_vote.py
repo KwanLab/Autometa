@@ -237,10 +237,8 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         <path/to/output/dir>
     votes_fname : str
         <votes.tsv filename>
-    lca_fname : str
-        <lca.tsv filename> (the default is None).
-        If None, filename will be generated from fasta.
-        I.e. </path/to/prot/orfs.faa> -> </path/to/`outdir`/orfs.lca.tsv
+    lca_fname : str, optional
+        <lca.tsv filename> (the default is </path/to/`outdir`/`fasta`.lca.tsv).
     **kwargs : dict
         Further parameters that may be passed along to LCA, LCA.blast2lca and
         rank_taxids as dicts of key-value pairs. Note: Types must match.
@@ -285,7 +283,7 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         force=kwargs.get('force',False)
     )
     # retrieve lca taxids for each contig
-    classifications = lca.parse(lca_fpath, kwargs.get('prodigal_orfs'))
+    classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=fasta)
     # Vote for majority lca taxid from contig lca taxids
     voted_taxids = rank_taxids(
         ctg_lcas=classifications,
@@ -330,7 +328,6 @@ def write_votes(results, outfpath):
     return outfpath
 
 def main(args):
-    prodigal_annotations = args.fasta if args.prodigal_orfs else None
     results_fpath = majority_vote(
         fasta=args.fasta,
         ncbi_dir=args.dbdir,
@@ -338,7 +335,6 @@ def main(args):
         votes_fname=args.outfname,
         blast=args.blast_table,
         lca_fname=args.lca_fname,
-        prodigal_orfs=prodigal_annotations,
         usepickle=args.nopickle,
         verbose=args.verbose)
 
@@ -356,8 +352,6 @@ if __name__ == '__main__':
     parser.add_argument('--nopickle', help='do not pickle objects to disk',
         action='store_false', default=True)
     parser.add_argument('--verbose', help="add verbosity", action='store_true',
-        default=False)
-    parser.add_argument('--prodigal-orfs', help="provided `fasta` ORFs will be translated using prodigal header", action='store_true',
         default=False)
     args = parser.parse_args()
     main(args)

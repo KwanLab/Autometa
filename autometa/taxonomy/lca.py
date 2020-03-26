@@ -331,7 +331,7 @@ class LCA(NCBI):
             `outfpath`
         """
         if self.verbose:
-            logger.info(f'Running BLAST to LCA for {fasta}')
+            logger.debug(f'Running BLAST to LCA for {fasta}')
         if os.path.exists(outfpath) and not force:
             logger.warning(f'FileAlreadyExists {outfpath}')
             return outfpath
@@ -390,7 +390,7 @@ class LCA(NCBI):
             outfile.write(outlines)
         return outfpath
 
-    def parse(self, lca_fpath, prodigal_annotations=None):
+    def parse(self, lca_fpath, orfs_fpath):
         """Retrieve and construct contig dictionary from provided `lca_fpath`.
 
         Parameters
@@ -399,8 +399,7 @@ class LCA(NCBI):
             </path/to/lcas.tsv>
             tab-delimited ordered columns: qseqid, name, rank, lca_taxid
 
-        prodigal_annotations : str
-            Default will attempt to translate recovered qseqids to contigs
+        orfs_fpath : str
             </path/to/prodigal/called/orfs.fasta>
             Note: These ORFs should correspond to the ORFs provided in the BLAST table.
 
@@ -413,17 +412,17 @@ class LCA(NCBI):
         -------
         FileNotFoundError
             `lca_fpath` does not exist
+        FileNotFoundError
+            `orfs_fpath` does not exist
         """
         logger.debug(f'Parsing LCA table: {lca_fpath}')
         if not os.path.exists(lca_fpath):
             raise FileNotFoundError(lca_fpath)
             # logger.exception(FileNotFoundError)
-        if prodigal_annotations and not os.path.exists(prodigal_annotations):
-            raise FileNotFoundError(prodigal_annotations)
+        if orfs_fpath and not os.path.exists(orfs_fpath):
+            raise FileNotFoundError(orfs_fpath)
 
-        if prodigal_annotations:
-            logger.debug('Retrieving ORF->contig translations from ORF Caller')
-            translations = prodigal.get_orf_translations(prodigal_annotations)
+        translations = prodigal.contigs_from_headers(orfs_fpath)
 
         fname = os.path.basename(lca_fpath)
         n_lines = file_length(lca_fpath) if self.verbose else None
@@ -432,10 +431,9 @@ class LCA(NCBI):
         with open(lca_fpath) as fh:
             header = fh.readline()
             for line in tqdm(fh, total=n_lines, disable=disable, desc=f'Parsing {fname}', leave=False):
-                contig_orf_id, name, rank, taxid = line.strip().split('\t')
-                contig_ = contig_orf_id.rsplit('_', 1)[0]
+                orf_id, name, rank, taxid = line.strip().split('\t')
                 taxid = int(taxid)
-                contig = translations.get(contig_orf_id, contig_) if prodigal_annotations else contig_
+                contig = translations.get(orf_id)
                 if taxid != 1:
                     while rank not in set(NCBI.CANONICAL_RANKS):
                         taxid = self.parent(taxid)

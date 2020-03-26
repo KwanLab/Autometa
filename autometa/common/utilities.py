@@ -133,7 +133,7 @@ def gunzip(infpath, outfpath):
 
 def untar(tarchive, outdir, member=None):
     """Decompress a tar archive (may be gzipped or bzipped). passing in `member`
-    requires an `outfpath` also be provided.
+    requires an `outdir` also be provided.
 
     See: https://docs.python.org/3.8/library/tarfile.html#module-tarfile
 
@@ -196,10 +196,10 @@ def tarchive_results(outfpath, src_dirpath):
 
     Parameters
     ----------
-    fpaths : list
-        </paths/to/files/to/archive>
     outfpath : str
         </path/to/output/tar/archive.tar.gz || </path/to/output/tar/archive.tgz
+    src_dirpath : str
+        </paths/to/directory/to/archive>
 
     Returns
     -------
@@ -436,7 +436,7 @@ def timeit(func):
         obj = func(*args, **kwds)
         end = time.time()
         time_taken = end - start
-        logger.info(f'{func.__name__} : {time_taken:.2f} seconds')
+        logger.info(f'{func.__name__} took {time_taken:.2f} seconds')
         # runlogger.info(f'func={func.__name__} : {time_taken} seconds')
         return obj
     return wrapper
