@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,7 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-
+COPYRIGHT
 Script containing wrapper functions for bowtie2.
 """
 
@@ -129,6 +130,8 @@ def align(db, sam, fwd_reads, rev_reads, nproc=0, **kwargs):
 def main(args):
     db = build(args.assembly, args.database)
     sam = align(args.database, args.sam, args.fwd_reads, args.rev_reads, args.nproc)
+
+
 
 if __name__ == '__main__':
     import argparse

@@ -6,6 +6,7 @@ Before running anything make sure you
 
 1. Running python3
 2. Have activated the conda environment using:
+
     ``conda activate autometa``
 3. Are in the Autometa directory
 4. If you are running the main autometa.py make sure that the Autometa directory is in your $PATH environmental variable

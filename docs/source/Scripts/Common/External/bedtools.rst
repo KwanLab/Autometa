@@ -16,28 +16,17 @@ While in the Autometa directory</path/to/output/file/prots.out> and with the con
 
 **Returns** : A tab-delimited table with index = contig and column = coverage
 
-**Usage and Command line options:**
+.. rubric:: Usage and command line options
 
-.. code-block:: bash
+.. program-output:: cd ../.. ; python -m autometa.common.external.bedtools -h
+    :shell:
 
-    Usage: Retrieves genome coverage from the input ibam file [-h] [--coverage COVERAGE] 
-                                                              [--force-bed] [--force-cov]
-                                                              ibam lengths bed
+.. rubric:: Functions
 
-    positional arguments:
-    ibam                    </path/to/BAM/alignment.bam>
-    lengths                 </path/to/genome/output/lengths.tsv> tab-delimited format
-                            columns = [contig,length]
-    bed                     </path/to/output/alignment.bed> tab-delimited format
-                            columns = [contig,length]
+.. autosummary::
 
-    optional arguments:
-    -h, --help              show this help message and exit
-    --coverage COVERAGE     </path/to/coverage.tsv>
-    --force-bed             force overwrite `bed` file
-    --force-cov             force overwrite `--coverage` file 
-
-
+    bedtools.genomecov
+    bedtools.parse
 
 .. automodule:: bedtools
     :members:

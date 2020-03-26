@@ -36,10 +36,6 @@ Guide
    api
    license
 
-Acknowledgments
----------------
-Dr.Miller, Mr. Rees, Mr.India, Mr.India_2, Mr.Wolf, Prof.Kwan
-
 Contact
 -------
 For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_ 
@@ -52,6 +48,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
 
 .. _Autometa: https://academic.oup.com/nar/article/47/10/e57/5369936
