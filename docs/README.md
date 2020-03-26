@@ -15,6 +15,7 @@ Installation
 ------------
 
 ```bash
+conda install -c anaconda sphinx
 conda install -c anaconda sphinx_rtd_theme
 conda install -c conda-forge sphinxcontrib-programoutput
 ```
