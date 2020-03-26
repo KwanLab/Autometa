@@ -2,7 +2,17 @@
 Samtools
 ========
 
-Hey sister what you're gonna do??
+.. rubric:: Usage and command line options
+
+.. program-output:: cd ../.. ; python -m autometa.common.external.samtools -h
+    :shell:
+
+.. rubric:: Functions
+
+.. autosummary:: 
+    
+    samtools.run
+    samtools.sort
 
 .. automodule:: samtools
     :members:

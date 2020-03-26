@@ -1,18 +1,14 @@
-# Configuration file for the Sphinx documentation builder.
-#
+# Autometa documentation build configuration file.
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import os
 import sys
+
 from sphinx.ext.autodoc import between
+from datetime import datetime
 
 
 sys.path.insert(0, os.path.abspath('../../'))
@@ -23,24 +19,17 @@ sys.path.insert(0, os.path.abspath('../../autometa/datasets'))
 sys.path.insert(0, os.path.abspath('../../autometa/validation'))
 sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
 
-""" sys.path.insert(0, sys.path.append('../..'))
-sys.path.insert(0, sys.path.append('../autometa'))
-sys.path.insert(0, sys.path.append('../autometa/common'))
-sys.path.insert(0, sys.path.append('../autometa/config'))
-sys.path.insert(0, sys.path.append('../autometa/binning'))
-sys.path.insert(0, sys.path.append('../autometa/datasets'))
-sys.path.insert(0, sys.path.append('../autometa/validation'))
-sys.path.insert(0, sys.path.append('../autometa/common/external'))
-sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
- """
 # -- Project information -----------------------------------------------------
 
 project = 'Autometa'
-copyright = '2020, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
+copyright = (f'2015 - {datetime.now().year}, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
 author = 'Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
 
+# The short X.Y version.
+version = '2.0'
+
 # The full version, including alpha/beta/rc tags
-release = '2.0.0'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,8 +37,16 @@ release = '2.0.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage',
-'sphinx_rtd_theme', 'sphinx.ext.napoleon'] 
+extensions = ['sphinx.ext.autodoc', 
+            'sphinx.ext.coverage',
+            'sphinx_rtd_theme', 
+            'sphinx.ext.napoleon',
+            'sphinx.ext.autosummary',
+            'sphinxcontrib.programoutput'
+               ] 
+
+autodoc_default_flags = ['members']    
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -59,6 +56,17 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# The suffix of source filenames.
+source_suffix = '.rst'
+
+# The encoding of source files.
+source_encoding = 'utf-8-sig'
+
+# The master toctree document.
+master_doc = 'index'
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = 'sphinx'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -74,6 +82,11 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 html_static_path = []
 
+# If not None, a 'Last updated on:' timestamp is inserted at every page
+# bottom, using the given strftime format.
+# The empty string is equivalent to '%b %d, %Y'.
+#
+html_last_updated_fmt = '%b %d, %Y'
 
 #Function to not include the copyright in the autodic extension
 def setup(app):

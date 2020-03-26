@@ -16,27 +16,19 @@ While in the Autometa directory and with the conda environment activated, run:
 
 **Returns** : Nucleotide file (ffn format) and protein file (faa format) containing orfs
 
-**Usage and Command line options:**
+.. rubric:: Usage and command line options
 
-.. code-block:: bash
+.. program-output:: cd ../.. ; python -m autometa.common.external.prodigal -h
+    :shell:
 
-    Usage: Calls ORFs with provided input assembly [-h] [--force] [--cpus CPUS]
-                                                        [--parallel] [--verbose]
-                                                        assembly nucls_out prots_out
+.. rubric:: Functions
 
-    Positional arguments:
-    assembly     </path/to/assembly/input/file>
-    nucls_out    </path/to/output/file/nucls.out>
-    prots_out    </path/to/output/file/prots.out>
-
-    Optional arguments:
-    -h, --help   show this help message and exit
-    --force      force overwrite of ORFs out filepaths
-    --cpus       number of cpus to use
-    --parallel   enable GNU parallel
-    --verbose    add verbosity
-
+.. autosummary::
+   
+    prodigal.contigs_from_headers
+    prodigal.orf_records_from_contigs
+    prodigal.run
+   
 
 .. automodule:: prodigal
     :members:
-    :show-inheritance:
