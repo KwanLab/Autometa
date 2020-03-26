@@ -1,6 +1,24 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 Script containing Metagenome class for general handling of metagenome assembly
 """
 
@@ -12,6 +30,7 @@ import numpy as np
 import pandas as pd
 
 from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio import SeqUtils
 
 from autometa.common import kmers
@@ -35,30 +54,38 @@ class Metagenome:
     Parameters
     ----------
     assembly : str
-        </path/to/assembled/metagenome.fasta>
-    outdir : type
+        </path/to/metagenome/assembly.fasta>
+    outdir : str
         </path/to/output/directory> (the default is None)
-    taxon_method : str
+    nucl_orfs_fpath : str
+        </path/to/assembly.orfs.fna>
+    prot_orfs_fpath : str
+        </path/to/assembly.orfs.faa>
+    taxonomy_fpath : str
+        </path/to/taxonomy.tsv>
+    taxon_method : str, optional
         method to assign taxonomy (the default is 'majority_vote').
         choices=['majority_vote']
+    fwd_reads : list, optional
+        [</path/to/forward_reads.fastq>, ...]
+    rev_reads : list, optional
+        [</path/to/reverse_reads.fastq>, ...]
+    se_reads : list, optional
+        [</path/to/single_end_reads.fastq>, ...]
 
     Attributes
     ----------
-    nucl_orfs_fpath : str
-        Description of attribute `nucl_orfs_fpath`.
-    prot_orfs_fpath : str
-        Description of attribute `prot_orfs_fpath`.
     taxonomy_fname : str
-        Description of attribute `taxonomy_fname`.
-    taxonomy_fpath : str
-        Description of attribute `taxonomy_fpath`.
+        basename of `taxonomy_fpath`
     taxonomy : pd.DataFrame
         index=contig cols=[taxid] may also contain lineage of taxid
     taxonomy_assigned : bool
-        `taxonomy_fpath` exists
+        True if `taxonomy_fpath` exists else False
     orfs_called : bool
-        `nucl_orfs_fpath` and `prot_orfs_fpath` exists
+        True if both `nucl_orfs_fpath` and `prot_orfs_fpath` exist else False
     sequences : list
+        [seq,...]
+    seqrecords : list
         [SeqRecord,...]
     nseqs : int
         Number of sequences in assembly.
@@ -86,10 +113,12 @@ class Metagenome:
     - self.write_ranks()
     """
     def __init__(self, assembly, outdir, nucl_orfs_fpath, prot_orfs_fpath,
-        taxonomy_fpath, fwd_reads=None, rev_reads=None, taxon_method='majority_vote'):
+        taxonomy_fpath, taxon_method='majority_vote', fwd_reads=None,
+        rev_reads=None, se_reads=None):
         self.assembly = os.path.realpath(assembly)
         self.fwd_reads = fwd_reads
         self.rev_reads = rev_reads
+        self.se_reads = se_reads
         self.outdir = outdir
         self.taxon_method = taxon_method
         self.nucl_orfs_fpath = nucl_orfs_fpath
@@ -106,6 +135,11 @@ class Metagenome:
 
     @property
     def sequences(self):
+        with open(self.assembly) as fh:
+            return [seq for title,seq in SimpleFastaParser(fh)]
+
+    @property
+    def seqrecords(self):
         return [seq for seq in SeqIO.parse(self.assembly, 'fasta')]
 
     @property
@@ -114,17 +148,17 @@ class Metagenome:
 
     @property
     def mean_gc(self):
-        return np.mean([SeqUtils.GC(record.seq) for record in self.sequences])
+        return np.mean([SeqUtils.GC(seq) for seq in self.sequences])
 
     @property
     def size(self):
-        return sum(len(record) for record in self.sequences)
+        return sum(len(seq) for seq in self.sequences)
 
     @property
     def largest_seq(self):
         max = float('-inf')
         largest = None
-        for rec in self.sequences:
+        for rec in self.seqrecords:
             if len(rec) > max:
                 largest = rec
                 max = len(rec)
@@ -175,7 +209,7 @@ class Metagenome:
         """
         target_size = self.size * quality_measure
         lengths = []
-        for length in sorted([len(r) for r in self.sequences], reverse=True):
+        for length in sorted([len(seq) for seq in self.sequences], reverse=True):
             lengths.append(length)
             if sum(lengths) > target_size:
                 return length
@@ -244,7 +278,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             if not os.path.exists(gunzipped_fpath):
                 gunzip(self.assembly, gunzipped_fpath)
             self.assembly = gunzipped_fpath
-        records = [seq for seq in self.sequences if len(seq) >= cutoff]
+        records = [seq for seq in self.seqrecords if len(seq) >= cutoff]
         SeqIO.write(records, out, 'fasta')
         return Metagenome(
             assembly=out,
@@ -297,10 +331,10 @@ Taxonomy filepath: {self.taxonomy_fpath}
                 cpus=cpus,
                 parallel=parallel,
             )
-        except OSError as err:
-            logger.exception(err)
         except FileExistsError as err:
             return self.nucl_orfs_fpath, self.prot_orfs_fpath
+        except ChildProcessError as err:
+            logger.exception(err)
         return nucls_fp, prots_fp
 
     def orfs(self, orf_type='prot', cpus=0):
@@ -381,12 +415,13 @@ Taxonomy filepath: {self.taxonomy_fpath}
     @timeit
     def get_coverages(self, out, from_spades=True, **kwargs):
         if from_spades:
-            return coverage.from_spades_names(self.sequences)
+            return coverage.from_spades_names(self.seqrecords)
         return coverage.get(
             fasta=self.assembly,
             out=out,
             fwd_reads=self.fwd_reads,
             rev_reads=self.rev_reads,
+            se_reads=self.se_reads,
             sam=kwargs.get('sam'),
             bam=kwargs.get('bam'),
             lengths=kwargs.get('lengths'),
@@ -399,7 +434,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         Parameters
         ----------
-        force : bool
+        force : bool, optional
             overwrite existing voting method's file (the default is False).
         *args : type
             Description of parameter `*args`.
@@ -412,6 +447,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             Why the exception is raised.
 
         """
+        logger.debug(f'assigning taxonomy via {method}')
         if not self.orfs_called:
             cpus = kwargs.get('cpus',0)
             try:
@@ -445,8 +481,8 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         Returns
         -------
-        type
-            Description of returned object.
+        dict
+            {'bacteria':MAG, ...}
 
         Raises
         -------
@@ -455,6 +491,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         """
         if not self.taxonomy_assigned:
+            logger.info('Assigning taxonomy. This may take a while...')
             self.taxonomy = self.assign_taxonomy(method=self.taxon_method, **kwargs)
         if self.taxonomy.shape[1] <= 2:
             # taxonomy_fp should only contain contig and taxid columns from voting method

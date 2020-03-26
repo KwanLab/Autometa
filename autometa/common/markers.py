@@ -1,6 +1,24 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 Autometa Marker class consisting of various methods to annotate sequences with
 marker sets depending on sequence set taxonomy
 """
@@ -20,35 +38,31 @@ logger = logging.getLogger(__name__)
 
 
 class Markers:
-    """docstring for Autometa Markers class.
+    f"""docstring for Autometa Markers class.
 
     Parameters
     ----------
-    orfs_fpath : type
+    orfs_fpath : str
         Description of parameter `orfs_fpath`.
-    kingdom : type
+    kingdom : str, optional
         Description of parameter `kingdom` (the default is 'bacteria').
-    dbdir : type
-        Description of parameter `dbdir` (the default is MARKERS_DIR).
+    dbdir : str, optional
+        Description of parameter `dbdir` (the default is {MARKERS_DIR}).
 
     Attributes
     ----------
-    hmmdb : type
+    hmmdb : str
         Description of attribute `hmmdb`.
-    cutoffs : type
+    cutoffs : str
         Description of attribute `cutoffs`.
-    markers_fn : type
-        Description of attribute `markers_fn`.
-    markers_fp : type
-        Description of attribute `markers_fp`.
-    hmmscan_fn : type
-        Description of attribute `hmmscan_fn`.
-    hmmscan_fp : type
-        Description of attribute `hmmscan_fp`.
-    orfs_fpath
-    kingdom
-    dbdir
-
+    hmmscan_fn : str
+        <`kingdom`.hmmscan.tsv>
+    hmmscan_fp : str
+        </path/to/`kingdom`.hmmscan.tsv>
+    markers_fn : str
+        <`kingdom`.markers.tsv>
+    markers_fp : str
+        </path/to/`kingdom`.markers.tsv>
     """
     def __init__(self, orfs_fpath, kingdom='bacteria', dbdir=MARKERS_DIR):
         self.orfs_fpath = os.path.realpath(orfs_fpath)
@@ -56,10 +70,10 @@ class Markers:
         self.dbdir = dbdir
         self.hmmdb = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.hmm')
         self.cutoffs = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
-        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
-        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
         self.hmmscan_fn = '.'.join([self.kingdom,'hmmscan.tsv'])
         self.hmmscan_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.hmmscan_fn)
+        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
+        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
 
     @property
     def searched(self):
@@ -145,9 +159,10 @@ class Markers:
         else:
             params = ['wide','long','list','counts']
             err_msg = f'{format} is not a supported format.\n\tSupported formats: {params}'
+            # TODO: Write Marker specific AutometaException
             raise ValueError(err_msg)
 
-    def get_markers(self, format='wide', **kwargs):
+    def get(self, format='wide', **kwargs):
         """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
         Parameters
@@ -174,14 +189,22 @@ class Markers:
             Why the exception is raised.
         """
         if not self.searched:
-            hmmer.hmmscan(self.orfs_fpath, self.hmmdb, self.hmmscan_fp, **kwargs)
+            hmmer.hmmscan(
+                orfs=self.orfs_fpath,
+                hmmdb=self.hmmdb,
+                outfpath=self.hmmscan_fp,
+                **kwargs)
         if not self.found:
-            hmmer.filter_markers(self.hmmscan_fp, self.markers_fp, self.cutoffs)
+            hmmer.filter_markers(
+                infpath=self.hmmscan_fp,
+                outfpath=self.markers_fp,
+                cutoffs=self.cutoffs,
+                orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
 def main(args):
     markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
-    markers.get_markers()
+    markers.get()
 
 if __name__ == '__main__':
     import argparse

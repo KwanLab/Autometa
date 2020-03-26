@@ -1,5 +1,23 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 Modified majority vote algorithm (Autometa V1.0)
 """
 
@@ -219,10 +237,8 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         <path/to/output/dir>
     votes_fname : str
         <votes.tsv filename>
-    lca_fname : str
-        <lca.tsv filename> (the default is None).
-        If None, filename will be generated from fasta.
-        I.e. </path/to/prot/orfs.faa> -> </path/to/`outdir`/orfs.lca.tsv
+    lca_fname : str, optional
+        <lca.tsv filename> (the default is </path/to/`outdir`/`fasta`.lca.tsv).
     **kwargs : dict
         Further parameters that may be passed along to LCA, LCA.blast2lca and
         rank_taxids as dicts of key-value pairs. Note: Types must match.
@@ -253,7 +269,7 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         outdir=outdir,
         usepickle=kwargs.get('usepickle',True),
         verbose=kwargs.get('verbose',True),
-        cpus=kwargs.get('cpus',)
+        cpus=kwargs.get('cpus',0)
     )
     if not lca_fname:
         fname, ext = os.path.splitext(os.path.basename(fasta))
@@ -267,7 +283,7 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         force=kwargs.get('force',False)
     )
     # retrieve lca taxids for each contig
-    classifications = lca.parse_lca(lca_fpath)
+    classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=fasta)
     # Vote for majority lca taxid from contig lca taxids
     voted_taxids = rank_taxids(
         ctg_lcas=classifications,
@@ -312,7 +328,6 @@ def write_votes(results, outfpath):
     return outfpath
 
 def main(args):
-
     results_fpath = majority_vote(
         fasta=args.fasta,
         ncbi_dir=args.dbdir,

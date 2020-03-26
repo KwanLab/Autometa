@@ -1,5 +1,23 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+
 Determines the Lowest Common Ancestor given a tab-delimited BLAST table,fasta file, or iterable of SeqRecords
 
 Assumes BLAST outfmt=6
@@ -18,6 +36,7 @@ from autometa.taxonomy.ncbi import NCBI
 from autometa.common.utilities import make_pickle, unpickle, file_length
 from autometa.common.external.diamond import DiamondResult
 from autometa.common.external import diamond
+from autometa.common.external import prodigal
 
 
 logger = logging.getLogger(__name__)
@@ -259,7 +278,7 @@ class LCA(NCBI):
         """
         lcas = {}
         n_qseqids = len(hits)
-        desc = f'Determining {n_qseqids} qseqids\' lowest common ancestors'
+        desc = f'Determining {n_qseqids:,} qseqids\' lowest common ancestors'
         # not_found = ''
         for qseqid,hit in tqdm(hits.items(), disable=self.disable, total=n_qseqids, desc=desc, leave=False):
             taxids = set()
@@ -312,7 +331,7 @@ class LCA(NCBI):
             `outfpath`
         """
         if self.verbose:
-            logger.info(f'Running BLAST to LCA for {fasta}')
+            logger.debug(f'Running BLAST to LCA for {fasta}')
         if os.path.exists(outfpath) and not force:
             logger.warning(f'FileAlreadyExists {outfpath}')
             return outfpath
@@ -371,7 +390,7 @@ class LCA(NCBI):
             outfile.write(outlines)
         return outfpath
 
-    def parse_lca(self, lca_fpath):
+    def parse(self, lca_fpath, orfs_fpath):
         """Retrieve and construct contig dictionary from provided `lca_fpath`.
 
         Parameters
@@ -379,6 +398,10 @@ class LCA(NCBI):
         lca_fpath : str
             </path/to/lcas.tsv>
             tab-delimited ordered columns: qseqid, name, rank, lca_taxid
+
+        orfs_fpath : str
+            </path/to/prodigal/called/orfs.fasta>
+            Note: These ORFs should correspond to the ORFs provided in the BLAST table.
 
         Returns
         -------
@@ -389,11 +412,18 @@ class LCA(NCBI):
         -------
         FileNotFoundError
             `lca_fpath` does not exist
+        FileNotFoundError
+            `orfs_fpath` does not exist
         """
         logger.debug(f'Parsing LCA table: {lca_fpath}')
         if not os.path.exists(lca_fpath):
             raise FileNotFoundError(lca_fpath)
             # logger.exception(FileNotFoundError)
+        if orfs_fpath and not os.path.exists(orfs_fpath):
+            raise FileNotFoundError(orfs_fpath)
+
+        translations = prodigal.contigs_from_headers(orfs_fpath)
+
         fname = os.path.basename(lca_fpath)
         n_lines = file_length(lca_fpath) if self.verbose else None
         disable = False if self.verbose else True
@@ -401,9 +431,9 @@ class LCA(NCBI):
         with open(lca_fpath) as fh:
             header = fh.readline()
             for line in tqdm(fh, total=n_lines, disable=disable, desc=f'Parsing {fname}', leave=False):
-                orf, name, rank, taxid = line.strip().split('\t')
-                contig, orf_num = orf.rsplit('_', 1)
+                orf_id, name, rank, taxid = line.strip().split('\t')
                 taxid = int(taxid)
+                contig = translations.get(orf_id)
                 if taxid != 1:
                     while rank not in set(NCBI.CANONICAL_RANKS):
                         taxid = self.parent(taxid)
