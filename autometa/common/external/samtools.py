@@ -30,7 +30,6 @@ import multiprocessing as mp
 
 logger = logging.getLogger(__name__)
 
-
 def sort(sam, bam, nproc=mp.cpu_count()):
     """
     Views then sorts sam file by leftmost coordinates and outputs to bam.
@@ -48,29 +47,31 @@ def sort(sam, bam, nproc=mp.cpu_count()):
     ------
     TypeError
         nproc must be an integer greater than zero
+    FileNotFoundError
+        Specified path is incorrect or the file is empty        
     ChildProcessError
         Samtools did not run successfully, returns the return code from subprocessing call
     """
 
     if type(nproc) is not int or nproc <= 0:
         raise TypeError(f'nproc must be an integer greater than zero! Given: {nproc}')
+    if not os.path.exists(sam) or os.stat(sam).st_size == 0:
+        raise FileNotFoundError(f'The specified path: {sam} is either incorrect or the file is empty')
     samtools_out_dir = os.path.dirname(os.path.abspath(bam))
-    samtools_err = os.path.join(samtools_out_dir, 'samtools.err')
-    samtools_out = os.path.join(samtools_out_dir, 'samtools.out')
-    outfile = os.path.basename(bam)
-    samtools_outfile = os.path.join(samtools_out_dir, outfile)
-    with tempfile.TemporaryDirectory(suffix = None, prefix = 'samtools', dir = samtools_out_dir) as tempdir:    
-        temp_outfile = os.path.join(tempdir, outfile)
-        cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_outfile}'
+    err = os.path.join(samtools_out_dir, 'samtools.err')
+    out = os.path.join(samtools_out_dir, 'samtools.out')
+    with tempfile.TemporaryDirectory() as tempdir:    
+        temp_bam = os.path.join(tempdir, os.path.basename(bam))
+        cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_bam}'
         logger.debug(f'cmd: {cmd}')
-        with open(samtools_out, 'w') as stdout, open(samtools_err, 'w') as stderr:
+        with open(out, 'w') as stdout, open(err, 'w') as stderr:
             retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-            if retcode != 0:
-                raise ChildProcessError(f'Sort failed, retcode: {retcode}')
-            else:
-                shutil.move(temp_outfile, samtools_outfile)
-        os.remove(samtools_err)
-        os.remove(samtools_out)
+        if retcode != 0:
+            raise ChildProcessError(f'Sort failed, retcode: {retcode}')
+        else:
+            shutil.move(temp_bam, bam)
+        os.remove(err)
+        os.remove(out)
           
 def main(args):
     sort(args.sam, args.bam, args.nproc)
