@@ -7,11 +7,10 @@ Scripts
    :caption: Table of Contents
    :glob:
 
-   main
+   autometa
    Binning/binning
    Common/common
    Config/config
    datasets
    Taxonomy/taxonomy
    Validation/validation
-

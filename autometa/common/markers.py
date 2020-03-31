@@ -20,6 +20,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
+
 Autometa Marker class consisting of various methods to annotate sequences with
 marker sets depending on sequence set taxonomy
 """

@@ -3,7 +3,7 @@ Install
 =======
 
 
-Currently installation is supported by constructing a conda_ environment. You need to be running 
+Currently installation is supported by constructing a conda_ environment. You need to be running
 a conda_ package (eg. miniconda, anaconda, etc) to install autometa.
 
 Conda environment creation:
@@ -23,11 +23,9 @@ Conda environment creation:
         hmmer \
         prodigal \
         diamond \
-        ipython \
         ndcctools \
         parallel \
         requests \
-        hdbscan \
         umap-learn \
         && conda clean --all --yes
 

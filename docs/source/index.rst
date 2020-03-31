@@ -4,10 +4,10 @@ Autometa documentation
 
 **Autometa: automated extraction of microbial genomes from individual shotgun metagenomes**
 
-An automated binning pipeline for single metagenomes, in particular 
-host-associated and highly complex ones. Autometa is copyright 2020 
-Ian J. Miller, Evan R. Rees, Izaak Miller and Jason C. Kwan, and is 
-released under the GNU Affero General Public License v3 (see :ref:`License`). 
+An automated binning pipeline for single metagenomes, in particular
+host-associated and highly complex ones. Autometa is copyright 2020
+Ian J. Miller, Evan R. Rees, Izaak Miller and Jason C. Kwan, and is
+released under the GNU Affero General Public License v3 (see :ref:`License`).
 If you find Autometa useful to your work, please cite our Autometa_ paper.
 
 
@@ -23,10 +23,8 @@ Guide
 
 .. toctree::
    :maxdepth: 1
-   :numbered:
-   :caption: Table of Contents
    :glob:
-      
+
    install
    databases
    running-autometa
@@ -38,8 +36,8 @@ Guide
 
 Contact
 -------
-For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_ 
-at jason.kwan@wisc.edu 
+For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
+at jason.kwan@wisc.edu
 
 
 Indices and tables

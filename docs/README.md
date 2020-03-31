@@ -16,14 +16,17 @@ Installation
 Install it in the conda environment
 
 ```bash
-conda install -c anaconda sphinx
-conda install -c anaconda sphinx_rtd_theme
-conda install -c conda-forge sphinxcontrib-programoutput
+conda install -c conda-forge sphinxcontrib-programoutput sphinx sphinx_rtd_theme
 ```
 
 Running
 -------
-```make html```
+
+```bash
+make clean html
+make html
+
+```
 
 Organization
 ------------
@@ -36,7 +39,7 @@ How to do the documentation:
 
 https://github.com/matplotlib/matplotlib/blob/master/doc/devel/documenting_mpl.rst
 
-This links to Matplotlib how to buikd documentation page.
+This links to Matplotlib how to build documentation page.
 
 Read old issues before submitting new ones
 Guidelines
