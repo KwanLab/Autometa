@@ -7,5 +7,3 @@ Main
    :caption: Table of Contents
 
    autometa
-
-.. - :ref:`autometa.py`

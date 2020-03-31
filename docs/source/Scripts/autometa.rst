@@ -1,10 +1,11 @@
-autometa.py
+===========
+run_autometa.py
 ===========
 
 .. note:: 
     Autometa is package and cannot be directly executed.
 
-.. automodule:: autometa
+.. automodule:: run_autometa
     :members:
 
 Main pipeline script calls
