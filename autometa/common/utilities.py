@@ -436,7 +436,7 @@ def timeit(func):
         obj = func(*args, **kwds)
         end = time.time()
         time_taken = end - start
-        logger.info(f'{func.__name__} : {time_taken:.2f} seconds')
+        logger.info(f'{func.__name__} took {time_taken:.2f} seconds')
         # runlogger.info(f'func={func.__name__} : {time_taken} seconds')
         return obj
     return wrapper

@@ -93,12 +93,12 @@ def init_logger(fpath=None, level=logging.INFO):
 
 def main(args):
     # Setup logger
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
-    log_fpath = args.log if args.log else f'{timestamp}_autometa.log'
+    # timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
+    # log_fpath = args.log if args.log else f'{timestamp}_autometa.log'
     if args.debug:
-        logger = init_logger(fpath=log_fpath, level=logging.DEBUG)
+        logger = init_logger(fpath=args.log, level=logging.DEBUG)
     else:
-        logger = init_logger(fpath=log_fpath)
+        logger = init_logger(fpath=args.log)
     # Configure AutometaUser
     # TODO: master from WorkQueue is AutometaUser
     user = AutometaUser(dryrun=args.check_dependencies, nproc=args.cpus)
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     import argparse
     import time
     cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser('Main script to run Autometa')
+    parser = argparse.ArgumentParser(description='Main script to run Autometa pipeline.')
     parser.add_argument('config',
         help='</path/to/metagenome.config>',
         nargs='*')

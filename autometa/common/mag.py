@@ -109,7 +109,7 @@ class MAG:
             return True
         return False
 
-    def get_orfs(self, orf_type='prot', prodigal_fpath=None):
+    def get_orfs(self, orf_type='prot'):
         """Retrieve ORFs corresponding to MAG.
 
         Parameters
@@ -117,8 +117,6 @@ class MAG:
         orf_type : str
             Type of ORF to retrieve (the default is 'prot'). Amino acid or nucleotide
             choices = ['prot','nucl']
-        prodigal_fpath : str
-            </path/to/prodigal/annotated/orfs.fasta (the default is None).
 
         Returns
         -------
@@ -135,15 +133,12 @@ class MAG:
         orfs_fpath = orfs_fpaths.get(orf_type, 'prot')
         if not self.prepared(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
-        if prodigal_fpath:
-            return prodigal.orf_records_from_contigs(
-                contigs=self.contigs,
-                fpath=prodigal_fpath)
-        return [rec for rec in SeqIO.parse(orfs_fpath, 'fasta')
-            if rec.id.rsplit('_',1)[0] in self.contigs]
+        return prodigal.orf_records_from_contigs(
+            contigs=self.contigs,
+            fpath=self.prot_orfs_fpath)
 
-    def write_orfs(self, fpath, orf_type='prot', prodigal_fpath=None):
-        records = self.get_orfs(orf_type, prodigal_fpath)
+    def write_orfs(self, fpath, orf_type='prot'):
+        records = self.get_orfs(orf_type=orf_type)
         SeqIO.write(records, fpath, 'fasta')
 
     def get_seqs(self, all=False):
@@ -243,6 +238,7 @@ ________________________
                     left_index=True,
                     right_index=True)
             master_df = self.subset_df(master_df)
+            master_df = master_df.convert_dtypes()
             use_taxonomy = True if 'taxid' in master_df else False
             markers = self.markers(kwargs.get('domain','bacteria'))
             logger.info(f'Binning {kwargs.get("domain")} with {method}')
@@ -259,22 +255,19 @@ ________________________
         raise NotImplementedError(f'{method} not yet implemented')
 
     @timeit
-    def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False, orf_caller='prodigal'):
-        """Retrieve Markers dataframe using orfs called from `orf_caller` and
+    def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False):
+        f"""Retrieve Markers dataframe using orfs called from `orf_caller` and
         annotated belonging to provided `kingdom`.
 
         Parameters
         ----------
-        kingdom : str
+        kingdom : str, optional
             Domain specific markers to retrieve (the default is 'bacteria').
-        dbdir : str
-            </path/to/markers/database/directory> (the default is MARKERS_DIR).
+        dbdir : str, optional
+            </path/to/markers/database/directory> (the default is {MARKERS_DIR}).
             Should contain pressed hmms and cutoffs table.
-        force : bool
-            Will overwrite existing marker annotations (the default is False).
-        orf_caller : str
-            Will use `orf_caller` to connect ORFs with contigs and contigs with
-            their respective ORFs (the default is 'prodigal').
+        force : bool, optional
+            Will overwrite existing marker annotations (the default is {force}).
 
         Returns
         -------
@@ -291,11 +284,9 @@ ________________________
         logger.debug(f'Retrieving markers for {kingdom} kingdom')
         orfs_fp = os.path.join(self.outdir, f'{kingdom.lower()}.orfs.faa')
         if (not os.path.exists(orfs_fp)) or (os.path.exists(orfs_fp) and force):
-            if orf_caller == 'prodigal':
-                self.write_orfs(orfs_fp, prodigal_fpath=self.prot_orfs_fpath)
-            else:
-                self.write_orfs(orfs_fp)
-        return Markers(orfs_fp, kingdom=kingdom, dbdir=dbdir).get_markers()
+            self.write_orfs(orfs_fp)
+        markers = Markers(orfs_fp, kingdom=kingdom, dbdir=dbdir)
+        return markers.get()
 
     def subset_df(self, df):
         if type(df) not in [pd.DataFrame, pd.Series]:

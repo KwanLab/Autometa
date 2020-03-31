@@ -51,7 +51,7 @@ EXECUTABLES = [
 def which(program):
     """Finds the full path for an executable and checks read permissions exist.
 
-    See: https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+    See: https://stackoverflow.com/a/377028
 
     Returns:
         The path if it was valid or None if not
@@ -86,17 +86,12 @@ def which(program):
     return ''
 
 def find_executables():
-    """Short summary.
+    """Retrieves executable file paths by looking in Autometa dependent executables.
 
     Returns
     -------
-    type
-        Description of returned object.
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
+    dict
+        {executable:</path/to/executable>, ...}
 
     """
     return {exe:which(exe) for exe in EXECUTABLES}
@@ -108,6 +103,7 @@ def diamond():
     -------
     str
         version of diamond
+
     """
     exe = which('diamond')
     proc = subprocess.Popen(
@@ -249,8 +245,9 @@ def get_versions(program=None):
 
     Returns
     -------
-    dict
-        {program:version, ...}
+    dict or str
+        if program is None: dict - {program:version, ...}
+        if program: str - version
 
     Raises
     -------
@@ -276,7 +273,7 @@ def get_versions(program=None):
             raise ValueError(f'program is not string. given:{type(program)}')
         if program not in dispatcher:
             raise KeyError(f'{program} not in executables')
-        return {program:dispatcher[program]()}
+        return dispatcher[program]()
     versions = {}
     executables = find_executables()
     for exe,found in executables.items():
@@ -324,16 +321,16 @@ def configure(config=DEFAULT_CONFIG):
             satisfied = False
             logger.warning(f'executable not found: {executable}')
         elif not config.has_option('environ', executable):
-            logger.debug(f'Updated executable {executable}: {found}')
+            logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         user_executable = config.get('environ', executable)
         if not which(user_executable):
-            logger.debug(f'Updated executable {executable}: {found}')
+            logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         else:
-            version = get_versions(user_executable).get(user_executable)
+            version = get_versions(user_executable)
             config.set('versions', user_executable, version)
     return config, satisfied
 

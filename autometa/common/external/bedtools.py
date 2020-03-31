@@ -32,7 +32,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def genomecov(ibam, lengths, out):
+def genomecov(ibam, lengths, out, force=False):
     """Run bedtools genomecov with input `ibam` and `lengths` to retrieve
     metagenome coverages.
 
@@ -43,7 +43,7 @@ def genomecov(ibam, lengths, out):
     lengths : str
         </path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]
     out : str
-        </path/to/out.bed>
+        </path/to/alignment.bed>
         The bedtools genomecov output is a tab-delimited file with the following columns:
         1. Chromosome
         2. Depth of coverage
@@ -51,29 +51,33 @@ def genomecov(ibam, lengths, out):
         4. Size of chromosome
         5. Fraction of bases on that chromosome with that coverage
         See also: http://bedtools.readthedocs.org/en/latest/content/tools/genomecov.html
+    force : bool
+        force overwrite of `out` if it already exists (default is False).
 
     Returns
     -------
-    type
-        Description of returned object.
+    str
+        </path/to/alignment.bed>
 
     Raises
     -------
     FileExistsError
-        `out` file already exists
+        `out` file already exists and force is False
     OSError
         Why the exception is raised.
 
     """
     cmd = f'bedtools genomecov -ibam {ibam} -g {lengths}'
-    if os.path.exists(out):
-        raise FileExistsError(out)
+    if os.path.exists(out) and not force:
+        logger.debug(f'{out} already exists. skipping...')
+        return out
     with open(os.devnull,'w') as stderr, open(out,'w') as stdout:
         retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
     if retcode or not os.path.exists(out) or os.stat(out).st_size == 0:
-        raise OSError(f'bedtools failed: {cmd}')
+        raise ChildProcessError(f'bedtools failed: {cmd}')
+    return out
 
-def parse(bed, out=None):
+def parse(bed, out=None, force=False):
     """Calculate coverages from bed file.
 
     Parameters
@@ -82,6 +86,8 @@ def parse(bed, out=None):
         </path/to/file.bed>
     out : str
         if provided will write to `out`. I.e. </path/to/coverage.tsv>
+    force : bool
+        force overwrite of `out` if it already exists (default is False).
 
     Returns
     -------
@@ -90,32 +96,37 @@ def parse(bed, out=None):
 
     Raises
     -------
+    ValueError
+        `out` incorrectly formatted to be read as pandas DataFrame.
     FileNotFoundError
         `bed` does not exist
 
     """
-    if out and os.path.exists(out):
-        cols = ['contig','coverage']
-        return pd.read_csv(out, sep='\t', usecols=cols, index_col='contig')
+    if out and os.path.exists(out) and not os.stat(out).st_size == 0:
+        try:
+            cols = ['contig','coverage']
+            return pd.read_csv(out, sep='\t', usecols=cols, index_col='contig')
+        except ValueError as err:
+            raise ValueError(f'InvalidTableFormat: {out}')
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
-    names = ['contig','depth','bases','length','breadth']
+    names = ['contig','depth','bases','length','depth_fraction']
     df = pd.read_csv(bed, sep='\t', names=names, index_col='contig')
     criterion1 = df.depth != 0
     criterion2 = df.index != 'genome'
     df = df[criterion1 & criterion2]
-    df = df.assign(total_breadth=lambda x: x.depth * x.bases)
-    dff = df.groupby('contig')['total_breadth', 'bases'].sum()
-    dff = dff.assign(coverage=lambda x: x.total_breadth/x.bases)
-    if out:
+    df = df.assign(depth_product=lambda x: x.depth * x.bases)
+    dff = df.groupby('contig')['depth_product', 'bases'].sum()
+    dff = dff.assign(coverage=lambda x: x.depth_product/x.bases)
+    if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep='\t', index=True, header=True)
         logger.debug(f'{out} written')
     logger.debug(f'{os.path.basename(out)} shape: {dff.shape}')
-    return dff['coverage']
+    return dff[['coverage']]
 
 def main(args):
-    genomecov(ibam=args.ibam, lengths=args.lengths, out=args.bed)
-    df = parse(bed=args.bed, out=args.coverage)
+    bed = genomecov(ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed)
+    df = parse(bed=bed, out=args.coverage, force=args.force_cov)
 
 if __name__ == '__main__':
     import argparse
@@ -131,5 +142,9 @@ if __name__ == '__main__':
     parser.add_argument('bed',
         help='</path/to/alignment.bed> tab-delimited cols=[contig,length]')
     parser.add_argument('--coverage', help='</path/to/coverage.tsv>')
+    parser.add_argument('--force-bed', help='force overwrite `bed`',
+        action='store_true',default=False)
+    parser.add_argument('--force-cov', help='force overwrite `--coverage`',
+        action='store_true',default=False)
     args = parser.parse_args()
     main(args)

@@ -30,6 +30,7 @@ import shutil
 
 from glob import glob
 from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 
 from autometa.config.environ import get_versions
 
@@ -64,7 +65,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     -------
     FileExistsError
         `nucls_out` or `prots_out` already exists
-    OSError
+    ChildProcessError
         Prodigal Failed
     """
     if not os.path.exists(assembly):
@@ -158,8 +159,14 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         logger.warning(f'Args:{cmd} ReturnCode:{returncode}')
         # COMBAK: Check all possible return codes for GNU parallel
     for fp in [nucls_out, prots_out]:
-        if not os.path.exists(fp):
-            raise OSError(f'{fp} not written')
+        if not os.path.exists(fp) or os.stat(fp).st_size == 0:
+            raise ChildProcessError(f'{fp} not written')
+        try:
+            with open(fp) as fh:
+                for _ in SimpleFastaParser(fh):
+                    pass
+        except (IOError, ValueError):
+            raise IOError(f'InvalidFileFormat: {fp}')
     return nucls_out, prots_out
 
 def contigs_from_headers(fpath):
@@ -188,7 +195,7 @@ def contigs_from_headers(fpath):
         Why the exception is raised.
 
     """
-    version = get_versions('prodigal').get('prodigal')
+    version = get_versions('prodigal')
     if version.count('.') >= 2:
         version = float('.'.join(version.split('.')[:2]))
     else:
@@ -225,7 +232,7 @@ def orf_records_from_contigs(contigs, fpath):
         Why the exception is raised.
 
     """
-    version = get_versions('prodigal').get('prodigal')
+    version = get_versions('prodigal')
     if version.count('.') >= 2:
         version = float('.'.join(version.split('.')[:2]))
     else:

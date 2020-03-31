@@ -90,7 +90,7 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Concise Functional Description of Script')
+    parser = argparse.ArgumentParser(description='Concise Functional Description of Script')
     parser.add_argument('positional',help='<help text of positional arg>')
     parser.add_argument('--optional',help='<help text of optional arg>')
     parser.add_argument(

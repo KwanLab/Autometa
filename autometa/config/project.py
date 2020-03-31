@@ -76,6 +76,9 @@ class Project:
             Why the exception is raised.
 
         """
+        # I.e. no metagenomes have been added to project yet.
+        if not self.metagenomes:
+            return 1
         max_num = max(self.metagenomes)
         if max_num == self.n_metagenomes:
             return self.n_metagenomes + 1
