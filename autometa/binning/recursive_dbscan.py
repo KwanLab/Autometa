@@ -4,6 +4,11 @@
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
+"""
+COPYRIGHT
+Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
 This file is part of Autometa.
 
 Autometa is free software: you can redistribute it and/or modify
