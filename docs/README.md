@@ -13,11 +13,17 @@ What files to install and how to run
 
 Installation
 ------------
+Install it in the conda environment
 
 ```bash
+conda install -c anaconda sphinx
 conda install -c anaconda sphinx_rtd_theme
 conda install -c conda-forge sphinxcontrib-programoutput
 ```
+
+Running
+-------
+```make html```
 
 Organization
 ------------
