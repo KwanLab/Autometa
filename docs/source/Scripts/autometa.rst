@@ -1,10 +1,11 @@
 autometa.py
 ===========
 
-If you are seeing this that mean rst is working
-the world is in a pandemic now, can metagenomeics save us????
+.. note:: 
+    Autometa is package and cannot be directly executed.
 
-Year 2020: TELEWORKING REVOLUTION
+.. automodule:: autometa
+    :members:
 
 Main pipeline script calls
     ``autometa.py </path/to/metagenome.config>``

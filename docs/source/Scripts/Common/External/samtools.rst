@@ -1,6 +1,6 @@
-========
-Samtools
-========
+===========
+samtools.py
+===========
 
 .. rubric:: Usage and command line options
 

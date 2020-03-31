@@ -1,6 +1,6 @@
-======
-Bowtie
-======
+=========
+bowtie.py
+=========
 
 .. rubric:: Usage adn command line options
 
