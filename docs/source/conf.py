@@ -10,7 +10,7 @@ import sys
 from sphinx.ext.autodoc import between
 from datetime import datetime
 
-sys.path.insert(0, os.path.abspath('../'))
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../autometa/common'))
