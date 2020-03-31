@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,8 +19,9 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
-Construct contig coverage table given an input assembly and reads or alignments.
+Autometa Coverage
 """
 
 
@@ -86,29 +88,24 @@ def make_length_table(fasta, out):
 
 def get(fasta, out, fwd_reads=None, rev_reads=None, se_reads=None, sam=None,
     bam=None, lengths=None, bed=None, nproc=1):
-    """Get coverages for assembly `fasta` file using provided files:
+    """Get coverages for assembly `fasta` file using provided files.
+    Either: `fwd_reads` and `rev_reads` and/or `se_reads` or,`sam`, or `bam`, or `bed`.
 
-    Either:
-        `fwd_reads` and `rev_reads` and/or `se_reads`
-    or:
-        `sam`
-    or:
-        `bam`
-    or:
-        `bed`
+    Notes
+    -----
+        Will begin coverage calculation based on files provided checking in the
+        following order:
 
-    Will begin coverage calculation based on files provided checking in the
-    following order:
-        1. `bed`
-        2. `bam`
-        3. `sam`
-        4. `fwd_reads` and `rev_reads` and `se_reads`
+        #. `bed`
+        #. `bam`
+        #. `sam`
+        #. `fwd_reads` and `rev_reads` and `se_reads`
 
-    Event sequence to calculate contig coverages:
-    1. align paired-end reads to generate alignment.sam
-    2. sort samfile to generate alignment.bam
-    3. calculate assembly coverages to generate alignment.bed
-    4. calculate contig coverages to generate coverage.tsv
+        Event sequence to calculate contig coverages:
+        #. align paired-end reads to generate alignment.sam
+        #. sort samfile to generate alignment.bam
+        #. calculate assembly coverages to generate alignment.bed
+        #. calculate contig coverages to generate coverage.tsv
 
 
     Parameters

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,6 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 Cluster contigs recursively searching for bins with highest completeness and purity.
 """
@@ -238,8 +240,7 @@ def get_clusters(master_df, markers_df, domain='bacteria', completeness=20., pur
     ----------
     master_df : pd.DataFrame
         index=contig,
-        cols=
-            embedded-kmers are cols 'x','y' and 'z'
+        cols=['x','y','coverage']
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
     domain : str
@@ -304,10 +305,9 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     ----------
     master : pd.DataFrame
         index=contig,
-        cols=
-            embedded-kmers are cols 'x','y' and 'z'
-            taxa cols should be present if `taxonomy` is True.
-            i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
+        cols=['x','y']
+        taxa cols should be present if `taxonomy` is True.
+        i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
     domain : str
