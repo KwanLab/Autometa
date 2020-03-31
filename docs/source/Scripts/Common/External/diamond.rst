@@ -1,6 +1,6 @@
-========
-Diamond
-========
+==========
+diamond.py
+==========
 
 File containing class and functions related to running diamond on metagenome sequences
 

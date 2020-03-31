@@ -10,13 +10,15 @@ import sys
 from sphinx.ext.autodoc import between
 from datetime import datetime
 
-
+sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../autometa/common'))
 sys.path.insert(0, os.path.abspath('../../autometa/config'))
 sys.path.insert(0, os.path.abspath('../../autometa/binning'))
 sys.path.insert(0, os.path.abspath('../../autometa/datasets'))
 sys.path.insert(0, os.path.abspath('../../autometa/validation'))
+sys.path.insert(0, os.path.abspath('../../autometa/taxonomy'))
 sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
 
 # -- Project information -----------------------------------------------------

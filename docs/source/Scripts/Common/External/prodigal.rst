@@ -1,6 +1,6 @@
-========
-Prodigal
-========
+===========
+prodigal.py
+===========
 
 File containing functions to retrieve orfs from provided assembly using prodigal.
 

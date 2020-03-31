@@ -19,7 +19,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
-Description of DBSCAN works
+Cluster contigs recursively searching for bins with highest completeness and purity.
 """
 
 import logging
