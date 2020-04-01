@@ -211,7 +211,6 @@ if __name__ == '__main__':
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(description="""
     Contains Project class used to manipulate user's Project.
-
     main logs status of project.
     """)
     parser.add_argument('config',help='</path/to/project.config>')

@@ -351,8 +351,9 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
 
     Notes
     -----
-        `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
-        `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
+
+        * `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
+        * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
 
     Parameters
     ----------

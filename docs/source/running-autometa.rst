@@ -2,8 +2,28 @@
 Running Autometa
 ================
 
+
 Before running anything make sure you have activated the conda environment using
- ``conda activate autometa`` and are in the Autometa directory.
+
+``conda activate autometa`` and are in the Autometa directory.
+
+See the install page for details on setting up your conda environment.
+
+
+Testing Autometa
+================
+
+.. code-block:: shell
+
+    # Check dependencies to see if Autometa environment is appropriately configured
+    python autometa.py --check-dependencies
+
+    # If any of the checks return False, you can check which failed using
+    python autometa.py --check-dependencies --debug
+
+
+Once you have resolved the dependencies and your checks are returning ``True``, you
+can move on to running the pipeline.
 
 Running modules
 ===============
@@ -22,7 +42,6 @@ Many of the Autometa functions may be run standalone as well. It is same as impo
 function.
 
 .. code-block:: python
-    :linenos:
 
     from autometa.common.external import samtools
 
@@ -37,7 +56,7 @@ We recommend using MetaSPAdes (part of the SPAdes_ package) after removing Illum
 adaptors with Trimmomatic_.
 
 Note that if you use SPAdes or something else that names contigs like
-this: `` NODE_235_length_161117_cov_116.709`` then Autometa can use the coverage
+this: ``NODE_235_length_161117_cov_116.709`` then Autometa can use the coverage
 information in the contig names. If you have used another assembler, then
 you first have to make a coverage table.
 
@@ -47,8 +66,39 @@ Fortunately, Autometa can construct this table for you with: ``python -m automet
 Metagenome Job Submission(s)
 ============================
 
-An Autometa metagenome job submission file is provided in the `projects/tests` directory.
-You may also find it `here <https://github.com/WiscEvan/Autometa/blob/dev/tests/metagenome.config>`_.
+An Autometa metagenome job submission file is provided in the `tests` directory.
+You may find it here: `Autometa/tests/metagenome.config <https://github.com/KwanLab/Autometa/blob/dev/tests/metagenome.config>`_.
+
+If you are not providing a file, under the ``[files]`` section, leave the value as None,
+and Autometa will write update this value with the file it will generate.
+
+The required value(s) for running the full pipeline are ``metagenome`` and at least one file
+for calculating contig coverage. Note, if you have assembled your metagenome
+with SPAdes, you can specify ``cov_from_spades = True`` in the ``[parameters]``
+section and *only* your metagenome assembly is required.
+
+Otherwise, you will need to provide *at least one* file in the metagenome.config ``[files]`` section:
+
+.. code-block:: python
+
+    [files]
+    ...
+    # Multiple Reads files of respective format may be provided using a comma-delimiter
+    # Paired-end forward reads
+    fwd_reads = None
+    # Paired-end reverse reads
+    rev_reads = None
+    # Single-end reads
+    se_reads = None
+    # Reads aligned to metagenome assembly (in sam format)
+    sam = None
+    # Reads sorted from alignment to metagenome assembly (in bam format)
+    bam = None
+    # bedtools genomecov output file (in bed format)
+    bed = None
+    # Tab-delimited table of (at least) contig and coverage columns
+    coverages = None
+    ...
 
 After you have filled out the job submission form, you may run the job via the command:
 

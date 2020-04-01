@@ -21,7 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Autometa Coverage
+Calculates coverage of contigs
 """
 
 
@@ -102,7 +102,8 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, se_reads=None, sam=None,
         #. `fwd_reads` and `rev_reads` and `se_reads`
 
         Event sequence to calculate contig coverages:
-        #. align paired-end reads to generate alignment.sam
+
+        #. align reads to generate alignment.sam
         #. sort samfile to generate alignment.bam
         #. calculate assembly coverages to generate alignment.bed
         #. calculate contig coverages to generate coverage.tsv

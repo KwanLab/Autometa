@@ -246,6 +246,7 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         rank_taxids as dicts of key-value pairs.
         Note: Types must match.
         Defaults are listed below:
+
         * LCA:  usepickle=True (bool), verbose=True (bool)
         * LCA.blast2lca: blast=None (str), hits_fpath=None (str), force=False (bool)
         * rank_taxids: verbose=False (bool)
