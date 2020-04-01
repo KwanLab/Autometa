@@ -12,7 +12,7 @@ sphinx:
 formats: all
 
 conda:
-  file: docs/environment.yaml
+  environment: docs/environment.yaml
 
 python:
     version: 3.7
