@@ -1,0 +1,27 @@
+name: autometa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bedtools
+  - biopython
+  - bowtie2
+  - diamond
+  - hdbscan
+  - hmmer
+  - ndcctools
+  - numba
+  - numpy
+  - pandas=1.0.3
+  - parallel
+  - prodigal
+  - requests
+  - samtools
+  - scikit-learn
+  - scipy
+  - tqdm
+  - umap-learn
+  - sphinxcontrib-programoutput
+  - sphinx
+  - sphinx_rtd_theme
