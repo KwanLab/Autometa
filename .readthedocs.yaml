@@ -12,4 +12,9 @@ sphinx:
 formats: all
 
 conda:
-  environment: environment.yaml
+  file: docs/environment.yaml
+
+python:
+    version: 3.7
+    install:
+        - requirements: docs/requirements.txt

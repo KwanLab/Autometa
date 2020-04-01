@@ -1,0 +1,11 @@
+name: autometa
+
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+
+dependencies:
+  - python==3.7
+  - pip:
+    - sphinxcontrib-programoutput
