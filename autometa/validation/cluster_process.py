@@ -233,12 +233,6 @@ def main(args):
 
         run_command(cmd)
 
-
-def main(args):
-    logger.info(args.hello_world)
-    # operations on args.positional
-    # operations on args.optional
-
 if __name__ == '__main__':
     import argparse
     import logging as logger
