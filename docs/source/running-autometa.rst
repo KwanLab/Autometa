@@ -4,8 +4,7 @@ Running Autometa
 
 
 Before running anything make sure you have activated the conda environment using
-
-``conda activate autometa`` and are in the Autometa directory.
+``conda activate autometa`` and are in the Autometa directory (``cd </path/to/Autometa>``).
 
 See the install page for details on setting up your conda environment.
 

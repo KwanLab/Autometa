@@ -36,6 +36,8 @@ from autometa.config.user import AutometaUser
 logger = logging.getLogger('autometa')
 
 
+__version__ = "2.0.0"
+
 def init_logger(fpath=None, level=logging.INFO):
     """Initialize logger.
 
@@ -139,7 +141,6 @@ if __name__ == '__main__':
         main(args)
     except KeyboardInterrupt:
         logger.info('User cancelled run. Exiting...')
-        sys.exit(1)
     except Exception as err:
         issue_request = '''
 

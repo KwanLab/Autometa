@@ -21,104 +21,172 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Uses Work Queue as a task-manager to run different tasks within the autometa pipeline on a scalable computing system.
+Work Queue API to scale Autometa job submissions allowing for dynamically
+scalable and robust application across multiple machines, clusters, or
+computing grids.
+
 """
 
-import work_queue as wq
 
+import logging
 import os
 import sys
 
+import work_queue as wq
 
-def init_queue(name='autometa', password, port=0, debug_log=None, stats_log=None):
-    # create a new queue
-    # We create the tasks queue using the default port. If this port is already
-    # been used by another program, you can try setting port = 0 to use an
-    # available port.
-    try:
-        q = wq.WorkQueue(
-            name=name,
-            port=port,
-            debug_log=debug_log,
-            stats_log=stats_log)
-    except:
-        print('Instantiation of Work Queue failed!')
-        sys.exit(1)
+logger = logging.getLogger(__name__)
 
+
+def start_master(port, name, password, stats=None, debug=None, transactions=None):
+    """Start a work-queue master to handle task submissions.
+
+    Notes
+    -----
+
+    * Reference: https://cctools.readthedocs.io/en/latest/work_queue/
+
+    Parameters
+    ----------
+    port : int
+        port for master to operate on
+    name : str
+        Name of work-queue master to reference with workers
+    password : str
+        </path/to/file/password.txt>
+        Following recommended security practices, a password allows only specific
+        workers to be able to connect to work-queue master.
+    debug : str, optional
+        </path/to/output/debug.log>
+    stats : str, optional
+        </path/to/output/stats.log>
+
+    Returns
+    -------
+    work_queue.WorkQueue
+        work-queue master awaiting task submissions
+
+    Raises
+    -------
+    ExceptionName
+        Why the exception is raised.
+
+    """
+    q = wq.WorkQueue(
+        port=port,
+        name=name,
+        stats_log=stats,
+        transactions=transactions,
+        debug_log=debug)
     q.specify_password_file(password)
+    logger.debug(f'({q.name}) wq-master started')
     return q
 
-def check_executable(executable):
-    executable_path = os.path.realpath(executable)
-    if not os.path.exists(executable_path):
-        executable_path = '/usr/bin/sleep'
-        if not os.path.exists(executable_path):
-            print(f'{executable_path} was not found. Please modify the executable_path')
-            sys.exit(1)
-    return executable_path
-
 def main(args):
-    q = init_queue(args.project_name, port=args.port, args.debug, args.stats)
-    # We have to specify precisely which files need to be transmitted to the workers.
-    # We record the location of executable in 'executable_path'
 
-    print(f'listening on port {q.port}...')
-    tasks = {
-        'run_autometa':'autometa.py',
-        'call_orfs':'prodigal.py',
-        'get_markers':'hmmer.py',
-    }
-    # We create and dispatch a task for each filename given in the argument list
-    for task,executable in tasks.items():
-        executable_path = check_executable(executable)
+    q = start_master(
+        port=args.port,
+        name=args.project_name,
+        password=args.password,
+        debug_log=args.debug,
+        stats_log=args.stats)
 
-        # Note that we write ./gzip here, to guarantee that the gzip version we
-        # are using is the one being sent to the workers.
-        command = "./gzip < %s > %s" % (infile, outfile)
+    # Create a task for the queue
+    # task = wq.Task("exe_name infname args outfname")
 
-        t = Task(command)
+    # Specify resource requirements: (Default will consume entire worker)
+    # t.specify_cores(required_cores)    # Integer
+    # t.specify_memory(required_memory) # Integer specified in MB
+    # t.specify_disk(required_disk)  # Integer specified in MB
+    raise NotImplementedError
+    # Add required executables
+    for exe_fp,exe_name in executables:
+        task.specify_input_file(exe_fp, exe_name, cache=True)
+    # Add required input filepaths
+    for infpath,infname in infpaths:
+        task.specify_input_file(infpath, infname, cache=False)
+    # Add required output filepaths
+    for outfpath,outfname in outfpaths:
+        task.specify_output_file(outfpath, outfname, cache=False)
+    # Submit task to the queue
+    task_id = q.submit(task)
 
-        # gzip is the same across all tasks, so we can cache it in the workers.
-        # Note that when specifying a file, we have to name its local name
-        # (e.g. executable_path), and its remote name (e.g. "gzip"). Unlike the
-        # following line, more often than not these are the same.
-        t.specify_file(executable_path, executable, wq.WORK_QUEUE_INPUT, cache=True)
-        t.specify_cores(2)    #needs 2 cores
-        t.specify_memory(100) #needs 100 MB memory
-        t.specify_disk(1000)  #needs 1 GB disk
-        # files to be compressed are different across all tasks, so we do not
-        # cache them. This is, of course, application specific. Sometimes you may
-        # want to cache an output file if is the input of a later task.
-        t.specify_file(infile, infile, wq.WORK_QUEUE_INPUT, cache=False)
-        t.specify_file(outfile, outfile, wq.WORK_QUEUE_OUTPUT, cache=False)
-
-        # Once all files has been specified, we are ready to submit the task to the queue.
-        taskid = q.submit(t)
-        print("submitted task (id# %d): %s" % (taskid, t.command))
-    stats = q.stats
-    print(stats.workers_busy)
-    print("waiting for tasks to complete...")
+    # Retrieve results from the queue
     while not q.empty():
         t = q.wait(5)
         if t:
-            print("task (id# %d) complete: %s (return code %d)" % (t.id, t.command, t.return_status))
-            if t.return_status != 0:
-              # The task failed. Error handling (e.g., resubmit with new parameters, examine logs, etc.) here
-              None
-        #task object will be garbage collected by Python automatically when it goes out of scope
+            print("Task {} has returned!".format(t.id))
 
-    print("all tasks complete!")
+            if t.return_status == 0:
+                print("command exit code:\n{}".format(t.exit_code))
+                print("stdout:\n{}".format(t.output))
+            else:
+                print("There was a problem executing the task.")
 
-    #work queue object will be garbage collected by Python automatically when it goes out of scope
-    sys.exit(0)
+    # NOTE: The size of output is limited to 1 GB so the output should be file paths!
+    # ... Not the contents of the file.
+
+    # Pipelined Submission.
+    # If you have a very large number of tasks to run, it may not be possible to submit all
+    # of the tasks, and then wait for all of them. Instead, submit a small number of tasks,
+    # then alternate waiting and submiting to keep a constant number in the queue. The
+    # hungry will tell you if more submissions are warranted:
+
+    if q.hungry():
+        # submit more tasks...
+        pass
+
+    # Watching Output Files:
+
+    task.specify_output_file("my-file", flags = wq.WORK_QUEUE_WATCH)
+
+    # Kill workers that are executing tasks twice as slow as compared to the
+    # average.
+    q.activate_fast_abort(2)
+
+    # create task as usual and tag it with an arbitrary string.
+    t = wq.Task(...)
+    t.specify_tag("my-tag")
+
+    taskid = q.submit(t)
+
+    # cancel task by id. Return the canceled task.
+    t = q.cancel_by_taskid(taskid)
+
+    # or cancel task by tag. Return the canceled task.
+    t = q.cancel_by_tasktag("my-tag")
+
+
+    # if task fails given a worker misconfiguration:
+    q.blacklist(t.hostname)
+
+    # Retrieve all stats from the queue
+    stats = q.stats
+    print(stats.workers_busy)
 
 # Main program
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('password', help='</path/to/work-queue/master/password/file>')
-    parser.add_argument('--port', default=wq.WORK_QUEUE_DEFAULT_PORT)
-    parser.add_argument('--project-name', default='myautometaproject')
-    parser.add_argument('--debug', default='my.debug.log')
-    parser.add_argument('--stats', default='my.stats.log')
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logger.DEBUG)
+
+    parser = argparse.ArgumentParser(description="""
+    Uses WorkQueue as a task-manager to run different tasks within the Autometa
+    pipeline on a scalable computing system.
+    """)
+    parser.add_argument('password', help='</path/to/work-queue/master/password.txt>')
+    parser.add_argument('project-name', help='<unique project identifier>')
+    # TODO: Allow argparse to handle range of ints for port
+    parser.add_argument('--port', help="""
+    The port number to listen on. If zero, then a random port is chosen. A range
+     of possible ports (low, hight) can be also specified instead of a single integer.
+    """,
+        default=wq.WORK_QUEUE_DEFAULT_PORT, type=int)
+    parser.add_argument('--stats', help='</path/to/workqueue/stats.log')
+    parser.add_argument('--transactions', help='</path/to/workqueue/transactions.log')
+    parser.add_argument('--debug', help='</path/to/workqueue/debug.log')
+
     args = parser.parse_args()
     main(args)

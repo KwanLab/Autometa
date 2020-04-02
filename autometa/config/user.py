@@ -136,19 +136,18 @@ class AutometaUser:
         -----
             This method performs a number of configuration checks to ensure the
             binning run will perform without conflicts.
-            1. workspace check: Will construct workspace directory if provided does not
-            exist.
-            2. Project check: Will configure a new project if project number is not
-            found in workspace directory.
-            3. Metagenome check: Will update if existing with edits or resume
-            if existing without edits. Otherwise will add new metagenome to project.
+
+            1. workspace check: Will construct workspace directory if provided does not exist.
+            2. Project check: Will configure a new project if project number is not found in workspace directory.
+            3. Metagenome check: Will update if existing with edits or resume if existing without edits. Otherwise will add new metagenome to project.
+
 
         Example
         -------
         .. code-block:: python
 
             #:  Generate namespace - mgargs.files.<file>
-            mgargs = prepare_run(mg_config)
+            mgargs = prepare_binning_args(mg_config)
             #:  Access file from args - mgargs.files.<file>
             mgargs.files.length_filtered
             #:  Access parameter from args - mgargs.parameters.<parameter>

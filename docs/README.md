@@ -16,6 +16,8 @@ run the script need to be available. In order to perform the build, the `automet
 conda environment needs to be active and additional packages need to be installed.
 
 ```bash
+# Note: This assumes you've already created the autometa environment.
+# Install additional dependencies to autometa environment...
 conda install -n autometa -c conda-forge sphinxcontrib-programoutput sphinx sphinx_rtd_theme
 ```
 
@@ -28,12 +30,16 @@ formatting issues in your newly written docstrings) using the command:
 from the base Autometa directory, you can run the command: `make clean html -C docs`
 
 ```shell
+# Note: You will need to have already installed dependencies described above.
+# First activate env.
+conda activate autometa
+
+# Then build the docs either from base Autometa directory.
+make clean html -C docs && open docs/build/html/index.html
 # clean will remove any files from previous build
 # -C flag will first navigate to specified directory and look for Makefile there.
-# Either: From base Autometa directory.
-make clean html -C docs && open docs/build/html/index.html
 
-# OR: First navigate to the `docs` directory then build.
+# Or build from `docs` directory.
 cd docs && make clean html && open build/html/index.html
 ```
 
