@@ -25,13 +25,13 @@ conda install -c bioconda -c conda-forge --yes \
     tqdm \
     numpy \
     scikit-learn \
+    scipy \
     samtools \
     bedtools \
     bowtie2 \
     hmmer \
     prodigal \
     diamond \
-    ipython \
     ndcctools \
     parallel \
     requests \

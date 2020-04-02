@@ -1,12 +1,8 @@
 ===========
-run_autometa.py
+autometa.py
 ===========
 
-.. note:: 
-    Autometa is package and cannot be directly executed.
+.. rubric:: Usage and command line options
 
-.. automodule:: run_autometa
-    :members:
-
-Main pipeline script calls
-    ``autometa.py </path/to/metagenome.config>``
+.. program-output:: cd ../.. ; python autometa.py -h
+    :shell:

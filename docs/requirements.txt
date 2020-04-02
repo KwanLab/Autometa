@@ -1,0 +1,13 @@
+bedtools
+biopython
+bowtie2
+diamond
+hdbscan
+hmmer
+ndcctools
+parallel
+prodigal
+samtools
+scikit-learn
+tqdm
+umap-learn

@@ -20,9 +20,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
-File containing functions to count, retrieve, k-mers given sequences
 
-TODO: Separate file to handle parallel,work-queue processing
+Count, normalize and embed k-mers given nucleotide sequences
 """
 
 
@@ -350,6 +349,12 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
     method='UMAP', perplexity=30.0, **kwargs):
     """Embed k-mers using provided `method`.
 
+    Notes
+    -----
+
+        * `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
+        * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
+
     Parameters
     ----------
     kmers : str or pd.DataFrame
@@ -367,9 +372,6 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         embedding method to use (the default is 'UMAP').
     perplexity : float, optional
         hyperparameter used to tune TSNE (the default is 30.0).
-        See below for details:
-            # COMBAK: Insert link to readthedocs documentation
-            https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE
     **kwargs : dict, optional
         Other keyword arguments to be supplied to respective `method`.
 

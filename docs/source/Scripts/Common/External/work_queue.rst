@@ -2,4 +2,16 @@
 work_queue.py
 =============
 
-There is some error in importing the docstring for this file
+.. rubric:: Usage and command line options
+
+.. program-output:: cd ../.. ; python -m autometa.common.external.work_queue -h
+    :shell:
+
+.. rubric:: Functions
+
+.. autosummary::
+
+    work_queue.start_master
+
+.. automodule:: work_queue
+    :members:

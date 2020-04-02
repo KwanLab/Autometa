@@ -9,11 +9,9 @@ samtools.py
 
 .. rubric:: Functions
 
-.. autosummary:: 
-    
-    samtools.run
+.. autosummary::
+
     samtools.sort
 
 .. automodule:: samtools
     :members:
-

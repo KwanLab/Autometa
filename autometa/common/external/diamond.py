@@ -39,13 +39,44 @@ logger = logging.getLogger(__name__)
 
 
 class DiamondResult:
-    """docstring for DiamondResult.
+    """DiamondResult class
 
-    Some operator overloading here...
-    For other examples of this see:
-        https://www.geeksforgeeks.org/operator-overloading-in-python/
+    Parameters
+    ----------
+    qseqid : str
+        query sequence ID
+    sseqid : str
+        subject sequence ID
+    pident : float
+        Percentage of identical matches.
+    length : int
+        Alignment length.
+    mismatch : int
+        Number of mismatches.
+    gapopen : int
+        Number of gap openings.
+    qstart : int
+        Start of alignment in query.
+    qend : int
+        End of alignment in query.
+    sstart : int
+        Start of alignment in subject.
+    send : int
+        End of alignment in subject sequence.
+    evalue : float
+        Expect value.
+    bitscore : float
+        Bitscore.
+
+    Attributes
+    ----------
+    sseqids : dict
+        {sseqid:parameters, sseqid:parameters, ...}
+    qseqid: str
+        result query sequence ID
 
     """
+
     def __init__(self, qseqid, sseqid, pident, length, mismatch, gapopen,
         qstart, qend, sstart, send, evalue, bitscore):
         self.qseqid = qseqid
@@ -366,7 +397,9 @@ def main(args):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser('Retrieves blastp hits with provided input assembly')
+    parser = argparse.ArgumentParser(description="""
+    Retrieves blastp hits with provided input assembly
+    """)
     parser.add_argument('fasta', help='</path/to/faa/file>')
     parser.add_argument('database', help='</path/to/diamond/formatted/database>')
     parser.add_argument('acc2taxids', help='</path/to/ncbi/prot.accession2taxid.gz>')

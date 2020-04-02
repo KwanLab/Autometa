@@ -34,6 +34,7 @@ conda install -n autometa -c bioconda -c conda-forge --yes \
     tqdm \
     numpy \
     scikit-learn \
+    scipy \
     samtools \
     bedtools \
     bowtie2 \

@@ -20,6 +20,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
+
 Functions to retrieve orfs from provided assembly using prodigal
 """
 
@@ -177,9 +178,32 @@ def contigs_from_headers(fpath):
     First determines if all of ID=3495691_2 from description is in header.
     "3495691_2" represents the 3,495,691st gene in the 2nd sequence.
 
-    i.e. : record.description
+    Example
+    -------
+    .. code-block:: python
+
+        #: prodigal versions < 2.6 record
+        >>>record.id
+        'k119_1383959_3495691_2'
+
+        >>>record.description
         'k119_1383959_3495691_2 # 688 # 1446 # 1 # ID=3495691_2;partial=01;start_type=ATG;rbs_motif=None;rbs_spacer=None'
-                                                      ^       ^
+
+        >>>record.description.split('#')[-1].split(';')[0].strip()
+        'ID=3495691_2'
+
+        >>>orf_id = '3495691_2'
+        '3495691_2'
+
+        >>>record.id.replace(f'_{orf_id}', '')
+        'k119_1383959'
+
+        #: prodigal versions >= 2.6 record
+        >>>record.id
+        'k119_1383959_2'
+        >>>record.id.rsplit('_',1)[0]
+        'k119_1383959'
+
     Parameters
     ----------
     fpath : str
@@ -189,11 +213,6 @@ def contigs_from_headers(fpath):
     -------
     dict
         contigs translated from prodigal ORF description.  {orf_id:contig_id, ...}
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
 
     """
     version = get_versions('prodigal')

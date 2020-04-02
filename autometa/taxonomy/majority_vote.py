@@ -42,10 +42,10 @@ logger = logging.getLogger(__name__)
 
 
 def is_consistent_with_other_orfs(taxid, rank, ctg_lcas, ncbi):
-    """Function that determines for a given taxid, whether the majority of proteins
-    in a contig, with rank equal to or above the given rank, are common
-    ancestors of the taxid.  If the majority are, this function returns True,
-    otherwise it returns False
+    """Determines whether the majority of proteins in a contig, with rank equal
+    to or above the given rank, are common ancestors of the taxid.
+
+    If the majority are, this function returns True, otherwise it returns False.
 
     Parameters
     ----------
@@ -243,17 +243,14 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         <lca.tsv filename> (the default is </path/to/`outdir`/`fasta`.lca.tsv).
     **kwargs : dict
         Further parameters that may be passed along to LCA, LCA.blast2lca and
-        rank_taxids as dicts of key-value pairs. Note: Types must match.
-        Defaults:
-        -LCA
-            usepickle=True (bool)
-            verbose=True (bool)
-        -LCA.blast2lca
-            blast=None (str)
-            hits_fpath=None (str)
-            force=False (bool)
-        -rank_taxids
-            verbose=False (bool)
+        rank_taxids as dicts of key-value pairs.
+        Note: Types must match.
+        Defaults are listed below:
+
+        * LCA:  usepickle=True (bool), verbose=True (bool)
+        * LCA.blast2lca: blast=None (str), hits_fpath=None (str), force=False (bool)
+        * rank_taxids: verbose=False (bool)
+
 
     Returns
     -------

@@ -12,7 +12,6 @@ from datetime import datetime
 
 
 sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../autometa/common'))
 sys.path.insert(0, os.path.abspath('../../autometa/config'))
 sys.path.insert(0, os.path.abspath('../../autometa/binning'))
@@ -24,7 +23,7 @@ sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
 # -- Project information -----------------------------------------------------
 
 project = 'Autometa'
-copyright = (f'2015 - {datetime.now().year}, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
+copyright = (f'2016 - {datetime.now().year}, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
 author = 'Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
 
 # The short X.Y version.
@@ -39,15 +38,18 @@ release = version
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 
-            'sphinx.ext.coverage',
-            'sphinx_rtd_theme', 
-            'sphinx.ext.napoleon',
-            'sphinx.ext.autosummary',
-            'sphinxcontrib.programoutput'
-               ] 
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
+    'sphinx.ext.todo',
+    'sphinx_rtd_theme',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosummary',
+    'sphinxcontrib.programoutput',
+]
 
-autodoc_default_flags = ['members']    
+todo_include_todos = True
+
 autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,28 +73,29 @@ master_doc = 'index'
 pygments_style = 'sphinx'
 
 # -- Options for HTML output -------------------------------------------------
-
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-#html_theme = 'alabaster'
+
 html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
+
+if not os.path.isdir('_static'):
+    os.mkdir('_static')
+
 html_static_path = ['_static']
-html_static_path = []
 
 # If not None, a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
 # The empty string is equivalent to '%b %d, %Y'.
-#
+
 html_last_updated_fmt = '%b %d, %Y'
 
-#Function to not include the copyright in the autodic extension
 def setup(app):
     # Register a sphinx.ext.autodoc.between listener to ignore everything
     # between lines that contain the word COPYRIGHT
+    # Exclude COPYRIGHT block in scripts using the autodoc between function
     app.connect('autodoc-process-docstring', between('^.*COPYRIGHT.*$', exclude=True))
     return app
