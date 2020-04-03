@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,6 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 Template Script for Autometa Modules
 
@@ -87,7 +89,7 @@ if __name__ == '__main__':
     import argparse
     import logging as logger
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(description='Concise Functional Description of Script')

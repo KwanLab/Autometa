@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,8 +19,10 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 AutometaUser configuration class
+
 """
 
 
@@ -41,27 +44,49 @@ logger = logging.getLogger(__name__)
 
 
 class AutometaUser:
-    """docstring for AutometaUser."""
+    """AutometaUser Class to handle job submissions.
 
-    def __init__(self, config_fpath=None, dryrun=True, nproc=2):
+    Parameters
+    ----------
+    user_config : str
+        </path/to/user/default.config
+    dryrun : type
+        Description of parameter `dryrun` (the default is True).
+    nproc : type
+        Description of parameter `nproc` (the default is 2).
+
+    config : config.ConfigParser
+        user base database/executable configuration
+
+    Methods
+    -------
+    configure : NoneType
+        Configure user databases and environment.
+    dryrun: bool
+        If True, will check dependencies and exit.
+    nproc: int
+        Number of processors to use while downloading/formatting databases.
+
+    """
+
+    def __init__(self, user_config=None, dryrun=True, nproc=2):
         self.dryrun= dryrun
         self.nproc = nproc
-        self.config_fp = config_fpath
-        self.config = config.get_config(self.config_fp) if self.config_fp else config.DEFAULT_CONFIG
+        self.config = config.get_config(user_config) if user_config else config.DEFAULT_CONFIG
         if not self.config.has_section('common'):
             self.config.add_section('common')
         self.config.set('common','home_dir', config.AUTOMETA_DIR)
 
         if self.dryrun:
             self.configure()
-            import sys;sys.exit(1)
+            return
 
     def configure(self):
         """Configure user execution environment and databases.
 
         Returns
         -------
-        NoteType
+        NoneType
 
         """
         # Execution env
@@ -104,33 +129,39 @@ class AutometaUser:
         config.put_config(self.config, fpath)
         return Project(fpath)
 
-    def prepare_binning_args(self, config_fpath):
-        """Prepares metagenome binning run using provided `config_fpath`.
+    def prepare_binning_args(self, fpath):
+        """Prepares metagenome binning run using provided `fpath`.
 
-        This method performs a number of configuration checks to ensure the
-        binning run will perform without conflicts.
-        1. workspace check: Will construct workspace directory if provided does not
-        exist.
-        2. Project check: Will configure a new project if project number is not
-        found in workspace directory.
-        3. Metagenome check: Will update if existing with edits or resume
-        if existing without edits. Otherwise will add new metagenome to project.
+        Notes
+        -----
+            This method performs a number of configuration checks to ensure the
+            binning run will perform without conflicts.
+
+            1. workspace check: Will construct workspace directory if provided does not exist.
+            2. Project check: Will configure a new project if project number is not found in workspace directory.
+            3. Metagenome check: Will update if existing with edits or resume if existing without edits. Otherwise will add new metagenome to project.
+
+
+        Example
+        -------
+        .. code-block:: python
+
+            #:  Generate namespace - mgargs.files.<file>
+            mgargs = prepare_binning_args(mg_config)
+            #:  Access file from args - mgargs.files.<file>
+            mgargs.files.length_filtered
+            #:  Access parameter from args - mgargs.parameters.<parameter>
+            mgargs.parameters.length_cutoff
 
         Parameters
         ----------
-        config_fpath : str
+        fpath : str
             </path/to/metagenome.config>
 
         Returns
         -------
         argparse.Namespace
-            access to parameters and files from config via syntax...
-            i.e.
-            generate namespace:
-                mgargs = prepare_run(mg_config)
-            access namespace:
-                mgargs.files.<file>
-                mgargs.parameters.<parameter>
+            parameters and files parsed from config.
 
         Raises
         -------
@@ -141,7 +172,7 @@ class AutometaUser:
         # 1. configure user environment
         self.configure()
         # 2. check workspace exists
-        mgargs = config.parse_config(config_fpath)
+        mgargs = config.parse_config(fpath)
         workspace = os.path.realpath(mgargs.parameters.workspace)
         if not os.path.exists(workspace):
             os.makedirs(workspace)
@@ -156,17 +187,17 @@ class AutometaUser:
         # 4. check whether existing or new run with metagenome_num
         metagenome = f'metagenome_{mgargs.parameters.metagenome_num:03d}'
         if metagenome not in project.metagenomes:
-            mgargs = project.add(config_fpath)
+            mgargs = project.add(fpath)
             project.save()
             return mgargs
         # If resuming existing metagenome run. Check whether config file has changed.
         old_config_fp = project.metagenomes.get(metagenome)
         old_chksum = utilities.get_checksum(old_config_fp)
-        new_chksum = utilities.get_checksum(config_fpath)
+        new_chksum = utilities.get_checksum(fpath)
         if old_chksum != new_chksum:
             mgargs = project.update(
                 metagenome_num=mgargs.parameters.metagenome_num,
-                fpath=config_fpath)
+                fpath=fpath)
         project.save()
         return mgargs
 

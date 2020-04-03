@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,6 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 Script containing Metagenome class for general handling of metagenome assembly
 """
@@ -589,7 +591,9 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Metagenome class to filter sequences by length')
+    parser = argparse.ArgumentParser(description="""
+    Metagenome class holding attributes and methods to manipulate metagenome assemblies.
+    """)
     parser.add_argument('assembly', help='</path/to/assembly.fasta>')
     parser.add_argument('--ncbi', help='</path/to/ncbi/dir>', required=True)
     parser.add_argument('--cutoff', help='length to filter sequences',default=3000,

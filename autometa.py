@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,6 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 Main script to run Autometa
 """
@@ -33,6 +35,8 @@ from autometa.config.user import AutometaUser
 
 logger = logging.getLogger('autometa')
 
+
+__version__ = "2.0.0"
 
 def init_logger(fpath=None, level=logging.INFO):
     """Initialize logger.
@@ -137,7 +141,6 @@ if __name__ == '__main__':
         main(args)
     except KeyboardInterrupt:
         logger.info('User cancelled run. Exiting...')
-        sys.exit(1)
     except Exception as err:
         issue_request = '''
 

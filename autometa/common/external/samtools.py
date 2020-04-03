@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 This file is part of Autometa.
@@ -14,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-
+COPYRIGHT
 Script containing wrapper functions for samtools
 """
 

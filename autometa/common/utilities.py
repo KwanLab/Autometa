@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -17,6 +18,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 File containing common utilities functions to be used by Autometa scripts.
 """
@@ -37,8 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def unpickle(fpath):
-    """Load a pickle file. Opposite of make_pickle method that writes
-    object to a pickle file (*.pkl).
+    """Load a serialized `fpath` from :func:`make_pickle`.
 
     Parameters
     ----------
@@ -67,8 +68,8 @@ def unpickle(fpath):
     return obj
 
 def make_pickle(obj, outfpath):
-    """Serialize a python object to a pickle file (*.pkl). Opposite of
-    unpickle function that retrieves python object from file.
+    """Serialize a python object (`obj`) to `outfpath`.
+    Note:  Opposite of :func:`unpickle`
 
     Parameters
     ----------
@@ -80,7 +81,7 @@ def make_pickle(obj, outfpath):
     Returns
     -------
     str
-        </path/to/pickled/file>
+        </path/to/pickled/file.pkl>
 
     Raises
     -------
@@ -413,22 +414,27 @@ def timeit(func):
     """Time function run time (to be used as a decorator). I.e. when defining a
     function use python's decorator syntax
 
-    Example Usage:
-    @timeit
-    def function(stuff):
-        ...
-        return stuff
+    Example
+    -------
+    .. code-block:: python
 
-    For details on functools.wraps see: https://docs.python.org/2/library/functools.html#functools.wraps
+        @timeit
+        def your_function(args):
+            ...
+
+    Notes
+    -----
+        See: https://docs.python.org/2/library/functools.html#functools.wraps
+
     Parameters
     ----------
-    func : type
-        Description of parameter `func`.
+    func : function
+        function to decorate timer
 
     Returns
     -------
-    type
-        Description of returned object.
+    function
+        timer decorated `func`.
     """
     @wraps(func)
     def wrapper(*args, **kwds):

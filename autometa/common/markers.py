@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -18,6 +19,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
 
 Autometa Marker class consisting of various methods to annotate sequences with
 marker sets depending on sequence set taxonomy
@@ -38,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class Markers:
-    f"""docstring for Autometa Markers class.
+    """docstring for Autometa Markers class.
 
     Parameters
     ----------
@@ -52,9 +54,9 @@ class Markers:
     Attributes
     ----------
     hmmdb : str
-        Description of attribute `hmmdb`.
+        </path/to/hmmpressed/`dbdir`/`kingdom`.single_copy.hmm
     cutoffs : str
-        Description of attribute `cutoffs`.
+        </path/to/`dbdir`/`kingdom`.single_copy.cutoffs
     hmmscan_fn : str
         <`kingdom`.hmmscan.tsv>
     hmmscan_fp : str
@@ -106,8 +108,8 @@ class Markers:
 
         Raises
         -------
-        ExceptionName
-            Why the exception is raised.
+        NotImplementedError
+            method not yet implemented
 
         """
         raise NotImplementedError
@@ -122,18 +124,17 @@ class Markers:
         Parameters
         ----------
         fpath : str
-            Description of parameter `fpath`.
+            </path/to/`kingdom`.markers.tsv>
         format : str
-            Description of parameter `format` (the default is 'wide').
+            * wide - index=contig, cols=[domain sacc,..] (default)
+            * long - index=contig, cols=['sacc','count']
+            * list - {contig:[sacc,...],...}
+            * counts - {contig:len([sacc,...]), ...}
 
         Returns
         -------
-        pd.DataFrame if 'wide' or 'long' else dict
-        shape is (row x col)
-            wide - index=contig, cols=[domain sacc,..]
-            long - index=contig, cols=['sacc','count']
-            list - {contig:[sacc,...],...}
-            counts - {contig:len([sacc,...]), ...}
+        pd.DataFrame
+            if 'wide' or 'long' else dict shape is (row x col)
 
         Raises
         -------
@@ -141,7 +142,7 @@ class Markers:
             Provided `fpath` does not exist
         ValueError
             Provided `format` is not in choices:
-            choices = ['wide','long','list','counts']
+            choices = wide, long, list or counts
 
         """
         if not os.path.exists(fpath):
@@ -167,21 +168,19 @@ class Markers:
 
         Parameters
         ----------
-        format : str
-            Description of parameter `format` (the default is 'wide').
-            Choices include:
-                - 'wide' returns wide dataframe of contig PFAM counts (default)
-                - 'long' returns long dataframe of contig PFAM counts
-                - 'list' returns list of pfams for each contig
-                - 'counts' returns count of pfams for each contig
+        format : str, optional
+            * wide - returns wide dataframe of contig PFAM counts (default)
+            * long - returns long dataframe of contig PFAM counts
+            * list - returns list of pfams for each contig
+            * counts - returns count of pfams for each contig
 
         Returns
         -------
         pd.Dataframe or dict
-            wide - pd.DataFrame(index_col='contig', columns=[PFAM,...])
-            long - pd.DataFrame(index_col='contig', columns=['sacc','count'])
-            list - {contig:[pfam,pfam,...],contig:[...],...}
-            counts - {contig:count, contig:count,...}
+            * wide - pd.DataFrame(index_col=contig, columns=[PFAM,...])
+            * long - pd.DataFrame(index_col=contig, columns=['sacc','count'])
+            * list - {contig:[pfam,pfam,...],contig:[...],...}
+            * counts - {contig:count, contig:count,...}
 
         Raises
         -------
