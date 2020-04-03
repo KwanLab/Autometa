@@ -11,14 +11,10 @@ from sphinx.ext.autodoc import between
 from datetime import datetime
 
 
-sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../../autometa/common'))
-sys.path.insert(0, os.path.abspath('../../autometa/config'))
-sys.path.insert(0, os.path.abspath('../../autometa/binning'))
-sys.path.insert(0, os.path.abspath('../../autometa/datasets'))
-sys.path.insert(0, os.path.abspath('../../autometa/validation'))
-sys.path.insert(0, os.path.abspath('../../autometa/taxonomy'))
-sys.path.insert(0, os.path.abspath('../../autometa/common/external'))
+sys.path.append(os.path.abspath("./_ext"))
+
+for (dir_path,dir_names,file_name) in os.walk('../../', topdown=True): 
+    sys.path.insert(0, os.path.abspath(dir_path))
 
 # -- Project information -----------------------------------------------------
 
@@ -38,6 +34,7 @@ release = version
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
