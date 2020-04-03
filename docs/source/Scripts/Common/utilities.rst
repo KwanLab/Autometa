@@ -3,7 +3,7 @@ utilities.py
 ============
 
 .. note:: 
-    File containing utilities functions for Autometa pipeline, cannot be run as a standalone module.
+    This file contains custom exceptions for Autometa and should not be run directly
 
 .. rubric:: Functions
 

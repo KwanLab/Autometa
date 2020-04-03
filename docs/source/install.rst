@@ -40,4 +40,3 @@ Now download autometa to your desired directory using:
 
     ``git clone https://github.com/KwanLab/Autometa.git``
 
-You should now add the Autometa directory to your $PATH environmental variable

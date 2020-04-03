@@ -7,6 +7,6 @@ Config
    :caption: Table of Contents
 
    databases
-   evnviron
+   environ
    project
    user
