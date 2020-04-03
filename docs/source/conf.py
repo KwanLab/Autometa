@@ -19,8 +19,8 @@ for (dir_path,dir_names,file_name) in os.walk('../../', topdown=True):
 # -- Project information -----------------------------------------------------
 
 project = 'Autometa'
-copyright = (f'2016 - {datetime.now().year}, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
-author = 'Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
+copyright = (f'2016 - {datetime.now().year}, Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
+author = 'Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
 
 # The short X.Y version.
 version = '2.0'

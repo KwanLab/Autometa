@@ -2,10 +2,10 @@
 Common
 ======
 
-.. sidebar:: Script under external
+.. sidebar:: External Contents
 
-    The external directory is a subdirectory of common.
-    All scripts in there come under common.
+   The External directory contains wrappers respective 
+   to each utilized external program
     
 .. toctree::
 

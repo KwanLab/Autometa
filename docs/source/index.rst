@@ -38,8 +38,7 @@ at jason.kwan@wisc.edu
 
 Copyright and License
 ---------------------
-Autometa is copyright 2020 Ian J. Miller, Evan R. Rees, Izaak Miller and Jason C. Kwan, 
-and is released under the GNU Affero General Public License v3 (see :ref:`License`).
+Autometa is released under the GNU Affero General Public License v3 (see :ref:`License`).
 
 Indices and tables
 ------------------

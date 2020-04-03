@@ -2,7 +2,7 @@
 bowtie.py
 =========
 
-.. rubric:: Usage adn command line options
+.. rubric:: Usage and command line options
 
 .. program-output:: cd ../.. ; python -m autometa.common.external.bowtie -h
     :shell:
