@@ -1,3 +1,7 @@
+# The following python script was written using
+# sphinx documentation as a reference.
+# https://www.sphinx-doc.org/en/master/development/tutorials/todo.html 
+
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
