@@ -201,11 +201,7 @@ class Markers:
                 orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
-def main(args):
-    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
-    markers.get()
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -218,4 +214,8 @@ if __name__ == '__main__':
         choices=['bacteria','archaea'], default='bacteria')
     parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
     args = parser.parse_args()
-    main(args)
+    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
+    markers.get()
+
+if __name__ == '__main__':
+    main()

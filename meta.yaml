@@ -1,0 +1,52 @@
+{% set name = "Autometa" %}
+{% set version = "2.0.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/WiscEvan/Autometa.git
+  git_rev: 2.0.0-cbld
+  git_depth: 1
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install -no-deps --ignore-installed -vv ."
+  skip: True
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    - biopython
+    - pandas
+    - tqdm
+    - scikit-learn
+    - scipy
+    - samtools
+    - bedtools
+    - bowtie2
+    - hmmer
+    - pandas
+    - prodigal
+    - diamond
+    - ndcctools
+    - parallel
+    - requests
+    - umap-learn
+
+test:
+  commands:
+    - autometa -h
+    - autometa-markers -h
+    - autometa-coverage -h
+    - autometa-kmers -h
+  imports:
+    - autometa
+
+about:
+  home: https://github.com/WiscEvan/Autometa
+  license: GPL3

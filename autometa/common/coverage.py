@@ -192,27 +192,7 @@ def get(fasta, out, fwd_reads=None, rev_reads=None, se_reads=None, sam=None,
     finally:
         shutil.rmtree(tempdir, ignore_errors=True)
 
-def main(args):
-
-    if args.from_spades:
-        records = [rec for rec in SeqIO.parse(args.assembly, 'fasta')]
-        coverages = from_spades_names(records)
-        logger.info(f'{coverages.index.nunique():,} contig coverages retrieved from {args.assembly}')
-        coverages.to_csv(args.out, sep='\t', index=True, header=True)
-        logger.info(f'written: {args.out}')
-        return
-
-    get(fasta=args.assembly,
-        fwd_reads=args.fwd_reads,
-        rev_reads=args.rev_reads,
-        sam=args.sam,
-        bam=args.bam,
-        lengths=args.lengths,
-        bed=args.bed,
-        nproc=args.nproc,
-        out=args.out)
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     import multiprocessing as mp
@@ -239,4 +219,24 @@ if __name__ == '__main__':
         default=False)
     parser.add_argument('--out', help='</path/to/coverages.tsv>', required=True)
     args = parser.parse_args()
-    main(args)
+
+    if args.from_spades:
+        records = [rec for rec in SeqIO.parse(args.assembly, 'fasta')]
+        coverages = from_spades_names(records)
+        logger.info(f'{coverages.index.nunique():,} contig coverages retrieved from {args.assembly}')
+        coverages.to_csv(args.out, sep='\t', index=True, header=True)
+        logger.info(f'written: {args.out}')
+        return
+
+    get(fasta=args.assembly,
+        fwd_reads=args.fwd_reads,
+        rev_reads=args.rev_reads,
+        sam=args.sam,
+        bam=args.bam,
+        lengths=args.lengths,
+        bed=args.bed,
+        nproc=args.nproc,
+        out=args.out)
+
+if __name__ == '__main__':
+    main()
