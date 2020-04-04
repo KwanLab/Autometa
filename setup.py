@@ -15,10 +15,6 @@ def read(fname):
 
 long_description = read('README.md')
 
-install_requires = [
-    'numpy >= 1.8',
-]
-
 setup(
     name='Autometa',
     python_requires='>=3.7',
@@ -30,7 +26,6 @@ setup(
     description='Automated Extraction of Genomes from Shotgun Metagenomes',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'autometa=autometa.main:entrypoint',

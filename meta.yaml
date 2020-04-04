@@ -11,11 +11,10 @@ source:
   git_depth: 1
 
 build:
+  numpy: 1.18
   number: 0
-  script: "{{ PYTHON }} -m pip install -no-deps --ignore-installed -vv ."
-  skip: True
 
-requirements:
+requirements:  
   host:
     - python
     - pip
