@@ -14,15 +14,16 @@ build:
   numpy: 1.18
   number: 0
 
-requirements:  
+requirements:
   host:
     - python
-    - pip
+    - numpy 1.18
   run:
     - python
     - biopython
     - pandas
     - tqdm
+    - numpy 1.18
     - scikit-learn
     - scipy
     - samtools
@@ -38,11 +39,6 @@ requirements:
     - umap-learn
 
 test:
-  commands:
-    - autometa -h
-    - autometa-markers -h
-    - autometa-coverage -h
-    - autometa-kmers -h
   imports:
     - autometa
 
