@@ -189,7 +189,7 @@ def update_dbs(outdir, db='all'):
 		if os.path.isfile(taxdump_fpath):
 			run_command('tar -xzf {} -C {} names.dmp nodes.dmp merged.dmp'.format(taxdump_fpath, outdir))
 			os.remove(taxdump_fpath)
-			print("nodes.dmp,names.dmp, merged.dmp updated")
+			print("nodes.dmp, names.dmp, merged.dmp updated")
 
 def check_dbs(db_path):
 	'''
@@ -200,7 +200,7 @@ def check_dbs(db_path):
 		db_dict = {
 			'nr': ['nr.dmnd','nr.gz.md5'],
 			'acc2taxid': ['prot.accession2taxid.gz.md5','prot.accession2taxid'],
-			'taxdump': ['names.dmp','nodes.dmp','taxdump.tar.gz.md5']
+			'taxdump': ['merged.dmp','names.dmp','nodes.dmp','taxdump.tar.gz.md5']
 			}
 	else:
 		db_dict = {
