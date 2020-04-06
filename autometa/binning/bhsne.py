@@ -50,13 +50,7 @@ def embed(kmers_fpath):
     X = bh_sne(X, d=2)
     return pd.DataFrame(X, columns=['x','y'], index=df.index)
 
-def main(args):
-    df = embed(args.kmers)
-    logger.debug('{} embedded. : df.shape: {}'.format(args.kmers, df.shape))
-    df.to_csv(args.embedded, sep='\t', index=True, header=True)
-    logger.debug('embedded written {}'.format(args.embedded))
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -67,4 +61,10 @@ if __name__ == '__main__':
     parser.add_argument('kmers',help='</path/to/kmers.normalized.tsv>')
     parser.add_argument('embedded',help='</path/to/kmers.embedded.tsv>')
     args = parser.parse_args()
-    main(args)
+    df = embed(args.kmers)
+    logger.debug('{} embedded. : df.shape: {}'.format(args.kmers, df.shape))
+    df.to_csv(args.embedded, sep='\t', index=True, header=True)
+    logger.debug('embedded written {}'.format(args.embedded))
+
+if __name__ == '__main__':
+    main()

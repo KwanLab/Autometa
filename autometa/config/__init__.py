@@ -128,3 +128,12 @@ def parse_config(fpath=None):
                     value = config.getlist(section,key)
             namespace.__dict__[section].__dict__[key] = value
     return namespace
+
+def init_default():
+    cfg = get_config(DEFAULT_FPATH)
+    home_dir = cfg.get('common','home_dir')
+    if not os.path.isdir(home_dir):
+        logger.info(f'Updated {os.path.basename(DEFAULT_FPATH)} ([common],home_dir): {AUTOMETA_DIR}')
+        update_config(DEFAULT_FPATH,'common','home_dir',AUTOMETA_DIR)
+        home_dir = AUTOMETA_DIR
+    return home_dir

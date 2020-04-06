@@ -378,20 +378,7 @@ class NCBI:
             ancestor_taxid = self.parent(ancestor_taxid)
         return False
 
-def main(args):
-    ncbi = NCBI(args.ncbi, args.verbose)
-    query_taxid_parent = ncbi.parent(taxid=args.query_taxid)
-    logger.info(
-        f'{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n'
-        f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
-        f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
-        f'{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n'
-        f'{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n'
-        f'{args.query_taxid} is_common_ancestor {query_taxid_parent}: '
-        f'{ncbi.is_common_ancestor(parent_taxid=query_taxid_parent, child_taxid=args.query_taxid)}\n'
-    )
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -408,4 +395,17 @@ if __name__ == '__main__':
     )
     parser.add_argument('--verbose', help="add verbosity", action='store_true', default=True)
     args = parser.parse_args()
-    main(args)
+    ncbi = NCBI(args.ncbi, args.verbose)
+    query_taxid_parent = ncbi.parent(taxid=args.query_taxid)
+    logger.info(
+        f'{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
+        f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
+        f'{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} is_common_ancestor {query_taxid_parent}: '
+        f'{ncbi.is_common_ancestor(parent_taxid=query_taxid_parent, child_taxid=args.query_taxid)}\n'
+    )
+
+if __name__ == '__main__':
+    main()

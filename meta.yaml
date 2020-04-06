@@ -18,6 +18,22 @@ requirements:
   host:
     - python
     - numpy 1.18
+    - pandas
+    - tqdm
+    - numpy 1.18
+    - scikit-learn
+    - scipy
+    - samtools
+    - bedtools
+    - bowtie2
+    - hmmer
+    - pandas
+    - prodigal
+    - diamond
+    - ndcctools
+    - parallel
+    - requests
+    - umap-learn
   run:
     - python
     - biopython

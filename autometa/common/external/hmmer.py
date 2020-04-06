@@ -134,6 +134,36 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         raise OSError(f'{outfpath} not written.')
     return outfpath
 
+def hmmpress(fpath):
+    """Runs hmmpress on `fpath`.
+
+    Parameters
+    ----------
+    fpath : str
+        </path/to/kindom.markers.hmm>
+
+    Returns
+    -------
+    str
+        </path/to/hmmpressed/kindom.markers.hmm>
+
+    Raises
+    -------
+    FileNotFoundError
+        `fpath` not found.
+    ChildProcessError
+        hmmpress failed
+    """
+    if not os.path.exists(fpath):
+        raise FileNotFoundError(fpath)
+    cmd = f'hmmpress -f {fpath}'
+    logger.debug(cmd)
+    with open(os.devnull, 'w') as STDOUT, open(os.devnull, 'w') as STDERR:
+        retcode = subprocess.call(cmd, stdout=STDOUT, stderr=STDERR, shell=True)
+    if retcode:
+        raise ChildProcessError(f'{cmd} failed with returncode: {retcode}')
+    return fpath
+
 def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     """Filter markers from hmmscan output table that are above cutoff values.
 

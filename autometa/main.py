@@ -33,6 +33,7 @@ import multiprocessing as mp
 
 from .config.user import AutometaUser
 
+
 logger = logging.getLogger('autometa')
 
 
@@ -105,7 +106,8 @@ def main(args):
         logger = init_logger(fpath=args.log)
     # Configure AutometaUser
     # TODO: master from WorkQueue is AutometaUser
-    user = AutometaUser(dryrun=args.check_dependencies, nproc=args.cpus)
+    user = AutometaUser(nproc=args.cpus)
+    user.configure(dryrun=args.check_dependencies)
 
     for config in args.config:
         # TODO: Add directions to master from WorkQueue
@@ -137,6 +139,7 @@ def entrypoint():
         action='store_true',
         default=False)
     args = parser.parse_args()
+
     try:
         main(args)
     except KeyboardInterrupt:

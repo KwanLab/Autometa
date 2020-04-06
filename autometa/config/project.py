@@ -197,12 +197,7 @@ class Project:
         logger.debug(f'Updated {metagenome}.config with {fpath}')
         return parse_config(old_config_fp)
 
-def main(args):
-    project = Project(args.config)
-    logger.info(f'{project.config_fpath} has {project.n_metagenomes} metagenomes in {project.dirpath}')
-    logger.info(f"metagenome config numbers: {','.join(map(str,project.metagenomes))}")
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -215,4 +210,9 @@ if __name__ == '__main__':
     """)
     parser.add_argument('config',help='</path/to/project.config>')
     args = parser.parse_args()
-    main(args)
+    project = Project(args.config)
+    logger.info(f'{project.config_fpath} has {project.n_metagenomes} metagenomes in {project.dirpath}')
+    logger.info(f"metagenome config numbers: {','.join(map(str,project.metagenomes))}")
+
+if __name__ == '__main__':
+    main()

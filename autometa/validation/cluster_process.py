@@ -68,7 +68,32 @@ def assess_assembly(seq_record_list):
         'largest_sequence':largest_sequence_length,
         'n50':n50}
 
-def main(args):
+def main():
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logger.DEBUG)
+    curdir = os.path.join(os.path.abspath(os.curdir), 'clusters')
+    description = 'Script to summarize the assembly characteristics and taxonomy\
+    of binned clusters, as well producing individual cluster fasta files'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-b', '--bin_table', metavar='<bin.tab>', help='path to the output from either run_autometa.py or ML_recruitment.py', required=True)
+    parser.add_argument('-c', '--column', metavar='<bin column name>', help='the name of the column to use for binning purposes', default='cluster')
+    parser.add_argument('-f', '--fasta', metavar='<assembly.fasta>', help='path to the assembly used to make the bin table', required=True)
+    parser.add_argument('--outdir', help='</path/to/output/directory>', default=curdir)
+    parser.add_argument('-k', '--kingdom', metavar='<archaea|bacteria>', help='kingdom to consider', choices=['bacteria', 'archaea'], default='bacteria')
+    parser.add_argument('-t', '--do_taxonomy', help='carry out taxonomic analysis on the clusters (you must have already run make_taxonomy_table.py)', action='store_true')
+    parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump files')
+    args = vars(parser.parse_args())
+    parser.add_argument('positional',help='<help text of positional arg>')
+    parser.add_argument('--optional',help='<help text of optional arg>')
+    parser.add_argument(
+        '--hello-world',
+        help='<help text of hello world>',
+        default='Hello World')
+    args = parser.parse_args()
     # Check paths exist
     if not os.path.isfile(args.bin_table):
         logger.error(f'Error! Could not find a bin table at the following path: {args.bin_table}')
@@ -234,29 +259,4 @@ def main(args):
         run_command(cmd)
 
 if __name__ == '__main__':
-    import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    curdir = os.path.join(os.path.abspath(os.curdir), 'clusters')
-    description = 'Script to summarize the assembly characteristics and taxonomy\
-    of binned clusters, as well producing individual cluster fasta files'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-b', '--bin_table', metavar='<bin.tab>', help='path to the output from either run_autometa.py or ML_recruitment.py', required=True)
-    parser.add_argument('-c', '--column', metavar='<bin column name>', help='the name of the column to use for binning purposes', default='cluster')
-    parser.add_argument('-f', '--fasta', metavar='<assembly.fasta>', help='path to the assembly used to make the bin table', required=True)
-    parser.add_argument('--outdir', help='</path/to/output/directory>', default=curdir)
-    parser.add_argument('-k', '--kingdom', metavar='<archaea|bacteria>', help='kingdom to consider', choices=['bacteria', 'archaea'], default='bacteria')
-    parser.add_argument('-t', '--do_taxonomy', help='carry out taxonomic analysis on the clusters (you must have already run make_taxonomy_table.py)', action='store_true')
-    parser.add_argument('-db', '--db_dir', metavar='<dir>', help='Path to directory with taxdump files')
-    args = vars(parser.parse_args())
-    parser.add_argument('positional',help='<help text of positional arg>')
-    parser.add_argument('--optional',help='<help text of optional arg>')
-    parser.add_argument(
-        '--hello-world',
-        help='<help text of hello world>',
-        default='Hello World')
-    args = parser.parse_args()
-    main(args)
+    main()

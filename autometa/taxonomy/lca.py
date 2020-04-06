@@ -483,22 +483,7 @@ class LCA(NCBI):
                 contigs[contig][taxid] += 1
         return contigs
 
-def main(args):
-    lca = LCA(
-        dbdir=args.dbdir,
-        outdir=args.outdir,
-        usepickle=args.nopickle,
-        verbose=args.verbose,
-    )
-    outfpath = os.path.join(args.outdir, args.outfname)
-    lca.blast2lca(
-        fasta=args.orfs,
-        outfpath=outfpath,
-        blast=args.blast,
-        hits_fpath=args.blast_hits,
-        force=args.force)
-
-if __name__ == '__main__':
+def main():
     import argparse
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     dbdir = os.path.join(basedir,'databases','ncbi')
@@ -514,4 +499,19 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', help="add verbosity", action='store_true', default=False)
     parser.add_argument('--force', help="force overwrite if file already exists", action='store_true', default=False)
     args = parser.parse_args()
-    main(args)
+    lca = LCA(
+        dbdir=args.dbdir,
+        outdir=args.outdir,
+        usepickle=args.nopickle,
+        verbose=args.verbose,
+    )
+    outfpath = os.path.join(args.outdir, args.outfname)
+    lca.blast2lca(
+        fasta=args.orfs,
+        outfpath=outfpath,
+        blast=args.blast,
+        hits_fpath=args.blast_hits,
+        force=args.force)
+
+if __name__ == '__main__':
+    main()

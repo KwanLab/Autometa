@@ -12,13 +12,13 @@ def read(fname):
     """Read a file from the current directory."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-
 long_description = read('README.md')
+version = read('VERSION').strip()
 
 setup(
     name='Autometa',
     python_requires='>=3.7',
-    version=read('VERSION').strip(),
+    version=version,
     packages=find_packages(exclude=["tests"]),
     package_data={'':['*.config']},
     author='Jason C. Kwan',
@@ -29,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'autometa=autometa.main:entrypoint',
+            'autometa-configure=autometa.config.user:main',
             'autometa-kmers=autometa.common.kmers:main',
             'autometa-coverage=autometa.common.coverage:main',
             'autometa-markers=autometa.common.markers:main',
