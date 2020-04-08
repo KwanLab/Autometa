@@ -208,11 +208,12 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('')
+    parser = argparse.ArgumentParser(description='Annotate ORFs with kingdom-marker information')
     parser.add_argument('orfs', help='</path/to/prot.orfs.faa>')
     parser.add_argument('kingdom', help='kingdom to search for markers',
         choices=['bacteria','archaea'], default='bacteria')
-    parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
+    parser.add_argument('--dbdir', help=f'</path/to/markers/dir> {MARKERS_DIR}',
+        default=MARKERS_DIR)
     args = parser.parse_args()
     markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
     markers.get()

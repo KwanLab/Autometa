@@ -474,7 +474,7 @@ def main():
         level=logger.DEBUG)
     skip_desc = '(will skip if file exists)'
     cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser('Count k-mers')
+    parser = argparse.ArgumentParser(description='Count k-mer frequencies of given `fasta`')
     parser.add_argument('--fasta', help='</path/to/sequences.fna>', required=True)
     parser.add_argument('--kmers', help=f'</path/to/output/kmers.tsv> {skip_desc}', required=True)
     parser.add_argument('--size', help='k-mer size', default=5, type=int)

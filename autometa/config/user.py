@@ -306,18 +306,24 @@ def main():
     import argparse
     import multiprocessing as mp
     import logging as logger
-    parser = argparse.ArgumentParser(description='Configure Autometa user environment')
-    parser.add_argument('--config', help='</path/to/user.config>', default=config.DEFAULT_FPATH)
+    parser = argparse.ArgumentParser(description="""
+    Configures the Autometa user environment/databases.
+    Running without args will download and format Autometa database dependencies.
+    """)
+    parser.add_argument('--config',
+        help=f'</path/to/user.config> (default is {config.DEFAULT_FPATH}).',
+        default=config.DEFAULT_FPATH)
     parser.add_argument('--dryrun',
-        help='Log configuration without performing updates',
+        help='Log configuration without performing updates.',
         action='store_true',
         default=False)
     parser.add_argument('--debug',
-        help='Stream debugging information to terminal',
+        help='Stream debugging information to terminal.',
         action='store_true',
         default=False)
     parser.add_argument('--cpus',
-        help='</path/to/user.config>', default=mp.cpu_count(), type=int)
+        help=f'</path/to/user.config> (default is {mp.cpu_count()}).',
+        default=mp.cpu_count(), type=int)
     args = parser.parse_args()
     # config.init_default()
     level = logger.DEBUG if args.debug else logger.INFO
