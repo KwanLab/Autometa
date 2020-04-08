@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), 'default.config')
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-WORKSPACE = os.path.join(AUTOMETA_DIR, 'workspace')
 
 def get_config(fpath):
     if not os.path.exists(fpath) or os.stat(fpath).st_size == 0:
