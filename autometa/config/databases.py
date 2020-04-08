@@ -158,6 +158,8 @@ class Databases:
 
         """
         # Download required NCBI database files
+        if not os.path.exists(self.ncbi_dir):
+            os.makedirs(self.ncbi_dir)
         host = DEFAULT_CONFIG.get('ncbi','host')
         for option in options:
             ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
@@ -199,6 +201,8 @@ class Databases:
             marker file download failed.
 
         """
+        if not os.path.exists(self.markers_dir):
+            os.makedirs(self.markers_dir)
         for option in options:
             url = DEFAULT_CONFIG.get('database_urls', option)
             if self.config.has_option('markers', option):

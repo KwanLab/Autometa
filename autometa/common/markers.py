@@ -33,7 +33,7 @@ import pandas as pd
 from autometa.common.external import hmmer
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MARKERS_DIR = os.path.join(BASE_DIR,'databases','markers')
 
 logger = logging.getLogger(__name__)

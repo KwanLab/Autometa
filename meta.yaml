@@ -1,9 +1,9 @@
 {% set name = "Autometa" %}
-{% set version = "2.0.0" %}
+{% set data = load_setup_py_data() %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: {{ data.get('version') }}
 
 source:
   path: ./
@@ -13,28 +13,21 @@ source:
 
 build:
   noarch: python
-  entry_points:
-      - autometa = autometa.main:entrypoint
-      - autometa-configure = autometa.config.user:main
-      - autometa-kmers = autometa.common.kmers:main
-      - autometa-coverage = autometa.common.coverage:main
-      - autometa-markers = autometa.common.markers:main
-  script:
-      python setup.py install
-  always_include_files:
-    - "*/autometa/**/default.config"
+  script: python -m pip install . --ignore-installed --no-deps -vv
 
 requirements:
   host:
+    - python >=3
+    - pip
     - setuptools
-    - python x.x
   run:
-    - python x.x
+    - python >=3
     - biopython
     - bedtools
     - bowtie2
     - diamond
     - hmmer
+    - hdbscan
     - ndcctools
     - numpy >=1.18.*
     - pandas >=1.*
@@ -50,16 +43,18 @@ requirements:
 test:
   imports:
     - autometa
-  # commands:
-  #   - autometa -h
-  #   - autometa-configure -h
-  #   - autometa-kmers -h
-  #   - autometa-coverage -h
-  #   - autometa-markers -h
+  commands:
+    - autometa -h
+    - autometa-configure -h
+    - autometa-kmers -h
+    - autometa-coverage -h
+    - autometa-markers -h
 
 about:
   home: https://github.com/WiscEvan/Autometa
   license: GPL3
+  license_file: LICENSE.txt
+  summary: "Autometa is an automated pipeline to extract genomes from metagenomes."
 
 extra:
   maintainers:

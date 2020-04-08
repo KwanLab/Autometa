@@ -1,9 +1,6 @@
 """Setup for installation of Autometa."""
 
-import glob
 import os
-import subprocess
-import sys
 
 from setuptools import setup
 from setuptools import find_packages
@@ -21,6 +18,15 @@ setup(
     version=version,
     packages=find_packages(exclude=["tests"]),
     package_data={'':['*.config']},
+    entry_points={
+        'console_scripts':[
+            'autometa = autometa.main:entrypoint',
+            'autometa-configure = autometa.config.user:main',
+            'autometa-kmers = autometa.common.kmers:main',
+            'autometa-coverage = autometa.common.coverage:main',
+            'autometa-markers = autometa.common.markers:main',
+        ]
+    },
     author='Jason C. Kwan',
     author_email='jkwan@wisc.edu',
     description='Automated Extraction of Genomes from Shotgun Metagenomes',
