@@ -6,58 +6,62 @@ package:
   version: {{ version }}
 
 source:
-  git_url: https://github.com/WiscEvan/Autometa.git
-  git_rev: 2.0.0-cbld
-  git_depth: 1
+  path: ./
+  # git_url: https://github.com/WiscEvan/Autometa.git
+  # git_rev: 2.0.0-cbld
+  # git_depth: 1
 
 build:
-  numpy: 1.18
-  number: 0
+  noarch: python
+  entry_points:
+      - autometa = autometa.main:entrypoint
+      - autometa-configure = autometa.config.user:main
+      - autometa-kmers = autometa.common.kmers:main
+      - autometa-coverage = autometa.common.coverage:main
+      - autometa-markers = autometa.common.markers:main
+  script:
+      python setup.py install
+  always_include_files:
+    - "*/autometa/**/default.config"
 
 requirements:
   host:
-    - python
-    - numpy 1.18
-    - pandas
-    - tqdm
-    - numpy 1.18
-    - scikit-learn
-    - scipy
-    - samtools
-    - bedtools
-    - bowtie2
-    - hmmer
-    - pandas
-    - prodigal
-    - diamond
-    - ndcctools
-    - parallel
-    - requests
-    - umap-learn
+    - setuptools
+    - python x.x
   run:
-    - python
+    - python x.x
     - biopython
-    - pandas
-    - tqdm
-    - numpy 1.18
+    - bedtools
+    - bowtie2
+    - diamond
+    - hmmer
+    - ndcctools
+    - numpy >=1.18.*
+    - pandas >=1.*
+    - parallel
+    - prodigal
+    - requests
     - scikit-learn
     - scipy
     - samtools
-    - bedtools
-    - bowtie2
-    - hmmer
-    - pandas
-    - prodigal
-    - diamond
-    - ndcctools
-    - parallel
-    - requests
+    - tqdm
     - umap-learn
 
 test:
   imports:
     - autometa
+  # commands:
+  #   - autometa -h
+  #   - autometa-configure -h
+  #   - autometa-kmers -h
+  #   - autometa-coverage -h
+  #   - autometa-markers -h
 
 about:
   home: https://github.com/WiscEvan/Autometa
   license: GPL3
+
+extra:
+  maintainers:
+   - Jason C. Kwan
+   - Evan R. Rees

@@ -26,15 +26,6 @@ setup(
     description='Automated Extraction of Genomes from Shotgun Metagenomes',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    entry_points={
-        'console_scripts': [
-            'autometa=autometa.main:entrypoint',
-            'autometa-configure=autometa.config.user:main',
-            'autometa-kmers=autometa.common.kmers:main',
-            'autometa-coverage=autometa.common.coverage:main',
-            'autometa-markers=autometa.common.markers:main',
-        ],
-    },
     url='https://github.com/WiscEvan/Autometa',
     license='GNU Affero General Public License v3 or later (AGPLv3+)',
     classifiers=[
