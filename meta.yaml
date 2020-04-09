@@ -9,7 +9,6 @@ source:
   path: ./
   # git_url: https://github.com/KwanLab/Autometa.git
   # git_rev: {{ data.get('version') }}
-  # git_depth: 1
 
 build:
   noarch: python
@@ -54,7 +53,9 @@ about:
   home: {{ data.get('url') }}
   license: {{ data.get('license') }}
   license_file: LICENSE.txt
-  description: {{ data.get('description')}}
+  description: |
+    An automated binning pipeline for metagenomes, in particular host-associated and highly complex ones.
+    Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. Nucleic Acids Research, 2019. DOI: https://doi.org/10.1093/nar/gkz148
   summary:
     - doc_url: https://autometa.readthedocs.io/en/latest/
     - dev_url: {{ data.get('url') }}
