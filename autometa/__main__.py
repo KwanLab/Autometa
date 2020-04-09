@@ -37,8 +37,6 @@ from .config.user import AutometaUser
 logger = logging.getLogger('autometa')
 
 
-__version__ = "2.0.0"
-
 def init_logger(fpath=None, level=logging.INFO):
     """Initialize logger.
 

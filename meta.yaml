@@ -7,8 +7,8 @@ package:
 
 source:
   path: ./
-  # git_url: https://github.com/WiscEvan/Autometa.git
-  # git_rev: 2.0.0-cbld
+  # git_url: https://github.com/KwanLab/Autometa.git
+  # git_rev: {{ data.get('version') }}
   # git_depth: 1
 
 build:
@@ -17,11 +17,11 @@ build:
 
 requirements:
   host:
-    - python >=3
+    - python {{ data.get('python_requires') }}
     - pip
     - setuptools
   run:
-    - python >=3
+    - python {{ data.get('python_requires') }}
     - biopython
     - bedtools
     - bowtie2
@@ -51,8 +51,8 @@ test:
     - autometa-markers -h
 
 about:
-  home: https://github.com/WiscEvan/Autometa
-  license: GPL3
+  home: {{ data.get('url') }}
+  license: {{ data.get('license') }}
   license_file: LICENSE.txt
   summary: "Autometa is an automated pipeline to extract genomes from metagenomes."
 

@@ -1,5 +1,6 @@
 """Setup for installation of Autometa."""
 
+
 import os
 
 from setuptools import setup
@@ -20,7 +21,7 @@ setup(
     package_data={'':['*.config']},
     entry_points={
         'console_scripts':[
-            'autometa = autometa.main:entrypoint',
+            'autometa = autometa.__main__:entrypoint',
             'autometa-configure = autometa.config.user:main',
             'autometa-kmers = autometa.common.kmers:main',
             'autometa-coverage = autometa.common.coverage:main',
@@ -28,16 +29,16 @@ setup(
         ]
     },
     author='Jason C. Kwan',
-    author_email='jkwan@wisc.edu',
+    author_email='jason.kwan@wisc.edu',
     description='Automated Extraction of Genomes from Shotgun Metagenomes',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/WiscEvan/Autometa',
+    url='https://github.com/KwanLab/Autometa',
     license='GNU Affero General Public License v3 or later (AGPLv3+)',
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python :: 3.7',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
