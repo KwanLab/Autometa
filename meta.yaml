@@ -54,7 +54,10 @@ about:
   home: {{ data.get('url') }}
   license: {{ data.get('license') }}
   license_file: LICENSE.txt
-  summary: "Autometa is an automated pipeline to extract genomes from metagenomes."
+  description: {{ data.get('description')}}
+  summary:
+    - doc_url: https://autometa.readthedocs.io/en/latest/
+    - dev_url: {{ data.get('url') }}
 
 extra:
   maintainers:
