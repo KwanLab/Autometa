@@ -130,7 +130,6 @@ def main(args):
     df = parse(bed=bed, out=args.coverage, force=args.force_cov)
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -149,5 +148,4 @@ if __name__ == '__main__':
     parser.add_argument('--force-cov', help='force overwrite `--coverage`',
         action='store_true',default=False)
     args = parser.parse_args()
-    #end_parsing
     main(args)

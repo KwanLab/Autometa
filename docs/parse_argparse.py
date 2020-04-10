@@ -10,21 +10,23 @@ if os.path.exists(path_scripts_2):
 
 for dir_name in glob.glob("../autometa/**/*.py", recursive=True): 
     if "__" not in dir_name: #to not include __init__ files
-        #print(dir_name)
+        print(dir_name)
         with open (dir_name) as fh_read:
             path_temp_write = '../docs/temp_write.py'
-            #path_temp_write='/home/siddharth/Desktop/temp_write.py'
             fh_write = open(path_temp_write, 'w+')            
             for line in fh_read:
-                if line.strip() == '#start_parsing':
+                if line.strip() == 'import argparse':
+                    line = line.strip()
+                    fh_write.write(line + '\n')
                     break
             # Reads text until the end of the block:
             for line in fh_read:  # This keeps reading the file
-                if line.strip() == '#end_parsing':
+                if line.strip() == 'args = parser.parse_args()':
+                    line = line.strip()
+                    fh_write.write(line + '\n')
                     break
                 line = line.strip()
-                fh_write.write(line)
-                fh_write.write('\n')
+                fh_write.write(line + '\n')
             fh_write.close()
         
         basename = os.path.basename(dir_name) #Extract the filename, eg: kmers.py
@@ -112,6 +114,5 @@ for dir_name in glob.glob("../autometa/**/*.py", recursive=True):
         with open (main_file, 'a+') as fh_main:
              fh_main.write(f'\n \t {file_name_base}')
         
-
 os.remove(path_temp_write)
 os.remove(base_path_temp_write+'.rst')

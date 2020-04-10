@@ -70,7 +70,9 @@ class RecursiveDBSCANError(AutometaException):
         return self.value
 
 if __name__ == '__main__':
-    #start_parsing
-    print('This file contains custom exceptions for Autometa and should not be run directly')
-    #end_parsing
+    import argparse
+    parser = argparse.ArgumentParser(usage='exceptions.py',
+        description='file containing utilities functions for Autometa pipeline')
+    print('file containing utilities functions for Autometa pipeline')
+    args = parser.parse_args()
     import sys;sys.exit(1)

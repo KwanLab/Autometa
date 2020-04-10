@@ -451,7 +451,6 @@ def main(args):
     master_out[outcols].to_csv(args.out, sep='\t', index=True, header=True)
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -486,5 +485,4 @@ if __name__ == '__main__':
         default='bacteria')
     parser.add_argument('--verbose', action='store_true',default=False,help='log debug information')
     args = parser.parse_args()
-    #end_parsing
     main(args)

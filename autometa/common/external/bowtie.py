@@ -149,7 +149,6 @@ def main(args):
         kwargs=args.kwargs)
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -173,5 +172,4 @@ if __name__ == '__main__':
         nargs='*')
     parser.add_argument('--nproc', help='Num processors to use.', default=1, type=int)
     args = parser.parse_args()
-    #end_parsing
     main(args)

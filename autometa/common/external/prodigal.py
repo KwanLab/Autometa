@@ -283,7 +283,6 @@ def main(args):
     logger.info(f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -302,5 +301,4 @@ if __name__ == '__main__':
         action='store_true', default=False)
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
-    #end_parsing
     main(args)

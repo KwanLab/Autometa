@@ -311,7 +311,6 @@ def main(args):
     # mag.split_nucleotides()
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -326,5 +325,4 @@ if __name__ == '__main__':
     parser.add_argument('--taxonomy', help='</path/to/taxonomy_vote.tsv')
     parser.add_argument('--coverage', help='</path/to/coverages.tsv')
     args = parser.parse_args()
-    #end_parsing
     main(args)

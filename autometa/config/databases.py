@@ -298,7 +298,6 @@ def main(args):
     logger.debug(f'{args.out} written.')
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     import multiprocessing as mp
@@ -317,5 +316,4 @@ if __name__ == '__main__':
         help=f'num. cpus to use for DB formatting. (default {cpus})', type=int, default=cpus)
     parser.add_argument('--out', help='</path/to/output/database.config>')
     args = parser.parse_args()
-    #end_parsing
     main(args)

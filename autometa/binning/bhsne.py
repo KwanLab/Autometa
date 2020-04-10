@@ -57,7 +57,6 @@ def main(args):
     logger.debug('embedded written {}'.format(args.embedded))
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -68,5 +67,4 @@ if __name__ == '__main__':
     parser.add_argument('kmers',help='</path/to/kmers.normalized.tsv>')
     parser.add_argument('embedded',help='</path/to/kmers.embedded.tsv>')
     args = parser.parse_args()
-    #end_parsing
     main(args)

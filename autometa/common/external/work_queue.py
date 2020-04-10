@@ -165,7 +165,6 @@ def main(args):
 
 # Main program
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -188,7 +187,5 @@ if __name__ == '__main__':
     parser.add_argument('--stats', help='</path/to/workqueue/stats.log')
     parser.add_argument('--transactions', help='</path/to/workqueue/transactions.log')
     parser.add_argument('--debug', help='</path/to/workqueue/debug.log')
-
     args = parser.parse_args()
-    #end_parsing
     main(args)

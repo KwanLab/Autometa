@@ -396,7 +396,6 @@ def main(args):
     logger.debug(f'{len(hits):,} diamond hits serialized to {pickled_fpath}')
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import os
     parser = argparse.ArgumentParser(description="""
@@ -418,5 +417,4 @@ if __name__ == '__main__':
         action='store_true')
     parser.add_argument('--verbose', help='add verbosity', action='store_true')
     args = parser.parse_args()
-    #end_parsing
     main(args)

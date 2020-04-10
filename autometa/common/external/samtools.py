@@ -78,7 +78,6 @@ def main(args):
     sort(args.sam, args.bam, args.nproc)
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     import multiprocessing as mp
@@ -90,5 +89,4 @@ if __name__ == '__main__':
     parser.add_argument('--bam', help='</path/to/output/alignment.bam>', type=str)
     parser.add_argument('--nproc', help='Number of processors to use', default=mp.cpu_count(), type=int)
     args = parser.parse_args()
-    #end_parsing
     main(args)

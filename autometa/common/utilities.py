@@ -448,7 +448,9 @@ def timeit(func):
     return wrapper
 
 if __name__ == '__main__':
-    #start_parsing
+    import argparse
+    parser = argparse.ArgumentParser(usage='utilities.py',
+        description='file containing utilities functions for Autometa pipeline')
     print('file containing utilities functions for Autometa pipeline')
-    #end_parsing
+    args = parser.parse_args()
     import sys;sys.exit(1)

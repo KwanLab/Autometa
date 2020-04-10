@@ -206,7 +206,6 @@ def main(args):
     markers.get()
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -219,5 +218,4 @@ if __name__ == '__main__':
         choices=['bacteria','archaea'], default='bacteria')
     #parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
     args = parser.parse_args()
-    #end_parsing
     main(args)

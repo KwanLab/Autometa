@@ -213,7 +213,6 @@ def main(args):
         out=args.out)
 
 if __name__ == '__main__':
-    #start_parsing
     import argparse
     import logging as logger
     import multiprocessing as mp
@@ -241,5 +240,4 @@ if __name__ == '__main__':
         default=False)
     parser.add_argument('--out', help='</path/to/coverages.tsv>', required=True)
     args = parser.parse_args()
-    #end_parsing
     main(args)
