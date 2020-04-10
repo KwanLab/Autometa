@@ -3,7 +3,7 @@ Examining Results
 =================
 
 
-.. todo:: Overview of figures/summaries generated from results.
+Need to add a to do here
 
 
 .. csv-table:: Autometa Results
