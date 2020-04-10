@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>external.diamond &mdash; Autometa 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Autometa
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">1. Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../databases.html">2. Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../running-autometa.html">3. Running Autometa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examining-results.html">4. Examining Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts.html">5. Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution-guidelines.html">6. Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">8. License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Autometa</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+      <li>external.diamond</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/Scripts/Common/External/external.diamond.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-external.diamond">
+<span id="external-diamond"></span><h1>external.diamond<a class="headerlink" href="#module-external.diamond" title="Permalink to this headline">¶</a></h1>
+<p>Class and functions related to running diamond on metagenome sequences</p>
+<p class="rubric">Functions</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#external.diamond.add_taxids" title="external.diamond.add_taxids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_taxids</span></code></a>(hits, database[, verbose])</p></td>
+<td><p>Translates accessions to taxid translations from prot.accession2taxid.gz</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#external.diamond.blast" title="external.diamond.blast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">blast</span></code></a>(fasta, database, outfpath[, …])</p></td>
+<td><p>Performs diamond blastp search using fasta against diamond formatted database</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code>(args)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">makedatabase</span></code>(fasta, database[, nproc])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#external.diamond.parse" title="external.diamond.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(results[, top_pct, verbose])</p></td>
+<td><p>Retrieve diamond results from output table</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#external.diamond.DiamondResult" title="external.diamond.DiamondResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiamondResult</span></code></a>(qseqid, sseqid, pident, …)</p></td>
+<td><p>docstring for DiamondResult.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="external.diamond.DiamondResult">
+<em class="property">class </em><code class="sig-prename descclassname">external.diamond.</code><code class="sig-name descname">DiamondResult</code><span class="sig-paren">(</span><em class="sig-param">qseqid</em>, <em class="sig-param">sseqid</em>, <em class="sig-param">pident</em>, <em class="sig-param">length</em>, <em class="sig-param">mismatch</em>, <em class="sig-param">gapopen</em>, <em class="sig-param">qstart</em>, <em class="sig-param">qend</em>, <em class="sig-param">sstart</em>, <em class="sig-param">send</em>, <em class="sig-param">evalue</em>, <em class="sig-param">bitscore</em><span class="sig-paren">)</span><a class="headerlink" href="#external.diamond.DiamondResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>docstring for DiamondResult.</p>
+<p>Some operator overloading here…
+For other examples of this see:</p>
+<blockquote>
+<div><p><a class="reference external" href="https://www.geeksforgeeks.org/operator-overloading-in-python/">https://www.geeksforgeeks.org/operator-overloading-in-python/</a></p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="external.diamond.add_taxids">
+<code class="sig-prename descclassname">external.diamond.</code><code class="sig-name descname">add_taxids</code><span class="sig-paren">(</span><em class="sig-param">hits</em>, <em class="sig-param">database</em>, <em class="sig-param">verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#external.diamond.add_taxids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates accessions to taxid translations from prot.accession2taxid.gz</p>
+<p># TODO: Should maybe write a wrapper for this to run on all of the NCBI
+databases listed below… Maybe this will help account for instances where the
+accession is not found due to suppression,deprecation,removal,etc…</p>
+<p>DiamondResults contain sseqids with non-redundant protein sequence database
+entries from:
+- GenPept
+- Swissprot
+- PIR
+- PDF
+- PDB
+- RefSeq</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> (<em>dict</em>) – {qseqid: DiamondResult, …}</p></li>
+<li><p><strong>database</strong> (<em>str</em>) – &lt;/path/to/prot.accession2taxid.gz&gt;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hits - {qseqid: DiamondResult, …} sseqids dicts updated with ‘taxid’ key</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – prot.accession2taxid.gz database is required for translation taxid</p></li>
+<li><p><strong>DatabasesOutOfDateError</strong> – prot.accession2taxid.gz database and nr.dmnd are out of sync resulting
+    in accessions that are no longer available (either due to being
+    suppressed, deprecated or removed by NCBI). This must be resolved by
+    updating both nr and prot.accession2taxid.gz and re-running diamond on
+    the new nr.dmnd database. Alternatively, can try to find the exceptions in merged.dmp</p></li>
+</ul>
+</dd>
+</dl>
+<p># TODO: Replace file_length func for database file.
+(in this case 808,717,857 lines takes ~15 minutes simply to read each line…)
+This causes unnecessary slowdown. On download of the respective database. Line
+counts can be saved in config and replaced here for the file_length func. This
+will allow for only one read-through of the file, instead of two.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="external.diamond.blast">
+<code class="sig-prename descclassname">external.diamond.</code><code class="sig-name descname">blast</code><span class="sig-paren">(</span><em class="sig-param">fasta</em>, <em class="sig-param">database</em>, <em class="sig-param">outfpath</em>, <em class="sig-param">blast_type='blastp'</em>, <em class="sig-param">evalue=1e-05</em>, <em class="sig-param">maxtargetseqs=200</em>, <em class="sig-param">cpus=0</em>, <em class="sig-param">tmpdir='.'</em>, <em class="sig-param">force=False</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#external.diamond.blast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs diamond blastp search using fasta against diamond formatted database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fasta</strong> (<em>str</em>) – &lt;/path/to/fasta/file&gt;. May be amino acid or nucleotide sequences</p></li>
+<li><p><strong>database</strong> (<em>str</em>) – &lt;/path/to/diamond/formatted/database&gt;.</p></li>
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/output/file&gt;.</p></li>
+<li><p><strong>blast_type</strong> (<em>str</em>) – blastp if fasta consists of amino acids or blastx if nucleotides</p></li>
+<li><p><strong>evalue</strong> (<em>float</em>) – cutoff e-value to count hit as significant (the default is float(‘1e-5’)).</p></li>
+<li><p><strong>maxtargetseqs</strong> (<em>int</em>) – max number of target sequences to retrieve per query by diamond (the default is 200).</p></li>
+<li><p><strong>cpus</strong> (<em>int</em>) – number of cpus to use (the default is 1).</p></li>
+<li><p><strong>tmpdir</strong> (<em>type</em>) – &lt;/path/to/temporary/directory&gt; (the default is os.curdir).</p></li>
+<li><p><strong>force</strong> (<em>boolean</em>) – overwrite existing diamond results <cite>force</cite> (the default is False).</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em>) – log progress to terminal <cite>verbose</cite> (the default is False).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>outfpath</cite></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – <cite>fasta</cite> file does not exist</p></li>
+<li><p><strong>ValueError</strong> – provided <cite>blast_type</cite> is not ‘blastp’ or ‘blastx’</p></li>
+<li><p><strong>OSError</strong> – Diamond execution failed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="external.diamond.parse">
+<code class="sig-prename descclassname">external.diamond.</code><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">results</em>, <em class="sig-param">top_pct=0.9</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#external.diamond.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve diamond results from output table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results</strong> (<em>str</em>) – &lt;/path/to/blastp/outfmt6/output/file&gt;</p></li>
+<li><p><strong>top_pct</strong> (<em>0 &lt; float &lt;= 1</em>) – bitscore filter applied to each qseqid (the default is 0.9).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>{qseqid: DiamondResult, …}</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – diamond results table does not exist</p></li>
+<li><p><strong>ValueError</strong> – top_pct value is not a float or not in range of 0 to 1</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015 - 2020, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan
+      <span class="lastupdated">
+        Last updated on Mar 25, 2020.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

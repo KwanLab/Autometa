@@ -1,0 +1,25 @@
+external.samtools
+=================
+
+.. automodule:: external.samtools
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      depth
+      main
+      run
+      sort
+   
+   
+
+   
+   
+   
+
+   
+   
+   

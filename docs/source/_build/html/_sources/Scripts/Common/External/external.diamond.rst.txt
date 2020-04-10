@@ -1,0 +1,32 @@
+external.diamond
+================
+
+.. automodule:: external.diamond
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_taxids
+      blast
+      main
+      makedatabase
+      parse
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DiamondResult
+   
+   
+
+   
+   
+   

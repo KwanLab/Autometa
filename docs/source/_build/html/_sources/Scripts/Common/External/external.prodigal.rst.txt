@@ -1,0 +1,25 @@
+external.prodigal
+=================
+
+.. automodule:: external.prodigal
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      contigs_from_headers
+      main
+      orf_records_from_contigs
+      run
+   
+   
+
+   
+   
+   
+
+   
+   
+   

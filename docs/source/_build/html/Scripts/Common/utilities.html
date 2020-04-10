@@ -1,0 +1,553 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>5.3.8. utilities.py &mdash; Autometa 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="5.4. Config" href="../Config/config.html" />
+    <link rel="prev" title="5.3.7. metagenome.py" href="metagenome.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Autometa
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">1. Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../databases.html">2. Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../running-autometa.html">3. Running Autometa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examining-results.html">4. Examining Results</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../scripts.html">5. Scripts</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../main.html">5.1. Main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Binning/binning.html">5.2. Binning</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="common.html">5.3. Common</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="External/external.html">5.3.1. External</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coverage.html">5.3.2. coverage.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="exceptions.html">5.3.3. exceptions.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kmers.html">5.3.4. kmers.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mag.html">5.3.5. mag.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="markers.html">5.3.6. markers.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metagenome.html">5.3.7. metagenome.py</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.3.8. utilities.py</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Config/config.html">5.4. Config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html">5.5. Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Taxonomy/taxonomy.html">5.6. Taxonomy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Validation/validation.html">5.7. Validation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution-guidelines.html">6. Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">7. REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">8. License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Autometa</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../scripts.html">5. Scripts</a> &raquo;</li>
+        
+          <li><a href="common.html">5.3. Common</a> &raquo;</li>
+        
+      <li>5.3.8. utilities.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/Scripts/Common/utilities.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="utilities-py">
+<h1>5.3.8. utilities.py<a class="headerlink" href="#utilities-py" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Functions</p>
+<p class="rubric">Functions</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.file_length" title="utilities.file_length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.file_length</span></code></a>(fpath)</p></td>
+<td><p>Retrieve the number of lines in <cite>fpath</cite></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#utilities.get_checkpoints" title="utilities.get_checkpoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.get_checkpoints</span></code></a>(checkpoint_fp[, …])</p></td>
+<td><p>Get checkpoints from <cite>checkpoint_fp</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.get_checksum" title="utilities.get_checksum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.get_checksum</span></code></a>(fpath)</p></td>
+<td><p>Retrieve sha256 checksums from provided <cite>args</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#utilities.gunzip" title="utilities.gunzip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.gunzip</span></code></a>(infpath, outfpath)</p></td>
+<td><p>Decompress gzipped <cite>infpath</cite> to <cite>outfpath</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.make_pickle" title="utilities.make_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.make_pickle</span></code></a>(obj, outfpath)</p></td>
+<td><p>Serialize a python object to a pickle file (<a href="#id1"><span class="problematic" id="id2">*</span></a>.pkl).Opposite of unpickle function that retrieves python object from file..</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#utilities.tarchive_results" title="utilities.tarchive_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.tarchive_results</span></code></a>(outfpath, src_dirpath)</p></td>
+<td><p>Generate a tar archive of Autometa Results</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.timeit" title="utilities.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.timeit</span></code></a>(func)</p></td>
+<td><p>Time function run time (to be used as a decorator).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#utilities.unpickle" title="utilities.unpickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.unpickle</span></code></a>(fpath)</p></td>
+<td><p>Load a pickle file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.untar" title="utilities.untar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.untar</span></code></a>(tarchive, outdir[, member])</p></td>
+<td><p>Decompress a tar archive (may be gzipped or bzipped).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#utilities.update_checkpoints" title="utilities.update_checkpoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.update_checkpoints</span></code></a>(checkpoint_fp, …)</p></td>
+<td><p>Update <cite>checkpoints_fp</cite> with <cite>fpath</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#utilities.valid_checkpoint" title="utilities.valid_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">utilities.valid_checkpoint</span></code></a>(checkpoint_fp, fpath)</p></td>
+<td><p>Validate <cite>fpath</cite> is the same checksum as in <cite>checkpoint_fp</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+<span class="target" id="module-utilities"></span><p>File containing common utilities functions to be used by Autometa scripts.</p>
+<dl class="function">
+<dt id="utilities.file_length">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">file_length</code><span class="sig-paren">(</span><em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.file_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the number of lines in <cite>fpath</cite></p>
+<p>See:
+<a class="reference external" href="https://stackoverflow.com/questions/845058/how-to-get-line-count-of-a-large-file-cheaply-in-python">https://stackoverflow.com/questions/845058/how-to-get-line-count-of-a-large-file-cheaply-in-python</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fpath</strong> (<em>str</em>) – Description of parameter <cite>fpath</cite>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of lines in <cite>fpath</cite></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – provided <cite>fpath</cite> does not exist</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.get_checkpoints">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">get_checkpoints</code><span class="sig-paren">(</span><em class="sig-param">checkpoint_fp</em>, <em class="sig-param">fpaths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.get_checkpoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get checkpoints from <cite>checkpoint_fp</cite>.</p>
+<p><cite>checkpoint_fp</cite> will be written and populate with <cite>fpaths</cite> if it does not exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>checkpoint_fp</strong> (<em>str</em>) – &lt;/path/to/checkpoints.tsv&gt;</p></li>
+<li><p><strong>fpaths</strong> (<em>[</em><em>str</em><em>, </em><em>..</em><em>]</em>) – [&lt;/path/to/file&gt;, …]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>{fpath:checksum, …}</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – When <cite>checkpoint_fp</cite> first being written, will not populate an empty checkpoints file.
+    Raises an error if the <cite>fpaths</cite> list is empty or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.get_checksum">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">get_checksum</code><span class="sig-paren">(</span><em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.get_checksum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve sha256 checksums from provided <cite>args</cite>.</p>
+<dl class="simple">
+<dt>See:</dt><dd><p><a class="reference external" href="https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file">https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file</a></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fpath</strong> (<em>str</em>) – &lt;/path/to/file&gt;</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hexdigest of <cite>fpath</cite> using sha256</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – Provided <cite>fpath</cite> does not exist</p></li>
+<li><p><strong>TypeError</strong> – <cite>fpath</cite> is not a string</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.gunzip">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">gunzip</code><span class="sig-paren">(</span><em class="sig-param">infpath</em>, <em class="sig-param">outfpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.gunzip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decompress gzipped <cite>infpath</cite> to <cite>outfpath</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infpath</strong> (<em>str</em>) – &lt;/path/to/file.gz&gt;</p></li>
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/file&gt;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/file&gt;</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>FileExistsError</strong> – <cite>outfpath</cite> already exists and is not empty</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.make_pickle">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">make_pickle</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">outfpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.make_pickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize a python object to a pickle file (<a href="#id3"><span class="problematic" id="id4">*</span></a>.pkl). Opposite of
+unpickle function that retrieves python object from file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> (<em>any</em>) – Python object to serialize to outfpath.</p></li>
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/pickled/file&gt;.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/pickled/file&gt;</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ExceptionName</strong> – Why the exception is raised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.tarchive_results">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">tarchive_results</code><span class="sig-paren">(</span><em class="sig-param">outfpath</em>, <em class="sig-param">src_dirpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.tarchive_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a tar archive of Autometa Results</p>
+<p>See:
+<a class="reference external" href="https://stackoverflow.com/questions/2032403/how-to-create-full-compressed-tar-file-using-python">https://stackoverflow.com/questions/2032403/how-to-create-full-compressed-tar-file-using-python</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/output/tar/archive.tar.gz || &lt;/path/to/output/tar/archive.tgz</p></li>
+<li><p><strong>src_dirpath</strong> (<em>str</em>) – &lt;/paths/to/directory/to/archive&gt;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/output/tar/archive.tar.gz || &lt;/path/to/output/tar/archive.tgz</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>FileExistsError</strong> – <cite>outfpath</cite> already exists</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.timeit">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">timeit</code><span class="sig-paren">(</span><em class="sig-param">func</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.timeit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time function run time (to be used as a decorator). I.e. when defining a
+function use python’s decorator syntax</p>
+<p>Example Usage:
+&#64;timeit
+def function(stuff):</p>
+<blockquote>
+<div><p>…
+return stuff</p>
+</div></blockquote>
+<p>For details on functools.wraps see: <a class="reference external" href="https://docs.python.org/2/library/functools.html#functools.wraps">https://docs.python.org/2/library/functools.html#functools.wraps</a>
+:param func: Description of parameter <cite>func</cite>.
+:type func: type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Description of returned object.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.unpickle">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">unpickle</code><span class="sig-paren">(</span><em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.unpickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pickle file. Opposite of make_pickle method that writes
+object to a pickle file (<a href="#id5"><span class="problematic" id="id6">*</span></a>.pkl).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fpath</strong> (<em>str</em>) – &lt;/path/to/file.pkl&gt;.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Python object that was serialized to file via make_pickle()</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>any</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ExceptionName</strong> – Why the exception is raised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.untar">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">untar</code><span class="sig-paren">(</span><em class="sig-param">tarchive</em>, <em class="sig-param">outdir</em>, <em class="sig-param">member=None</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.untar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decompress a tar archive (may be gzipped or bzipped). passing in <cite>member</cite>
+requires an <cite>outdir</cite> also be provided.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3.8/library/tarfile.html#module-tarfile">https://docs.python.org/3.8/library/tarfile.html#module-tarfile</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tarchive</strong> (<em>str</em>) – &lt;/path/tarchive.tar.[compression]&gt;</p></li>
+<li><p><strong>outdir</strong> (<em>str</em>) – &lt;/path/to/output/directory&gt;</p></li>
+<li><p><strong>member</strong> (<em>str</em>) – member file to extract.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/extracted/member/file&gt; if member else &lt;/path/to/output/directory&gt;</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>IsADirectoryError</strong> – <cite>outdir</cite> already exists</p></li>
+<li><p><strong>ValueError</strong> – <cite>tarchive</cite> is not a tar archive</p></li>
+<li><p><strong>KeyError</strong> – <cite>member</cite> was not found in <cite>tarchive</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.update_checkpoints">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">update_checkpoints</code><span class="sig-paren">(</span><em class="sig-param">checkpoint_fp</em>, <em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.update_checkpoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update <cite>checkpoints_fp</cite> with <cite>fpath</cite>. If <cite>fpath</cite> already exists in <cite>checkpoint_fp</cite>
+and the hash is the same, no update will take place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>checkpoint_fp</strong> (<em>str</em>) – &lt;/path/to/checkpoints.tsv&gt;</p></li>
+<li><p><strong>fpath</strong> (<em>str</em>) – &lt;/path/to/file&gt;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>{fp:checksum, …}</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utilities.valid_checkpoint">
+<code class="sig-prename descclassname">utilities.</code><code class="sig-name descname">valid_checkpoint</code><span class="sig-paren">(</span><em class="sig-param">checkpoint_fp</em>, <em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="headerlink" href="#utilities.valid_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate <cite>fpath</cite> is the same checksum as in <cite>checkpoint_fp</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>checkpoint_fp</strong> (<em>str</em>) – &lt;/path/to/checkpoints.tsv&gt;</p></li>
+<li><p><strong>fpath</strong> (<em>str</em>) – &lt;/path/to/file&gt;</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if same else False</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – Either <cite>fpath</cite> or <cite>checkpoint_fp</cite> does not exist</p></li>
+<li><p><strong>TypeError</strong> – Either <cite>fpath</cite> or <cite>checkpoint_fp</cite> is not a string</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Config/config.html" class="btn btn-neutral float-right" title="5.4. Config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="metagenome.html" class="btn btn-neutral float-left" title="5.3.7. metagenome.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015 - 2020, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan
+      <span class="lastupdated">
+        Last updated on Mar 26, 2020.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

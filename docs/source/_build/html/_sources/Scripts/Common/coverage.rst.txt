@@ -1,0 +1,14 @@
+===========
+coverage.py
+===========
+
+.. rubric:: Functions
+
+.. autosummary::
+   
+    coverage.from_spades_names
+    coverage.get
+    coverage.make_length_table
+
+.. automodule:: coverage
+    :members:

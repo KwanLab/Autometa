@@ -1,0 +1,14 @@
+========
+Samtools
+========
+
+.. rubric:: Functions
+
+.. autosummary:: 
+    
+    samtools.run
+    samtools.sort
+
+.. automodule:: samtools
+    :members:
+

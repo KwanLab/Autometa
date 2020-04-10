@@ -1,0 +1,24 @@
+external.hmmer
+==============
+
+.. automodule:: external.hmmer
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      filter_markers
+      hmmscan
+      main
+   
+   
+
+   
+   
+   
+
+   
+   
+   

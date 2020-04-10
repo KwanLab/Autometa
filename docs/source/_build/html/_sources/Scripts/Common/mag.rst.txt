@@ -1,0 +1,12 @@
+======
+mag.py
+======
+
+.. rubric:: Classes
+
+.. autosummary::
+   
+    mag.MAG
+
+.. automodule:: mag
+    :members:

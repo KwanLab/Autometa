@@ -1,0 +1,24 @@
+external.bedtools
+=================
+
+.. automodule:: external.bedtools
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      genomecov
+      main
+      parse
+   
+   
+
+   
+   
+   
+
+   
+   
+   

@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>external.hmmer &mdash; Autometa 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Autometa
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">1. Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../databases.html">2. Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../running-autometa.html">3. Running Autometa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examining-results.html">4. Examining Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts.html">5. Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution-guidelines.html">6. Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">8. License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Autometa</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+      <li>external.hmmer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/Scripts/Common/External/external.hmmer.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-external.hmmer">
+<span id="external-hmmer"></span><h1>external.hmmer<a class="headerlink" href="#module-external.hmmer" title="Permalink to this headline">¶</a></h1>
+<p>Functions related to running hmmer on metagenome sequences</p>
+<p class="rubric">Functions</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#external.hmmer.filter_markers" title="external.hmmer.filter_markers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_markers</span></code></a>(infpath, outfpath, cutoffs[, …])</p></td>
+<td><p>Filter markers from hmmscan output table that are above cutoff values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#external.hmmer.hmmscan" title="external.hmmer.hmmscan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hmmscan</span></code></a>(orfs, hmmdb, outfpath[, cpus, …])</p></td>
+<td><p>Runs hmmscan on dataset ORFs and provided hmm database.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code>(args)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="external.hmmer.filter_markers">
+<code class="sig-prename descclassname">external.hmmer.</code><code class="sig-name descname">filter_markers</code><span class="sig-paren">(</span><em class="sig-param">infpath</em>, <em class="sig-param">outfpath</em>, <em class="sig-param">cutoffs</em>, <em class="sig-param">prodigal_annotations=None</em>, <em class="sig-param">force=False</em><span class="sig-paren">)</span><a class="headerlink" href="#external.hmmer.filter_markers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter markers from hmmscan output table that are above cutoff values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infpath</strong> (<em>str</em>) – &lt;/path/to/hmmscan.tsv&gt;</p></li>
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/output.markers.tsv&gt;</p></li>
+<li><p><strong>cutoffs</strong> (<em>str</em>) – &lt;/path/to/cutoffs.tsv&gt;</p></li>
+<li><p><strong>prodigal_annotations</strong> (<em>str</em>) – Default will attempt to translate recovered qseqids to contigs
+&lt;/path/to/prodigal/called/orfs.fasta&gt;</p></li>
+<li><p><strong>force</strong> (<em>bool</em>) – Overwrite existing <cite>outfpath</cite> (the default is False).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/output.markers.tsv&gt;</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – <cite>infpath</cite> or <cite>cutoffs</cite> not found</p></li>
+<li><p><strong>FileExistsError</strong> – <cite>outfpath</cite> already exists and force=False</p></li>
+<li><p><strong>AssertionError</strong> – No returned markers pass the cutoff thresholds. I.e. final df is empty.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="external.hmmer.hmmscan">
+<code class="sig-prename descclassname">external.hmmer.</code><code class="sig-name descname">hmmscan</code><span class="sig-paren">(</span><em class="sig-param">orfs</em>, <em class="sig-param">hmmdb</em>, <em class="sig-param">outfpath</em>, <em class="sig-param">cpus=0</em>, <em class="sig-param">force=False</em>, <em class="sig-param">parallel=True</em>, <em class="sig-param">log=None</em><span class="sig-paren">)</span><a class="headerlink" href="#external.hmmer.hmmscan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs hmmscan on dataset ORFs and provided hmm database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>orfs</strong> (<em>str</em>) – &lt;/path/to/orfs.faa&gt;</p></li>
+<li><p><strong>hmmdb</strong> (<em>str</em>) – &lt;/path/to/hmmpressed/database.hmm&gt;</p></li>
+<li><p><strong>outfpath</strong> (<em>str</em>) – &lt;/path/to/output.hmmscan.tsv&gt;</p></li>
+<li><p><strong>cpus</strong> (<em>int</em>) – Num. cpus to use. 0 will run as many cpus as possible (the default is 0).</p></li>
+<li><p><strong>force</strong> (<em>bool</em>) – Overwrite existing <cite>outfpath</cite> (the default is False).</p></li>
+<li><p><strong>parallel</strong> (<em>bool</em>) – Will parallelize hmmscan using GNU parallel (the default is True).</p></li>
+<li><p><strong>log</strong> (<em>str</em>) – &lt;/path/to/parallel.log&gt; (the default is None). If provided will write
+parallel log to <cite>log</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>&lt;/path/to/output.hmmscan.tsv&gt;</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileExistsError</strong> – <cite>outfpath</cite> already exists</p></li>
+<li><p><strong>OSError</strong> – hmmscan failed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015 - 2020, Evan R. Rees, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan
+      <span class="lastupdated">
+        Last updated on Mar 25, 2020.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

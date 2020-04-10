@@ -1,0 +1,15 @@
+=============
+metagenome.py
+=============
+
+.. rubric:: Classes
+
+.. autosummary::
+   
+    metagenome.Metagenome
+
+.. automodule:: metagenome
+    :members:
+    
+    
+

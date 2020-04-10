@@ -25,14 +25,8 @@ Guide
    databases
    running-autometa
    examining-results
-   Scripts/scripts
-<<<<<<< HEAD
    scripts_2/script_main
    contribution-guidelines
-   .. sphinxapi_test/modules
-=======
-   contribution-guidelines
->>>>>>> 59941204e1ebb59a04da01b9bbd46c7fd50d3e7b
    api
    license
 
@@ -42,13 +36,6 @@ Contact
 For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
 at jason.kwan@wisc.edu
 
-<<<<<<< HEAD
-=======
-Copyright and License
----------------------
-Autometa is released under the GNU Affero General Public License v3 (see :ref:`License`).
-
->>>>>>> 59941204e1ebb59a04da01b9bbd46c7fd50d3e7b
 Indices and tables
 ------------------
 
