@@ -283,13 +283,15 @@ def main(args):
     logger.info(f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Calls ORFs with provided input assembly')
+    parser = argparse.ArgumentParser(usage = 'prodigal.py' ,
+        description = 'Calls ORFs with provided input assembly')
     parser.add_argument('assembly', help='</path/to/assembly>', type=str)
     parser.add_argument('nucls_out', help='</path/to/nucls.out>', type=str)
     parser.add_argument('prots_out', help='</path/to/prots.out>', type=str)
@@ -300,4 +302,5 @@ if __name__ == '__main__':
         action='store_true', default=False)
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
+    #end_parsing
     main(args)

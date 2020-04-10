@@ -213,6 +213,7 @@ def main(args):
         out=args.out)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     import multiprocessing as mp
@@ -220,7 +221,8 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Construct contig coverage table given an input assembly and reads.')
+    parser = argparse.ArgumentParser(usage='coverage.py',
+        description='Construct contig coverage table given an input assembly and reads.')
     parser.add_argument('-f','--assembly', help='</path/to/metagenome.fasta>', required=True)
     parser.add_argument('-1', '--fwd-reads', help='</path/to/forwards-reads.fastq>', nargs='*')
     parser.add_argument('-2', '--rev-reads', help='</path/to/reverse-reads.fastq>', nargs='*')
@@ -239,4 +241,5 @@ if __name__ == '__main__':
         default=False)
     parser.add_argument('--out', help='</path/to/coverages.tsv>', required=True)
     args = parser.parse_args()
+    #end_parsing
     main(args)
