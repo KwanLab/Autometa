@@ -25,5 +25,4 @@ dependencies:
   - pip:
       - sphinx-rtd-theme
       - Sphinx==2.2.1
-      - requirements: docs/requirements.txt
       
