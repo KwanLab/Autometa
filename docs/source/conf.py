@@ -92,9 +92,9 @@ html_static_path = ['_static']
 
 html_last_updated_fmt = '%b %d, %Y'
 
-def setup(app):
+#def setup(app):
     # Register a sphinx.ext.autodoc.between listener to ignore everything
     # between lines that contain the word COPYRIGHT
     # Exclude COPYRIGHT block in scripts using the autodoc between function
-    app.connect('autodoc-process-docstring', between('^.*COPYRIGHT.*$', exclude=True))
-    return app
+#    app.connect('autodoc-process-docstring', between('^.*COPYRIGHT.*$', exclude=True))
+#    return app
