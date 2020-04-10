@@ -234,6 +234,7 @@ def main(args):
         run_command(cmd)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -259,4 +260,5 @@ if __name__ == '__main__':
         help='<help text of hello world>',
         default='Hello World')
     args = parser.parse_args()
+    #end_parsing
     main(args)

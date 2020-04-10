@@ -203,6 +203,7 @@ def main(args):
     logger.info(f"metagenome config numbers: {','.join(map(str,project.metagenomes))}")
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -215,4 +216,5 @@ if __name__ == '__main__':
     """)
     parser.add_argument('config',help='</path/to/project.config>')
     args = parser.parse_args()
+    #end_parsing
     main(args)

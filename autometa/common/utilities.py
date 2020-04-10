@@ -448,5 +448,7 @@ def timeit(func):
     return wrapper
 
 if __name__ == '__main__':
+    #start_parsing
     print('file containing utilities functions for Autometa pipeline')
+    #end_parsing
     import sys;sys.exit(1)

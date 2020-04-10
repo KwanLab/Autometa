@@ -585,6 +585,7 @@ def main(args):
     logger.info('Done')
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -621,4 +622,5 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', help="add verbosity",
         action='store_true', default=False)
     args = parser.parse_args()
+    #end_parsing
     main(args)

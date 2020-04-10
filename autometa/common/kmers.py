@@ -510,6 +510,7 @@ def main(args):
         pca_dimensions=args.pca_dimensions)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -537,4 +538,5 @@ if __name__ == '__main__':
         help=f'num. processors to use if multiprocess is selected. (default = {cpus})',
         default=cpus, type=int)
     args = parser.parse_args()
+    #end_parsing
     main(args)

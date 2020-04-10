@@ -343,6 +343,7 @@ def main(args):
     put_config(config, args.out)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -355,4 +356,5 @@ if __name__ == '__main__':
     parser.add_argument('--out',
         help='</path/to/output/executables.config>')
     args = parser.parse_args()
+    #end_parsing
     main(args)

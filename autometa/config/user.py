@@ -299,6 +299,7 @@ def main(args):
     logger.info(args.user)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -308,4 +309,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Concise Functional Description of Script')
     parser.add_argument('user', help='</path/to/user.config>')
     args = parser.parse_args()
+    #end_parsing
     main(args)

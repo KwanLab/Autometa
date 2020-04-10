@@ -499,6 +499,7 @@ def main(args):
         force=args.force)
 
 if __name__ == '__main__':
+    #start_parsing
     import argparse
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     dbdir = os.path.join(basedir,'databases','ncbi')
@@ -514,4 +515,5 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', help="add verbosity", action='store_true', default=False)
     parser.add_argument('--force', help="force overwrite if file already exists", action='store_true', default=False)
     args = parser.parse_args()
+    #end_parsing
     main(args)
