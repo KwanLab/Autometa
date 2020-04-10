@@ -1,3 +1,4 @@
+sphinx==2.2.1
 bedtools
 biopython
 bowtie2
