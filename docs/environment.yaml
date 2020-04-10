@@ -9,4 +9,7 @@ dependencies:
   - python==3.7
   - pip
   - pip:
-    - sphinxcontrib-programoutput
+      - sphinxcontrib-programoutput
+      - sphinx-rtd-theme
+      - Sphinx==2.2.1
+      
