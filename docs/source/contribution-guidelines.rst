@@ -2,5 +2,5 @@
 Contribution Guidelines
 =======================
 
-.. todo:: Guidelines about how to contribute
+ Need to add TO DO here
 
