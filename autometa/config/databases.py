@@ -301,6 +301,7 @@ if __name__ == '__main__':
     #start_parsing
     import argparse
     import logging as logger
+    import multiprocessing as mp
 
     cpus = mp.cpu_count()
     logger.basicConfig(

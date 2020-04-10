@@ -180,11 +180,11 @@ if __name__ == '__main__':
     parser.add_argument('password', help='</path/to/work-queue/master/password.txt>')
     parser.add_argument('project-name', help='<unique project identifier>')
     # TODO: Allow argparse to handle range of ints for port
-    parser.add_argument('--port', help="""
-    The port number to listen on. If zero, then a random port is chosen. A range
-     of possible ports (low, hight) can be also specified instead of a single integer.
-    """,
-        default=wq.WORK_QUEUE_DEFAULT_PORT, type=int)
+    #parser.add_argument('--port', help="""
+    #The port number to listen on. If zero, then a random port is chosen. A range
+    # of possible ports (low, hight) can be also specified instead of a single integer.
+    #""",
+    #    default=wq.WORK_QUEUE_DEFAULT_PORT, type=int)
     parser.add_argument('--stats', help='</path/to/workqueue/stats.log')
     parser.add_argument('--transactions', help='</path/to/workqueue/transactions.log')
     parser.add_argument('--debug', help='</path/to/workqueue/debug.log')

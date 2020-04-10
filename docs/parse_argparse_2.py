@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import glob
 import subprocess
 import os
@@ -13,9 +10,11 @@ if os.path.exists(path_scripts_2):
 
 for dir_name in glob.glob("../autometa/**/*.py", recursive=True): 
     if "__" not in dir_name: #to not include __init__ files
+        #print(dir_name)
         with open (dir_name) as fh_read:
-            path_temp_write = '../autometa/temp_write.py'
-            fh_write = open(path_temp_write, 'w')            
+            path_temp_write = '../docs/temp_write.py'
+            #path_temp_write='/home/siddharth/Desktop/temp_write.py'
+            fh_write = open(path_temp_write, 'w+')            
             for line in fh_read:
                 if line.strip() == '#start_parsing':
                     break
@@ -27,7 +26,7 @@ for dir_name in glob.glob("../autometa/**/*.py", recursive=True):
                 fh_write.write(line)
                 fh_write.write('\n')
             fh_write.close()
-
+        
         basename = os.path.basename(dir_name) #Extract the filename, eg: kmers.py
         #print (basename)
         len_base = len(basename) #needed to get the number of '=' in the header
@@ -48,18 +47,20 @@ for dir_name in glob.glob("../autometa/**/*.py", recursive=True):
         path = os.path.join(path, file_name) #adding the kmers.rst to the above complete path
         #now the path is 'docs/source/scripts_2/comon/external/samtools.rst'
         #print(path)
-        
-        cmd = 'python3 '+  '../autometa/temp_write.py ' + '-h'
 
-        path_temp_wrie_rst = path_temp_write
-        base_path_temp_write = os.path.splitext(path_temp_write)[0]
+        cmd = 'python3 '+  os.path.abspath(path_temp_write) + ' -h'
+        #print(cmd)
+
+        path_temp_write_rst = os.path.abspath(path_temp_write)
+        #print(path_temp_write_rst)
+        base_path_temp_write = os.path.splitext(os.path.abspath(path_temp_write))[0]
         #print(base_path_temp_write)
-        os.rename(path_temp_wrie_rst, base_path_temp_write + '.rst')
-        #print(path_temp_wrie_rst)
+        path_temp_write_rst = base_path_temp_write + '.rst'
+        #print(path_temp_write_rst)
 
         #this block writes the argparse output to the respective '.rst' file with proper indentation
         #this is the output that will be under '..code-block::' and will be displayed in html
-        with open(path_temp_wrie_rst, 'w+') as stdout:
+        with open(path_temp_write_rst, 'w+') as stdout:
             subprocess.call(cmd, stdout=stdout, shell=True) #capture the argparse output
             stdout.seek(0) #takes the cursor to beginning. Copy and indent stdout.
             #The indentation is done because the arparse text needs to be indented

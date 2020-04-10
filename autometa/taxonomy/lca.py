@@ -501,6 +501,7 @@ def main(args):
 if __name__ == '__main__':
     #start_parsing
     import argparse
+    import os
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     dbdir = os.path.join(basedir,'databases','ncbi')
     parser = argparse.ArgumentParser('Script to determine lowest common ancestor')

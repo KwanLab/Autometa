@@ -217,7 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('orfs', help='</path/to/prot.orfs.faa>')
     parser.add_argument('kingdom', help='kingdom to search for markers',
         choices=['bacteria','archaea'], default='bacteria')
-    parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
+    #parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
     args = parser.parse_args()
     #end_parsing
     main(args)
