@@ -209,10 +209,12 @@ def main():
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(description='Annotate ORFs with kingdom-marker information')
-    parser.add_argument('orfs', help='</path/to/prot.orfs.faa>')
+    parser.add_argument('orfs',
+        help='Path to a fasta file containing amino acid sequences of open reading frames')
     parser.add_argument('kingdom', help='kingdom to search for markers',
         choices=['bacteria','archaea'], default='bacteria')
-    parser.add_argument('--dbdir', help=f'</path/to/markers/dir> {MARKERS_DIR}',
+    parser.add_argument('--dbdir',
+        help=f'Path to directory containing the single-copy marker HMM databases. (default is {MARKERS_DIR})',
         default=MARKERS_DIR)
     args = parser.parse_args()
     markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)

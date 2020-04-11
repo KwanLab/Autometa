@@ -475,15 +475,15 @@ def main():
     skip_desc = '(will skip if file exists)'
     cpus = mp.cpu_count()
     parser = argparse.ArgumentParser(description='Count k-mer frequencies of given `fasta`')
-    parser.add_argument('--fasta', help='</path/to/sequences.fna>', required=True)
-    parser.add_argument('--kmers', help=f'</path/to/output/kmers.tsv> {skip_desc}', required=True)
-    parser.add_argument('--size', help='k-mer size', default=5, type=int)
+    parser.add_argument('--fasta', help='Metagenomic assembly fasta file', required=True)
+    parser.add_argument('--kmers', help=f'K-mers frequency tab-delimited table {skip_desc}', required=True)
+    parser.add_argument('--size', help='k-mer size in bp', default=5, type=int)
     parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
-    parser.add_argument('--embedded', help='</path/to/kmers.embedded.tsv>')
+    parser.add_argument('--embedded', help=f'</path/to/output/kmers.embedded.tsv> {skip_desc}')
     parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
-    parser.add_argument('--n-components', help='<num components of lower dimension manifold>',
+    parser.add_argument('--n-components', help='Number of dimensions to reduce k-mer frequencies to',
         type=int, default=2)
-    parser.add_argument('--do-pca', help='Whether to perform PCA prior to manifold learning',
+    parser.add_argument('--do-pca', help='Whether to perform PCA prior to dimension reduction',
         action='store_true', default=False)
     parser.add_argument('--pca-dimensions', help='<num components to reduce to PCA feature space',
         type=int, default=50)

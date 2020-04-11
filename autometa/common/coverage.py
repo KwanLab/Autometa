@@ -200,14 +200,24 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Construct contig coverage table given an input assembly and reads.')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""
+    Construct contig coverage table given an input `assembly` and provided files.
+
+    Provided files may include one from the list below:
+    1. `fwd_reads` and/or `rev_reads` and/or `se_reads`
+    2. `sam` - alignment of `assembly` and `reads` in SAM format
+    3. `bam` - alignment of `assembly` and `reads` in BAM format
+    4. `bed` - alignment of `assembly` and `reads` in BED format
+    """)
     parser.add_argument('-f','--assembly', help='</path/to/metagenome.fasta>', required=True)
     parser.add_argument('-1', '--fwd-reads', help='</path/to/forwards-reads.fastq>', nargs='*')
     parser.add_argument('-2', '--rev-reads', help='</path/to/reverse-reads.fastq>', nargs='*')
     parser.add_argument('-U', '--se-reads', help='</path/to/single-end-reads.fastq>', nargs='*')
     parser.add_argument('--sam', help='</path/to/alignments.sam>')
     parser.add_argument('--bam', help='</path/to/alignments.bam>')
-    parser.add_argument('--lengths', help='</path/to/lengths.tsv>')
+    parser.add_argument('--lengths',
+        help='Path to tab-delimited lengths table with columns of contig & length.')
     parser.add_argument('--bed', help='</path/to/alignments.bed>')
     parser.add_argument('--nproc',
         help=f'Num processors to use. (default: {mp.cpu_count()})',
@@ -217,7 +227,7 @@ def main():
         help='Extract k-mer coverages from contig IDs. (Input assembly is output from SPAdes)',
         action='store_true',
         default=False)
-    parser.add_argument('--out', help='</path/to/coverages.tsv>', required=True)
+    parser.add_argument('--out', help='Path to write a table of coverages', required=True)
     args = parser.parse_args()
 
     if args.from_spades:

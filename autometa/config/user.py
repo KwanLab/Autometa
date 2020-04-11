@@ -311,7 +311,7 @@ def main():
     Running without args will download and format Autometa database dependencies.
     """)
     parser.add_argument('--config',
-        help=f'</path/to/user.config> (default is {config.DEFAULT_FPATH}).',
+        help=f'Path to an Autometa default.config file (default is {config.DEFAULT_FPATH}).',
         default=config.DEFAULT_FPATH)
     parser.add_argument('--dryrun',
         help='Log configuration without performing updates.',
@@ -319,10 +319,9 @@ def main():
         default=False)
     parser.add_argument('--debug',
         help='Stream debugging information to terminal.',
-        action='store_true',
-        default=False)
+        action='store_true')
     parser.add_argument('--cpus',
-        help=f'</path/to/user.config> (default is {mp.cpu_count()}).',
+        help=f'Num. cpus to use when updating/constructing databases (default is {mp.cpu_count()}).',
         default=mp.cpu_count(), type=int)
     args = parser.parse_args()
     # config.init_default()

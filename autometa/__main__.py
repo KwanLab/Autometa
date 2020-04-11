@@ -119,9 +119,9 @@ def entrypoint():
     import argparse
     import time
     cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser(description='Main script to run Autometa pipeline.')
+    parser = argparse.ArgumentParser(description='Main script to run the Autometa pipeline.')
     parser.add_argument('config',
-        help='</path/to/metagenome.config>',
+        help='Path to your metagenome.config file',
         nargs='*')
     parser.add_argument('--cpus',
         help=f'Num. cpus to use when updating/constructing databases (default: {cpus} cpus)',
@@ -129,13 +129,12 @@ def entrypoint():
         default=cpus)
     parser.add_argument('--debug',
         help='Stream debugging information to terminal',
-        action='store_true',
-        default=False)
+        action='store_const',
+        const=logging.DEBUG)
     parser.add_argument('--log', help='</path/to/autometa.log>', type=str)
     parser.add_argument('--check-dependencies',
         help='Check user executables and databases accessible to Autometa and exit.',
-        action='store_true',
-        default=False)
+        action='store_true')
     args = parser.parse_args()
 
     try:
