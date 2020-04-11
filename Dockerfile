@@ -1,4 +1,4 @@
-FROM continuumio/anaconda
+FROM continuumio/miniconda3
 MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
 
 # Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
@@ -19,24 +19,16 @@ MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-conda install -c bioconda -c conda-forge --yes \
-    biopython \
-    pandas \
-    tqdm \
-    numpy \
-    scikit-learn \
-    scipy \
-    samtools \
-    bedtools \
-    bowtie2 \
-    hmmer \
-    prodigal \
-    diamond \
-    ndcctools \
-    parallel \
-    requests \
-    hdbscan \
-    umap-learn \
-    && conda clean --all --yes
+RUN conda config --prepend channels erees \
+    && conda config --append channels bioconda \
+    && conda config --append channels conda-forge
 
-RUN git clone https://github.com/KwanLab/Autometa
+RUN conda install autometa
+
+RUN echo "testing autometa import"
+RUN python -c "import autometa"
+
+RUN echo "Running Autometa dependencies test"
+RUN autometa --check-dependencies --debug
+
+# RUN python -c "import tsne"
