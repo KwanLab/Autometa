@@ -20,10 +20,10 @@ channels:
   - anaconda
 
 dependencies:
-  - python==3.7
+  - python=3.7
   - pip
   - pip:
       - sphinx-rtd-theme
-      - sphinx==2.2.1
+      - sphinx=2.2.1
       - requirements: docs/requirements.txt
       
