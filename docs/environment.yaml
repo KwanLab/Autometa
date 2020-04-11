@@ -11,19 +11,9 @@ sphinx:
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats: all
-
-name: autometa
-
-channels:
-  - conda-forge
-  - bioconda
-  - anaconda
-
-dependencies:
-  - python=3.7
-  - pip
-  - pip:
-      - sphinx-rtd-theme
-      - sphinx=2.2.1
+  
+python:
+   version: 3.7
+   install:
       - requirements: docs/requirements.txt
       
