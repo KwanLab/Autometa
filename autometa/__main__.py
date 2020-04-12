@@ -131,7 +131,7 @@ def entrypoint():
         help='Stream debugging information to terminal',
         action='store_const',
         const=logging.DEBUG)
-    parser.add_argument('--log', help='</path/to/autometa.log>', type=str)
+    parser.add_argument('--log', help='Path to write a log file (e.g. </path/to/autometa.log>)', type=str)
     parser.add_argument('--check-dependencies',
         help='Check user executables and databases accessible to Autometa and exit.',
         action='store_true')
