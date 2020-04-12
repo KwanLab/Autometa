@@ -1,3 +1,4 @@
+python>=3.7
 bedtools
 biopython
 bowtie2
@@ -5,6 +6,8 @@ diamond
 hdbscan
 hmmer
 ndcctools
+numpy=1.18.*
+pandas=1.*
 parallel
 prodigal
 samtools

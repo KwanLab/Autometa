@@ -550,41 +550,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
                 fpaths.append(rank_name_fp)
         return fpaths
 
-def main(args):
-    raw_mags = Metagenome(args.assembly)
-    mags = raw_mags.length_filter(cutoff=args.cutoff)
-    logger.info(f'{args.cutoff:,}bp length filter {raw_mags.nseqs:,} to {mags.nseqs:,} seqs')
-    logger.info(f'CallingORFs: force:{args.force}. cpus:{args.cpus} parallel:{args.noparallel}')
-    try:
-        mags.call_orfs(
-            force=args.force,
-            verbose=args.verbose,
-            cpus=args.cpus,
-            parallel=args.noparallel,
-        )
-    except FileExistsError as err:
-        logger.warning(f'FileExistsError: {mags.prots_out}. Skipping...')
-    logger.info(f'TaxonAssignment - method:{args.taxon_method}')
-    mags.get_kingdoms(
-        method=args.taxon_method,
-        fasta=mags.prots_out,
-        ncbi_dir=args.ncbi,
-        outdir=mags.dirname,
-        blast=None,
-        usepickle=True,
-        verbose=args.verbose,
-    )
-    logger.info(f'Getting k-mers of size {args.kmer_size}. Normalize: {args.kmer_normalized}')
-    kmer_fpath = args.kmer_fpath if args.kmer_fpath else os.path.join(mags.dirname, 'kmers.tsv')
-    kmers_df = mags.get_kmers(
-        kmer_size=args.kmer_size,
-        normalized=args.kmer_normalized,
-        out=kmer_fpath,
-        force=args.force,
-    )
-    logger.info('Done')
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -621,4 +587,38 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', help="add verbosity",
         action='store_true', default=False)
     args = parser.parse_args()
-    main(args)
+    raw_mags = Metagenome(args.assembly)
+    mags = raw_mags.length_filter(cutoff=args.cutoff)
+    logger.info(f'{args.cutoff:,}bp length filter {raw_mags.nseqs:,} to {mags.nseqs:,} seqs')
+    logger.info(f'CallingORFs: force:{args.force}. cpus:{args.cpus} parallel:{args.noparallel}')
+    try:
+        mags.call_orfs(
+            force=args.force,
+            verbose=args.verbose,
+            cpus=args.cpus,
+            parallel=args.noparallel,
+        )
+    except FileExistsError as err:
+        logger.warning(f'FileExistsError: {mags.prots_out}. Skipping...')
+    logger.info(f'TaxonAssignment - method:{args.taxon_method}')
+    mags.get_kingdoms(
+        method=args.taxon_method,
+        fasta=mags.prots_out,
+        ncbi_dir=args.ncbi,
+        outdir=mags.dirname,
+        blast=None,
+        usepickle=True,
+        verbose=args.verbose,
+    )
+    logger.info(f'Getting k-mers of size {args.kmer_size}. Normalize: {args.kmer_normalized}')
+    kmer_fpath = args.kmer_fpath if args.kmer_fpath else os.path.join(mags.dirname, 'kmers.tsv')
+    kmers_df = mags.get_kmers(
+        kmer_size=args.kmer_size,
+        normalized=args.kmer_normalized,
+        out=kmer_fpath,
+        force=args.force,
+    )
+    logger.info('Done')
+
+if __name__ == '__main__':
+    main()

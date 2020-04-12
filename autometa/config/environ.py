@@ -271,11 +271,12 @@ def get_versions(program=None):
         'bedtools':bedtools,
     }
     if program:
+        exe_name = os.path.basename(program)
         if type(program) is not str:
             raise ValueError(f'program is not string. given:{type(program)}')
-        if program not in dispatcher:
-            raise KeyError(f'{program} not in executables')
-        return dispatcher[program]()
+        if exe_name not in dispatcher:
+            raise KeyError(f'{exe_name} not in executables')
+        return dispatcher[exe_name]()
     versions = {}
     executables = find_executables()
     for exe,found in executables.items():
@@ -336,13 +337,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('versions', user_executable, version)
     return config, satisfied
 
-def main(args):
-    config,satisfied = configure(infpath=args.infpath)
-    if not args.out:
-        import sys;sys.exit(0)
-    put_config(config, args.out)
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
@@ -355,4 +350,10 @@ if __name__ == '__main__':
     parser.add_argument('--out',
         help='</path/to/output/executables.config>')
     args = parser.parse_args()
-    main(args)
+    config,satisfied = configure(infpath=args.infpath)
+    if not args.out:
+        import sys;sys.exit(0)
+    put_config(config, args.out)
+
+if __name__ == '__main__':
+    main()

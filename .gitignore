@@ -135,7 +135,7 @@ dmypy.json
 *.c
 autometa/*.pyc
 autometa/taxonomy/*.pyc
-databases/markers/*.h3*
+autometa/databases/markers/*.h3*
 
 # databases / testing
 tests/data/*
