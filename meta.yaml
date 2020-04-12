@@ -27,6 +27,7 @@ requirements:
     - diamond
     - hmmer
     - hdbscan
+    - openssl ==1.0.*
     - ndcctools
     - numpy >=1.18.*
     - pandas >=1.*
@@ -56,7 +57,7 @@ about:
   description: |
     An automated binning pipeline for metagenomes, in particular host-associated and highly complex ones.
     Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. Nucleic Acids Research, 2019. DOI: https://doi.org/10.1093/nar/gkz148
-  summary: "Autometa: Automated extraction of genomes from shotgun metagenomes."
+  summary: "Automated extraction of genomes from shotgun metagenomes"
   doc_url: https://autometa.readthedocs.io/en/latest/
   dev_url: {{ data.get('url') }}
 
