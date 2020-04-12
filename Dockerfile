@@ -23,12 +23,11 @@ RUN conda config --prepend channels erees \
     && conda config --append channels bioconda \
     && conda config --append channels conda-forge
 
-RUN conda install autometa
+RUN conda install autometa tsne
 
-RUN echo "testing autometa import"
+RUN echo "testing autometa and tsne import"
 RUN python -c "import autometa"
+RUN python -c "import tsne"
 
 RUN echo "Running Autometa dependencies test"
 RUN autometa --check-dependencies --debug
-
-# RUN python -c "import tsne"
