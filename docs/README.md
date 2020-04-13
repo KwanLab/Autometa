@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/autometa20/badge/?version=latest&token=af09dcd9897c0cf0e1b6a555ae17cca654ff9fd03e881b2d860052bd3535a08e)](https://autometa20.readthedocs.io/en/latest/?badge=latest)
+      
 Autometa documentation
 ========================
 
