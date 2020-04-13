@@ -410,7 +410,41 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     unclustered_df.loc[:,'cluster'] = pd.NA
     return pd.concat([clustered_df,unclustered_df], sort=True)
 
-def main(args):
+def main():
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logger.DEBUG)
+    parser = argparse.ArgumentParser(
+        description="Perform decomposition/embedding/clustering via PCA/[TSNE|UMAP]/DBSCAN."
+    )
+    parser.add_argument('kmers', help='</path/to/kmers.tsv>')
+    parser.add_argument('coverage', help='</path/to/coverages.tsv>')
+    parser.add_argument('markers', help='</path/to/markers.tsv>')
+    parser.add_argument('out', help='</path/to/output.tsv>')
+    parser.add_argument('--embedded-kmers',help='</path/to/embedded_kmers.tsv>')
+    parser.add_argument(
+        '--embedding-method',
+        help='Embedding method to use',
+        choices=['TSNE','UMAP'],
+        default='TSNE')
+    parser.add_argument(
+        '--clustering-method',
+        help='Clustering method to use',
+        choices=['DBSCAN','HDBSCAN'],
+        default='DBSCAN')
+    parser.add_argument('--completeness', help='<completeness cutoff>', default=20., type=float)
+    parser.add_argument('--purity', help='<purity cutoff>', default=90., type=float)
+    parser.add_argument('--taxonomy', help='</path/to/taxonomy.tsv>')
+    parser.add_argument(
+        '--domain',
+        help='Kingdom to consider (archaea|bacteria)',
+        choices=['bacteria','archaea'],
+        default='bacteria')
+    parser.add_argument('--verbose', action='store_true',default=False,help='log debug information')
+    args = parser.parse_args()
     # Kmers.load().embed(method=args.embedded_kmers)
     kmers_df = kmers.embed(
         kmers=args.kmers,
@@ -451,38 +485,4 @@ def main(args):
     master_out[outcols].to_csv(args.out, sep='\t', index=True, header=True)
 
 if __name__ == '__main__':
-    import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser(
-        description="Perform decomposition/embedding/clustering via PCA/[TSNE|UMAP]/DBSCAN."
-    )
-    parser.add_argument('kmers', help='</path/to/kmers.tsv>')
-    parser.add_argument('coverage', help='</path/to/coverages.tsv>')
-    parser.add_argument('markers', help='</path/to/markers.tsv>')
-    parser.add_argument('out', help='</path/to/output.tsv>')
-    parser.add_argument('--embedded-kmers',help='</path/to/embedded_kmers.tsv>')
-    parser.add_argument(
-        '--embedding-method',
-        help='Embedding method to use',
-        choices=['TSNE','UMAP'],
-        default='TSNE')
-    parser.add_argument(
-        '--clustering-method',
-        help='Clustering method to use',
-        choices=['DBSCAN','HDBSCAN'],
-        default='DBSCAN')
-    parser.add_argument('--completeness', help='<completeness cutoff>', default=20., type=float)
-    parser.add_argument('--purity', help='<purity cutoff>', default=90., type=float)
-    parser.add_argument('--taxonomy', help='</path/to/taxonomy.tsv>')
-    parser.add_argument(
-        '--domain',
-        help='Kingdom to consider (archaea|bacteria)',
-        choices=['bacteria','archaea'],
-        default='bacteria')
-    parser.add_argument('--verbose', action='store_true',default=False,help='log debug information')
-    args = parser.parse_args()
-    main(args)
+    main()

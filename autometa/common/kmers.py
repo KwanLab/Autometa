@@ -465,7 +465,34 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         logger.debug(f'embedded.shape {embedded_df.shape} : Written {embedded}')
     return embedded_df
 
-def main(args):
+def main():
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logger.DEBUG)
+    skip_desc = '(will skip if file exists)'
+    cpus = mp.cpu_count()
+    parser = argparse.ArgumentParser(description='Count k-mer frequencies of given `fasta`')
+    parser.add_argument('--fasta', help='Metagenomic assembly fasta file', required=True)
+    parser.add_argument('--kmers', help=f'K-mers frequency tab-delimited table {skip_desc}', required=True)
+    parser.add_argument('--size', help='k-mer size in bp', default=5, type=int)
+    parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
+    parser.add_argument('--embedded', help=f'</path/to/output/kmers.embedded.tsv> {skip_desc}')
+    parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
+    parser.add_argument('--n-components', help='Number of dimensions to reduce k-mer frequencies to',
+        type=int, default=2)
+    parser.add_argument('--do-pca', help='Whether to perform PCA prior to dimension reduction',
+        action='store_true', default=False)
+    parser.add_argument('--pca-dimensions', help='<num components to reduce to PCA feature space',
+        type=int, default=50)
+    parser.add_argument('--multiprocess', help='count k-mers using multiprocessing',
+        action='store_true', default=False)
+    parser.add_argument('--nproc',
+        help=f'num. processors to use if multiprocess is selected. (default = {cpus})',
+        default=cpus, type=int)
+    args = parser.parse_args()
     try:
         df = load(args.kmers)
         logger.debug(f'{args.kmers} exists... loaded: df.shape {df.shape}')
@@ -510,32 +537,4 @@ def main(args):
         pca_dimensions=args.pca_dimensions)
 
 if __name__ == '__main__':
-    import argparse
-    import logging as logger
-    import multiprocessing as mp
-    logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    skip_desc = '(will skip if file exists)'
-    cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser('Count k-mers')
-    parser.add_argument('--fasta', help='</path/to/sequences.fna>', required=True)
-    parser.add_argument('--kmers', help=f'</path/to/output/kmers.tsv> {skip_desc}', required=True)
-    parser.add_argument('--size', help='k-mer size', default=5, type=int)
-    parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
-    parser.add_argument('--embedded', help='</path/to/kmers.embedded.tsv>')
-    parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
-    parser.add_argument('--n-components', help='<num components of lower dimension manifold>',
-        type=int, default=2)
-    parser.add_argument('--do-pca', help='Whether to perform PCA prior to manifold learning',
-        action='store_true', default=False)
-    parser.add_argument('--pca-dimensions', help='<num components to reduce to PCA feature space',
-        type=int, default=50)
-    parser.add_argument('--multiprocess', help='count k-mers using multiprocessing',
-        action='store_true', default=False)
-    parser.add_argument('--nproc',
-        help=f'num. processors to use if multiprocess is selected. (default = {cpus})',
-        default=cpus, type=int)
-    args = parser.parse_args()
-    main(args)
+    main()

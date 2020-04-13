@@ -299,7 +299,21 @@ ________________________
             df = pd.read_csv(df, sep='\t', index_col='contig')
         return df[df.index.isin(self.contigs)]
 
-def main(args):
+def main():
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logger.DEBUG)
+    parser = argparse.ArgumentParser(description='Autometa MAG Class')
+    parser.add_argument('--assembly', help='</path/to/metagenome.fasta>', required=True)
+    parser.add_argument('--contigs', help='list of contigs in MAG',nargs='+', required=True)
+    parser.add_argument('--domain', help='kingdom to use for binning', default='bacteria')
+    parser.add_argument('--kmers', help='</path/to/kmers.tsv')
+    parser.add_argument('--taxonomy', help='</path/to/taxonomy_vote.tsv')
+    parser.add_argument('--coverage', help='</path/to/coverages.tsv')
+    args = parser.parse_args()
     mag = MAG(args.assembly, args.contigs)
 
     mag.get_binning(
@@ -311,18 +325,4 @@ def main(args):
     # mag.split_nucleotides()
 
 if __name__ == '__main__':
-    import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Autometa Bin Class')
-    parser.add_argument('--assembly', help='</path/to/metagenome.fasta>', required=True)
-    parser.add_argument('--contigs', help='list of contigs in MAG',nargs='+', required=True)
-    parser.add_argument('--domain', help='kingdom to use for binning', default='bacteria')
-    parser.add_argument('--kmers', help='</path/to/kmers.tsv')
-    parser.add_argument('--taxonomy', help='</path/to/taxonomy_vote.tsv')
-    parser.add_argument('--coverage', help='</path/to/coverages.tsv')
-    args = parser.parse_args()
-    main(args)
+    main()

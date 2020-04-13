@@ -33,7 +33,7 @@ import pandas as pd
 from autometa.common.external import hmmer
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MARKERS_DIR = os.path.join(BASE_DIR,'databases','markers')
 
 logger = logging.getLogger(__name__)
@@ -201,21 +201,24 @@ class Markers:
                 orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
-def main(args):
-    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
-    markers.get()
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('')
-    parser.add_argument('orfs', help='</path/to/prot.orfs.faa>')
+    parser = argparse.ArgumentParser(description='Annotate ORFs with kingdom-marker information')
+    parser.add_argument('orfs',
+        help='Path to a fasta file containing amino acid sequences of open reading frames')
     parser.add_argument('kingdom', help='kingdom to search for markers',
         choices=['bacteria','archaea'], default='bacteria')
-    #parser.add_argument('--dbdir', help='</path/to/markers/dir>', default=MARKERS_DIR)
+    parser.add_argument('--dbdir',
+        help=f'Path to directory containing the single-copy marker HMM databases. (default is {MARKERS_DIR})',
+        default=MARKERS_DIR)
     args = parser.parse_args()
-    main(args)
+    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
+    markers.get()
+
+if __name__ == '__main__':
+    main()

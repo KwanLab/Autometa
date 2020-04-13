@@ -144,7 +144,7 @@ def main(args):
     q.activate_fast_abort(2)
 
     # create task as usual and tag it with an arbitrary string.
-    t = wq.Task(...)
+    # t = wq.Task(...)
     t.specify_tag("my-tag")
 
     taskid = q.submit(t)

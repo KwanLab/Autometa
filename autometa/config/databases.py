@@ -19,6 +19,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
+
 Configuration handling for Autometa Databases.
 """
 
@@ -34,14 +35,19 @@ from configparser import ExtendedInterpolation
 from ftplib import FTP
 
 from autometa.config import get_config
+from autometa.config import DEFAULT_FPATH
 from autometa.config import DEFAULT_CONFIG
 from autometa.config import put_config
 from autometa.config import AUTOMETA_DIR
 from autometa.common.utilities import untar
 from autometa.common.external import diamond
+from autometa.common.external import hmmer
 
 
 logger = logging.getLogger(__name__)
+urllib_logger = logging.getLogger("urllib3")
+urllib_logger.setLevel(logging.WARNING)
+
 
 class Databases:
     """docstring for Databases."""
@@ -102,11 +108,9 @@ class Databases:
             config updated option:'nr' in section:'ncbi'.
 
         """
-        nr = self.config.get('ncbi','nr')
-        nr_base = os.path.splitext(os.path.basename(nr))[0]
-        db_infpath = os.path.join(self.ncbi_dir, nr_base)
+        db_infpath = self.config.get('ncbi','nr')
         db_outfpath = db_infpath.replace('.gz','.dmnd')
-        if not self.dryrun and not os.path.exists(db_infpath):
+        if not self.dryrun and not os.path.exists(db_outfpath):
             diamond.makedatabase(fasta=nr, database=db_infpath, nproc=self.nproc)
         self.config.set('ncbi','nr', db_outfpath)
         logger.debug(f'set ncbi nr: {db_outfpath}')
@@ -131,7 +135,7 @@ class Databases:
             outfpath = os.path.join(self.ncbi_dir,fname)
             if not self.dryrun and not os.path.exists(outfpath):
                 outfpath = untar(taxdump, self.ncbi_dir, fname)
-            logger.debug(f'update ncbi : {option} : {outfpath}')
+            logger.debug(f'UPDATE (ncbi,{option}): {outfpath}')
             self.config.set('ncbi',option,outfpath)
 
     def update_ncbi(self, options):
@@ -154,6 +158,8 @@ class Databases:
 
         """
         # Download required NCBI database files
+        if not os.path.exists(self.ncbi_dir):
+            os.makedirs(self.ncbi_dir)
         host = DEFAULT_CONFIG.get('ncbi','host')
         for option in options:
             ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
@@ -171,7 +177,7 @@ class Databases:
                     if not result.startswith('226 Transfer complete'):
                         raise ConnectionError(f'{option} download failed')
                     ftp.quit()
-            logger.debug(f'update ncbi {option}: {outfpath}')
+            logger.debug(f'UPDATE: (ncbi,{option}): {outfpath}')
             self.config.set('ncbi', option, outfpath)
         # Extract/format respective NCBI files
         self.extract_taxdump()
@@ -195,6 +201,8 @@ class Databases:
             marker file download failed.
 
         """
+        if not os.path.exists(self.markers_dir):
+            os.makedirs(self.markers_dir)
         for option in options:
             url = DEFAULT_CONFIG.get('database_urls', option)
             if self.config.has_option('markers', option):
@@ -203,7 +211,7 @@ class Databases:
                 outfname = os.path.basename(url)
                 outfpath = os.path.join(self.markers_dir, outfname)
             if self.dryrun:
-                logger.debug(f'update markers {option}: {outfpath}')
+                logger.debug(f'UPDATE: (markers,{option}): {outfpath}')
                 self.config.set('markers', option, outfpath)
                 continue
             with requests.Session() as session:
@@ -213,6 +221,8 @@ class Databases:
             with open(outfpath, 'w') as outfh:
                 outfh.write(resp.text)
             self.config.set('markers', option, outfpath)
+            if outfpath.endswith('.hmm'):
+                hmmer.hmmpress(outfpath)
 
     def get_missing(self, validate=False):
         """Retrieve all database files from all database sections that are not
@@ -222,7 +232,7 @@ class Databases:
         -------
         bool or dict
             if `validate` is True : bool
-                - True if all available, else False
+            If all available True, else False
             if `validate` is False : dict
                 - {section:{option, option,...}, section:{...}, ...}
 
@@ -288,32 +298,36 @@ class Databases:
         self.update_missing()
         return self.config
 
-def main(args):
-    dbs = Databases(config=args.config, dryrun=args.dryrun, nproc=args.nproc)
-    config, satisfied = dbs.configure()
-    logger.info(f'Database dependencies satisfied: {satisfied}')
-    if not args.out:
-        import sys;sys.exit(0)
-    put_config(config, args.out)
-    logger.debug(f'{args.out} written.')
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     import multiprocessing as mp
 
     cpus = mp.cpu_count()
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
 
     parser = argparse.ArgumentParser('databases config', epilog='By default, with no arguments, will download/format databases into default databases directory.')
-    parser.add_argument('--config', help='</path/to/input/database.config>')
+    parser.add_argument('--config', help='</path/to/input/database.config>', default=DEFAULT_FPATH)
     parser.add_argument('--dryrun', help='Log configuration actions but do not perform them.',
         action='store_true', default=False)
     parser.add_argument('--nproc',
         help=f'num. cpus to use for DB formatting. (default {cpus})', type=int, default=cpus)
     parser.add_argument('--out', help='</path/to/output/database.config>')
     args = parser.parse_args()
-    main(args)
+
+    config = get_config(args.config)
+    dbs = Databases(config=config, dryrun=args.dryrun, nproc=args.nproc)
+    logger.debug(f'Configuring databases')
+    config = dbs.configure()
+    dbs = Databases(config=config, dryrun=args.dryrun, nproc=args.nproc)
+    logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
+    if not args.out:
+        import sys;sys.exit(0)
+    put_config(config, args.out)
+    logger.debug(f'{args.out} written.')
+
+if __name__ == '__main__':
+    main()

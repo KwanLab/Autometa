@@ -326,18 +326,7 @@ def write_votes(results, outfpath):
         fh.write(outlines)
     return outfpath
 
-def main(args):
-    results_fpath = majority_vote(
-        fasta=args.fasta,
-        ncbi_dir=args.dbdir,
-        outdir=args.outdir,
-        votes_fname=args.outfname,
-        blast=args.blast_table,
-        lca_fname=args.lca_fname,
-        usepickle=args.nopickle,
-        verbose=args.verbose)
-
-if __name__ == '__main__':
+def main():
     import argparse
     import os
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -354,4 +343,15 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', help="add verbosity", action='store_true',
         default=False)
     args = parser.parse_args()
-    main(args)
+    results_fpath = majority_vote(
+        fasta=args.fasta,
+        ncbi_dir=args.dbdir,
+        outdir=args.outdir,
+        votes_fname=args.outfname,
+        blast=args.blast_table,
+        lca_fname=args.lca_fname,
+        usepickle=args.nopickle,
+        verbose=args.verbose)
+
+if __name__ == '__main__':
+    main()

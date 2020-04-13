@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """
+COPYRIGHT
 Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
@@ -17,6 +18,9 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Utility functions for handling Autometa and user configuration.
 """
 
 
@@ -33,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), 'default.config')
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-WORKSPACE = os.path.join(AUTOMETA_DIR, 'workspace')
 
 def get_config(fpath):
     if not os.path.exists(fpath) or os.stat(fpath).st_size == 0:
@@ -128,3 +131,12 @@ def parse_config(fpath=None):
                     value = config.getlist(section,key)
             namespace.__dict__[section].__dict__[key] = value
     return namespace
+
+def init_default():
+    cfg = get_config(DEFAULT_FPATH)
+    home_dir = cfg.get('common','home_dir')
+    if not os.path.isdir(home_dir):
+        logger.info(f'Updated {os.path.basename(DEFAULT_FPATH)} ([common],home_dir): {AUTOMETA_DIR}')
+        update_config(DEFAULT_FPATH,'common','home_dir',AUTOMETA_DIR)
+        home_dir = AUTOMETA_DIR
+    return home_dir

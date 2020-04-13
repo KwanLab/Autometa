@@ -35,8 +35,7 @@ Template Format:
 5. - Main function
 6. - if __name__ == '__main__' clause
 7. - Argparse
-8. - Logging aliased to logger in clause 6.
-9. - Pass args to main
+8. - Logging aliased to logger in 5.
 """
 
 
@@ -80,19 +79,14 @@ def fname(arg):
     """
     pass
 
-def main(args):
-    logger.info(args.hello_world)
-    # operations on args.positional
-    # operations on args.optional
-
-if __name__ == '__main__':
+def main():
     import argparse
     import logging as logger
     logger.basicConfig(
         format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Concise Functional Description of Script')
+    parser = argparse.ArgumentParser(description='Concise description of script.')
     parser.add_argument('positional',help='<help text of positional arg>')
     parser.add_argument('--optional',help='<help text of optional arg>')
     parser.add_argument(
@@ -100,4 +94,10 @@ if __name__ == '__main__':
         help='<help text of hello world>',
         default='Hello World')
     args = parser.parse_args()
-    main(args)
+
+    logger.info(args.hello_world)
+    # operations on args.positional
+    # operations on args.optional
+
+if __name__ == '__main__':
+    main()

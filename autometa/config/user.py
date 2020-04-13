@@ -38,6 +38,7 @@ from autometa.config.databases import Databases
 from autometa.config.project import Project
 from autometa.common.utilities import timeit
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,62 +47,68 @@ class AutometaUser:
 
     Parameters
     ----------
-    user_config : str
-        </path/to/user/default.config
-    dryrun : type
-        Description of parameter `dryrun` (the default is True).
-    nproc : type
-        Description of parameter `nproc` (the default is 2).
+    user_config : str, optional
+        </path/to/user/default.config (the default is config.DEFAULT_FPATH).
+    nproc : int, optional
+        Number of cpus to use when downloading/updating databases. (the default is 2).
 
+    Attributes
+    ----------
+    home_dir : str
+        </path/to/Autometa/>
     config : config.ConfigParser
-        user base database/executable configuration
-
-    Methods
-    -------
-    configure : NoneType
-        Configure user databases and environment.
-    dryrun: bool
-        If True, will check dependencies and exit.
-    nproc: int
-        Number of processors to use while downloading/formatting databases.
+        User configuration from `user_config`.
 
     """
-
-    def __init__(self, user_config=None, dryrun=True, nproc=2):
-        self.dryrun= dryrun
+    def __init__(self, user_config=config.DEFAULT_FPATH, nproc=2):
+        self.home_dir = self.set_home()
         self.nproc = nproc
-        self.config = config.get_config(user_config) if user_config else config.DEFAULT_CONFIG
+        self.user_config = user_config
+        self.config = config.get_config(self.user_config)
         if not self.config.has_section('common'):
             self.config.add_section('common')
-        self.config.set('common','home_dir', config.AUTOMETA_DIR)
+        if not self.config.has_option('common','home_dir'):
+            self.config.set('common','home_dir',self.home_dir)
 
-        if self.dryrun:
-            self.configure()
-            return
+    def __str__(self):
+        return self.user_config
 
-    def configure(self):
+    def set_home(self):
+        return config.init_default()
+
+    def save(self):
+        config.put_config(self.config, self.user_config)
+
+    def configure(self, dryrun=True):
         """Configure user execution environment and databases.
+
+        Parameters
+        ----------
+        dryrun : bool
+            Log configuration without performing updates (Default is True).
 
         Returns
         -------
         NoneType
 
         """
+
         # Execution env
         self.config, exe_satisfied = environ.configure(self.config)
-        if self.dryrun:
-            logger.info(f'Executable dependencies satisfied: {exe_satisfied}')
+        logger.info(f'Executable dependencies satisfied: {exe_satisfied}')
         # Database env
-        dbs = Databases(self.config, dryrun=self.dryrun, nproc=self.nproc)
+        dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc)
         self.config = dbs.configure()
-        if self.dryrun:
-            logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
+        logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
+        if dryrun:
             return
 
         if not dbs.satisfied:
             raise LookupError('Database dependencies not satisfied!')
         if not exe_satisfied:
             raise LookupError('Executable dependencies not satisfied!')
+
+        self.save()
 
     def new_project(self, fpath):
         """Configure new project at `outdir`.
@@ -293,17 +300,38 @@ class AutometaUser:
             index=True,
             header=True)
 
-def main(args):
-    logger.info(args.user)
+def main():
+    import argparse
+    import multiprocessing as mp
+    import logging as logger
+    parser = argparse.ArgumentParser(description="""
+    Configures the Autometa user environment/databases.
+    Running without args will download and format Autometa database dependencies.
+    """)
+    parser.add_argument('--config',
+        help=f'Path to an Autometa default.config file (default is {config.DEFAULT_FPATH}).',
+        default=config.DEFAULT_FPATH)
+    parser.add_argument('--dryrun',
+        help='Log configuration without performing updates.',
+        action='store_true',
+        default=False)
+    parser.add_argument('--debug',
+        help='Stream debugging information to terminal.',
+        action='store_true')
+    parser.add_argument('--cpus',
+        help=f'Num. cpus to use when updating/constructing databases (default is {mp.cpu_count()}).',
+        default=mp.cpu_count(), type=int)
+    args = parser.parse_args()
+    # config.init_default()
+    level = logger.DEBUG if args.debug else logger.INFO
+    logger.basicConfig(
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=level)
+    user = AutometaUser(
+        user_config=args.config,
+        nproc=args.cpus)
+    user.configure(args.dryrun)
 
 if __name__ == '__main__':
-    import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Concise Functional Description of Script')
-    parser.add_argument('user', help='</path/to/user.config>')
-    args = parser.parse_args()
-    main(args)
+    main()
