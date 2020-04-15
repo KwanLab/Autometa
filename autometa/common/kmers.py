@@ -37,6 +37,7 @@ from Bio import SeqIO
 from scipy.stats import gmean
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from tsne import bh_sne
 from umap import UMAP
 
 from autometa.common.utilities import gunzip
@@ -59,6 +60,7 @@ def _revcomp(string):
     -------
     str
         reverse complemented string.
+
     """
     complement = {'A':'T','T':'A','C':'G','G':'C'}
     return ''.join(complement.get(char) for char in reversed(string))
@@ -76,6 +78,7 @@ def init_kmers(kmer_size=5):
     -------
     dict
         {kmer:index, ...}
+
     """
     kmers = {}
     index = 0
@@ -115,6 +118,7 @@ def load(kmers_fpath):
         `kmers_fpath` does not exist or is empty
     KmerFormatError
         `kmers_fpath` file format is invalid
+
     """
     if not os.path.exists(kmers_fpath) or os.stat(kmers_fpath).st_size == 0:
         raise FileNotFoundError(kmers_fpath)
@@ -141,11 +145,6 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
     list
         [{record:counts}, {record:counts}, ...]
 
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
-
     """
     pool = mp.Pool(nproc)
     args = [(record,ref_kmers) for record in SeqIO.parse(assembly, 'fasta')]
@@ -169,6 +168,7 @@ def record_counter(args):
     -------
     dict
         {contig:[count,count,...]} count index is respective to ref_kmers.keys()
+
     """
     record, ref_kmers = args
     for ref_kmer in ref_kmers:
@@ -213,11 +213,6 @@ def seq_counter(assembly, ref_kmers, verbose=True):
     -------
     dict
         {contig:[count,count,...]} count index is respective to ref_kmers.keys()
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
 
     """
     n_uniq_kmers = len(ref_kmers)
@@ -354,6 +349,7 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
 
         * `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
         * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
+        * `tsne.bh_sne` <https://pypi.org/project/tsne/>`_
 
     Parameters
     ----------
@@ -369,9 +365,10 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
         If None, will estimate based on
     method : str, optional
-        embedding method to use (the default is 'UMAP').
+        embedding method to use (the default is 'umap').
+        choices include sksne, bhsne and umap.
     perplexity : float, optional
-        hyperparameter used to tune TSNE (the default is 30.0).
+        hyperparameter used to tune sksne and bhsne (the default is 30.0).
     **kwargs : dict, optional
         Other keyword arguments to be supplied to respective `method`.
 
@@ -416,9 +413,10 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         requirements = f'kmers type must be a pd.DataFrame or filepath.'
         raise FileNotFoundError(f'{kmers_desc} {embed_desc} {requirements}')
 
-    method = method.upper()
-    if method not in ['UMAP','TSNE']:
-        raise ValueError(f'{method} not in embedding methods. Choices: TSNE, UMAP')
+    method = method.lower()
+    choices = ['umap','sksne','bhsne']
+    if method not in choices:
+        raise ValueError(f'{method} not in embedding methods. Choices: {choices}')
     # PCA
     n_samples, n_dims = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
@@ -433,17 +431,23 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
 
     logger.debug(f'{method}: {n_samples} data points and {n_dims} dimensions')
 
-    def do_TSNE(perplexity=perplexity, n_components=n_components):
+    n_rows = n_samples-1
+    scaler = 3.0
+    if n_rows < (scaler*perplexity):
+        perplexity = (n_rows/scaler) - 1
+    def do_sksne(perplexity=perplexity, n_components=n_components, seed=42):
         # Adjust perplexity according to the number of data points
-        # COMBAK: Insert link to readthedocs discussion on python2.7 vs. python3 TSNE implementations
-        n_rows = n_samples-1
-        scaler = 3.0
-        if n_rows < (scaler*perplexity):
-            perplexity = (n_rows/scaler) - 1
         return TSNE(
             n_components=n_components,
             perplexity=perplexity,
-            random_state=0).fit_transform(X)
+            random_state=np.random.RandomState(seed)).fit_transform(X)
+
+    def do_bhsne(n_components=n_components, perplexity=perplexity, seed=42):
+        return bh_sne(
+            data=X,
+            d=n_components,
+            perplexity=perplexity,
+            random_state=np.random.RandomState(seed))
 
     def do_UMAP(n_neighbors=15, n_components=n_components, metric='euclidean'):
         return UMAP(
@@ -451,7 +455,7 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
             n_components=n_components,
             metric=metric).fit_transform(X)
 
-    dispatcher = {'TSNE':do_TSNE, 'UMAP':do_UMAP}
+    dispatcher = {'sksne':do_sksne, 'bhsne': do_bhsne, 'umap':do_UMAP}
     logger.debug(f'Performing embedding with {method}')
     X = dispatcher[method](**kwargs)
     if n_components == 3:
@@ -480,9 +484,10 @@ def main():
     parser.add_argument('--size', help='k-mer size in bp', default=5, type=int)
     parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
     parser.add_argument('--embedded', help=f'</path/to/output/kmers.embedded.tsv> {skip_desc}')
-    parser.add_argument('--method', help='embedding method', choices=['TSNE','UMAP'], default='UMAP')
-    parser.add_argument('--n-components', help='Number of dimensions to reduce k-mer frequencies to',
-        type=int, default=2)
+    parser.add_argument('--method', help='embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.',
+        choices=['sksne','bhsne','umap'], default='umap')
+    parser.add_argument('--n-components',
+        help='Number of dimensions to reduce k-mer frequencies to', type=int, default=2)
     parser.add_argument('--do-pca', help='Whether to perform PCA prior to dimension reduction',
         action='store_true', default=False)
     parser.add_argument('--pca-dimensions', help='<num components to reduce to PCA feature space',
@@ -513,11 +518,9 @@ def main():
             logger.debug(f'{args.normalized} exists... loaded: df.shape {ndf.shape}')
         except FileNotFoundError as err:
             logger.debug(f'Normalizing {df.shape} k-mers DataFrame.')
-        if ndf is not None:
-            return ndf
-        ndf = normalize(df)
-        ndf.to_csv(args.normalized, sep='\t', header=True, index=True)
-        logger.debug(f'Wrote {len(df)} normalized k-mer freqs. to {args.normalized}.')
+            ndf = normalize(df)
+            ndf.to_csv(args.normalized, sep='\t', header=True, index=True)
+            logger.debug(f'Wrote {len(df)} normalized k-mer freqs. to {args.normalized}.')
 
     if not args.embedded:
         return
