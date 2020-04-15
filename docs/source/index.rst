@@ -25,7 +25,7 @@ Guide
    databases
    running-autometa
    examining-results
-   scripts_2/script_main
+   scripts/Usage
    contribution-guidelines
    api
    license

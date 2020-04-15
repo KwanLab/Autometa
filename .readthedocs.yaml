@@ -14,7 +14,3 @@ formats: all
 conda:
   environment: docs/environment.yaml
 
-python:
-    version: 3.7
-    install:
-        - requirements: docs/requirements.txt

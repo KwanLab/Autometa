@@ -98,3 +98,4 @@ def setup(app):
     # Exclude COPYRIGHT block in scripts using the autodoc between function
     app.connect('autodoc-process-docstring', between('^.*COPYRIGHT.*$', exclude=True))
     return app
+    
