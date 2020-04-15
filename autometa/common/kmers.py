@@ -414,9 +414,9 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         raise FileNotFoundError(f'{kmers_desc} {embed_desc} {requirements}')
 
     method = method.lower()
-    choices = ['umap','sksne','bhsne']
+    choices = {'umap','sksne','bhsne'}
     if method not in choices:
-        raise ValueError(f'{method} not in embedding methods. Choices: {choices}')
+        raise ValueError(f'{method} not in embedding methods. Choices: {", ".join(choices)}')
     # PCA
     n_samples, n_dims = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
