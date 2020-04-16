@@ -231,10 +231,14 @@ class Databases:
         Returns
         -------
         bool or dict
-            if `validate` is True : bool
-            If all available True, else False
-            if `validate` is False : dict
-                - {section:{option, option,...}, section:{...}, ...}
+
+            - if `validate` is True : bool
+
+                all available evaluates to True, otherwise False
+
+            - if `validate` is False : dict
+
+                {section:{option, option,...}, section:{...}, ...}
 
         """
         missing = {}
