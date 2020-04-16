@@ -57,7 +57,7 @@ def from_spades_names(records):
         index=contig, name='coverage', dtype=float
 
     """
-    logger.info(f'Retrieving coverages from contig ID in {args.assembly}')
+    logger.info(f'Retrieving coverages from contig ID in {len(records):,} records')
     coverages = pd.Series(
         {record.id:record.id.split('_cov_')[-1] for record in records},
         name='coverage',
