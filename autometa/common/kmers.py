@@ -341,7 +341,7 @@ def normalize(df):
     return df.transform(step_2a, axis='columns').transform(step_2b, axis='columns')
 
 def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions=50,
-    method='UMAP', perplexity=30.0, **kwargs):
+    method='bhsne', perplexity=30.0, **kwargs):
     """Embed k-mers using provided `method`.
 
     Notes
@@ -365,7 +365,7 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
         If None, will estimate based on
     method : str, optional
-        embedding method to use (the default is 'umap').
+        embedding method to use (the default is 'bhsne').
         choices include sksne, bhsne and umap.
     perplexity : float, optional
         hyperparameter used to tune sksne and bhsne (the default is 30.0).
@@ -485,7 +485,7 @@ def main():
     parser.add_argument('--normalized', help=f'</path/to/output/kmers.normalized.tsv> {skip_desc}')
     parser.add_argument('--embedded', help=f'</path/to/output/kmers.embedded.tsv> {skip_desc}')
     parser.add_argument('--method', help='embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.',
-        choices=['sksne','bhsne','umap'], default='umap')
+        choices=['sksne','bhsne','umap'], default='bhsne')
     parser.add_argument('--n-components',
         help='Number of dimensions to reduce k-mer frequencies to', type=int, default=2)
     parser.add_argument('--do-pca', help='Whether to perform PCA prior to dimension reduction',
