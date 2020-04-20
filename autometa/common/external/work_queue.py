@@ -81,6 +81,7 @@ def start_master(port, name, password, stats=None, debug=None, transactions=None
     logger.debug(f'({q.name}) wq-master started')
     return q
 
+
 def main(args):
 
     q = start_master(
@@ -99,13 +100,13 @@ def main(args):
     # t.specify_disk(required_disk)  # Integer specified in MB
     raise NotImplementedError
     # Add required executables
-    for exe_fp,exe_name in executables:
+    for exe_fp, exe_name in executables:
         task.specify_input_file(exe_fp, exe_name, cache=True)
     # Add required input filepaths
-    for infpath,infname in infpaths:
+    for infpath, infname in infpaths:
         task.specify_input_file(infpath, infname, cache=False)
     # Add required output filepaths
-    for outfpath,outfname in outfpaths:
+    for outfpath, outfname in outfpaths:
         task.specify_output_file(outfpath, outfname, cache=False)
     # Submit task to the queue
     task_id = q.submit(task)
@@ -137,7 +138,7 @@ def main(args):
 
     # Watching Output Files:
 
-    task.specify_output_file("my-file", flags = wq.WORK_QUEUE_WATCH)
+    task.specify_output_file("my-file", flags=wq.WORK_QUEUE_WATCH)
 
     # Kill workers that are executing tasks twice as slow as compared to the
     # average.
@@ -155,13 +156,13 @@ def main(args):
     # or cancel task by tag. Return the canceled task.
     t = q.cancel_by_tasktag("my-tag")
 
-
     # if task fails given a worker misconfiguration:
     q.blacklist(t.hostname)
 
     # Retrieve all stats from the queue
     stats = q.stats
     print(stats.workers_busy)
+
 
 # Main program
 if __name__ == '__main__':
@@ -176,16 +177,18 @@ if __name__ == '__main__':
     Uses WorkQueue as a task-manager to run different tasks within the Autometa
     pipeline on a scalable computing system.
     """)
-    parser.add_argument('password', help='</path/to/work-queue/master/password.txt>')
+    parser.add_argument(
+        'password', help='</path/to/work-queue/master/password.txt>')
     parser.add_argument('project-name', help='<unique project identifier>')
     # TODO: Allow argparse to handle range of ints for port
     parser.add_argument('--port', help="""
     The port number to listen on. If zero, then a random port is chosen. A range
      of possible ports (low, hight) can be also specified instead of a single integer.
     """,
-        default="wq.WORK_QUEUE_DEFAULT_PORT", type=int)
+                        default=wq.WORK_QUEUE_DEFAULT_PORT, type=int)
     parser.add_argument('--stats', help='</path/to/workqueue/stats.log')
-    parser.add_argument('--transactions', help='</path/to/workqueue/transactions.log')
+    parser.add_argument(
+        '--transactions', help='</path/to/workqueue/transactions.log')
     parser.add_argument('--debug', help='</path/to/workqueue/debug.log')
     args = parser.parse_args()
     main(args)

@@ -67,6 +67,7 @@ def unpickle(fpath):
     logger.debug(f'{fpath} object unpickled')
     return obj
 
+
 def make_pickle(obj, outfpath):
     """Serialize a python object (`obj`) to `outfpath`.
     Note:  Opposite of :func:`unpickle`
@@ -99,6 +100,7 @@ def make_pickle(obj, outfpath):
     logger.debug(f'object pickled to {outfpath}')
     return outfpath
 
+
 def gunzip(infpath, outfpath):
     """Decompress gzipped `infpath` to `outfpath`.
 
@@ -120,7 +122,8 @@ def gunzip(infpath, outfpath):
         `outfpath` already exists and is not empty
 
     """
-    logger.debug(f'gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}')
+    logger.debug(
+        f'gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}')
     if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
         raise FileExistsError(outfpath)
     lines = ''
@@ -131,6 +134,7 @@ def gunzip(infpath, outfpath):
         out.write(lines)
     logger.debug(f'gunzipped {infpath} to {outfpath}')
     return outfpath
+
 
 def untar(tarchive, outdir, member=None):
     """Decompress a tar archive (may be gzipped or bzipped). passing in `member`
@@ -162,7 +166,8 @@ def untar(tarchive, outdir, member=None):
         `member` was not found in `tarchive`
     """
     if not member and not outdir:
-        raise ValueError(f'`member` or `outdir` must be passed: member={member} outdir={outdir}')
+        raise ValueError(
+            f'`member` or `outdir` must be passed: member={member} outdir={outdir}')
     logger.debug(f'decompressing tarchive {tarchive} to {outdir}')
     outfpath = os.path.join(outdir, member) if member else None
     if member and os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
@@ -180,7 +185,8 @@ def untar(tarchive, outdir, member=None):
             try:
                 tar.extract(member=member, path=outdir)
             except KeyError as err:
-                raise KeyError(f'member not in tarchive : {member} : {tarchive}')
+                raise KeyError(
+                    f'member not in tarchive : {member} : {tarchive}')
         else:
             tar.extractall(outdir)
     if member:
@@ -188,6 +194,7 @@ def untar(tarchive, outdir, member=None):
         return outfpath
     logger.debug(f'{tarchive} decompressed to {outdir}')
     return outdir
+
 
 def tarchive_results(outfpath, src_dirpath):
     """Generate a tar archive of Autometa Results
@@ -219,6 +226,7 @@ def tarchive_results(outfpath, src_dirpath):
         tar.add(src_dirpath, arcname=os.path.basename(src_dirpath))
     logger.debug(f'{src_dirpath} tarchived to {outfpath}')
     return outfpath
+
 
 def file_length(fpath):
     """Retrieve the number of lines in `fpath`
@@ -252,6 +260,7 @@ def file_length(fpath):
         pass
     fh.close()
     return i+1
+
 
 def get_checksum(fpath):
     """Retrieve sha256 checksums from provided `args`.
@@ -298,6 +307,7 @@ def get_checksum(fpath):
     fh.close()
     return cksum
 
+
 def valid_checkpoint(checkpoint_fp, fpath):
     """Validate `fpath` is the same checksum as in `checkpoint_fp`.
 
@@ -336,6 +346,7 @@ def valid_checkpoint(checkpoint_fp, fpath):
     new_chksum = get_checksum(fpath)
     return True if new_chksum == prev_chksum else False
 
+
 def get_checkpoints(checkpoint_fp, fpaths=None):
     """Get checkpoints from `checkpoint_fp`.
 
@@ -362,7 +373,8 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     if not os.path.exists(checkpoint_fp):
         logger.debug(f'{checkpoint_fp} not found... Writing')
         if not fpaths:
-            raise ValueError(f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
+            raise ValueError(
+                f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
         outlines = ''
         for fpath in fpaths:
             try:
@@ -376,10 +388,11 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     checkpoints = {}
     with open(checkpoint_fp) as fh:
         for line in fh:
-            chk,fp = line.split('\t')
+            chk, fp = line.split('\t')
             fp = fp.strip()
-            checkpoints.update({fp:chk})
+            checkpoints.update({fp: chk})
     return checkpoints
+
 
 def update_checkpoints(checkpoint_fp, fpath):
     """Update `checkpoints_fp` with `fpath`. If `fpath` already exists in `checkpoint_fp`
@@ -401,14 +414,16 @@ def update_checkpoints(checkpoint_fp, fpath):
     if valid_checkpoint(checkpoint_fp, fpath):
         return checkpoints
     new_checksum = get_checksum(fpath)
-    checkpoints.update({fpath:new_checksum})
+    checkpoints.update({fpath: new_checksum})
     outlines = ''
-    for fp,chk in checkpoints.items():
+    for fp, chk in checkpoints.items():
         outlines += f'{chk}\t{fp}\n'
     with open(checkpoint_fp, 'w') as fh:
         fh.write(outlines)
-    logger.debug(f'Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}')
+    logger.debug(
+        f'Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}')
     return checkpoints
+
 
 def timeit(func):
     """Time function run time (to be used as a decorator). I.e. when defining a
@@ -446,10 +461,12 @@ def timeit(func):
         return obj
     return wrapper
 
+
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(usage='utilities.py',
+    parser = argparse.ArgumentParser(
         description='file containing utilities functions for Autometa pipeline')
     print('file containing utilities functions for Autometa pipeline')
     args = parser.parse_args()
-    import sys;sys.exit(1)
+    import sys
+    sys.exit(1)

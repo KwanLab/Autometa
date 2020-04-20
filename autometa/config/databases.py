@@ -52,32 +52,34 @@ urllib_logger.setLevel(logging.WARNING)
 class Databases:
     """docstring for Databases."""
     SECTIONS = {
-        'ncbi':[
+        'ncbi': [
             'nodes',
             'names',
             'merged',
             'accession2taxid',
             'nr',
         ],
-        'markers':[
+        'markers': [
             'bacteria_single_copy',
             'bacteria_single_copy_cutoffs',
             'archaea_single_copy',
             'archaea_single_copy_cutoffs',
         ],
     }
+
     def __init__(self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count()):
         if type(config) is not ConfigParser:
             raise TypeError(f'config is not ConfigParser : {type(config)}')
         if type(dryrun) is not bool:
-            raise TypeError(f'dryrun must be True or False. type: {type(dryrun)}')
+            raise TypeError(
+                f'dryrun must be True or False. type: {type(dryrun)}')
 
-        self.config=config
-        self.dryrun=dryrun
-        self.nproc=nproc
+        self.config = config
+        self.dryrun = dryrun
+        self.nproc = nproc
         self.prepare_sections()
-        self.ncbi_dir = self.config.get('databases','ncbi')
-        self.markers_dir = self.config.get('databases','markers')
+        self.ncbi_dir = self.config.get('databases', 'ncbi')
+        self.markers_dir = self.config.get('databases', 'markers')
 
     @property
     def satisfied(self):
@@ -108,11 +110,12 @@ class Databases:
             config updated option:'nr' in section:'ncbi'.
 
         """
-        db_infpath = self.config.get('ncbi','nr')
-        db_outfpath = db_infpath.replace('.gz','.dmnd')
+        db_infpath = self.config.get('ncbi', 'nr')
+        db_outfpath = db_infpath.replace('.gz', '.dmnd')
         if not self.dryrun and not os.path.exists(db_outfpath):
-            diamond.makedatabase(fasta=nr, database=db_infpath, nproc=self.nproc)
-        self.config.set('ncbi','nr', db_outfpath)
+            diamond.makedatabase(
+                fasta=nr, database=db_infpath, nproc=self.nproc)
+        self.config.set('ncbi', 'nr', db_outfpath)
         logger.debug(f'set ncbi nr: {db_outfpath}')
 
     def extract_taxdump(self):
@@ -125,18 +128,18 @@ class Databases:
         NoneType
 
         """
-        taxdump = self.config.get('ncbi','taxdump')
+        taxdump = self.config.get('ncbi', 'taxdump')
         taxdump_files = [
-            ('nodes','nodes.dmp'),
-            ('names','names.dmp'),
-            ('merged','merged.dmp'),
+            ('nodes', 'nodes.dmp'),
+            ('names', 'names.dmp'),
+            ('merged', 'merged.dmp'),
         ]
-        for option,fname in taxdump_files:
-            outfpath = os.path.join(self.ncbi_dir,fname)
+        for option, fname in taxdump_files:
+            outfpath = os.path.join(self.ncbi_dir, fname)
             if not self.dryrun and not os.path.exists(outfpath):
                 outfpath = untar(taxdump, self.ncbi_dir, fname)
             logger.debug(f'UPDATE (ncbi,{option}): {outfpath}')
-            self.config.set('ncbi',option,outfpath)
+            self.config.set('ncbi', option, outfpath)
 
     def update_ncbi(self, options):
         """Update NCBI database files (taxdump.tar.gz and nr.gz).
@@ -160,9 +163,9 @@ class Databases:
         # Download required NCBI database files
         if not os.path.exists(self.ncbi_dir):
             os.makedirs(self.ncbi_dir)
-        host = DEFAULT_CONFIG.get('ncbi','host')
+        host = DEFAULT_CONFIG.get('ncbi', 'host')
         for option in options:
-            ftp_fullpath = DEFAULT_CONFIG.get('database_urls',option)
+            ftp_fullpath = DEFAULT_CONFIG.get('database_urls', option)
             ftp_fpath = ftp_fullpath.split(host)[-1]
             if self.config.has_option('ncbi', option):
                 outfpath = self.config.get('ncbi', option)
@@ -243,7 +246,7 @@ class Databases:
                 if option not in Databases.SECTIONS.get(section):
                     # Skip user added options not required by Autometa
                     continue
-                fpath = self.config.get(section,option)
+                fpath = self.config.get(section, option)
                 if os.path.exists(fpath) and os.stat(fpath).st_size >= 0:
                     # TODO: [Checkpoint validation]
                     logger.debug(f'({section},{option}): {fpath}')
@@ -253,8 +256,8 @@ class Databases:
                 if section in missing:
                     missing[section].add(option)
                 else:
-                    missing.update({section:set([option])})
-        for section,opts in missing.items():
+                    missing.update({section: set([option])})
+        for section, opts in missing.items():
             for opt in opts:
                 logger.debug(f'MISSING: ({section},{opt})')
         return True if validate else missing
@@ -270,9 +273,9 @@ class Databases:
             config updated with required missing sections.
 
         """
-        dispatcher = {'ncbi':self.update_ncbi, 'markers':self.update_markers}
+        dispatcher = {'ncbi': self.update_ncbi, 'markers': self.update_markers}
         missing = self.get_missing()
-        for section,options in missing.items():
+        for section, options in missing.items():
             if section == 'ncbi':
                 if 'nodes' in options or 'names' in options or 'merged' in options:
                     options.discard('nodes')
@@ -298,10 +301,10 @@ class Databases:
         self.update_missing()
         return self.config
 
+
 def main():
     import argparse
     import logging as logger
-    import multiprocessing as mp
 
     cpus = mp.cpu_count()
     logger.basicConfig(
@@ -309,12 +312,14 @@ def main():
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
 
-    parser = argparse.ArgumentParser('databases config', epilog='By default, with no arguments, will download/format databases into default databases directory.')
-    parser.add_argument('--config', help='</path/to/input/database.config>', default=DEFAULT_FPATH)
+    parser = argparse.ArgumentParser(
+        description='databases config', epilog='By default, with no arguments, will download/format databases into default databases directory.')
+    parser.add_argument(
+        '--config', help='</path/to/input/database.config>', default=DEFAULT_FPATH)
     parser.add_argument('--dryrun', help='Log configuration actions but do not perform them.',
-        action='store_true', default=False)
+                        action='store_true', default=False)
     parser.add_argument('--nproc',
-        help=f'num. cpus to use for DB formatting. (default {cpus})', type=int, default=cpus)
+                        help=f'num. cpus to use for DB formatting. (default {cpus})', type=int, default=cpus)
     parser.add_argument('--out', help='</path/to/output/database.config>')
     args = parser.parse_args()
 
@@ -325,9 +330,11 @@ def main():
     dbs = Databases(config=config, dryrun=args.dryrun, nproc=args.nproc)
     logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
     if not args.out:
-        import sys;sys.exit(0)
+        import sys
+        sys.exit(0)
     put_config(config, args.out)
     logger.debug(f'{args.out} written.')
+
 
 if __name__ == '__main__':
     main()

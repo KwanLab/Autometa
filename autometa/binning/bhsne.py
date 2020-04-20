@@ -44,11 +44,12 @@ def embed(kmers_fpath):
 
     """
     df = pd.read_csv(kmers_fpath, sep='\t', index_col='contig')
-    df.dropna(how='all',inplace=True)
+    df.dropna(how='all', inplace=True)
     X = df.to_numpy()
     X = PCA(n_components=50).fit_transform(X)
     X = bh_sne(X, d=2)
-    return pd.DataFrame(X, columns=['x','y'], index=df.index)
+    return pd.DataFrame(X, columns=['x', 'y'], index=df.index)
+
 
 def main():
     import argparse
@@ -57,14 +58,16 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('py2.7 tsne manifold learning implementation for k-mer frequency embedding.')
-    parser.add_argument('kmers',help='</path/to/kmers.normalized.tsv>')
-    parser.add_argument('embedded',help='</path/to/kmers.embedded.tsv>')
+    parser = argparse.ArgumentParser(
+        description='py2.7 tsne manifold learning implementation for k-mer frequency embedding')
+    parser.add_argument('kmers', help='</path/to/kmers.normalized.tsv>')
+    parser.add_argument('embedded', help='</path/to/kmers.embedded.tsv>')
     args = parser.parse_args()
     df = embed(args.kmers)
     logger.debug('{} embedded. : df.shape: {}'.format(args.kmers, df.shape))
     df.to_csv(args.embedded, sep='\t', index=True, header=True)
     logger.debug('embedded written {}'.format(args.embedded))
+
 
 if __name__ == '__main__':
     main()
