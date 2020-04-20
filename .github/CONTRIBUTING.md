@@ -8,14 +8,14 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 [Contributing Code](#contributing-code)
 
 [How Can I Contribute?](#how-can-i-contribute)
-    * [Reporting Bugs](#reporting-bugs)
-    * [Suggesting Enhancements](#suggesting-enhancements)
-    * [Submitting pull requests](#pull-requests)
+  * [Reporting Bugs](#reporting-bugs)
+  * [Suggesting Enhancements](#suggesting-enhancements)
+  * [Submitting pull requests](#pull-requests)
 
 [Style guides](#style-guides)
-    * [git commit messages](#git-commit-messages)
-    * [documentation style guide](#documentation-style-guide)
-    * [python style guide](#python-style-guide)
+  * [git commit messages](#git-commit-messages)
+  * [documentation style guide](#documentation-style-guide)
+  * [python style guide](#python-style-guide)
 
 ### Contributing Code
 
