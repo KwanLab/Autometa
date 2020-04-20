@@ -6,6 +6,7 @@
 
 import os
 import sys
+import subprocess
 
 from sphinx.ext.autodoc import between
 from datetime import datetime
@@ -13,13 +14,14 @@ from datetime import datetime
 
 sys.path.append(os.path.abspath("./_ext"))
 
-for (dir_path,dir_names,file_name) in os.walk('../../', topdown=True): 
+for (dir_path, dir_names, file_name) in os.walk('../../', topdown=True):
     sys.path.insert(0, os.path.abspath(dir_path))
 
 # -- Project information -----------------------------------------------------
 
 project = 'Autometa'
-copyright = (f'2016 - {datetime.now().year}, Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
+copyright = (
+    f'2016 - {datetime.now().year}, Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
 author = 'Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
 
 # The short X.Y version.
@@ -42,7 +44,6 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
-    'sphinxcontrib.programoutput',
 ]
 
 todo_include_todos = True
@@ -69,7 +70,7 @@ master_doc = 'index'
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-highlight_language = 'shell' 
+highlight_language = 'shell'
 
 # -- Options for HTML output -------------------------------------------------
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -92,10 +93,20 @@ html_static_path = ['_static']
 
 html_last_updated_fmt = '%b %d, %Y'
 
+
 def setup(app):
     # Register a sphinx.ext.autodoc.between listener to ignore everything
     # between lines that contain the word COPYRIGHT
     # Exclude COPYRIGHT block in scripts using the autodoc between function
-    app.connect('autodoc-process-docstring', between('^.*COPYRIGHT.*$', exclude=True))
+    app.connect('autodoc-process-docstring',
+                between('^.*COPYRIGHT.*$', exclude=True))
     return app
-    
+
+
+# runs `sphinx-apidoc`
+path_Autometa_base = os.path.dirname(os.path.dirname(os.getcwd()))
+os.chdir(path_Autometa_base)
+output_path = os.path.join(path_Autometa_base, "docs",
+                           "source", "API_documentation")
+cmd = f"sphinx-apidoc -o {output_path} autometa - f"
+subprocess.call(cmd, shell=True)

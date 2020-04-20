@@ -27,6 +27,7 @@ Guide
    examining-results
    scripts/Usage
    contribution-guidelines
+   API_documentation/modules
    api
    license
 
