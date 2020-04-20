@@ -43,7 +43,7 @@ When submitting a bug report, please follow the bug report [template](https://gi
 
 ### Suggesting Enhancements
 
-feature request [template](https://github.com/KwanLab/Autometa/blob/master/.github/ISSUE_TEMPLATE/feature_request.md)
+Feature requests may be submitted by creating a new issue. When creating this issue, please follow [this template](https://github.com/KwanLab/Autometa/blob/master/.github/ISSUE_TEMPLATE/feature_request.md). After your feature request has been submitted, a maintainer will respond with a determination of whether this feature is appropriate for Autometa. If a maintainer has not responded within a reasonable time period, you can notify the Autometa team. See [notifying the team](#notifying-the-team) for details.
 
 ### Pull Requests
 
@@ -99,3 +99,13 @@ When in doubt, you may reference:
 
 * google's python [style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
 * [PEP8](https://www.python.org/dev/peps/pep-0008/)
+
+### Notifying the Team
+
+you may notify the Autometa team corresponding to the respective update/bug affecting the files by mentioning them in a comment for your issue or pull request.
+
+| Team | Area of Development     |
+| :------------- | :------------- |
+| <code>@KwanLab/autometa-core</code> | This will notify members developing the core functionality of autometa |
+| <code>@KwanLab/autometa-website</code> | This will notify members developing the autometa website       |
+| <code>@KwanLab/autometa</code> | This will notify all members of the Autometa team (Please only use this if you receive no response from any of the teams above) |
