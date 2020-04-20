@@ -102,10 +102,12 @@ When in doubt, you may reference:
 
 ### Notifying the Team
 
-you may notify the Autometa team corresponding to the respective update/bug affecting the files by mentioning them in a comment for your issue or pull request.
+You may notify the Autometa team corresponding to the respective update/bug by mentioning them in a comment within your issue or pull request.
 
-| Team | Area of Development     |
-| :------------- | :------------- |
-| <code>@KwanLab/autometa-core</code> | This will notify members developing the core functionality of autometa |
-| <code>@KwanLab/autometa-website</code> | This will notify members developing the autometa website       |
-| <code>@KwanLab/autometa</code> | This will notify all members of the Autometa team (Please only use this if you receive no response from any of the teams above) |
+>Note: Please only use <code>@KwanLab/autometa</code> if you receive no response from any of the other teams below.
+
+| Team                                   | Area of Development                       |
+| -------------------------------------- | ----------------------------------------- |
+| <code>@KwanLab/autometa-core</code>    | Members developing the core functionality |
+| <code>@KwanLab/autometa-website</code> | Members developing the website            |
+| <code>@KwanLab/autometa</code>         | All Members of the Autometa team          |
