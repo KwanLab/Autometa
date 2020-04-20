@@ -10,5 +10,4 @@ dependencies:
   - sphinx=2.2.1
   - sphinx_rtd_theme
   - pip
-  - pip:
-      - sphinxcontrib-programoutput
+
