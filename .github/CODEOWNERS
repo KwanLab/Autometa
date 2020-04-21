@@ -1,0 +1,10 @@
+# Syntax for this file at https://help.github.com/articles/about-codeowners/
+
+# General catch-all if other documents outside of the specific directories are changed.
+*               @KwanLab/autometa
+
+# Any updates related to the core autometa module
+autometa/       @KwanLab/autometa-core
+
+# Any updates related to the autometa website
+website/        @KwanLab/autometa-website
