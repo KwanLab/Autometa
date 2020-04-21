@@ -28,6 +28,7 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 4. <details><summary>Check out a branch corresponding to the feature you wish to add.</summary><code>git checkout -b your-new-feature master</code></details>
 5. File an issue with the feature you plan on adding. This will open a channel of
 communication with the core developers. See [suggesting enhancements](#suggesting-enhancements) for details.
+6. Submit a pull request! To submit a pull request - see [instructions below](#pull-requests).
 
 
 ## How can I contribute?
