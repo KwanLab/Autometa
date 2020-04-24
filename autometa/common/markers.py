@@ -34,7 +34,7 @@ from autometa.common.external import hmmer
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MARKERS_DIR = os.path.join(BASE_DIR,'databases','markers')
+MARKERS_DIR = os.path.join(BASE_DIR, 'databases', 'markers')
 
 logger = logging.getLogger(__name__)
 
@@ -66,16 +66,21 @@ class Markers:
     markers_fp : str
         </path/to/`kingdom`.markers.tsv>
     """
+
     def __init__(self, orfs_fpath, kingdom='bacteria', dbdir=MARKERS_DIR):
         self.orfs_fpath = os.path.realpath(orfs_fpath)
         self.kingdom = kingdom.lower()
         self.dbdir = dbdir
-        self.hmmdb = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.hmm')
-        self.cutoffs = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
-        self.hmmscan_fn = '.'.join([self.kingdom,'hmmscan.tsv'])
-        self.hmmscan_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.hmmscan_fn)
-        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
-        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
+        self.hmmdb = os.path.join(
+            self.dbdir, f'{self.kingdom}.single_copy.hmm')
+        self.cutoffs = os.path.join(
+            self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
+        self.hmmscan_fn = '.'.join([self.kingdom, 'hmmscan.tsv'])
+        self.hmmscan_fp = os.path.join(
+            os.path.dirname(self.orfs_fpath), self.hmmscan_fn)
+        self.markers_fn = '.'.join([self.kingdom, 'markers.tsv'])
+        self.markers_fp = os.path.join(
+            os.path.dirname(self.orfs_fpath), self.markers_fn)
 
     @property
     def searched(self):
@@ -154,11 +159,11 @@ class Markers:
         elif format == 'long':
             return grouped_df.value_counts().reset_index(level=1, name='count')
         elif format == 'list':
-            return {k:v.tolist() for k,v in list(grouped_df)}
+            return {k: v.tolist() for k, v in list(grouped_df)}
         elif format == 'counts':
             return grouped_df.count().to_dict()
         else:
-            params = ['wide','long','list','counts']
+            params = ['wide', 'long', 'list', 'counts']
             err_msg = f'{format} is not a supported format.\n\tSupported formats: {params}'
             # TODO: Write Marker specific AutometaException
             raise ValueError(err_msg)
@@ -201,6 +206,7 @@ class Markers:
                 orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
+
 def main():
     import argparse
     import logging as logger
@@ -208,17 +214,20 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Annotate ORFs with kingdom-marker information')
+    parser = argparse.ArgumentParser(
+        description='Annotate ORFs with kingdom-marker information')
     parser.add_argument('orfs',
-        help='Path to a fasta file containing amino acid sequences of open reading frames')
+                        help='Path to a fasta file containing amino acid sequences of open reading frames')
     parser.add_argument('kingdom', help='kingdom to search for markers',
-        choices=['bacteria','archaea'], default='bacteria')
+                        choices=['bacteria', 'archaea'], default='bacteria')
     parser.add_argument('--dbdir',
-        help=f'Path to directory containing the single-copy marker HMM databases. (default is {"MARKERS_DIR"})',
-        default="MARKERS_DIR")
+                        help=f'Path to directory containing the single-copy marker HMM databases. (default is {MARKERS_DIR})',
+                        default=MARKERS_DIR)
     args = parser.parse_args()
-    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
+    markers = Markers(orfs_fpath=args.orfs,
+                      kingdom=args.kingdom, dbdir=args.dbdir)
     markers.get()
+
 
 if __name__ == '__main__':
     main()

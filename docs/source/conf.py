@@ -44,6 +44,7 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+    "sphinx.ext.githubpages"
 ]
 
 todo_include_todos = True
@@ -103,10 +104,23 @@ def setup(app):
     return app
 
 
-# runs `sphinx-apidoc`
-path_Autometa_base = os.path.dirname(os.path.dirname(os.getcwd()))
-os.chdir(path_Autometa_base)
-output_path = os.path.join(path_Autometa_base, "docs",
-                           "source", "API_documentation")
-cmd = f"sphinx-apidoc -o {output_path} autometa - f"
-subprocess.call(cmd, shell=True)
+def sphinx_apidoc(header="Developer_API"):
+    """
+    Runs `spinx-apidoc`
+    Example usage: sphinx-apidoc[OPTIONS] - o < OUTPUT_PATH > <MODULE_PATH > [EXCLUDE_PATTERN, ...]
+
+    Parameters
+    ----------
+    header : str, optional
+        Project name to be displayed on its tab in build docs, by default "developer API"
+    """
+
+    source_dir = os.path.dirname(__file__)
+    pkg_dir = os.path.join(os.path.dirname(
+        os.path.dirname(source_dir)), "autometa")
+    dest_dir = os.path.join(source_dir, "API_documentation")
+    cmd = f"sphinx-apidoc --force --output-dir {dest_dir} {pkg_dir} --doc-project {header}"
+    subprocess.call(cmd, shell=True)
+
+
+sphinx_apidoc()
