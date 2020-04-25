@@ -104,7 +104,7 @@ def setup(app):
     return app
 
 
-def sphinx_apidoc(header="Developer_API"):
+def sphinx_apidoc(header="Developer API"):
     """
     Runs `spinx-apidoc`
     Example usage: sphinx-apidoc[OPTIONS] - o < OUTPUT_PATH > <MODULE_PATH > [EXCLUDE_PATTERN, ...]
@@ -119,7 +119,7 @@ def sphinx_apidoc(header="Developer_API"):
     pkg_dir = os.path.join(os.path.dirname(
         os.path.dirname(source_dir)), "autometa")
     dest_dir = os.path.join(source_dir, "API_documentation")
-    cmd = f"sphinx-apidoc --force --output-dir {dest_dir} {pkg_dir} --doc-project {header}"
+    cmd = f"sphinx-apidoc --force --output-dir {dest_dir} {pkg_dir} --doc-project '{header}'"
     subprocess.call(cmd, shell=True)
 
 
