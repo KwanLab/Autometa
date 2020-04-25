@@ -76,10 +76,11 @@ def get_argparse_block(fpath):
                 # Regex functioning: lower case letter (optional) followed by a '.' (zero or one) upper case (atleast one)
                 # the required '_', upper case (atleast one), then underscore ('_') followed by upper case, both os them optional
                 #captures, config.DEFAULT_FPATH, MARKERS_DIR, wq.WORK_QUEUE_DEFAULT_PORT and DEFAULT_FPATH
-                # add the a comment there and change the variable 'x'
-                x = re.search(r"[a-z]*\.?[A-Z]+_[A-Z]+[_A-Z]*", line)
-                if x:
-                    line = line.replace(x.group(), f'"{x.group()}"')
+                # add the a comment there and change the variable 'cap_str'
+                cap_str = re.search(r"[a-z]*\.?[A-Z]+_[A-Z]+[_A-Z]*", line)
+                if cap_str:
+                    line = line.replace(
+                        cap_str.group(), f'"{cap_str.group()}"')
             if writing:
                 outlines += f"{line}\n"
             if line == "args = parser.parse_args()":
