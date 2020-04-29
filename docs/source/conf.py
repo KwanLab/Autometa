@@ -14,8 +14,8 @@ from datetime import datetime
 
 sys.path.append(os.path.abspath("./_ext"))
 
-for (dir_path, dir_names, file_name) in os.walk('../../', topdown=True):
-    sys.path.insert(0, os.path.abspath(dir_path))
+for dirpath, dirnames, filenames in os.walk('../../', topdown=True):
+    sys.path.insert(0, os.path.abspath(dirpath))
 
 # -- Project information -----------------------------------------------------
 
@@ -43,8 +43,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary',
-    "sphinx.ext.githubpages"
+    'sphinx.ext.autosummary'
 ]
 
 todo_include_todos = True

@@ -25,7 +25,7 @@ Guide
    databases
    running-autometa
    examining-results
-   scripts/Usage
+   scripts/usage
    contribution-guidelines
    API_documentation/modules
    api

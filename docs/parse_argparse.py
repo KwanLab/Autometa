@@ -33,12 +33,16 @@ import re
 import shutil
 import subprocess
 import tempfile
-import textwrap
 
 
 def get_argparse_block(fpath):
     """
-    Copies the argparse block of each script in a temporary file
+    Copies the argparse block of each script in a string
+
+    Regex is used to capture the constant string eg. config.DEFAULT_FPATH then convert it to a string eg. "config.DEFAULT_FPATH"
+    Regex functioning: lower case letter (optional) followed by a '.' (zero or one) upper case (atleast one)
+    the required '_', upper case (atleast one), then underscore ('_') followed by upper case, both os them optional
+    captures, config.DEFAULT_FPATH, MARKERS_DIR, wq.WORK_QUEUE_DEFAULT_PORT and DEFAULT_FPATH
 
     Parameters
     ----------
@@ -49,46 +53,36 @@ def get_argparse_block(fpath):
     Returns
     -------
     string
-        path to temporary file that has the argparse block
-        e.g. '</path/to/tmp/file>'
+        argparse block between (and includes) import argparse and args = parser.parse_args() to be written to a temporary file
     """
     writing = False
-    outlines = ""
+    outlines = "import os\nimport multiprocessing as mp\n"
     with open(fpath) as fh:
         for line in fh:
             line = line.strip()
             if line == "import argparse":
                 writing = True
-                imports = ["import os",
-                           "import multiprocessing as mp", ""]
-                # the blank "" is needed to give a new line else error
-                import_lines = "\n".join(imports)
-                outlines += import_lines
-            # Add usage  = ScriptName.py in argparse block
+            if line == "args = parser.parse_args()":
+                outlines += f"{line}\n"
+                writing = False
+            if not writing:
+                continue
+            # Notice below we can assume we are writing and no longer need additional if statements
+            # Add usage  = script.py in argparse block
             if "argparse.ArgumentParser" in line:
                 fname = os.path.basename(fpath)
                 # Uses the starting `(` of Argument.parser, and replaces it with ( usage=
-                usage = f"( usage = '{fname}', "
+                # this adds the usage = script.py in Argparse automatically
+                usage = f"(usage='{fname}', "
                 line = line.replace("(", usage)
-            if writing:
-                # regex is used to capture the constant string eg. config.DEFAULT_FPATH
-                # then convert it to "config.DEFAULT_FPATH"
-                # Regex functioning: lower case letter (optional) followed by a '.' (zero or one) upper case (atleast one)
-                # the required '_', upper case (atleast one), then underscore ('_') followed by upper case, both os them optional
-                #captures, config.DEFAULT_FPATH, MARKERS_DIR, wq.WORK_QUEUE_DEFAULT_PORT and DEFAULT_FPATH
-                # add the a comment there and change the variable 'cap_str'
-                cap_str = re.search(r"[a-z]*\.?[A-Z]+_[A-Z]+[_A-Z]*", line)
-                if cap_str:
-                    line = line.replace(
-                        cap_str.group(), f'"{cap_str.group()}"')
-            if writing:
-                outlines += f"{line}\n"
-            if line == "args = parser.parse_args()":
-                writing = False
-    __, tmp_fpath = tempfile.mkstemp()
-    with open(tmp_fpath, 'w') as outfh:
-        outfh.write(outlines)
-    return tmp_fpath
+            # Regex is used to capture the constant string eg. config.DEFAULT_FPATH then convert it to a string eg. "config.DEFAULT_FPATH"
+            capture_constant = re.search(
+                r"[a-z]*\.?[A-Z]+_[A-Z]+[_A-Z]*", line)
+            if capture_constant:
+                line = line.replace(
+                    capture_constant.group(), f'"{capture_constant.group()}"')
+            outlines += f"{line}\n"
+    return outlines
 
 
 def path_dir_docs_scripts(fpath):
@@ -123,57 +117,62 @@ def path_dir_docs_scripts(fpath):
     return (rst_dirpath)
 
 
-def write_run_argparse_output(tmp_fpath, rst_dirpath, fpath):
+def get_argparse_out(argparse_lines):
     """
-    Runs the `--help` command on the agrparse block, copies the output to a rst file
-    with proper identation
+    Write the argparse block to a temporary file and run the `--help` command on it
+    Indents the output using `sed` to be inaccordance with rst syntax
 
     Parameters
     ----------
+    argparse_lines : string
+        argparse block between (and includes) import argparse and 
+        args = parser.parse_args() to be written to a temporary file
+
+    Returns
+    -------
     tmp_fpath : string
         path to temporary file that has the argparse block
         e.g. '</path/to/tmp/file>'
-    rst_dirpath : string
-        path to the directory where script.rst files will be written,
-        e.g. '</path/to/docs/source/scripts/directory>'
+    proc : string
+        indented arparse output after running the `--help` command    
+    """
+    __, tmp_fpath = tempfile.mkstemp()
+    with open(tmp_fpath, 'w') as outfh:
+        outfh.write(argparse_lines)
+    cmd = f"python {tmp_fpath} -h | sed 's/^/   /'"
+    # capture the argparse output
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE,
+                          stderr=subprocess.DEVNULL, shell=True, text=True)
+    return (tmp_fpath, proc)
+
+
+def write_argparse_out(fpath, rst_dirpath, proc):
+    """
+    Creates `rst` file for each script, and writes the header along with 
+    the respective argparse output generated after running `--help`
+
+    Parameters
+    ----------
     fpath : string
         file path that needs to be documented,
         e.g. '</path/to/autometa/script.py>'
+    rst_dirpath : string
+        path to the directory where script.rst files will be written,
+        e.g. '</path/to/docs/source/scripts/directory>'
+    proc : string
+        indented arparse output after running the `--help` command    
     """
     # Extract the filename, eg: kmers.py
     fname = os.path.basename(fpath)
     # extract the "kmers" of kmers.py
     basename = os.path.splitext(fname)[0]
     fname_rst = basename + ".rst"  # make it kmers.rst
-    # another temporary file to store stdout
-    __, path_tmp_rst = tempfile.mkstemp()
-    cmd = f"python {tmp_fpath} -h"
-    # this block writes the argparse output to the respective ".rst" file with proper indentation
-    # this is the output that will be under "..code-block::" and will be displayed in html
-    with open(path_tmp_rst, "w+") as stdout:
-        # capture the argparse output
-        subprocess.call(cmd, stdout=stdout, shell=True)
-        # takes the cursor to beginning to copy and indent stdout.
-        stdout.seek(0)
-        # The indentation is done because the arparse text needs to be indented
-        # under the ..code-block:: section in the final rst file
-        # https://docs.python.org/2/library/textwrap.html#textwrap.TextWrapper
-        wrapper = textwrap.TextWrapper(
-            initial_indent="\t", subsequent_indent="\t", width=80)
-        wrapped = ""
-        path_script_rst = os.path.join(
-            rst_dirpath, fname_rst)
-        # now the path is "docs/source/scripts/comon/kmers.rst"
-        with open(path_script_rst, "w") as fh_rst:
-            write_text = "\n".join(["="*len(fname), fname, "=" *
-                                    len(fname), " ", ".. code-block:: shell", "\n"])
-            fh_rst.write(write_text)
-            for line in stdout:
-                # copying the indented text
-                wrapped += wrapper.fill(line) + "\n"
-            # writing the indented text to the final rst files, this will be dislayed in html
-            fh_rst.write(wrapped)
-        os.remove(path_tmp_rst)
+    path_script_rst = os.path.join(
+        rst_dirpath, fname_rst)
+    with open(path_script_rst, "w") as fh_rst:
+        frmt_header = "="*len(fname)
+        text = f"{frmt_header}\n{fname}\n{frmt_header}\n\n.. code-block:: shell\n"
+        fh_rst.write(f"{text}\n{proc.stdout}")
 
 
 def design_main_file(fpath, rst_dirpath):
@@ -182,6 +181,14 @@ def design_main_file(fpath, rst_dirpath):
     Eg. Linking external with the toctree of common
     These rst files will be called by the toctreee in scripts_main.rst
 
+    Also prevents writing directories below  the sub-directories with the toc tree of parent directory,
+    ie. we don't need to link any directories (if they are in future) that are below external with the common toctree.
+    The way this `if` statements works is: os.walk will keep iterating through a directory recursively (going into sub-sub-directories), we just need its first output
+    of the directories within the root, after that it goes through the sub-sub-directories and lists their directories which we don't want,
+    meanwhile main_file_fpath is constant, thus we can skip recording sub-subdirectories if we tell it that, this path has alreasy been recorded.
+    Remember main_file_fpath is remaining constant for one dir_path
+
+
     Parameters
     ----------
     fpath : string
@@ -190,126 +197,122 @@ def design_main_file(fpath, rst_dirpath):
     rst_dirpath : string
         path to the directory where script.rst files will be written,
         e.g. '</path/to/docs/source/scripts/directory>'
+
+    Returns
+    -------
+    string
+        path to the `_main.rst` file corresponding to each directory
+        e.g. '</path/to/docs/source/scripts/directory/directory_main.rst>' 
     """
     # extract "/home/siddharth/Autometa/autometa/common/external"
     dir_path = os.path.dirname(os.path.abspath(fpath))
     rst_main_dir = os.path.basename(dir_path)  # extraxt "external"
     rst_main_file = rst_main_dir + "_main.rst"  # making a file external_main
-    path_main_file = os.path.join(rst_dirpath, rst_main_file)
+    main_file_fpath = os.path.join(rst_dirpath, rst_main_file)
     outlines = ""
-    if not os.path.exists(path_main_file):
-        with open(path_main_file, "w") as fh:
-            lines = "\n".join(["="*len(rst_main_dir), rst_main_dir, "="*len(rst_main_dir), " ", ".. toctree::",
-                               "\t :maxdepth: 2", "\t :caption: Table of Contents", " "])
-            outlines += lines
-            path_recorded = ""
-            for __, dirnames, filename in os.walk(dir_path):
-                # This is done to prevent writing directories below  the sub-directories
-                # i.e. we don't need to link any directories (if they are in future) that are below external with the common toctree
-                # the way this `if` statements works is: os.walk will keep iterating through a directory recursively (going into sub-sub-directories), we just need its first output
-                # of the directories within the root, after that it goes through the sub-sub-directories and lists their directories which we don't want,
-                # meanwhile path_main_file is constant, thus we can skip recording sub-subdirectories if we tell it that, this path has alreasy been recorded.
-                # remember path_main_file is remaining constant for one dir_path
-                if path_recorded == path_main_file:
+    if os.path.exists(main_file_fpath):
+        return main_file_fpath
+    with open(main_file_fpath, "w") as fh:
+        frmt_header = "="*len(rst_main_dir)
+        outlines += f"{frmt_header}\n{rst_main_dir}\n{frmt_header}\n\n.. toctree::\n"
+        outlines += f"\t :maxdepth: 2\n\t :caption: Table of Contents\n\n"
+        path_recorded = ""
+        for __, dirnames, _ in os.walk(dir_path):
+            if path_recorded == main_file_fpath:
+                continue
+            for dirname in dirnames:
+                if "__" in dirname:  # to prevent __pychache__ folders from being considered
                     continue
-                # this counts the number of sub-directories each directory has
-                # true only for `common` (as of April 24, 2020)
-                if len(dirnames) > 0:
-                    for dirname in dirnames:
-                        if "__" in dirname:  # to prevent __pychache__ folders from being considered
-                            continue
-                        dir_main = dirname + "_main"  # external_main
-                        path_recorded = path_main_file
-                        lines = f"\n\t {dirname}/{dir_main}"
-                        outlines += lines
-            fh.write(outlines)
-    # Opens each DirectoryName_main.rst and add the name of the scripts in that directory
-    with open(path_main_file, "a") as fh:
-        fname = os.path.basename(fpath)
+                dir_main = dirname + "_main"  # external_main
+                path_recorded = main_file_fpath
+                lines = f"\n\t {dirname}/{dir_main}"
+                outlines += lines
+        fh.write(outlines)
+    return (main_file_fpath)
+
+
+def write_scrit_names(main_file_fpath, fpath):
+    """
+    Opens each DirectoryName_main.rst and add the name of the scripts in that directory
+
+    Parameters
+    ----------
+    main_file_fpath : string
+        path to the `_main.rst` file corresponding to each directory
+        e.g. '</path/to/docs/source/scripts/directory/directory_main.rst>' 
+    fpath : string
+        file path that needs to be documented,
+        e.g. '</path/to/autometa/script.py>'
+    """
+    with open(main_file_fpath, "a") as fh:
+        basename = os.path.basename(fpath)
         # extract the "kmers" of kmers.py
-        basename = os.path.splitext(fname)[0]
-        fh.write(f"\n\t {basename}")
+        fname = os.path.splitext(basename)[0]
+        fh.write(f"\n\t {fname}")
 
 
 def link_write_usage():
     """
     Creates usage.rst and writes the directories in its toctree
     """
-    if not os.path.exists(path_usage):
-        with open(path_usage, "w") as fh:
-            write_text = "\n".join(["="*len("usage"), "Usage", "="*len("usage"), " ", ".. toctree::",
-                                    "\t :maxdepth: 3", "\t :caption: Table of Contents", " "])
-            fh.write(write_text)
-            # This can also be done using next() -> https://stackoverflow.com/a/142535/12671809 ,
-            # but reduces readability. What to do ??
-            for dirname in os.listdir(path_scripts):
-                path_dirname = os.path.join(path_scripts, dirname)
-                if os.path.isdir(path_dirname):
+    scripts_dirpath = os.path.join(
+        os.path.dirname(__file__), "source", "scripts")
+    usage_fpath = os.path.join(scripts_dirpath, "usage.rst")
+    if not os.path.exists(usage_fpath):
+        with open(usage_fpath, "w") as fh:
+            frmt_header = "="*len("usage")
+            text = f"{frmt_header}\nUsage\n{frmt_header}\n\n.. toctree::\n"
+            text += f"\t :maxdepth: 3\n\t :caption: Table of Contents\n\n"
+            fh.write(text)
+            for dirname in os.listdir(scripts_dirpath):
+                dirpath = os.path.join(scripts_dirpath, dirname)
+                if os.path.isdir(dirpath):
                     dirname_rst = dirname + "_main"
                     fh.write(f"\n\t {dirname}/{dirname_rst}")
 
 
 def remove_existing_docs():
     """
-    Removes the exists documentatio in `scripts` directory
+    Removes the existing documentatio in `scripts` directory
     """
-    if os.path.exists(path_scripts):
-        shutil.rmtree(path_scripts)
+    scripts_dirpath = os.path.join(
+        os.path.dirname(__file__), "source", "scripts")
+    if os.path.exists(scripts_dirpath):
+        shutil.rmtree(scripts_dirpath)
 
 
 def remove_empty_dir():
     """
     Removes any empty directory that may have been added by mistake
     """
-    for root, dirnames, filenames in os.walk(os.path.join(os.path.dirname(os.path.dirname(__file__)), "autometa")):
-        if os.listdir(root) == []:
+    pkg_dirpath = os.path.join(os.path.dirname(
+        os.path.dirname(__file__)), "autometa")
+    for root, dirnames, filenames in os.walk(pkg_dirpath):
+        # If the list is empty, then this will evaluate to false, and if it contains elements, it will evaluate to true
+        if not os.listdir(root):
             os.rmdir(root)
 
 
-def remove_temp_files(tmp_fpath):
-    """
-    Removes the temporary files to which the argparse block was copied
-
-    Parameters
-    ----------
-    tmp_fpath : string
-        path to temporary file that has the argparse block
-        e.g. '</path/to/tmp/file>'
-    """
+def main():
+    remove_existing_docs()
+    remove_empty_dir()
+    pkg_scripts_fpath = os.path.join(os.path.dirname(
+        os.path.dirname(__file__)), "autometa", "**", "*.py")
+    for fpath in glob.glob(pkg_scripts_fpath, recursive=True):
+        exclude_dirs = ["validation"]
+        if "__" in fpath:  # do not include __init__ and __main__.py files
+            continue
+        if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
+            continue
+        argparse_lines = get_argparse_block(fpath)
+        rst_dirpath = path_dir_docs_scripts(fpath)
+        tmp_fpath, proc = get_argparse_out(argparse_lines)
+        write_argparse_out(fpath, rst_dirpath, proc)
+        main_file_fpath = design_main_file(fpath, rst_dirpath)
+        write_scrit_names(main_file_fpath, fpath)
+    link_write_usage()
     os.remove(tmp_fpath)
 
 
-path_scripts = os.path.join(os.path.dirname(__file__), "source", "scripts")
-path_usage = os.path.join(path_scripts, "usage.rst")
-
-remove_existing_docs()
-remove_empty_dir()
-
-for fpath in glob.glob(os.path.join(os.path.dirname(os.path.dirname(__file__)), "autometa", "**", "*.py"), recursive=True):
-    exclude_dirs = ["validation"]
-    if "__" in fpath:  # do not include __init__ and __main__.py files
-        continue
-    if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
-        continue
-    tmp_fpath = get_argparse_block(fpath)
-    rst_dirpath = path_dir_docs_scripts(fpath)
-    write_run_argparse_output(tmp_fpath, rst_dirpath, fpath)
-    design_main_file(fpath, rst_dirpath)
-
-link_write_usage()
-remove_temp_files(tmp_fpath)
-
-
-def main(args):
-    pass
-
-
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(
-        description="""
-        Parses the argparse block of all autometa scripts, copy them to a 
-        new file and run --help from there
-        """)
-    args = parser.parse_args()
-    main(args)
+    main()
