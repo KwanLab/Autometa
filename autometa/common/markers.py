@@ -221,7 +221,7 @@ def main():
     parser.add_argument('kingdom', help='kingdom to search for markers',
                         choices=['bacteria', 'archaea'], default='bacteria')
     parser.add_argument('--dbdir',
-                        help=f'Path to directory containing the single-copy marker HMM databases. (default is {MARKERS_DIR})',
+                        help=f'Path to directory containing the single-copy marker HMM databases.',
                         default=MARKERS_DIR)
     args = parser.parse_args()
     markers = Markers(orfs_fpath=args.orfs,
