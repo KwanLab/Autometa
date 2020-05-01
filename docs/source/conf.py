@@ -4,13 +4,16 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
+import glob
 import os
-import sys
 import subprocess
+import sys
 
 from sphinx.ext.autodoc import between
 from datetime import datetime
 
+sys.path.insert(1, "/home/the_bio_informatician/Autometa/docs/")  # nopep8
+import parse_argparse  # nopep8
 
 sys.path.append(os.path.abspath("./_ext"))
 
@@ -101,6 +104,9 @@ def setup(app):
     app.connect('autodoc-process-docstring',
                 between('^.*COPYRIGHT.*$', exclude=True))
     return app
+
+
+parse_argparse.main()
 
 
 def sphinx_apidoc(header="Developer API"):
