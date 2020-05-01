@@ -12,13 +12,13 @@ import sys
 from sphinx.ext.autodoc import between
 from datetime import datetime
 
-sys.path.insert(1, "/home/the_bio_informatician/Autometa/docs/")  # nopep8
-import parse_argparse  # nopep8
 
 sys.path.append(os.path.abspath("./_ext"))
 
 for dirpath, dirnames, filenames in os.walk('../../', topdown=True):
     sys.path.insert(0, os.path.abspath(dirpath))
+
+import parse_argparse  # nopep8
 
 # -- Project information -----------------------------------------------------
 
@@ -42,11 +42,9 @@ release = version
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.coverage',
     'sphinx.ext.todo',
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary'
 ]
 
 todo_include_todos = True
