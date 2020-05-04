@@ -317,7 +317,7 @@ def main():
         os.path.dirname(__file__), "source", "scripts")
     remove_existing_docs(rst_scripts_dirpath)
     remove_empty_dir()
-    pkg_scripts_search_fpath = os.path.join(os.path.dirname(
+    pkg_scripts_search_str = os.path.join(os.path.dirname(
         os.path.dirname(__file__)), "autometa", "**", "*.py")
     for fpath in glob.glob(pkg_scripts_search_str, recursive=True):
         exclude_dirs = ["validation"]
