@@ -123,7 +123,7 @@ def get_usage(argparse_lines):
         initial_indent="\t", subsequent_indent="\t", width=80)
     wrapped_lines = ""
     # splitlines is required because wrapped_lines.stdout is just as big line with \n in between.
-    # Splitlines will "split" as each \n, without this var `line` would go through each character and not each line
+    # without this line would go through each character and not each line
     for line in proc.stdout.splitlines():
         # writing the indented text to the final rst files, this will be dislayed in html
         wrapped_lines += wrapper.fill(line) + "\n"
@@ -135,6 +135,10 @@ def make_rst_dir(fpath):
     """
     Replaces the autometa directory in the path of scripts that needs to be documented,
     with <docs/source/scripts/> and creates these directories
+
+    We are finding the index of autometa from reverse, as sometimes there may be multiple
+    occurunces of 'autometa' in a single file path, and always the last occurence will point to 
+    the autometa package and that is what we want
 
     Parameters
     ----------
@@ -152,15 +156,17 @@ def make_rst_dir(fpath):
     rst_scripts_dir = os.path.join("docs", "source", "scripts")
     # change this path "~/Autometa/autometa/common/external"
     script_dirpath = os.path.dirname(os.path.abspath(fpath))
+    # split the original path, make it into a list and reverse the list
     rev_path_list = script_dirpath.split(os.path.sep)[::-1]
     autometa_index = rev_path_list.index("autometa")
+    # replace autometa with docs/source/scripts
     rev_path_list[autometa_index] = rst_scripts_dir
+    # again reverse the list
     path_list = rev_path_list[::-1]
     rst_dirpath = os.path.join(os.path.sep, *path_list)
     # referenced from https://stackoverflow.com/a/14826889/12671809
     # https://docs.python.org/2/tutorial/controlflow.html#unpacking-argument-lists
     # path now has "~/Autometa/docs/source/scripts/comon/external" instead of autometa
-    print(rst_dirpath)
     if not os.path.exists(rst_dirpath):
         os.makedirs(rst_dirpath)
     return (rst_dirpath)
