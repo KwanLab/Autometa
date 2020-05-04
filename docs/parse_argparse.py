@@ -152,13 +152,15 @@ def make_rst_dir(fpath):
     rst_scripts_dir = os.path.join("docs", "source", "scripts")
     # change this path "~/Autometa/autometa/common/external"
     script_dirpath = os.path.dirname(os.path.abspath(fpath))
-    path_list = script_dirpath.split(os.path.sep)
-    autometa_index = path_list.index("autometa")
-    path_list[autometa_index] = rst_scripts_dir
+    rev_path_list = script_dirpath.split(os.path.sep)[::-1]
+    autometa_index = rev_path_list.index("autometa")
+    rev_path_list[autometa_index] = rst_scripts_dir
+    path_list = rev_path_list[::-1]
+    rst_dirpath = os.path.join(os.path.sep, *path_list)
     # referenced from https://stackoverflow.com/a/14826889/12671809
     # https://docs.python.org/2/tutorial/controlflow.html#unpacking-argument-lists
-    rst_dirpath = os.path.join(os.path.sep, *path_list)
     # path now has "~/Autometa/docs/source/scripts/comon/external" instead of autometa
+    print(rst_dirpath)
     if not os.path.exists(rst_dirpath):
         os.makedirs(rst_dirpath)
     return (rst_dirpath)
