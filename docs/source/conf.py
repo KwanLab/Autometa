@@ -4,7 +4,6 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-import glob
 import os
 import subprocess
 import sys
@@ -104,9 +103,6 @@ def setup(app):
     return app
 
 
-parse_argparse.main()
-
-
 def sphinx_apidoc(header="Developer API"):
     """
     Runs `spinx-apidoc`
@@ -126,4 +122,5 @@ def sphinx_apidoc(header="Developer API"):
     subprocess.call(cmd, shell=True)
 
 
+parse_argparse.main()
 sphinx_apidoc()

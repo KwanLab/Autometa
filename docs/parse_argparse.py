@@ -87,7 +87,7 @@ def get_argparse_block(fpath):
     return outlines
 
 
-def get_uasge(argparse_lines, fpath):
+def get_uasge(argparse_lines):
     """
     Write the argparse block  to a temporary file and run the `--help` command on it,
     followed by proper indentation as per rst syntax
@@ -114,10 +114,14 @@ def get_uasge(argparse_lines, fpath):
     proc = subprocess.run(cmd, stdout=subprocess.PIPE,
                           stderr=subprocess.DEVNULL, shell=True, text=True)
     # checks if the command was run properly else raises error
+    # proc.check_returncode()
     try:
         proc.check_returncode()
-    except:
-        print(f"Error while parsing argparse block of {fpath}")
+    except subprocess.CalledProcessError as err:
+        print(err)
+        print(
+            f"Error while running --help on these argparse lines \n {argparse_lines}")
+        raise err
     wrapper = textwrap.TextWrapper(
         initial_indent="\t", subsequent_indent="\t", width=80)
     wrapped_lines = ""
@@ -147,6 +151,7 @@ def make_rst_dir(fpath):
         path to the directory where script.rst files will be written,
         e.g. '</path/to/docs/source/scripts/directory>'
     """
+
     rst_scripts_dir = os.path.join("docs", "source", "scripts")
     # change this path "~/Autometa/autometa/common/external"
     script_dirpath = os.path.dirname(os.path.abspath(fpath))
@@ -179,69 +184,67 @@ def write_usage(fpath, rst_dirpath, wrapped_lines):
         indented arparse output after running the `--help` command
     """
     # Extract the filename, eg: kmers.py
-    fname = os.path.basename(fpath)
+    basename = os.path.basename(fpath)
     # extract the "kmers" of kmers.py
-    basename = os.path.splitext(fname)[0]
-    fname_rst = basename + ".rst"  # make it kmers.rst
-    path_script_rst = os.path.join(
-        rst_dirpath, fname_rst)
-    frmt_header = "="*len(fname)
-    text = f"{frmt_header}\n{fname}\n{frmt_header}\n\n.. code-block:: shell\n"
-    with open(path_script_rst, "w") as fh_rst:
-        fh_rst.write(f"{text}\n{wrapped_lines}")
+    fname = os.path.splitext(basename)[0]
+    rst_fname = fname + ".rst"  # make it kmers.rst
+    rst_fpath = os.path.join(
+        rst_dirpath, rst_fname)
+    frmt_header = "="*len(basename)
+    header = f"{frmt_header}\n{basename}\n{frmt_header}\n\n.. code-block:: shell\n"
+    with open(rst_fpath, "w") as fh_rst:
+        fh_rst.write(f"{header}\n{wrapped_lines}")
 
 
-def write_main_file(fpath, rst_dirpath):
+def write_main_header(root, dirname):
     """
     Writes the header and basic information to all of the `main.rst` files
 
     Parameters
     ----------
-    fpath : string
-        file path that needs to be documented,
-        e.g. '</path/to/autometa/script.py>'
-    rst_dirpath : string
-        path to the directory where script.rst files will be written,
+    root : string
+        path to parent directory of the directory where `main.rst` file needs to be written
         e.g. '</path/to/docs/source/scripts/directory>'
+    dirname : string
+        name of the directory whose main file we are writing
     """
-    # extract "/home/siddharth/Autometa/autometa/common/external"
-    dir_path = os.path.dirname(os.path.abspath(fpath))
-    main_rst_dir = os.path.basename(dir_path)  # extraxt "external"
-    main_rst_file = main_rst_dir + "_main.rst"  # making a file external_main
-    main_rst_fpath = os.path.join(rst_dirpath, main_rst_file)
-    if not os.path.exists(main_rst_fpath):
-        frmt_header = "="*len(main_rst_dir)
-        outlines = f"{frmt_header}\n{main_rst_dir}\n{frmt_header}\n\n.. toctree::\n"
-        outlines += f"\t :maxdepth: 2\n\t :caption: Table of Contents\n\n"
-        with open(main_rst_fpath, "w") as fh:
-            fh.write(outlines)
+    main_rst_file = dirname + "_main.rst"  # making a file external_main
+    main_rst_fpath = os.path.join(root, dirname, main_rst_file)
+    frmt_header = "="*len(dirname)
+    header = f"{frmt_header}\n{dirname}\n{frmt_header}\n\n.. toctree::\n"
+    header += f"\t :maxdepth: 2\n\t :caption: Table of Contents\n\n"
+    with open(main_rst_fpath, "w") as fh:
+        fh.write(header)
 
 
-def link_main(rst_scripts_dirpath):
+def write_main_files(rst_scripts_dirpath):
     """
-    Links the parent toc tree with the sub-directories and the script that
-    directory has
+    Creates the main.rst files, writes their header, links the parent toc tree with the 
+    sub-directories and the scripts that directory has
 
     Parameters
     ----------
     rst_scripts_dirpath : string
-        path to the directory where script.rst files will be written,
-        e.g. '</path/to/docs/source/scripts/directory>'
+        path to scripts directory in docs,
+        e.g. '</path/to/docs/source/scripts>'
     """
     for root, dirnames, filenames in os.walk(rst_scripts_dirpath):
+        for dirname in dirnames:
+            write_main_header(root, dirname)
         if root == rst_scripts_dirpath:
             continue
         # links sub-directories
         lines = ""
-        if dirnames:
-            for dirname in dirnames:
-                dir_main = dirname + "_main"  # external_main
-                lines += f"\n\t {dirname}/{dir_main}"
+        # If the dirnames list is empty, then the for loop will iterate through
+        # nothing and simply move on to the next bit of code.
+        for dirname in dirnames:
+            dir_main = dirname + "_main"  # external_main
+            lines += f"\t{dirname}/{dir_main}\n"
         for index, filename in enumerate(filenames):
             # capture the index of `_main.rst` to open later
             if "main" in filename:
                 break
-        # get the path of the `main.rst` file
+        # # get the path of the `main.rst` file
         main_rst_fpath = os.path.join(root, filenames[index])
         # write the name of each script in the `main.rst` file
         for fname in filenames:
@@ -250,44 +253,48 @@ def link_main(rst_scripts_dirpath):
             if "main" in fname:
                 continue
             fname = os.path.splitext(fname)[0]
-            lines += f"\n\t {fname}"
+            lines += f"\t{fname}\n"
         with open(main_rst_fpath, "a") as fh:
             fh.write(lines)
 
 
-def write_usage_file(rst_scripts_dirpath):
+def write_usage_toctree(rst_scripts_dirpath):
     """
     Creates usage.rst and writes the directories in its toctree
 
     Parameters
     ----------
     rst_scripts_dirpath : string
-        path to the directory where script.rst files will be written,
-        e.g. '</path/to/docs/source/scripts/directory>'
+        path to scripts directory in docs,
+        e.g. '</path/to/docs/source/scripts>'
     """
     usage_fpath = os.path.join(rst_scripts_dirpath, "usage.rst")
     frmt_header = "="*len("usage")
-    text = f"{frmt_header}\nUsage\n{frmt_header}\n\n.. toctree::\n"
-    text += f"\t :maxdepth: 3\n\t :caption: Table of Contents\n\n"
-    if not os.path.exists(usage_fpath):
+    header = f"{frmt_header}\nUsage\n{frmt_header}\n\n.. toctree::\n"
+    header += f"\t :maxdepth: 3\n\t :caption: Table of Contents\n\n"
+    if os.path.exists(usage_fpath):
+        return
+    dir_names = ""
+    for dirname in os.listdir(rst_scripts_dirpath):
+        dirpath = os.path.join(rst_scripts_dirpath, dirname)
+        if not os.path.isdir(dirpath):
+            continue
+        dirname_rst = dirname + "_main"
+        dir_names += f"\t{dirname}/{dirname_rst}\n"
         with open(usage_fpath, "w") as fh:
-            fh.write(text)
-            for dirname in os.listdir(rst_scripts_dirpath):
-                dirpath = os.path.join(rst_scripts_dirpath, dirname)
-                if os.path.isdir(dirpath):
-                    dirname_rst = dirname + "_main"
-                    fh.write(f"\n\t {dirname}/{dirname_rst}")
+            fh.write(header)
+            fh.write(dir_names)
 
 
 def remove_existing_docs(rst_scripts_dirpath):
     """
-    Removes the existing documentatio in `scripts` directory
+    Removes the existing documentation in `scripts` directory
 
     Parameters
     ----------
     rst_scripts_dirpath : string
-        path to the directory where script.rst files will be written,
-        e.g. '</path/to/docs/source/scripts/directory>'
+        path to scripts directory in docs,
+        e.g. '</path/to/docs/source/scripts>'
     """
     if os.path.exists(rst_scripts_dirpath):
         shutil.rmtree(rst_scripts_dirpath)
@@ -310,21 +317,20 @@ def main():
         os.path.dirname(__file__), "source", "scripts")
     remove_existing_docs(rst_scripts_dirpath)
     remove_empty_dir()
-    pkg_scripts_fpath = os.path.join(os.path.dirname(
+    pkg_scripts_search_fpath = os.path.join(os.path.dirname(
         os.path.dirname(__file__)), "autometa", "**", "*.py")
-    for fpath in glob.glob(pkg_scripts_fpath, recursive=True):
+    for fpath in glob.glob(pkg_scripts_search_fpath, recursive=True):
         exclude_dirs = ["validation"]
         if "__" in fpath:  # do not include __init__ and __main__.py files
             continue
         if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
             continue
         argparse_lines = get_argparse_block(fpath)
-        wrapped_lines = get_uasge(argparse_lines, fpath)
+        wrapped_lines = get_uasge(argparse_lines)
         rst_dirpath = make_rst_dir(fpath)
         write_usage(fpath, rst_dirpath, wrapped_lines)
-        write_main_file(fpath, rst_dirpath)
-    link_main(rst_scripts_dirpath)
-    write_usage_file(rst_scripts_dirpath)
+    write_main_files(rst_scripts_dirpath)
+    write_usage_toctree(rst_scripts_dirpath)
 
 
 if __name__ == '__main__':
