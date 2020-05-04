@@ -87,7 +87,7 @@ def get_argparse_block(fpath):
     return outlines
 
 
-def get_uasge(argparse_lines):
+def get_usage(argparse_lines):
     """
     Write the argparse block  to a temporary file and run the `--help` command on it,
     followed by proper indentation as per rst syntax
@@ -113,12 +113,9 @@ def get_uasge(argparse_lines):
     # capture the argparse output
     proc = subprocess.run(cmd, stdout=subprocess.PIPE,
                           stderr=subprocess.DEVNULL, shell=True, text=True)
-    # checks if the command was run properly else raises error
-    # proc.check_returncode()
     try:
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
-        print(err)
         print(
             f"Error while running --help on these argparse lines \n {argparse_lines}")
         raise err
@@ -208,8 +205,8 @@ def write_main_header(root, dirname):
     dirname : string
         name of the directory whose main file we are writing
     """
-    main_rst_file = dirname + "_main.rst"  # making a file external_main
-    main_rst_fpath = os.path.join(root, dirname, main_rst_file)
+    main_rst_fname = dirname + "_main.rst"  # making a file external_main
+    main_rst_fpath = os.path.join(root, dirname, main_rst_fname)
     frmt_header = "="*len(dirname)
     header = f"{frmt_header}\n{dirname}\n{frmt_header}\n\n.. toctree::\n"
     header += f"\t :maxdepth: 2\n\t :caption: Table of Contents\n\n"
@@ -281,9 +278,9 @@ def write_usage_toctree(rst_scripts_dirpath):
             continue
         dirname_rst = dirname + "_main"
         dir_names += f"\t{dirname}/{dirname_rst}\n"
-        with open(usage_fpath, "w") as fh:
-            fh.write(header)
-            fh.write(dir_names)
+    with open(usage_fpath, "w") as fh:
+        fh.write(header)
+        fh.write(dir_names)
 
 
 def remove_existing_docs(rst_scripts_dirpath):
@@ -326,7 +323,7 @@ def main():
         if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
             continue
         argparse_lines = get_argparse_block(fpath)
-        wrapped_lines = get_uasge(argparse_lines)
+        wrapped_lines = get_usage(argparse_lines)
         rst_dirpath = make_rst_dir(fpath)
         write_usage(fpath, rst_dirpath, wrapped_lines)
     write_main_files(rst_scripts_dirpath)
