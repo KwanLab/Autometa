@@ -209,7 +209,7 @@ def write_main_header(root, dirname):
     main_rst_fpath = os.path.join(root, dirname, main_rst_fname)
     frmt_header = "="*len(dirname)
     header = f"{frmt_header}\n{dirname}\n{frmt_header}\n\n.. toctree::\n"
-    header += f"\t :maxdepth: 2\n\t :caption: Table of Contents\n\n"
+    header += f"\t:maxdepth: 2\n\t:caption: Table of Contents\n\n"
     with open(main_rst_fpath, "w") as fh:
         fh.write(header)
 
@@ -268,7 +268,7 @@ def write_usage_toctree(rst_scripts_dirpath):
     usage_fpath = os.path.join(rst_scripts_dirpath, "usage.rst")
     frmt_header = "="*len("usage")
     header = f"{frmt_header}\nUsage\n{frmt_header}\n\n.. toctree::\n"
-    header += f"\t :maxdepth: 3\n\t :caption: Table of Contents\n\n"
+    header += f"\t:maxdepth: 3\n\t:caption: Table of Contents\n\n"
     if os.path.exists(usage_fpath):
         return
     dir_names = ""
