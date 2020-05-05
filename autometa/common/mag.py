@@ -32,7 +32,9 @@ import pandas as pd
 import numpy as np
 
 from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio import SeqUtils
+from functools import lru_cache
 
 from autometa.common.markers import Markers,MARKERS_DIR
 from autometa.common import kmers
@@ -63,8 +65,29 @@ class MAG:
         self.nseqs = len(self.contigs)
 
     @property
+    @lru_cache(maxsize=None)
+    def assembly_seqs(self):
+        with open(self.assembly) as fh:
+            return [seq for title,seq in SimpleFastaParser(fh)]
+
+    @property
+    @lru_cache(maxsize=None)
+    def mag_seqs(self):
+        """Retrieve sequences from assembly contained in `self.contigs`.
+
+        Returns
+        -------
+        list
+            list of SeqIO [SeqRecords, ...]
+
+        """
+        return [seq for seq in SeqIO.parse(self.assembly, 'fasta')
+            if seq.id in self.contigs]
+
+    @property
+    @lru_cache(maxsize=None)
     def totalsize(self):
-        return sum([len(rec) for rec in self.get_seqs(all=True)])
+        return sum(len(rec) for rec in self.assembly_seqs)
 
     @property
     def size_pct(self):
@@ -72,19 +95,23 @@ class MAG:
 
     @property
     def nallseqs(self):
-        return len(self.get_seqs(all=True))
+        return len(self.assembly_seqs)
 
     @property
     def seqs_pct(self):
         return self.nseqs / self.nallseqs * 100
 
     @property
+    @lru_cache(maxsize=None)
     def size(self):
-        return sum(len(seq) for seq in self.get_seqs())
+        return sum(len(seq) for seq in self.mag_seqs)
 
     @property
-    def gc_content(self):
-        return np.mean([SeqUtils.GC(rec.seq) for rec in self.get_seqs()])
+    @lru_cache(maxsize=None)
+    def length_weighted_gc(self):
+        weights = [len(rec.seq)/self.size for rec in self.mag_seqs]
+        gc_content = [SeqUtils.GC(rec.seq) for rec in self.mag_seqs]
+        return np.average(a=gc_content, weights=weights)
 
     @property
     def nucl_orfs_exist(self):
@@ -142,26 +169,6 @@ class MAG:
     def write_orfs(self, fpath, orf_type='prot'):
         records = self.get_orfs(orf_type=orf_type)
         SeqIO.write(records, fpath, 'fasta')
-
-    def get_seqs(self, all=False):
-        """Retrieve sequences from assembly.
-
-        Parameters
-        ----------
-        all : bool
-            Gets all sequences from assembly if True else sequences for MAG
-            (the default is False).
-
-        Returns
-        -------
-        list
-            list of SeqIO [SeqRecords, ...]
-
-        """
-        if all:
-            return [seq for seq in SeqIO.parse(self.assembly, 'fasta')]
-        return [seq for seq in SeqIO.parse(self.assembly, 'fasta')
-            if seq.id in self.contigs]
 
     def describe(self, autometa_details=True):
         print(f'''
