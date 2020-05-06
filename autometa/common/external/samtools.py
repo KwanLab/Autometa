@@ -31,10 +31,11 @@ import multiprocessing as mp
 
 logger = logging.getLogger(__name__)
 
+
 def sort(sam, bam, nproc=mp.cpu_count()):
     """
     Views then sorts sam file by leftmost coordinates and outputs to bam.
-    
+
     Parameters
     ----------
     sam : str
@@ -43,7 +44,7 @@ def sort(sam, bam, nproc=mp.cpu_count()):
         </path/to/output/alignment.bam>
     nproc : int, optional
         Number of processors to be used. By default uses all the processors of the system 
-    
+
     Raises
     ------
     TypeError
@@ -55,27 +56,32 @@ def sort(sam, bam, nproc=mp.cpu_count()):
     """
 
     if type(nproc) is not int or nproc <= 0:
-        raise TypeError(f'nproc must be an integer greater than zero! Given: {nproc}')
+        raise TypeError(
+            f'nproc must be an integer greater than zero! Given: {nproc}')
     if not os.path.exists(sam) or os.stat(sam).st_size == 0:
-        raise FileNotFoundError(f'The specified path: {sam} is either incorrect or the file is empty')
+        raise FileNotFoundError(
+            f'The specified path: {sam} is either incorrect or the file is empty')
     samtools_out_dir = os.path.dirname(os.path.abspath(bam))
     err = os.path.join(samtools_out_dir, 'samtools.err')
     out = os.path.join(samtools_out_dir, 'samtools.out')
-    with tempfile.TemporaryDirectory() as tempdir:    
+    with tempfile.TemporaryDirectory() as tempdir:
         temp_bam = os.path.join(tempdir, os.path.basename(bam))
         cmd = f'samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_bam}'
         logger.debug(f'cmd: {cmd}')
         with open(out, 'w') as stdout, open(err, 'w') as stderr:
-            retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
+            retcode = subprocess.call(
+                cmd, stdout=stdout, stderr=stderr, shell=True)
         if retcode != 0:
             raise ChildProcessError(f'Sort failed, retcode: {retcode}')
         else:
             shutil.move(temp_bam, bam)
         os.remove(err)
         os.remove(out)
-          
+
+
 def main(args):
     sort(args.sam, args.bam, args.nproc)
+
 
 if __name__ == '__main__':
     import argparse
@@ -83,9 +89,12 @@ if __name__ == '__main__':
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
-    parser = argparse.ArgumentParser(description = "Takes a sam file, sorts it and returns the output to a bam file")
+    parser = argparse.ArgumentParser(
+        description="Takes a sam file, sorts it and returns the output to a bam file")
     parser.add_argument('--sam', help='</path/to/alignment.sam>', type=str)
-    parser.add_argument('--bam', help='</path/to/output/alignment.bam>', type=str)
-    parser.add_argument('--nproc', help='Number of processors to use', default=mp.cpu_count(), type=int)
+    parser.add_argument(
+        '--bam', help='</path/to/output/alignment.bam>', type=str)
+    parser.add_argument(
+        '--nproc', help='Number of processors to use', default=mp.cpu_count(), type=int)
     args = parser.parse_args()
     main(args)

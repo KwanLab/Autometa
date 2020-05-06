@@ -18,7 +18,7 @@ conda environment needs to be active and additional packages need to be installe
 ```bash
 # Note: This assumes you've already created the autometa environment.
 # Install additional dependencies to autometa environment...
-conda install -n autometa -c conda-forge sphinxcontrib-programoutput sphinx sphinx_rtd_theme
+conda install -n autometa -c conda-forge sphinx sphinx_rtd_theme
 ```
 
 Running make

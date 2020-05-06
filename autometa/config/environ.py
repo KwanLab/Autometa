@@ -50,6 +50,7 @@ EXECUTABLES = [
     'bedtools',
 ]
 
+
 def which(program):
     """Finds the full path for an executable and checks read permissions exist.
 
@@ -87,6 +88,7 @@ def which(program):
                 return exe_file
     return ''
 
+
 def find_executables():
     """Retrieves executable file paths by looking in Autometa dependent executables.
 
@@ -96,7 +98,8 @@ def find_executables():
         {executable:</path/to/executable>, ...}
 
     """
-    return {exe:which(exe) for exe in EXECUTABLES}
+    return {exe: which(exe) for exe in EXECUTABLES}
+
 
 def diamond():
     """Get diamond version.
@@ -109,12 +112,13 @@ def diamond():
     """
     exe = which('diamond')
     proc = subprocess.Popen(
-        [exe,'version'],
+        [exe, 'version'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     # stdout = b'diamond version 0.9.24\n'
     return stdout.decode().split()[-1]
+
 
 def hmmsearch():
     """Get hmmsearch version.
@@ -126,13 +130,14 @@ def hmmsearch():
     """
     exe = which('hmmsearch')
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def hmmpress():
     """Get hmmpress version.
@@ -144,13 +149,14 @@ def hmmpress():
     """
     exe = which('hmmpress')
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def hmmscan():
     """Get hmmscan version.
@@ -162,13 +168,14 @@ def hmmscan():
     """
     exe = which('hmmscan')
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def prodigal():
     """Get prodigal version.
@@ -180,12 +187,13 @@ def prodigal():
     """
     exe = which('prodigal')
     proc = subprocess.Popen(
-        [exe,'-v'],
+        [exe, '-v'],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     # stderr = b'\nProdigal V2.6.3: February, 2016\n\n'
-    return stderr.decode().strip().split(':')[0].replace('Prodigal V','')
+    return stderr.decode().strip().split(':')[0].replace('Prodigal V', '')
+
 
 def bowtie2():
     """Get bowtie2 version.
@@ -197,12 +205,13 @@ def bowtie2():
     """
     exe = which('bowtie2')
     proc = subprocess.Popen(
-        [exe,'--version'],
+        [exe, '--version'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     # stdout 'bowtie2-align-s version 2.3.5\n64-bit\n
     return stdout.decode().split()[2]
+
 
 def samtools():
     """Get samtools version.
@@ -213,11 +222,13 @@ def samtools():
         version of samtools
     """
     exe = which('samtools')
-    proc = subprocess.Popen([exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        [exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     stderr = stderr.decode().strip().split('\n')[1]
     # stderr = 'Version: 1.10 (using htslib 1.10.2)'
     return stderr.split()[1]
+
 
 def bedtools():
     """Get bedtools version.
@@ -235,6 +246,7 @@ def bedtools():
     stdout, stderr = proc.communicate()
     # stdout = b'bedtools v2.29.2\n'
     return stdout.decode().strip().split()[-1].strip('v')
+
 
 def get_versions(program=None):
     """Retrieve versions from all required executable dependencies.
@@ -260,15 +272,15 @@ def get_versions(program=None):
 
     """
     dispatcher = {
-        'prodigal':prodigal,
-        'diamond':diamond,
-        'hmmsearch':hmmsearch,
-        'hmmpress':hmmpress,
-        'hmmscan':hmmscan,
-        'prodigal':prodigal,
-        'bowtie2':bowtie2,
-        'samtools':samtools,
-        'bedtools':bedtools,
+        'prodigal': prodigal,
+        'diamond': diamond,
+        'hmmsearch': hmmsearch,
+        'hmmpress': hmmpress,
+        'hmmscan': hmmscan,
+        'prodigal': prodigal,
+        'bowtie2': bowtie2,
+        'samtools': samtools,
+        'bedtools': bedtools,
     }
     if program:
         exe_name = os.path.basename(program)
@@ -279,14 +291,15 @@ def get_versions(program=None):
         return dispatcher[exe_name]()
     versions = {}
     executables = find_executables()
-    for exe,found in executables.items():
+    for exe, found in executables.items():
         if found:
             version = dispatcher[exe]()
         else:
             logger.warning(f'VersionUnavailable {exe}')
             version = 'ExecutableNotFound'
-        versions.update({exe:version})
+        versions.update({exe: version})
     return versions
+
 
 def configure(config=DEFAULT_CONFIG):
     """Checks executable dependencies necessary to run autometa.
@@ -318,7 +331,7 @@ def configure(config=DEFAULT_CONFIG):
     executables = find_executables()
     versions = get_versions()
     satisfied = True
-    for executable,found in executables.items():
+    for executable, found in executables.items():
         version = versions.get(executable)
         if not config.has_option('environ', executable) and not found:
             satisfied = False
@@ -337,6 +350,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('versions', user_executable, version)
     return config, satisfied
 
+
 def main():
     import argparse
     import logging as logger
@@ -344,16 +358,19 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Configure executables.config')
+    parser = argparse.ArgumentParser(
+        description='Configure executables.config')
     parser.add_argument('--infpath',
-        help='</path/to/output/executables.config>', required=True)
+                        help='</path/to/output/executables.config>', required=True)
     parser.add_argument('--out',
-        help='</path/to/output/executables.config>')
+                        help='</path/to/output/executables.config>')
     args = parser.parse_args()
-    config,satisfied = configure(infpath=args.infpath)
+    config, satisfied = configure(infpath=args.infpath)
     if not args.out:
-        import sys;sys.exit(0)
+        import sys
+        sys.exit(0)
     put_config(config, args.out)
+
 
 if __name__ == '__main__':
     main()

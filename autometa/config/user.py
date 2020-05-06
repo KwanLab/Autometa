@@ -29,8 +29,6 @@ AutometaUser configuration class
 import logging
 import os
 
-import argparse
-
 from autometa import config
 from autometa.config import environ
 from autometa.common import utilities
@@ -63,6 +61,7 @@ class AutometaUser:
         User configuration from `user_config`.
 
     """
+
     def __init__(self, user_config=config.DEFAULT_FPATH, nproc=2):
         self.home_dir = self.set_home()
         self.nproc = nproc
@@ -70,8 +69,8 @@ class AutometaUser:
         self.config = config.get_config(self.user_config)
         if not self.config.has_section('common'):
             self.config.add_section('common')
-        if not self.config.has_option('common','home_dir'):
-            self.config.set('common','home_dir',self.home_dir)
+        if not self.config.has_option('common', 'home_dir'):
+            self.config.set('common', 'home_dir', self.home_dir)
 
     def __str__(self):
         return self.user_config
@@ -183,7 +182,7 @@ class AutometaUser:
             os.makedirs(workspace)
         # 3. check project exists
         proj_name = f'project_{mgargs.parameters.project:03d}'
-        project_dirpath = os.path.realpath(os.path.join(workspace,proj_name))
+        project_dirpath = os.path.realpath(os.path.join(workspace, proj_name))
         project_config_fp = os.path.join(project_dirpath, 'project.config')
         if not os.path.exists(project_dirpath) or not os.path.exists(project_config_fp):
             project = self.new_project(project_config_fp)
@@ -237,14 +236,15 @@ class AutometaUser:
             taxon_method=mgargs.parameters.taxon_method)
 
         try:
-        # Original (raw) file should not be manipulated so return new object
+            # Original (raw) file should not be manipulated so return new object
             mg = mg.length_filter(
                 out=mgargs.files.length_filtered,
                 cutoff=mgargs.parameters.length_cutoff)
-                # COMBAK: Checkpoint length filtered
+            # COMBAK: Checkpoint length filtered
         except FileExistsError as err:
             # COMBAK: Checkpoint length filtered
-            logger.debug(f'{mgargs.files.length_filtered} already exists. Continuing..')
+            logger.debug(
+                f'{mgargs.files.length_filtered} already exists. Continuing..')
             mg = Metagenome(
                 assembly=mgargs.files.length_filtered,
                 outdir=mgargs.parameters.outdir,
@@ -286,7 +286,8 @@ class AutometaUser:
 
             if not mgargs.parameters.kingdom in kingdoms:
                 recovered_kingdoms = ", ".join(kingdoms.keys())
-                raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}')
+                raise KeyError(
+                    f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}')
 
             mag = kingdoms.get(mgargs.parameters.kingdom)
         else:
@@ -308,12 +309,13 @@ class AutometaUser:
             taxonomy=mgargs.files.taxonomy,
             reverse=mgargs.parameters.reversed,
         )
-        binning_cols = ['cluster','completeness','purity']
+        binning_cols = ['cluster', 'completeness', 'purity']
         bins_df[binning_cols].to_csv(
             mgargs.files.binning,
             sep='\t',
             index=True,
             header=True)
+
 
 def main():
     import argparse
@@ -323,20 +325,20 @@ def main():
     Configures the Autometa user environment/databases.
     Running without args will download and format Autometa database dependencies.
     """,
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--config',
-        help=f'Path to an Autometa default.config file.',
-        default=config.DEFAULT_FPATH)
+                        help=f'Path to an Autometa default.config file.',
+                        default=config.DEFAULT_FPATH)
     parser.add_argument('--dryrun',
-        help='Log configuration without performing updates.',
-        action='store_true',
-        default=False)
+                        help='Log configuration without performing updates.',
+                        action='store_true',
+                        default=False)
     parser.add_argument('--debug',
-        help='Stream debugging information to terminal.',
-        action='store_true')
+                        help='Stream debugging information to terminal.',
+                        action='store_true')
     parser.add_argument('--cpus',
-        help=f'Num. cpus to use when updating/constructing databases.',
-        default=mp.cpu_count(), type=int)
+                        help=f'Num. cpus to use when updating/constructing databases.',
+                        default=mp.cpu_count(), type=int)
     args = parser.parse_args()
 
     level = logger.DEBUG if args.debug else logger.INFO
@@ -348,6 +350,7 @@ def main():
         user_config=args.config,
         nproc=args.cpus)
     user.configure(args.dryrun)
+
 
 if __name__ == '__main__':
     main()

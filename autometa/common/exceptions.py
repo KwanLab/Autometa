@@ -24,6 +24,7 @@ COPYRIGHT
 File containing customized AutometaExceptions for more specific exception handling
 """
 
+
 class AutometaException(Exception):
     """docstring for AutometaException."""
 
@@ -37,8 +38,10 @@ class AutometaException(Exception):
 
     You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
     '''
+
     def __str__(self):
         return f'{self.value}\n\n{issue_request}'
+
 
 class KmerFormatError(AutometaException):
     """KmerFormatError exception class."""
@@ -49,7 +52,8 @@ class KmerFormatError(AutometaException):
 
     def __str__(self):
         return f'{self.fpath} does not contain a \"contig\" column. '\
-        'Ensure the k-mer matrix was properly generated.'
+            'Ensure the k-mer matrix was properly generated.'
+
 
 class KmerEmbeddingError(AutometaException):
     """KmerEmbeddingError exception class."""
@@ -60,6 +64,7 @@ class KmerEmbeddingError(AutometaException):
     def __str__(self):
         return self.value
 
+
 class RecursiveDBSCANError(AutometaException):
     """RecursiveDBSCANError exception class."""
 
@@ -69,6 +74,12 @@ class RecursiveDBSCANError(AutometaException):
     def __str__(self):
         return self.value
 
+
 if __name__ == '__main__':
-    print('This file contains custom exceptions for Autometa and should not be run directly')
-    import sys;sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='file containing utilities functions for Autometa pipeline')
+    print('file containing utilities functions for Autometa pipeline')
+    args = parser.parse_args()
+    import sys
+    sys.exit(1)
