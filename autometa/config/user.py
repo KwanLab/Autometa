@@ -36,6 +36,7 @@ from autometa.config import environ
 from autometa.common import utilities
 
 from autometa.common.metagenome import Metagenome
+from autometa.common.mag import MAG
 from autometa.config.databases import Databases
 from autometa.config.project import Project
 from autometa.common.utilities import timeit
@@ -76,9 +77,11 @@ class AutometaUser:
         return self.user_config
 
     def set_home(self):
+        """Set `home_dir` in default.config to current Autometa location."""
         return config.init_default()
 
     def save(self):
+        """Saves the current user config to `self.user_config` file path."""
         config.put_config(self.config, self.user_config)
 
     def configure(self, dryrun=True):
@@ -113,7 +116,7 @@ class AutometaUser:
         self.save()
 
     def new_project(self, fpath):
-        """Configure new project at `outdir`.
+        """Configure new project at `fpath`.
 
         Parameters
         ----------
@@ -122,13 +125,8 @@ class AutometaUser:
 
         Returns
         -------
-        autometa.config.project.Project object
-
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
-
+        autometa.config.project.Project
+            Project object containing methods used to manipulate autometa project
         """
         dpath = os.path.dirname(fpath)
         if not os.path.exists(dpath):
@@ -210,7 +208,7 @@ class AutometaUser:
 
     @utilities.timeit
     def run_binning(self, mgargs):
-        """Run autometa.
+        """Run the autometa metagenome binning pipeline using the provided metagenome args.
 
         Parameters
         ----------
@@ -237,12 +235,15 @@ class AutometaUser:
             rev_reads=mgargs.files.rev_reads,
             se_reads=mgargs.files.se_reads,
             taxon_method=mgargs.parameters.taxon_method)
+
         try:
         # Original (raw) file should not be manipulated so return new object
             mg = mg.length_filter(
                 out=mgargs.files.length_filtered,
                 cutoff=mgargs.parameters.length_cutoff)
+                # COMBAK: Checkpoint length filtered
         except FileExistsError as err:
+            # COMBAK: Checkpoint length filtered
             logger.debug(f'{mgargs.files.length_filtered} already exists. Continuing..')
             mg = Metagenome(
                 assembly=mgargs.files.length_filtered,
@@ -262,6 +263,7 @@ class AutometaUser:
             multiprocess=mgargs.parameters.kmer_multiprocess,
             nproc=mgargs.parameters.cpus,
             force=mgargs.parameters.force)
+        # COMBAK: Checkpoint kmers
 
         coverages = mg.get_coverages(
             out=mgargs.files.coverages,
@@ -270,19 +272,30 @@ class AutometaUser:
             bam=mgargs.files.bam,
             lengths=mgargs.files.lengths,
             bed=mgargs.files.bed)
-        # Filter by Kingdom
-        kingdoms = mg.get_kingdoms(
-            ncbi=mgargs.databases.ncbi,
-            usepickle=mgargs.parameters.usepickle,
-            blast=mgargs.files.blastp,
-            hits=mgargs.files.blastp_hits,
-            force=mgargs.parameters.force,
-            cpus=mgargs.parameters.cpus)
+        # COMBAK: Checkpoint coverages
 
-        if not mgargs.parameters.kingdom in kingdoms:
-            raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {", ".join(kingdoms.keys())}')
+        if mgargs.parameters.do_taxonomy:
+            # Filter by Kingdom
+            kingdoms = mg.get_kingdoms(
+                ncbi=mgargs.databases.ncbi,
+                usepickle=mgargs.parameters.usepickle,
+                blast=mgargs.files.blastp,
+                hits=mgargs.files.blastp_hits,
+                force=mgargs.parameters.force,
+                cpus=mgargs.parameters.cpus)
 
-        mag = kingdoms.get(mgargs.parameters.kingdom)
+            if not mgargs.parameters.kingdom in kingdoms:
+                recovered_kingdoms = ", ".join(kingdoms.keys())
+                raise KeyError(f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}')
+
+            mag = kingdoms.get(mgargs.parameters.kingdom)
+        else:
+            mag = MAG(
+                assembly=mg.assembly,
+                contigs=mg.seqrecords,
+                outdir=mg.outdir)
+
+        # Perform binning
         bins_df = mag.get_binning(
             method=mgargs.parameters.binning_method,
             kmers=mgargs.files.kmer_counts,
@@ -309,9 +322,10 @@ def main():
     parser = argparse.ArgumentParser(description="""
     Configures the Autometa user environment/databases.
     Running without args will download and format Autometa database dependencies.
-    """)
+    """,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--config',
-        help=f'Path to an Autometa default.config file (default is {config.DEFAULT_FPATH}).',
+        help=f'Path to an Autometa default.config file.',
         default=config.DEFAULT_FPATH)
     parser.add_argument('--dryrun',
         help='Log configuration without performing updates.',
@@ -321,10 +335,10 @@ def main():
         help='Stream debugging information to terminal.',
         action='store_true')
     parser.add_argument('--cpus',
-        help=f'Num. cpus to use when updating/constructing databases (default is {mp.cpu_count()}).',
+        help=f'Num. cpus to use when updating/constructing databases.',
         default=mp.cpu_count(), type=int)
     args = parser.parse_args()
-    # config.init_default()
+
     level = logger.DEBUG if args.debug else logger.INFO
     logger.basicConfig(
         format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
