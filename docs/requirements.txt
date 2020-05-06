@@ -1,1 +1,5 @@
-sphinx_rtd_theme
+biopython
+hdbscan
+sklearn
+umap-learn
+tqdm
