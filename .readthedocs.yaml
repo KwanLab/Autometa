@@ -15,6 +15,4 @@ formats:
 build:
   image: stable
   
-conda:
-  environment: docs/environment.yaml
 
