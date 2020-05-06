@@ -34,7 +34,7 @@ Guide
 
 Contact
 -------
-For suggestions, queries or appreciation feel free to contact `Dr.JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
+For suggestions, queries or appreciation feel free to contact `Dr. JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
 at jason.kwan@wisc.edu
 
 Indices and tables
