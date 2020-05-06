@@ -31,28 +31,27 @@ import sys
 
 import multiprocessing as mp
 
-from .config.user import AutometaUser
+from autometa.config.user import AutometaUser
 
 
 logger = logging.getLogger('autometa')
 
 
-def init_logger(fpath=None, level=logging.INFO):
+def init_logger(fpath=None, verbosity=0):
     """Initialize logger.
 
-    By default will initialize streaming logger with DEBUG level messages.
+    By default will initialize streaming logger with INFO level messages.
     If `fpath` is provided, will write DEBUG level messages to `fpath` and
     set streaming messages to INFO.
 
     Parameters
     ----------
-    fpath : str
+    fpath : str, optional
         </path/to/file.log>
-    level : int
-        Overwrite default logging level behavior with provided `level`.
-        This must be a constant from logging levels.
+    verbosity : int, optional
+        Overwrite default logging level behavior with provided `verbosity`.
+        This must be between 0-2 where 0 is the least information and 2 is the most information.
         See https://docs.python.org/3/library/logging.html#levels for details.
-        i.e. logging.DEBUG, logging.INFO, etc. translates to 0,10, etc...
 
     Returns
     -------
@@ -63,21 +62,23 @@ def init_logger(fpath=None, level=logging.INFO):
     Raises
     -------
     TypeError
-        `level` must be an int
+        `verbosity` must be an int
     ValueError
-        `level` must be one of 0, 10, 20, 30, 40, 50
+        `verbosity` must be between of 0 and 2
     """
-    levels = {
-        logging.NOTSET,
-        logging.DEBUG,
-        logging.INFO,
-        logging.WARNING,
-        logging.ERROR,
-        logging.CRITICAL}
-    if type(level) is not int:
-        raise TypeError(f'{level} must be an int! {type(level)}')
-    if level and level not in levels:
-        raise ValueError(f'{level} not in levels: {levels}!')
+    log_levels = {
+        0: logging.WARN,
+        1: logging.INFO,
+        2: logging.DEBUG,
+    }
+
+    if type(verbosity) is not int:
+        raise TypeError(f'{verbosity} must be an int! {type(verbosity)}')
+    if verbosity and verbosity not in log_levels:
+        raise ValueError(f'{verbosity} not in log_levels: {log_levels}!')
+
+    level = log_levels.get(verbosity)
+
     formatter = logging.Formatter(
         fmt='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -95,13 +96,23 @@ def init_logger(fpath=None, level=logging.INFO):
     return logger
 
 def main(args):
-    # Setup logger
-    # timestamp = time.strftime("%Y-%m-%d_%H-%M-%S",time.gmtime())
-    # log_fpath = args.log if args.log else f'{timestamp}_autometa.log'
-    if args.debug:
-        logger = init_logger(fpath=args.log, level=logging.DEBUG)
-    else:
-        logger = init_logger(fpath=args.log)
+    """Main logic for running autometa pipeline.
+
+    Warning: This should be called by `entrypoint` and not directly.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        namespace containing config information for AutometaUser
+
+    Returns
+    -------
+    NoneType
+        Nothing if no errors are encountered.
+
+    """
+
+    logger = init_logger(fpath=args.log, verbosity=args.verbosity)
     # Configure AutometaUser
     # TODO: master from WorkQueue is AutometaUser
     user = AutometaUser(nproc=args.cpus)
@@ -116,21 +127,34 @@ def main(args):
     # user.get_pangenomes()
 
 def entrypoint():
+    """Main entrypoint for autometa pipeline.
+
+    Note, a requirement of packaging and distribution is for entrypoints to not
+    require any arguments. This is a wrapper to the main functionality of running
+    autometa via the `main` function.
+
+    Returns
+    -------
+    NoneType
+
+    """
     import argparse
-    import time
+    # import time
     cpus = mp.cpu_count()
-    parser = argparse.ArgumentParser(description='Main script to run the Autometa pipeline.')
+    parser = argparse.ArgumentParser(
+        description='Main script to run the Autometa pipeline.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('config',
         help='Path to your metagenome.config file',
         nargs='*')
     parser.add_argument('--cpus',
-        help=f'Num. cpus to use when updating/constructing databases (default: {cpus} cpus)',
+        help='Num. cpus to use when updating/constructing databases',
         type=int,
         default=cpus)
-    parser.add_argument('--debug',
-        help='Stream debugging information to terminal',
-        action='store_const',
-        const=logging.DEBUG)
+    parser.add_argument(
+        '-v', '--verbose', dest='verbosity', action='count', default=0,
+        help='Verbosity (between 1-2 occurrences with more leading to more '
+            'verbose logging). WARN=0, INFO=1, DEBUG=2')
     parser.add_argument('--log', help='Path to write a log file (e.g. </path/to/autometa.log>)', type=str)
     parser.add_argument('--check-dependencies',
         help='Check user executables and databases accessible to Autometa and exit.',
@@ -141,12 +165,13 @@ def entrypoint():
         main(args)
     except KeyboardInterrupt:
         logger.info('User cancelled run. Exiting...')
+        sys.exit(1)
     except Exception as err:
         issue_request = '''
 
         Please help us fix your problem!
 
-        You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
+        You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
         '''
         err.issue_request = issue_request
         logger.exception(err)
