@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath("./_ext"))
 for dirpath, dirnames, filenames in os.walk('../../', topdown=True):
     sys.path.insert(0, os.path.abspath(dirpath))
 
-autodoc_mock_imports = ["tsne"]
+autodoc_mock_imports = ["biopython", "hdbscan", "tsne", "sklearn", "umap-learn", "tqdm"]
 
 import parse_argparse  # nopep8
 
