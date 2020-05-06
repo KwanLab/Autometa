@@ -255,7 +255,6 @@ def main():
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(
-<< << << < HEAD
         description='Annotate ORFs with kingdom-marker information')
     parser.add_argument('orfs',
                         help='Path to a fasta file containing amino acid sequences of open reading frames')
