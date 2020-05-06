@@ -258,15 +258,16 @@ def main():
         description='Annotate ORFs with kingdom-marker information',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('orfs',
-        help='Path to a fasta file containing amino acid sequences of open reading frames')
+                        help='Path to a fasta file containing amino acid sequences of open reading frames')
     parser.add_argument('--kingdom', help='kingdom to search for markers',
-        choices=['bacteria', 'archaea'], default='bacteria')
+                        choices=['bacteria', 'archaea'], default='bacteria')
     parser.add_argument('--dbdir',
-        help='Path to directory containing the single-copy marker HMM databases.',
-        default=MARKERS_DIR)
-    args=parser.parse_args()
+                        help='Path to directory containing the single-copy marker HMM databases.',
+                        default=MARKERS_DIR)
+    args = parser.parse_args()
 
-    markers=Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
+    markers = Markers(orfs_fpath=args.orfs,
+                      kingdom=args.kingdom, dbdir=args.dbdir)
 
     markers.get()
 
