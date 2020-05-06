@@ -251,38 +251,23 @@ def main():
     import argparse
     import logging as logger
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(
         description='Annotate ORFs with kingdom-marker information')
     parser.add_argument('orfs',
                         help='Path to a fasta file containing amino acid sequences of open reading frames')
-    parser.add_argument('kingdom', help='kingdom to search for markers',
+    parser.add_argument('--kingdom', help='kingdom to search for markers',
                         choices=['bacteria', 'archaea'], default='bacteria')
     parser.add_argument('--dbdir',
-                        help=f'Path to directory containing the single-copy marker HMM databases.',
+                        help='Path to directory containing the single-copy marker HMM databases.',
                         default=MARKERS_DIR)
     args = parser.parse_args()
+
     markers = Markers(orfs_fpath=args.orfs,
                       kingdom=args.kingdom, dbdir=args.dbdir)
 
-
-== == == =
-        description = 'Annotate ORFs with kingdom-marker information',
-        formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('orfs',
-        help = 'Path to a fasta file containing amino acid sequences of open reading frames')
-    parser.add_argument('--kingdom', help = 'kingdom to search for markers',
-        choices = ['bacteria', 'archaea'], default = 'bacteria')
-    parser.add_argument('--dbdir',
-        help = 'Path to directory containing the single-copy marker HMM databases.',
-        default = MARKERS_DIR)
-    args=parser.parse_args()
-
-    markers=Markers(orfs_fpath = args.orfs,
-                    kingdom = args.kingdom, dbdir = args.dbdir)
->> >>>> > 962121fba54cc9c3bff74322b3a6fd734f4c5f12
     markers.get()
 
 
