@@ -56,6 +56,8 @@ def which(program):
 
     See: https://stackoverflow.com/a/377028
 
+    Returns:
+        The path if it was valid or None if not
 
     Parameters
     ----------
@@ -65,8 +67,7 @@ def which(program):
     Returns
     -------
     str
-        the path if it was valid or an empty string if not
-        eg. </path/to/executable/> or ''
+        </path/to/executable/> or ''
 
     Raises
     -------
@@ -76,8 +77,7 @@ def which(program):
     """
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    # check to see if program path is given or just the name
-    fpath, __ = os.path.split(program)
+    fpath, fname = os.path.split(program)
     if fpath:
         if is_exe(program):
             return program
@@ -249,16 +249,13 @@ def bedtools():
 
 
 def get_versions(program=None):
-    """
-    Retrieve versions from all required executable dependencies.
+    """Retrieve versions from all required executable dependencies.
     If `program` is provided will only return version for `program`.
-
-    See: https://stackoverflow.com/a/834451/12671809
 
     Parameters
     ----------
-    program : str, optional
-        the program to retrieve the version, by default None
+    program : str
+        the program to retrieve the version.
 
     Returns
     -------
@@ -272,26 +269,36 @@ def get_versions(program=None):
         `program` is not a string
     KeyError
         `program` is not an executable dependency.
+
     """
+    dispatcher = {
+        'prodigal': prodigal,
+        'diamond': diamond,
+        'hmmsearch': hmmsearch,
+        'hmmpress': hmmpress,
+        'hmmscan': hmmscan,
+        'prodigal': prodigal,
+        'bowtie2': bowtie2,
+        'samtools': samtools,
+        'bedtools': bedtools,
+    }
     if program:
-        if type(program) is not str:
-            raise TypeError(f'program is not string. given:{type(program)}')
         exe_name = os.path.basename(program)
-        if exe_name not in globals():
+        if type(program) is not str:
+            raise ValueError(f'program is not string. given:{type(program)}')
+        if exe_name not in dispatcher:
             raise KeyError(f'{exe_name} not in executables')
-        return (globals()[exe_name]())
+        return dispatcher[exe_name]()
     versions = {}
     executables = find_executables()
     for exe, found in executables.items():
         if found:
-            # globals()[exe]() accesses the location of the function for that program
-            # eg. location of bedtools(), prodigal(), etc..
-            version = globals()[exe]()
+            version = dispatcher[exe]()
         else:
             logger.warning(f'VersionUnavailable {exe}')
             version = 'ExecutableNotFound'
         versions.update({exe: version})
-    return (versions)
+    return versions
 
 
 def configure(config=DEFAULT_CONFIG):
@@ -358,8 +365,7 @@ def main():
     parser.add_argument('--out',
                         help='</path/to/output/executables.config>')
     args = parser.parse_args()
-    user_config = get_config(args.infpath)
-    config, satisfied = configure(config=user_config)
+    config, satisfied = configure(infpath=args.infpath)
     if not args.out:
         import sys
         sys.exit(0)
