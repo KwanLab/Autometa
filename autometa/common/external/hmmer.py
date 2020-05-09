@@ -28,7 +28,6 @@ import logging
 import os
 import subprocess
 import shutil
-import tempfile
 
 import pandas as pd
 
@@ -80,9 +79,11 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
     if parallel:
         outdir = os.path.dirname(os.path.realpath(outfpath))
         outprefix = os.path.splitext(os.path.basename(outfpath))[0]
-        tmp_dirpath = tempfile.mkdtemp(dir=outdir)
-        __, tmp_fpath = tempfile.mkstemp(
-            suffix=".{#}.txt", prefix=outprefix, dir=tmp_dirpath)
+        tmpdir = os.path.join(outdir, 'tmp')
+        if not os.path.exists(tmpdir):
+            os.makedirs(tmpdir)
+        tmpfname = '.'.join([outprefix, '{#}', 'txt'])
+        tmpfpath = os.path.join(tmpdir, tmpfname)
         jobs = f'-j{cpus}'
         cmd = [
             'parallel',
@@ -96,7 +97,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
             'hmmscan',
             '-o', os.devnull,
             '--tblout',
-            tmp_fpath,
+            tmpfpath,
             hmmdb,
             '-',
             '<', orfs,
@@ -111,13 +112,16 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
     logger.debug(f'cmd: {" ".join(cmd)}')
     if parallel:
         returncode = subprocess.call(' '.join(cmd), shell=True)
-        tmp_fpaths = glob(os.path.join(tmp_dirpath, '*.txt'))
-        with open(outfpath, 'w') as out:
-            for fp in tmp_fpaths:
-                with open(fp) as fh:
-                    for line in fh:
-                        out.write(line)
-        shutil.rmtree(tmp_dirpath)
+        tmpfpaths = glob(os.path.join(tmpdir, '*.txt'))
+        lines = ''
+        for fp in tmpfpaths:
+            with open(fp) as fh:
+                for line in fh:
+                    lines += line
+        out = open(outfpath, 'w')
+        out.write(lines)
+        out.close()
+        shutil.rmtree(tmpdir)
     else:
         with open(os.devnull, 'w') as STDOUT, open(os.devnull, 'w') as STDERR:
             proc = subprocess.run(cmd, stdout=STDOUT, stderr=STDERR)
@@ -230,30 +234,10 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     return outfpath
 
 
-def main():
-    import argparse
-    import logging as logger
-    logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
-    parser = argparse.ArgumentParser(
-        description='Retrieves markers with provided input assembly')
-    parser.add_argument('orfs', help='</path/to/assembly.orfs.faa>')
-    parser.add_argument('hmmdb', help='</path/to/hmmpressed/hmmdb>')
-    parser.add_argument('cutoffs', help='</path/to/hmm/cutoffs.tsv>')
-    parser.add_argument('hmmscan', help='</path/to/hmmscan.out>')
-    parser.add_argument('markers', help='</path/to/markers.tsv>')
-    parser.add_argument('--log', help='</path/to/parallel.log>')
-    parser.add_argument('--force', help="force overwrite of out filepath",
-                        action='store_true')
-    parser.add_argument('--cpus', help='num cpus to use', default=0, type=int)
-    parser.add_argument(
-        '--parallel', help="Enable GNU parallel", action='store_true')
-    parser.add_argument('--verbose', help="add verbosity", action='store_true')
-    args = parser.parse_args()
-
+def main(args):
     if args.verbose:
         logger.setLevel(logger.DEBUG)
+
     try:
         result = hmmscan(
             orfs=args.orfs,
@@ -276,4 +260,24 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    import logging as logger
+    logger.basicConfig(
+        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p')
+    parser = argparse.ArgumentParser(
+        description='Retrieves markers with provided input assembly')
+    parser.add_argument('orfs', help='</path/to/assembly.orfs.faa>')
+    parser.add_argument('hmmdb', help='</path/to/hmmpressed/hmmdb>')
+    parser.add_argument('cutoffs', help='</path/to/hmm/cutoffs.tsv>')
+    parser.add_argument('hmmscan', help='</path/to/hmmscan.out>')
+    parser.add_argument('markers', help='</path/to/markers.tsv>')
+    parser.add_argument('--log', help='</path/to/parallel.log>')
+    parser.add_argument('--force', help="force overwrite of out filepath",
+                        action='store_true')
+    parser.add_argument('--cpus', help='num cpus to use', default=0, type=int)
+    parser.add_argument(
+        '--parallel', help="Enable GNU parallel", action='store_true')
+    parser.add_argument('--verbose', help="add verbosity", action='store_true')
+    args = parser.parse_args()
+    main(args)
