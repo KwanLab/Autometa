@@ -27,6 +27,7 @@ Configuration handling for Autometa environment.
 import logging
 import os
 import sys
+import shutil
 import subprocess
 
 from configparser import ConfigParser
@@ -51,42 +52,23 @@ EXECUTABLES = [
 ]
 
 
-def which(program):
-    """Finds the full path for an executable and checks read permissions exist.
-
-    See: https://stackoverflow.com/a/377028
-
+def which(program, mode=os.X_OK):
+    """
+    Finds the full path for an executable and checks read permissions exist
 
     Parameters
     ----------
     program : str
         the program to check
+    mode : path like object, optional
+        permission mask passed to os.access(), by default os.X_OK
 
     Returns
     -------
-    str
-        the path if it was valid or an empty string if not
-        eg. </path/to/executable/> or ''
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
-
+    str or None
+        the path if it was valid, eg. </path/to/executable/> or None if not
     """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    # check to see if program path is given or just the name
-    fpath, __ = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return ''
+    return shutil.which(program)
 
 
 def find_executables():
@@ -279,19 +261,20 @@ def get_versions(program=None):
         exe_name = os.path.basename(program)
         if exe_name not in globals():
             raise KeyError(f'{exe_name} not in executables')
-        return (globals()[exe_name]())
+        return globals()[exe_name]()
     versions = {}
     executables = find_executables()
     for exe, found in executables.items():
         if found:
-            # globals()[exe]() accesses the location of the function for that program
-            # eg. location of bedtools(), prodigal(), etc..
-            version = globals()[exe]()
+            # get_version accesses the location of the function for that program, eg. find the location of bedtools()
+            # get_version() wraps the location and execute that function, eg. execute bedtools()
+            get_version = globals()[exe]
+            version = get_version()
         else:
             logger.warning(f'VersionUnavailable {exe}')
             version = 'ExecutableNotFound'
         versions.update({exe: version})
-    return (versions)
+    return versions
 
 
 def configure(config=DEFAULT_CONFIG):
