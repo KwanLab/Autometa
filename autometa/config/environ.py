@@ -52,25 +52,6 @@ EXECUTABLES = [
 ]
 
 
-def which(program, mode=os.X_OK):
-    """
-    Finds the full path for an executable and checks read permissions exist
-
-    Parameters
-    ----------
-    program : str
-        the program to check
-    mode : path like object, optional
-        permission mask passed to os.access(), by default os.X_OK
-
-    Returns
-    -------
-    str or None
-        the path if it was valid, eg. </path/to/executable/> or None if not
-    """
-    return shutil.which(program)
-
-
 def find_executables():
     """Retrieves executable file paths by looking in Autometa dependent executables.
 
@@ -80,7 +61,7 @@ def find_executables():
         {executable:</path/to/executable>, ...}
 
     """
-    return {exe: which(exe) for exe in EXECUTABLES}
+    return {exe: shutil.which(exe, mode=os.X_OK) for exe in EXECUTABLES}
 
 
 def diamond():
@@ -92,7 +73,7 @@ def diamond():
         version of diamond
 
     """
-    exe = which('diamond')
+    exe = shutil.which('diamond', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, 'version'],
         stdout=subprocess.PIPE,
@@ -110,7 +91,7 @@ def hmmsearch():
     str
         version of hmmsearch
     """
-    exe = which('hmmsearch')
+    exe = shutil.which('hmmsearch', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '-h'],
         stdout=subprocess.PIPE,
@@ -129,7 +110,7 @@ def hmmpress():
     str
         version of hmmpress
     """
-    exe = which('hmmpress')
+    exe = shutil.which('hmmpress', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '-h'],
         stdout=subprocess.PIPE,
@@ -148,7 +129,7 @@ def hmmscan():
     str
         version of hmmscan
     """
-    exe = which('hmmscan')
+    exe = shutil.which('hmmscan', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '-h'],
         stdout=subprocess.PIPE,
@@ -167,7 +148,7 @@ def prodigal():
     str
         version of prodigal
     """
-    exe = which('prodigal')
+    exe = shutil.which('prodigal', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '-v'],
         stdout=subprocess.DEVNULL,
@@ -185,7 +166,7 @@ def bowtie2():
     str
         version of bowtie2
     """
-    exe = which('bowtie2')
+    exe = shutil.which('bowtie2', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '--version'],
         stdout=subprocess.PIPE,
@@ -203,7 +184,7 @@ def samtools():
     str
         version of samtools
     """
-    exe = which('samtools')
+    exe = shutil.which('samtools', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
@@ -220,7 +201,7 @@ def bedtools():
     str
         version of bedtools
     """
-    exe = which('bedtools')
+    exe = shutil.which('bedtools', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '--version'],
         stdout=subprocess.PIPE,
@@ -317,7 +298,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         user_executable = config.get('environ', executable)
-        if not which(user_executable):
+        if not shutil.which(user_executable, mode=os.X_OK):
             logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
