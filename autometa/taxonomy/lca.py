@@ -20,9 +20,11 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Determines the Lowest Common Ancestor given a tab-delimited BLAST table,fasta file, or iterable of SeqRecords
+This script contains the LCA class containing methods to determine the
+Lowest Common Ancestor given a tab-delimited BLAST table, fasta file, or
+iterable of SeqRecords.
 
-Assumes BLAST outfmt=6
+Note: LCA will assume the BLAST results table is in output format 6.
 """
 
 
@@ -45,8 +47,48 @@ logger = logging.getLogger(__name__)
 
 
 class LCA(NCBI):
-    """docstring for LCA."""
+    """LCA class containing methods to retrieve the Lowest Common Ancestor.
 
+    LCAs may be computed given taxids, a fasta or BLAST results.
+
+    Parameters
+    ----------
+    dbdir : str
+        </path/to/ncbi/databases/directory>
+    outdir : str
+        </path/to/output/directory>
+    usepickle : bool, optional
+        Whether to serialize intermediate files to disk for later lookup (the default is True).
+    verbose : bool, optional
+        Add verbosity to logging stream (the default is False).
+    cpus : int, optional
+        Number of processors to use for diamond blastp searches (the default will use all available).
+
+    Attributes
+    ----------
+    disable : bool
+        Opposite of verbose. Used to disable `tqdm` module.
+    tour_fp : str
+        </path/to/serialized/file/eulerian/tour.pkl.gz>
+    tour : list
+        Eulerian tour containing branches and leaves information from tree traversal.
+    level_fp : str
+        </path/to/serialized/file/level.pkl.gz>
+    level : list
+        Lengths from root corresponding to `tour` during tree traversal.
+    occurrence_fp : str
+        </path/to/serialized/file/level.pkl.gz>
+    occurrence : dict
+        Contains first occurrence of each taxid while traversing tree (index in `tour`).
+        e.g. {taxid:index, taxid: index, ...}
+    sparse_fp : str
+        </path/to/serialized/file/sparse.pkl.gz>
+    sparse : numpy.ndarray
+        Precomputed LCA values corresponding to `tour`,`level` and `occurrence`.
+    lca_prepared : bool
+        Whether LCA internals have been computed (e.g. `tour`,`level`,`occurrence`,`sparse`).
+
+    """
     def __init__(self, dbdir, outdir, usepickle=True, verbose=False, cpus=0):
         super().__init__(dbdir, verbose=verbose)
         self.outdir = outdir
@@ -68,14 +110,22 @@ class LCA(NCBI):
         """Performs Eulerian tour of nodes.dmp taxids and constructs three data
         structures:
 
-        1. tour
-        2. level
-        3. occurrence
+        1. tour : list of branches and leaves.
+        2. level: list of distances from the root.
+        3. occurrence: dict of occurences of the taxid respective to the root.
+
+        Notes
+        -----
+            For more information on why we construct these three data structures see references below:
+
+            * `Geeksforgeeks: Find LCA in Binary Tree using RMQ  https://www.geeksforgeeks.org/find-lca-in-binary-tree-using-rmq/`_
+            * `Topcoder: Another easy solution in <O(N logN, O(logN)> https://www.topcoder.com/community/competitive-programming/tutorials/range-minimum-query-and-lowest-common-ancestor/#Another%20easy%20solution%20in%20O(N%20logN,%20O(logN)`_
 
         Returns
         -------
         NoneType
             sets internals to be used for LCA lookup
+
         """
         if self.usepickle:
             repickle = False
@@ -84,27 +134,31 @@ class LCA(NCBI):
                 if not os.path.exists(fp):
                     repickle = True
             if not repickle:
-                self.tour = unpickle(fpath=self.tour_fp)
-                self.level = unpickle(fpath=self.level_fp)
-                self.occurrence = unpickle(fpath=self.occurrence_fp)
-                return
+                try:
+                    self.tour = unpickle(fpath=self.tour_fp)
+                    self.level = unpickle(fpath=self.level_fp)
+                    self.occurrence = unpickle(fpath=self.occurrence_fp)
+                    return
+                except UnpicklingError as err:
+                    logger.error('Error unpickling `tour`,`level`, or `occurrence`. One of these files may be corrupted!')
+                    # This will now continue resulting in overwriting the corrupted files.
         if self.verbose:
             logger.debug('Preparing tree, level, occurrence for LCA/RMQ')
         taxids = {}
         parents = {}
         children = {}
-        # `self.nodes_fpath` inherited from NCBI
-        with open(self.nodes_fpath) as fh:
-            _ = fh.readline()  # root
-            for line in fh:
-                child, parent = line.split('\t|\t')[:2]
-                parent, child = [int(taxid) for taxid in [parent, child]]
-                taxids.update({child: 1})
-                parents.update({child: parent})
-                if parent in children:
-                    children[parent].add(child)
-                else:
-                    children.update({parent: set([child])})
+        for taxid,info in self.nodes.items():
+            if taxid == 1:
+                # Skip root
+                continue
+            parent = info['parent']
+            parents.update({taxid: parent})
+            taxids.update({taxid:1})
+            if parent in children:
+                children[parent].add(taxid)
+            else:
+                children.update({parent: set([taxid])})
+        # Start tour with root as (0,1)
         tour = [(0, 1)]
         direction = 1
         dist = 0
@@ -155,8 +209,11 @@ class LCA(NCBI):
         return
 
     def preprocess_minimums(self):
-        """Preprocesses all possible LCAs and constructs into sparse table to be
-         used for LCA/Range Minimum Query. Uses level array associated with its respective eulerian tour from tree construction.
+        """Preprocesses all possible LCAs.
+
+        This constructs a sparse table to be used for LCA/Range Minimum Query
+        using the `self.level` array associated with its respective eulerian `self.tour`.
+        For more information on these data structures see :func:`~lca.LCA.prepare_tree`.
 
         Sparse table size:
             n = number of elements in level list
@@ -166,50 +223,68 @@ class LCA(NCBI):
         Returns
         -------
         NoneType
-            sets internals to be used for LCA lookup
+            sets `self.sparse` internal to be used for LCA lookup.
 
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
         """
         if self.usepickle and os.path.exists(self.sparse_fp):
-            self.sparse = unpickle(fpath=self.sparse_fp)
-            return
+            try:
+                self.sparse = unpickle(fpath=self.sparse_fp)
+                return
+            except UnpicklingError as err:
+                logger.error(f'Error unpickling {self.sparse_fp}, this may be corrupted! Overwriting...')
         if self.verbose:
             logger.debug('Constructing Sparse Table')
+        # Instantiate an empty sparse array with dimensions from `self.level`
         nrows = len(self.level)
         ncols = int(np.floor(np.log2(nrows))+1)
-        sparse_matrix = np.empty((nrows, ncols))
-        sparse_matrix[:, 0] = [i for i in range(nrows)]
+        sparse_array = np.empty((nrows, ncols))
+        sparse_array[:, 0] = [i for i in range(nrows)]
+        # We start at 1th column because we have the indices in the 0th column from above
         for col in tqdm(range(1, ncols), disable=self.disable, desc='Precomputing LCAs', leave=False):
             for row in range(0, nrows):
+                # First we check that the exponent of the column does not exceed the rows
                 if 2**col > nrows:
                     continue
+                # Next check whether element at pos is within rows
                 if row+(2**col)-1 >= nrows:
-                    sparse_matrix[row, col] = False
+                    sparse_array[row, col] = False
                     continue
-                lower_index = sparse_matrix[row, (col-1)]
-                upper_index = sparse_matrix[(row + 2**(col-1)), (col-1)]
+                # We now have our range in terms of indices
+                # Retrieve indices corresponding to unique LCA comparisons
+                lower_index = sparse_array[row, (col-1)]
+                upper_index = sparse_array[(row + 2**(col-1)), (col-1)]
+                # We need to cast ints here to conver numpy.float64 to ints for index accession.
                 lower_index, upper_index = map(int, [lower_index, upper_index])
+                # Access levels via comparison indices
                 lower_min = self.level[lower_index]
                 upper_min = self.level[upper_index]
+                # Set the winning minimum between the range of indices
                 if lower_min < upper_min:
-                    sparse_matrix[row, col] = lower_index
+                    sparse_array[row, col] = lower_index
                 else:
-                    sparse_matrix[row, col] = upper_index
+                    sparse_array[row, col] = upper_index
         if self.usepickle:
-            make_pickle(obj=sparse_matrix, outfpath=self.sparse_fp)
-        self.sparse = sparse_matrix
+            make_pickle(obj=sparse_array, outfpath=self.sparse_fp)
+        self.sparse = sparse_array
         return
 
     def prepare_lca(self):
+        """Prepare LCA internal data structures for :func:`~lca.LCA.lca`.
+
+        e.g. self.tour, self.level, self.occurrence, self.sparse are all ready.
+
+        Returns
+        -------
+        NoneType
+            Prepares all LCA internals and if successful sets `self.lca_prepared` to True.
+
+        """
         if self.verbose:
             logger.debug('Preparing data structures for LCA')
         self.prepare_tree()
         self.preprocess_minimums()
         self.lca_prepared = True
-        # tour, level, occurrence, sparse_matrix all ready
+        # tour, level, occurrence, sparse all ready
         return
 
     def lca(self, node1, node2):
@@ -230,22 +305,23 @@ class LCA(NCBI):
         Raises
         -------
         ValueError
-            Provided taxid is not in the nodes.dmp tree
+            Provided taxid is not in the nodes.dmp tree.
+
         """
         if not self.lca_prepared:
             self.prepare_lca()
         if node1 is None and node2 is None:
             return 1
+        if node1 not in self.occurrence:
+            raise ValueError(f'{node1} not in tree')
+        if node2 not in self.occurrence:
+            raise ValueError(f'{node2} not in tree')
         if node1 is None:
             return node2
         if node2 is None:
             return node1
         if node1 == node2:
             return node1
-        if node1 not in self.occurrence:
-            raise ValueError(f'{node1} not in tree')
-        if node2 not in self.occurrence:
-            raise ValueError(f'{node2} not in tree')
         if self.occurrence[node1] < self.occurrence[node2]:
             low = self.occurrence[node1]
             high = self.occurrence[node2]
@@ -278,19 +354,15 @@ class LCA(NCBI):
         -------
         dict
             {qseqid:lca, qseqid:lca, ...}
+
         """
         lcas = {}
         n_qseqids = len(hits)
         desc = f'Determining {n_qseqids:,} qseqids\' lowest common ancestors'
-        # not_found = ''
         for qseqid, hit in tqdm(hits.items(), disable=self.disable, total=n_qseqids, desc=desc, leave=False):
             taxids = set()
             for sseqid in hit.sseqids:
                 taxid = hit.sseqids.get(sseqid, {'taxid': 1}).get('taxid')
-                if not taxid:
-                    # not_found += '%s not found for %s\n' % (sseqid, qseqid)
-                    # logger.warning('%s:%s suppressed/deprecated/removed', (qseqid,sseqid))
-                    continue
                 taxids.add(self.merged.get(taxid, taxid))
             lca = False
             num_taxids = len(taxids)
@@ -306,7 +378,7 @@ class LCA(NCBI):
             lcas.update({qseqid: lca})
         return lcas
 
-    def blast2lca(self, fasta, outfpath, blast=None, hits_fpath=None, force=False):
+    def blast2lca(self, fasta, outfpath, blast, hits_fpath=None, force=False):
         """Determine lowest common ancestor of provided protein sequences.
 
         1. Check for hits file
@@ -319,20 +391,21 @@ class LCA(NCBI):
             </path/to/prot_ORFS.fasta>.
         outfpath : str
             </path/to/lca/output/table>.
-        blast : str [optional]
-            </path/to/output/diamond/blastp.tsv>.
-            NOTE: If provided, will assume blast has been performed and requires
-            parsing (the default is None).
+        blast : str
+            </path/to/diamond/output/blastp.tsv>. Will write if the table does not exist.
         hits_fpath : str [optional]
             </path/to/diamond/hits.blastp.pkl.gz>.
             hits object: {qseqid:DiamondResult, ...}.
             NOTE: If provided, will assume blast has already been performed and
             parsed and taxids added (the default is None).
+        force : bool
+            Force overwrite of existing `outfpath`.
 
         Returns
         -------
         str
-            `outfpath`
+            `outfpath` </path/to/lca/output/table>.
+
         """
         if self.verbose:
             logger.debug(f'Running BLAST to LCA for {fasta}')
@@ -343,20 +416,17 @@ class LCA(NCBI):
             hits = unpickle(hits_fpath)
             lcas = self.get_lcas(hits=hits)
             return self.write_lcas(lcas, outfpath)
-        if blast and os.path.exists(blast):
+        if os.path.exists(blast):
             dmnd_outfpath = os.path.realpath(blast)
         else:
-            fname, ext = os.path.splitext(os.path.basename(fasta))
-            dmnd_outfname = '.'.join([fname, 'dmnd.blastp'])
-            dmnd_outfpath = os.path.join(self.outdir, dmnd_outfname)
             dmnd_outfpath = diamond.blast(
                 fasta=fasta,
                 database=self.nr_fpath,
-                outfpath=dmnd_outfpath,
+                outfpath=blast,
                 verbose=self.verbose,
                 cpus=self.cpus)
-        dmnd_fname = os.path.basename(dmnd_outfpath)
-        hits_fname = '.'.join([dmnd_fname, 'pkl.gz'])
+        blast_fname = os.path.basename(blast)
+        hits_fname = '.'.join([blast_fname, 'pkl.gz'])
         hits_fpath = os.path.join(self.outdir, hits_fname)
         hits = diamond.parse(results=dmnd_outfpath, verbose=self.verbose)
         hits = diamond.add_taxids(
@@ -369,7 +439,13 @@ class LCA(NCBI):
 
     def write_lcas(self, lcas, outfpath):
         """Write `lcas` to tab-delimited file: `outfpath`.
-        ordered columns are: qseqid, name, rank, lca
+
+        Ordered columns are:
+
+            * qseqid : query seqid
+            * name : LCA name
+            * rank : LCA rank
+            * lca : LCA taxid
 
         Parameters
         ----------
@@ -382,16 +458,18 @@ class LCA(NCBI):
         -------
         str
             `outfpath`
+
         """
-        outlines = 'qseqid\tname\trank\tlca\n'
+        lines = 'qseqid\tname\trank\tlca\n'
+        fh = open(outfpath, 'w')
+        count = 0
         for qseqid, taxid in lcas.items():
-            outlines += '\t'.join(map(str, [
-                qseqid,
-                self.name(taxid),
-                self.rank(taxid),
-                taxid]))+'\n'
-        with open(outfpath, 'w') as outfile:
-            outfile.write(outlines)
+            if count >= 10000:
+                fh.write(lines)
+                lines = ''
+            lines += '\t'.join(map(str, [
+                qseqid, self.name(taxid), self.rank(taxid), taxid]))+'\n'
+            count += 1
         return outfpath
 
     def parse(self, lca_fpath, orfs_fpath):
@@ -415,18 +493,18 @@ class LCA(NCBI):
         Raises
         -------
         FileNotFoundError
-            `lca_fpath` does not exist
+            `lca_fpath` does not exist.
         FileNotFoundError
-            `orfs_fpath` does not exist
+            `orfs_fpath` does not exist.
+
         """
         logger.debug(f'Parsing LCA table: {lca_fpath}')
         if not os.path.exists(lca_fpath):
             raise FileNotFoundError(lca_fpath)
-            # logger.exception(FileNotFoundError)
         if orfs_fpath and not os.path.exists(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
 
-        translations = prodigal.contigs_from_headers(orfs_fpath)
+        contigs_from_orfs = prodigal.contigs_from_headers(orfs_fpath)
 
         fname = os.path.basename(lca_fpath)
         n_lines = file_length(lca_fpath) if self.verbose else None
@@ -437,7 +515,7 @@ class LCA(NCBI):
             for line in tqdm(fh, total=n_lines, disable=disable, desc=f'Parsing {fname}', leave=False):
                 orf_id, name, rank, taxid = line.strip().split('\t')
                 taxid = int(taxid)
-                contig = translations.get(orf_id)
+                contig = contigs_from_orfs.get(orf_id)
                 if taxid != 1:
                     while rank not in set(NCBI.CANONICAL_RANKS):
                         taxid = self.parent(taxid)
@@ -452,67 +530,44 @@ class LCA(NCBI):
                     lca_hits[contig][rank][taxid] += 1
         return lca_hits
 
-    @staticmethod
-    def aggregate_lcas(self, orfs_lcas=None):
-        """Aggregates ORFs' LCAS for each respective contig.
-
-        Parameters
-        ----------
-        orfs_lcas : type
-            Description of parameter `orfs_lcas` (the default is None).
-
-        Returns
-        -------
-        dict
-            {contig:{taxid:count, taxid2:count,...}, ...}
-
-        Raises
-        -------
-        OrfsLcasNotFoundError
-            Why the exception is raised.
-        """
-        logger.debug('Aggregating Contig LCAs')
-        if not orfs_lcas:
-            logger.exception('ORFs LCAs not found')
-        contigs = {}
-        for orf, taxid in orfs_lcas.items():
-            contig, orf_num = orf.rsplit('_', 1)
-            if contig not in contigs:
-                contigs.update({contig: {taxid: 1}})
-            elif taxid not in contigs[contig]:
-                contigs[contig][taxid] = 1
-            else:
-                contigs[contig][taxid] += 1
-        return contigs
-
 
 def main():
     import argparse
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     dbdir = os.path.join(basedir, 'databases', 'ncbi')
     parser = argparse.ArgumentParser(
-        description='Script to determine lowest common ancestor')
-    parser.add_argument('orfs', help='<path/to/orfs.fasta>')
-    parser.add_argument('blast', help='<path/to/blast.tsv>')
-    parser.add_argument('outdir', help='<path/to/output/dir>')
-    parser.add_argument('outfname', help='<lca filename>')
+        description='Script to determine Lowest Common Ancestor',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('orfs', help='Path to amino-acids fasta file.')
+    parser.add_argument('blast',
+        help='Path to BLAST results file respective to `orfs`. '
+        '(Note: The table provided must be in outfmt=6)')
+    parser.add_argument('outdir', help='Path to output directory.')
+    parser.add_argument('outfname', help='Filename to write LCA results.')
     parser.add_argument(
-        '--blast-hits', help='<path/to/blast.pkl.gz> (with taxids already added)')
-    parser.add_argument('--dbdir', help='<path/to/ncbi/dir>', default=dbdir)
-    parser.add_argument('--nopickle', help='do not pickle objects to disk',
+        '--blast-hits',
+        help='Path to serialized BLAST results with taxids already added '
+            '(This is only relevant if you are continuing a previous run).')
+    parser.add_argument('--dbdir',
+        help='Path to NCBI databases directory.', default=dbdir)
+    parser.add_argument('--nopickle', help='Do not serialize required taxon objects to disk'
+        ' (If provided will not write serialized objects for lookup in later runs).',
                         action='store_false', default=True)
-    parser.add_argument('--verbose', help="add verbosity",
+    parser.add_argument('--verbose', help="Add verbosity to logging stream.",
                         action='store_true', default=False)
-    parser.add_argument('--force', help="force overwrite if file already exists",
+    parser.add_argument('--force', help="Force overwrite if results already exist.",
                         action='store_true', default=False)
     args = parser.parse_args()
+
     lca = LCA(
         dbdir=args.dbdir,
         outdir=args.outdir,
         usepickle=args.nopickle,
         verbose=args.verbose,
     )
+
     outfpath = os.path.join(args.outdir, args.outfname)
+
     lca.blast2lca(
         fasta=args.orfs,
         outfpath=outfpath,
