@@ -39,6 +39,25 @@ DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), 'default.config')
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 def get_config(fpath):
+    """Load the config provided at `fpath`.
+
+    Parameters
+    ----------
+    fpath : str
+        </path/to/file.config>
+
+    Returns
+    -------
+    config.ConfigParser
+        interpolated config object parsed from `fpath`.
+
+    Raises
+    -------
+    FileNotFoundError
+        Provided `fpath` does not exist.
+
+    """
+    # COMBAK: Checkpoint config
     if not os.path.exists(fpath) or os.stat(fpath).st_size == 0:
         raise FileNotFoundError(fpath)
     # https://stackoverflow.com/a/53274707/13118765
@@ -51,13 +70,46 @@ def get_config(fpath):
 DEFAULT_CONFIG = get_config(fpath=DEFAULT_FPATH)
 
 def put_config(config, out):
+    """Writes `config` to `out` and updates checkpoints checksum.
+
+    Parameters
+    ----------
+    config : config.ConfigParser
+        configuration containing user provided parameters and files information.
+    out : str
+        </path/to/output/file.config>
+
+    Returns
+    -------
+    NoneType
+
+    """
     with open(out, 'w') as fh:
         config.write(fh)
+    # COMBAK: Checkpoint config
 
 def update_config(fpath, section, option, value):
-    c = get_config(fpath)
-    c.set(section,option,value)
-    put_config(c, fpath)
+    """Update `fpath` in `section` for `option` with `value`.
+
+    Parameters
+    ----------
+    fpath : str
+        </path/to/file.config>
+    section : str
+        `section` header to update within `fpath`.
+    option : str
+        `option` to update within `section`.
+    value : str
+        `value` to update `option`.
+
+    Returns
+    -------
+    NoneType
+
+    """
+    cfg = get_config(fpath)
+    cfg.set(section,option,value)
+    put_config(cfg, fpath)
     logger.debug(f'updated {fpath} [{section}] option: {option} : {value}')
 
 def parse_config(fpath=None):
@@ -92,6 +144,7 @@ def parse_config(fpath=None):
          'do_pca':bool,
          'pca_dims':int,
          'embedding_method':str,
+         'do_taxonomy':bool,
          'taxon_method':str,
          'reversed':bool,
          'completeness':float,
@@ -133,6 +186,16 @@ def parse_config(fpath=None):
     return namespace
 
 def init_default():
+    """Set the `home_dir` in autometa's default configuration (default.config)
+    based on autometa's current location. If the `home_dir` variable is already
+    set, then this will be used as the `home_dir` location.
+
+    Returns
+    -------
+    str
+        </path/to/package/autometa>
+
+    """
     cfg = get_config(DEFAULT_FPATH)
     home_dir = cfg.get('common','home_dir')
     if not os.path.isdir(home_dir):

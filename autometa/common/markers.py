@@ -34,22 +34,23 @@ from autometa.common.external import hmmer
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MARKERS_DIR = os.path.join(BASE_DIR,'databases','markers')
+MARKERS_DIR = os.path.join(BASE_DIR, 'databases', 'markers')
 
 logger = logging.getLogger(__name__)
 
 
 class Markers:
-    """docstring for Autometa Markers class.
+    """Autometa Markers class containing methods to search, annotate and retrieve marker genes.
 
     Parameters
     ----------
     orfs_fpath : str
-        Description of parameter `orfs_fpath`.
+        </path/to/orfs.faa>
     kingdom : str, optional
-        Description of parameter `kingdom` (the default is 'bacteria').
+        kingdom to search for marker genes (the default is 'bacteria').
     dbdir : str, optional
-        Description of parameter `dbdir` (the default is {MARKERS_DIR}).
+        <path/to/database/directory> (the default is {MARKERS_DIR}).
+        Directory should contain hmmpressed marker genes database files.
 
     Attributes
     ----------
@@ -57,54 +58,75 @@ class Markers:
         </path/to/hmmpressed/`dbdir`/`kingdom`.single_copy.hmm
     cutoffs : str
         </path/to/`dbdir`/`kingdom`.single_copy.cutoffs
-    hmmscan_fn : str
-        <`kingdom`.hmmscan.tsv>
     hmmscan_fp : str
         </path/to/`kingdom`.hmmscan.tsv>
-    markers_fn : str
-        <`kingdom`.markers.tsv>
     markers_fp : str
         </path/to/`kingdom`.markers.tsv>
     """
+
     def __init__(self, orfs_fpath, kingdom='bacteria', dbdir=MARKERS_DIR):
         self.orfs_fpath = os.path.realpath(orfs_fpath)
         self.kingdom = kingdom.lower()
         self.dbdir = dbdir
-        self.hmmdb = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.hmm')
-        self.cutoffs = os.path.join(self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
-        self.hmmscan_fn = '.'.join([self.kingdom,'hmmscan.tsv'])
-        self.hmmscan_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.hmmscan_fn)
-        self.markers_fn = '.'.join([self.kingdom,'markers.tsv'])
-        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath),self.markers_fn)
+        self.hmmdb = os.path.join(
+            self.dbdir, f'{self.kingdom}.single_copy.hmm')
+        self.cutoffs = os.path.join(
+            self.dbdir, f'{self.kingdom}.single_copy.cutoffs')
+        hmmscan_fname = '.'.join([self.kingdom, 'hmmscan.tsv'])
+        self.hmmscan_fp = os.path.join(
+            os.path.dirname(self.orfs_fpath), hmmscan_fname)
+        markers_fname = '.'.join([self.kingdom, 'markers.tsv'])
+        self.markers_fp = os.path.join(
+            os.path.dirname(self.orfs_fpath), markers_fname)
 
     @property
     def searched(self):
+        """Determine whether hmmscan results (`self.hmmscan_fp`) exist.
+
+        Returns
+        -------
+        bool
+            True if `self.hmmscan_fp` exists and is not empty else False.
+
+        """
         if os.path.exists(self.hmmscan_fp) and os.stat(self.hmmscan_fp).st_size > 0:
             return True
         return False
 
     @property
     def found(self):
+        """Determine whether marker results (`self.markers_fp`) exist.
+
+        Returns
+        -------
+        bool
+            True if `self.markers_fp` exists and is not empty else False.
+
+
+        """
         if os.path.exists(self.markers_fp) and os.stat(self.markers_fp).st_size > 0:
             return True
         return False
 
     @property
     def n_ucgs(self):
+        """Get the number of universally conserved marker genes.
+
+        Returns
+        -------
+        int
+            Get the number of universally conserved marker genes from `self.ucgs`.
+
+        """
         return len(self.ucgs)
 
     def get_ucgs(self):
         """Retrieve Universally Conserved Markers Genes for sequences
 
-        Parameters
-        ----------
-        kingdom : type
-            Description of parameter `kingdom` (the default is self.kingdom).
-
         Returns
         -------
-        type
-            Description of returned object.
+        list
+            Annotated universally conserved marker genes from `self.orfs_fpath`.
 
         Raises
         -------
@@ -114,7 +136,25 @@ class Markers:
         """
         raise NotImplementedError
 
-    def get_marker_set(self, ):
+    def get_marker_set(self, taxon):
+        """Retrieve the marker set corresponding to the provided `taxon`.
+
+        Parameters
+        ----------
+        taxon : str
+            taxon-specific markers
+
+        Returns
+        -------
+        str
+            </path/to/hmmpressed/taxon-specific-markers.hmm>
+
+        Raises
+        -------
+        NotImplementedError
+            Functionality has not yet been implemented.
+
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -125,7 +165,7 @@ class Markers:
         ----------
         fpath : str
             </path/to/`kingdom`.markers.tsv>
-        format : str
+        format : str, optional
             * wide - index=contig, cols=[domain sacc,..] (default)
             * long - index=contig, cols=['sacc','count']
             * list - {contig:[sacc,...],...}
@@ -133,8 +173,11 @@ class Markers:
 
         Returns
         -------
-        pd.DataFrame
-            if 'wide' or 'long' else dict shape is (row x col)
+        pd.DataFrame or dict
+            * wide - index=contig, cols=[domain sacc,..] (default)
+            * long - index=contig, cols=['sacc','count']
+            * list - {contig:[sacc,...],...}
+            * counts - {contig:len([sacc,...]), ...}
 
         Raises
         -------
@@ -154,11 +197,11 @@ class Markers:
         elif format == 'long':
             return grouped_df.value_counts().reset_index(level=1, name='count')
         elif format == 'list':
-            return {k:v.tolist() for k,v in list(grouped_df)}
+            return {k: v.tolist() for k, v in list(grouped_df)}
         elif format == 'counts':
             return grouped_df.count().to_dict()
         else:
-            params = ['wide','long','list','counts']
+            params = ['wide', 'long', 'list', 'counts']
             err_msg = f'{format} is not a supported format.\n\tSupported formats: {params}'
             # TODO: Write Marker specific AutometaException
             raise ValueError(err_msg)
@@ -173,6 +216,8 @@ class Markers:
             * long - returns long dataframe of contig PFAM counts
             * list - returns list of pfams for each contig
             * counts - returns count of pfams for each contig
+        kwargs: dict
+            additional keyword arguments to pass to `hmmer.hmmscan`
 
         Returns
         -------
@@ -201,24 +246,31 @@ class Markers:
                 orfs=self.orfs_fpath)
         return Markers.load(fpath=self.markers_fp, format=format)
 
+
 def main():
     import argparse
     import logging as logger
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
+        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Annotate ORFs with kingdom-marker information')
+    parser = argparse.ArgumentParser(
+        description='Annotate ORFs with kingdom-marker information',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('orfs',
-        help='Path to a fasta file containing amino acid sequences of open reading frames')
-    parser.add_argument('kingdom', help='kingdom to search for markers',
-        choices=['bacteria','archaea'], default='bacteria')
+                        help='Path to a fasta file containing amino acid sequences of open reading frames')
+    parser.add_argument('--kingdom', help='kingdom to search for markers',
+                        choices=['bacteria', 'archaea'], default='bacteria')
     parser.add_argument('--dbdir',
-        help=f'Path to directory containing the single-copy marker HMM databases. (default is {MARKERS_DIR})',
-        default=MARKERS_DIR)
+                        help='Path to directory containing the single-copy marker HMM databases.',
+                        default=MARKERS_DIR)
     args = parser.parse_args()
-    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
+
+    markers = Markers(orfs_fpath=args.orfs,
+                      kingdom=args.kingdom, dbdir=args.dbdir)
+
     markers.get()
+
 
 if __name__ == '__main__':
     main()

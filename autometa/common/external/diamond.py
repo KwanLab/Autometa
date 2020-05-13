@@ -397,6 +397,7 @@ def main(args):
 
 if __name__ == '__main__':
     import argparse
+    import os
     parser = argparse.ArgumentParser(description="""
     Retrieves blastp hits with provided input assembly
     """)
