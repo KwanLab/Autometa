@@ -28,7 +28,6 @@ Configuration handling for Autometa User Project.
 import copy
 import logging
 import os
-import argparse
 
 from autometa.config import DEFAULT_CONFIG
 from autometa.config import get_config

@@ -72,11 +72,13 @@ def genomecov(ibam, lengths, out, force=False):
     if os.path.exists(out) and not force:
         logger.debug(f'{out} already exists. skipping...')
         return out
-    with open(os.devnull,'w') as stderr, open(out,'w') as stdout:
-        retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
+    with open(os.devnull, 'w') as stderr, open(out, 'w') as stdout:
+        retcode = subprocess.call(
+            cmd, stdout=stdout, stderr=stderr, shell=True)
     if retcode or not os.path.exists(out) or os.stat(out).st_size == 0:
         raise ChildProcessError(f'bedtools failed: {cmd}')
     return out
+
 
 def parse(bed, out=None, force=False):
     """Calculate coverages from bed file.
@@ -105,13 +107,13 @@ def parse(bed, out=None, force=False):
     """
     if out and os.path.exists(out) and not os.stat(out).st_size == 0:
         try:
-            cols = ['contig','coverage']
+            cols = ['contig', 'coverage']
             return pd.read_csv(out, sep='\t', usecols=cols, index_col='contig')
         except ValueError as err:
             raise ValueError(f'InvalidTableFormat: {out}')
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
-    names = ['contig','depth','bases','length','depth_fraction']
+    names = ['contig', 'depth', 'bases', 'length', 'depth_fraction']
     df = pd.read_csv(bed, sep='\t', names=names, index_col='contig')
     criterion1 = df.depth != 0
     criterion2 = df.index != 'genome'
@@ -125,9 +127,12 @@ def parse(bed, out=None, force=False):
     logger.debug(f'{os.path.basename(out)} shape: {dff.shape}')
     return dff[['coverage']]
 
+
 def main(args):
-    bed = genomecov(ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed)
+    bed = genomecov(ibam=args.ibam, lengths=args.lengths,
+                    out=args.bed, force=args.force_bed)
     df = parse(bed=bed, out=args.coverage, force=args.force_cov)
+
 
 if __name__ == '__main__':
     import argparse
@@ -135,17 +140,17 @@ if __name__ == '__main__':
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=" ")
     parser.add_argument('ibam', help='</path/to/BAM/alignment.bam>')
     parser.add_argument(
         'lengths',
         help='</path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]')
     parser.add_argument('bed',
-        help='</path/to/alignment.bed> tab-delimited cols=[contig,length]')
+                        help='</path/to/alignment.bed> tab-delimited cols=[contig,length]')
     parser.add_argument('--coverage', help='</path/to/coverage.tsv>')
     parser.add_argument('--force-bed', help='force overwrite `bed`',
-        action='store_true',default=False)
+                        action='store_true', default=False)
     parser.add_argument('--force-cov', help='force overwrite `--coverage`',
-        action='store_true',default=False)
+                        action='store_true', default=False)
     args = parser.parse_args()
     main(args)

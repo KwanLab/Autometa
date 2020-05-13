@@ -43,6 +43,7 @@ from autometa.common.external import prodigal
 
 logger = logging.getLogger(__name__)
 
+
 class LCA(NCBI):
     """docstring for LCA."""
 
@@ -94,17 +95,17 @@ class LCA(NCBI):
         children = {}
         # `self.nodes_fpath` inherited from NCBI
         with open(self.nodes_fpath) as fh:
-            _ = fh.readline() #root
+            _ = fh.readline()  # root
             for line in fh:
                 child, parent = line.split('\t|\t')[:2]
-                parent, child = [int(taxid) for taxid in [parent,child]]
-                taxids.update({child:1})
-                parents.update({child:parent})
+                parent, child = [int(taxid) for taxid in [parent, child]]
+                taxids.update({child: 1})
+                parents.update({child: parent})
                 if parent in children:
                     children[parent].add(child)
                 else:
-                    children.update({parent:set([child])})
-        tour = [(0,1)]
+                    children.update({parent: set([child])})
+        tour = [(0, 1)]
         direction = 1
         dist = 0
         level = [dist]
@@ -139,11 +140,11 @@ class LCA(NCBI):
                 # If parent still has children, reverse direction
                 if parent in children:
                     direction *= -1
-        occurrence= {}
-        for i,node in enumerate(tour):
+        occurrence = {}
+        for i, node in enumerate(tour):
             child = node[1]
             if child not in occurrence:
-                occurrence[child]=i
+                occurrence[child] = i
         self.tour = tour
         self.level = level
         self.occurrence = occurrence
@@ -179,8 +180,8 @@ class LCA(NCBI):
             logger.debug('Constructing Sparse Table')
         nrows = len(self.level)
         ncols = int(np.floor(np.log2(nrows))+1)
-        sparse_matrix = np.empty((nrows,ncols))
-        sparse_matrix[:,0] = [i for i in range(nrows)]
+        sparse_matrix = np.empty((nrows, ncols))
+        sparse_matrix[:, 0] = [i for i in range(nrows)]
         for col in tqdm(range(1, ncols), disable=self.disable, desc='Precomputing LCAs', leave=False):
             for row in range(0, nrows):
                 if 2**col > nrows:
@@ -282,10 +283,10 @@ class LCA(NCBI):
         n_qseqids = len(hits)
         desc = f'Determining {n_qseqids:,} qseqids\' lowest common ancestors'
         # not_found = ''
-        for qseqid,hit in tqdm(hits.items(), disable=self.disable, total=n_qseqids, desc=desc, leave=False):
+        for qseqid, hit in tqdm(hits.items(), disable=self.disable, total=n_qseqids, desc=desc, leave=False):
             taxids = set()
             for sseqid in hit.sseqids:
-                taxid = hit.sseqids.get(sseqid,{'taxid':1}).get('taxid')
+                taxid = hit.sseqids.get(sseqid, {'taxid': 1}).get('taxid')
                 if not taxid:
                     # not_found += '%s not found for %s\n' % (sseqid, qseqid)
                     # logger.warning('%s:%s suppressed/deprecated/removed', (qseqid,sseqid))
@@ -295,13 +296,14 @@ class LCA(NCBI):
             num_taxids = len(taxids)
             while not lca:
                 if num_taxids >= 2:
-                    lca = functools.reduce(lambda taxid1,taxid2: self.lca(node1=taxid1,node2=taxid2), taxids)
+                    lca = functools.reduce(lambda taxid1, taxid2: self.lca(
+                        node1=taxid1, node2=taxid2), taxids)
                 if num_taxids == 1:
                     lca = taxids.pop()
                 # Exception handling where input for qseqid contains no taxids
                 if num_taxids == 0:
                     lca = 1
-            lcas.update({qseqid:lca})
+            lcas.update({qseqid: lca})
         return lcas
 
     def blast2lca(self, fasta, outfpath, blast=None, hits_fpath=None, force=False):
@@ -345,7 +347,7 @@ class LCA(NCBI):
             dmnd_outfpath = os.path.realpath(blast)
         else:
             fname, ext = os.path.splitext(os.path.basename(fasta))
-            dmnd_outfname = '.'.join([fname,'dmnd.blastp'])
+            dmnd_outfname = '.'.join([fname, 'dmnd.blastp'])
             dmnd_outfpath = os.path.join(self.outdir, dmnd_outfname)
             dmnd_outfpath = diamond.blast(
                 fasta=fasta,
@@ -382,8 +384,8 @@ class LCA(NCBI):
             `outfpath`
         """
         outlines = 'qseqid\tname\trank\tlca\n'
-        for qseqid,taxid in lcas.items():
-            outlines += '\t'.join(map(str,[
+        for qseqid, taxid in lcas.items():
+            outlines += '\t'.join(map(str, [
                 qseqid,
                 self.name(taxid),
                 self.rank(taxid),
@@ -441,11 +443,11 @@ class LCA(NCBI):
                         taxid = self.parent(taxid)
                         rank = self.rank(taxid)
                 if contig not in lca_hits:
-                    lca_hits.update({contig:{rank:{taxid:1}}})
+                    lca_hits.update({contig: {rank: {taxid: 1}}})
                 elif rank not in lca_hits[contig]:
-                    lca_hits[contig].update({rank:{taxid:1}})
+                    lca_hits[contig].update({rank: {taxid: 1}})
                 elif taxid not in lca_hits[contig][rank]:
-                    lca_hits[contig][rank].update({taxid:1})
+                    lca_hits[contig][rank].update({taxid: 1})
                 else:
                     lca_hits[contig][rank][taxid] += 1
         return lca_hits
@@ -473,31 +475,36 @@ class LCA(NCBI):
         if not orfs_lcas:
             logger.exception('ORFs LCAs not found')
         contigs = {}
-        for orf,taxid in orfs_lcas.items():
-            contig, orf_num = orf.rsplit('_',1)
+        for orf, taxid in orfs_lcas.items():
+            contig, orf_num = orf.rsplit('_', 1)
             if contig not in contigs:
-                contigs.update({contig:{taxid:1}})
+                contigs.update({contig: {taxid: 1}})
             elif taxid not in contigs[contig]:
                 contigs[contig][taxid] = 1
             else:
                 contigs[contig][taxid] += 1
         return contigs
 
+
 def main():
     import argparse
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir,'databases','ncbi')
-    parser = argparse.ArgumentParser('Script to determine lowest common ancestor')
+    dbdir = os.path.join(basedir, 'databases', 'ncbi')
+    parser = argparse.ArgumentParser(
+        description='Script to determine lowest common ancestor')
     parser.add_argument('orfs', help='<path/to/orfs.fasta>')
     parser.add_argument('blast', help='<path/to/blast.tsv>')
     parser.add_argument('outdir', help='<path/to/output/dir>')
     parser.add_argument('outfname', help='<lca filename>')
-    parser.add_argument('--blast-hits', help='<path/to/blast.pkl.gz> (with taxids already added)')
+    parser.add_argument(
+        '--blast-hits', help='<path/to/blast.pkl.gz> (with taxids already added)')
     parser.add_argument('--dbdir', help='<path/to/ncbi/dir>', default=dbdir)
     parser.add_argument('--nopickle', help='do not pickle objects to disk',
-        action='store_false', default=True)
-    parser.add_argument('--verbose', help="add verbosity", action='store_true', default=False)
-    parser.add_argument('--force', help="force overwrite if file already exists", action='store_true', default=False)
+                        action='store_false', default=True)
+    parser.add_argument('--verbose', help="add verbosity",
+                        action='store_true', default=False)
+    parser.add_argument('--force', help="force overwrite if file already exists",
+                        action='store_true', default=False)
     args = parser.parse_args()
     lca = LCA(
         dbdir=args.dbdir,
@@ -512,6 +519,7 @@ def main():
         blast=args.blast,
         hits_fpath=args.blast_hits,
         force=args.force)
+
 
 if __name__ == '__main__':
     main()

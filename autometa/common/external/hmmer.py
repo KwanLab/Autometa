@@ -79,7 +79,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
     if parallel:
         outdir = os.path.dirname(os.path.realpath(outfpath))
         outprefix = os.path.splitext(os.path.basename(outfpath))[0]
-        tmpdir = os.path.join(outdir,'tmp')
+        tmpdir = os.path.join(outdir, 'tmp')
         if not os.path.exists(tmpdir):
             os.makedirs(tmpdir)
         tmpfname = '.'.join([outprefix, '{#}', 'txt'])
@@ -95,19 +95,20 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
             '--recstart',
             '\'>\'',
             'hmmscan',
-            '-o',os.devnull,
+            '-o', os.devnull,
             '--tblout',
             tmpfpath,
             hmmdb,
             '-',
-            '<',orfs,
-            '2>',os.devnull,
+            '<', orfs,
+            '2>', os.devnull,
         ]
         if log:
-            cmd.insert(3,log)
-            cmd.insert(3,'--joblog')
+            cmd.insert(3, log)
+            cmd.insert(3, '--joblog')
     else:
-        cmd = ['hmmscan', '--cpu', str(cpus), '--tblout', outfpath, hmmdb, orfs]
+        cmd = ['hmmscan', '--cpu',
+               str(cpus), '--tblout', outfpath, hmmdb, orfs]
     logger.debug(f'cmd: {" ".join(cmd)}')
     if parallel:
         returncode = subprocess.call(' '.join(cmd), shell=True)
@@ -134,6 +135,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         raise OSError(f'{outfpath} not written.')
     return outfpath
 
+
 def hmmpress(fpath):
     """Runs hmmpress on `fpath`.
 
@@ -159,10 +161,12 @@ def hmmpress(fpath):
     cmd = f'hmmpress -f {fpath}'
     logger.debug(cmd)
     with open(os.devnull, 'w') as STDOUT, open(os.devnull, 'w') as STDERR:
-        retcode = subprocess.call(cmd, stdout=STDOUT, stderr=STDERR, shell=True)
+        retcode = subprocess.call(
+            cmd, stdout=STDOUT, stderr=STDERR, shell=True)
     if retcode:
         raise ChildProcessError(f'{cmd} failed with returncode: {retcode}')
     return fpath
+
 
 def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     """Filter markers from hmmscan output table that are above cutoff values.
@@ -200,9 +204,9 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
             raise FileNotFoundError(f'{fp} not found')
     if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0 and not force:
         raise FileExistsError(f'{outfpath} already exists')
-    hmmtab_header = ['sname','sacc','orf','score']
-    col_indices = [0,1,2,5]
-    columns = {i:k for i,k in zip(col_indices,hmmtab_header)}
+    hmmtab_header = ['sname', 'sacc', 'orf', 'score']
+    col_indices = [0, 1, 2, 5]
+    columns = {i: k for i, k in zip(col_indices, hmmtab_header)}
     df = pd.read_csv(
         infpath,
         sep='\s+',
@@ -215,18 +219,20 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     df.dropna(inplace=True)
     df['cleaned_sacc'] = df['sacc'].map(lambda acc: acc.split('.')[0])
     dff = pd.read_csv(cutoffs, sep='\t', index_col='accession')
-    mdf = pd.merge(df,dff,how='left',left_on='cleaned_sacc',right_on='accession')
+    mdf = pd.merge(df, dff, how='left', left_on='cleaned_sacc',
+                   right_on='accession')
     mdf = mdf[mdf['score'] >= mdf['cutoff']]
     if mdf.empty:
         raise AssertionError(f'No markers in {infpath} pass cutoff thresholds')
-    cols = ['orf','sacc','sname','score','cutoff']
+    cols = ['orf', 'sacc', 'sname', 'score', 'cutoff']
     mdf = mdf[cols]
     translations = prodigal.contigs_from_headers(orfs)
-    translater = lambda x: translations.get(x, x.rsplit('_',1)[0])
+    def translater(x): return translations.get(x, x.rsplit('_', 1)[0])
     mdf['contig'] = mdf['orf'].map(translater)
     mdf.set_index('contig', inplace=True)
     mdf.to_csv(outfpath, sep='\t', index=True, header=True)
     return outfpath
+
 
 def main(args):
     if args.verbose:
@@ -259,7 +265,8 @@ if __name__ == '__main__':
     logger.basicConfig(
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p')
-    parser = argparse.ArgumentParser('Retrieves markers with provided input assembly')
+    parser = argparse.ArgumentParser(
+        description='Retrieves markers with provided input assembly')
     parser.add_argument('orfs', help='</path/to/assembly.orfs.faa>')
     parser.add_argument('hmmdb', help='</path/to/hmmpressed/hmmdb>')
     parser.add_argument('cutoffs', help='</path/to/hmm/cutoffs.tsv>')
@@ -267,9 +274,10 @@ if __name__ == '__main__':
     parser.add_argument('markers', help='</path/to/markers.tsv>')
     parser.add_argument('--log', help='</path/to/parallel.log>')
     parser.add_argument('--force', help="force overwrite of out filepath",
-        action='store_true')
-    parser.add_argument('--cpus', help='num cpus to use',default=0, type=int)
-    parser.add_argument('--parallel',help="Enable GNU parallel", action='store_true')
+                        action='store_true')
+    parser.add_argument('--cpus', help='num cpus to use', default=0, type=int)
+    parser.add_argument(
+        '--parallel', help="Enable GNU parallel", action='store_true')
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
     main(args)

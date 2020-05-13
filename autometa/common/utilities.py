@@ -70,6 +70,7 @@ def unpickle(fpath):
     logger.debug(f'{fpath} object unpickled')
     return obj
 
+
 def make_pickle(obj, outfpath):
     """Serialize a python object (`obj`) to `outfpath`.
     Note:  Opposite of :func:`unpickle`
@@ -143,6 +144,7 @@ def gunzip(infpath, outfpath, delete_original=False, block_size=60000):
         logger.debug(f'removed original file: {infpath}')
     return outfpath
 
+
 def untar(tarchive, outdir, member=None):
     """Decompress a tar archive (may be gzipped or bzipped). passing in `member`
     requires an `outdir` also be provided.
@@ -174,7 +176,8 @@ def untar(tarchive, outdir, member=None):
 
     """
     if not member and not outdir:
-        raise ValueError(f'`member` or `outdir` must be passed: member={member} outdir={outdir}')
+        raise ValueError(
+            f'`member` or `outdir` must be passed: member={member} outdir={outdir}')
     logger.debug(f'decompressing tarchive {tarchive} to {outdir}')
     outfpath = os.path.join(outdir, member) if member else None
     if member and os.path.exists(outfpath) and os.path.getsize(outfpath) > 0:
@@ -192,7 +195,8 @@ def untar(tarchive, outdir, member=None):
             try:
                 tar.extract(member=member, path=outdir)
             except KeyError as err:
-                raise KeyError(f'member not in tarchive : {member} : {tarchive}')
+                raise KeyError(
+                    f'member not in tarchive : {member} : {tarchive}')
         else:
             tar.extractall(outdir)
     if member:
@@ -200,6 +204,7 @@ def untar(tarchive, outdir, member=None):
         return outfpath
     logger.debug(f'{tarchive} decompressed to {outdir}')
     return outdir
+
 
 def tarchive_results(outfpath, src_dirpath):
     """Generate a tar archive of Autometa Results
@@ -386,6 +391,7 @@ def write_checksum(infpath, outfpath):
         fh.write(checksum)
     logger.debug(f'Wrote {infpath} checksum to {outfpath}')
 
+
 def valid_checkpoint(checkpoint_fp, fpath):
     """Validate `fpath` is the same checksum as in `checkpoint_fp`.
 
@@ -425,6 +431,7 @@ def valid_checkpoint(checkpoint_fp, fpath):
     new_chksum = calc_checksum(fpath)
     return new_chksum == prev_chksum
 
+
 def get_checkpoints(checkpoint_fp, fpaths=None):
     """Get checkpoints from `checkpoint_fp`.
 
@@ -452,7 +459,8 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     if not os.path.exists(checkpoint_fp):
         logger.debug(f'{checkpoint_fp} not found... Writing')
         if not fpaths:
-            raise ValueError(f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
+            raise ValueError(
+                f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
         outlines = ''
         for fpath in fpaths:
             try:
@@ -466,10 +474,11 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     checkpoints = {}
     with open(checkpoint_fp) as fh:
         for line in fh:
-            chk,fp = line.split('\t')
+            chk, fp = line.split('\t')
             fp = fp.strip()
-            checkpoints.update({fp:chk})
+            checkpoints.update({fp: chk})
     return checkpoints
+
 
 def update_checkpoints(checkpoint_fp, fpath):
     """Update `checkpoints_fp` with `fpath`. If `fpath` already exists in `checkpoint_fp`
@@ -494,12 +503,13 @@ def update_checkpoints(checkpoint_fp, fpath):
     new_checksum = calc_checksum(fpath)
     checkpoints.update({fpath:new_checksum})
     outlines = ''
-    for fp,chk in checkpoints.items():
+    for fp, chk in checkpoints.items():
         outlines += f'{chk}\t{fp}\n'
     with open(checkpoint_fp, 'w') as fh:
         fh.write(outlines)
     logger.debug(f'Checkpoints updated: {new_checksum[:16]} {os.path.basename(fpath)}')
     return checkpoints
+
 
 def timeit(func):
     """Time function run time (to be used as a decorator). I.e. when defining a
@@ -536,6 +546,7 @@ def timeit(func):
         logger.info(f'{func.__name__} took {time_taken:.2f} seconds')
         return obj
     return wrapper
+
 
 if __name__ == '__main__':
     print('This file contains utilities for Autometa pipeline and should not be run directly!')

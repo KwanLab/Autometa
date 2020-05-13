@@ -2,7 +2,6 @@
 Examining Results
 =================
 
-
 .. todo:: Overview of figures/summaries generated from results.
 
 

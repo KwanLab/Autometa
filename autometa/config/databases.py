@@ -83,14 +83,14 @@ class Databases:
     """
 
     SECTIONS = {
-        'ncbi':[
+        'ncbi': [
             'nodes',
             'names',
             'merged',
             'accession2taxid',
             'nr',
         ],
-        'markers':[
+        'markers': [
             'bacteria_single_copy',
             'bacteria_single_copy_cutoffs',
             'archaea_single_copy',
@@ -258,9 +258,9 @@ class Databases:
         """
         taxdump_fpath = self.config.get('ncbi','taxdump')
         taxdump_files = [
-            ('nodes','nodes.dmp'),
-            ('names','names.dmp'),
-            ('merged','merged.dmp'),
+            ('nodes', 'nodes.dmp'),
+            ('names', 'names.dmp'),
+            ('merged', 'merged.dmp'),
         ]
         for option,fname in taxdump_files:
             outfpath = os.path.join(self.ncbi_dir, fname)
@@ -615,6 +615,7 @@ class Databases:
         self.fix_invalid_checksums(section=section)
         return self.config
 
+
 def main():
     import argparse
     import logging as logger
@@ -679,9 +680,11 @@ def main():
     config = dbs.configure(section=section, no_checksum=args.no_checksum)
 
     if not args.out:
-        import sys;sys.exit(0)
+        import sys
+        sys.exit(0)
     put_config(config, args.out)
     logger.info(f'{args.out} written.')
+
 
 if __name__ == '__main__':
     main()
