@@ -107,15 +107,16 @@ class Metagenome:
 
     Methods
     ----------
-    - self.fragmentation_metric()
-    - self.describe()
-    - self.length_filter()
-    - self.call_orfs()
-    - self.orfs()
-    - self.get_kmers()
-    - self.assign_taxonomy()
-    - self.get_kingdoms()
-    - self.write_ranks()
+    * self.fragmentation_metric()
+    * self.describe()
+    * self.length_filter()
+    * self.call_orfs()
+    * self.orfs()
+    * self.get_kmers()
+    * self.assign_taxonomy()
+    * self.get_kingdoms()
+    * self.write_ranks()
+
     """
     def __init__(self, assembly, outdir, nucl_orfs_fpath, prot_orfs_fpath,
         taxonomy_fpath, taxon_method='majority_vote', fwd_reads=None,
@@ -141,31 +142,79 @@ class Metagenome:
     @property
     @lru_cache(maxsize=None)
     def sequences(self):
+        """Retrieve the sequences from provided `assembly`.
+
+        Returns
+        -------
+        list
+            [seq, seq, ...]
+
+        """
         with open(self.assembly) as fh:
             return [seq for title,seq in SimpleFastaParser(fh)]
 
     @property
     @lru_cache(maxsize=None)
     def seqrecords(self):
+        """Retrieve SeqRecord objects from provided `assembly`.
+
+        Returns
+        -------
+        list
+            [SeqRecord, SeqRecord, ...]
+
+        """
         return [seq for seq in SeqIO.parse(self.assembly, 'fasta')]
 
     @property
     def nseqs(self):
+        """Retrieve the number of sequences in provided `assembly`.
+
+        Returns
+        -------
+        int
+            Number of sequences parsed from `assembly`
+
+        """
         return len(self.sequences)
 
     @property
     @lru_cache(maxsize=None)
     def length_weighted_gc(self):
+        """Retrieve the length weighted average GC percentage of provided `assembly`.
+
+        Returns
+        -------
+        float
+            GC percentage weighted by contig length.
+
+        """
         weights = [len(seq)/self.size for seq in self.sequences]
         gc_counts = [SeqUtils.GC(seq) for seq in self.sequences]
         return np.average(a=gc_counts, weights=weights)
 
     @property
     def size(self):
+        """Retrieve the summation of sizes for each contig in the provided `assembly`.
+
+        Returns
+        -------
+        int
+            Total summation of contig sizes in `assembly`
+
+        """
         return sum(len(seq) for seq in self.sequences)
 
     @property
     def largest_seq(self):
+        """Retrieve the name of the largest sequence in the provided `assembly`.
+
+        Returns
+        -------
+        str
+            record ID of the largest sequence in `assembly`.
+
+        """
         max = float('-inf')
         largest = None
         for rec in self.seqrecords:
@@ -176,28 +225,72 @@ class Metagenome:
 
     @property
     def orfs_called(self):
+        """Retrieve whether `prot_orfs_fpath` and `nucl_orfs_fpath` have been called.
+
+        Note: This will check whether the aforementioned paths exist and are not empty.
+        In the future, a checksum comparison will be performed to ensure file integrity.
+
+        Returns
+        -------
+        bool
+            Description of returned object.
+
+        """
         # COMBAK: Add checkpointing checksum check here
         for fp in [self.prot_orfs_fpath, self.nucl_orfs_fpath]:
             if not os.path.exists(fp):
                 return False
-            elif not os.stat(fp).st_size > 0:
+            elif not os.path.getsize(fp) > 0:
                 return False
         return True
 
     @property
     @lru_cache(maxsize=None)
     def nucls(self):
+        """Retrieve `assembly` nucleotide ORFs.
+
+        Returns
+        -------
+        list
+            [SeqRecord, SeqRecord, ...]
+
+        """
         return self.orfs(orf_type='nucl')
 
     @property
     @lru_cache(maxsize=None)
     def prots(self):
+        """Retrieve `assembly` amino-acid ORFs.
+
+        Returns
+        -------
+        list
+            [SeqRecord, SeqRecord, ...]
+
+        """
         return self.orfs(orf_type='prot')
 
     @property
     def taxonomy_assigned(self):
+        """Retrieve whether taxonomy has been assigned to `assembly`. This will
+        check whether `taxonomy_fpath` exists and is non-empty.
+
+        Note: In the future, a checksum comparison should be performed to ensure
+        file integrity.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        Raises
+        -------
+        ExceptionName
+            Why the exception is raised.
+
+        """
         # COMBAK: Add checkpointing checksum check here
-        if os.path.exists(self.taxonomy_fpath) and os.stat(self.taxonomy_fpath).st_size > 0:
+        if os.path.exists(self.taxonomy_fpath) and os.path.getsize(self.taxonomy_fpath) > 0:
             return True
         return False
 
@@ -228,29 +321,44 @@ class Metagenome:
             if sum(lengths) > target_size:
                 return length
 
-    def describe(self):
-        print(f"""
-Metagenome Details
-________________________
-Assembly: {self.assembly}
-Num. Sequences: {self.nseqs:,}
-Size: {self.size:,} bp
-N50: {self.fragmentation_metric():,} bp
-N10: {self.fragmentation_metric(.1):,} bp
-N90: {self.fragmentation_metric(.9):,} bp
-Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%
-Largest sequence: {self.largest_seq}
-________________________
-Autometa Details
-________________________
-Outdir: {self.outdir}
-ORFs called: {self.orfs_called}
-Prots filepath: {self.prot_orfs_fpath}
-Nucl filepath: {self.nucl_orfs_fpath}
-Taxonomy method: {self.taxon_method}
-Taxonomy assigned: {self.taxonomy_assigned}
-Taxonomy filepath: {self.taxonomy_fpath}
-""")
+    def describe(self, autometa_details=True):
+        """Print `assembly` details.
+
+        Parameters
+        ----------
+        autometa_details : bool
+            Also log Autometa specific information to the terminal (Default is True).
+
+        Returns
+        -------
+        NoneType
+
+        """
+        print('Metagenome Details\n'
+            '________________________\n'
+            f'Assembly: {self.assembly}\n'
+            f'Num. Sequences: {self.nseqs:,}\n'
+            f'Size: {self.size:,} bp\n'
+            f'N50: {self.fragmentation_metric():,} bp\n'
+            f'N10: {self.fragmentation_metric(.1):,} bp\n'
+            f'N90: {self.fragmentation_metric(.9):,} bp\n'
+            f'Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n'
+            f'Largest sequence: {self.largest_seq}\n'
+            '________________________\n'
+        )
+        if not autometa_details:
+            return
+        print(
+            'Autometa Details\n'
+            '________________________\n'
+            f'Outdir: {self.outdir}\n'
+            f'ORFs called: {self.orfs_called}\n'
+            f'Prots filepath: {self.prot_orfs_fpath}\n'
+            f'Nucl filepath: {self.nucl_orfs_fpath}\n'
+            f'Taxonomy method: {self.taxon_method}\n'
+            f'Taxonomy assigned: {self.taxonomy_assigned}\n'
+            f'Taxonomy filepath: {self.taxonomy_fpath}\n'
+        )
 
     @timeit
     def length_filter(self, out, cutoff=3000):
@@ -279,6 +387,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             cutoff value must be a positive real number
         FileExistsError
             filepath consisting of sequences that passed filter already exists
+
         """
         if not isinstance(cutoff, numbers.Number) or isinstance(cutoff, bool):
             # https://stackoverflow.com/a/4187220/13118765
@@ -335,6 +444,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
             `force`,`parallel` or `cpus` type was incorrectly supplied.
         OSError
             ORF calling failed.
+
         """
         for arg, argname in zip([force, parallel],['force','parallel']):
             if not isinstance(arg, bool) and isinstance(arg, numbers.Number):
@@ -376,6 +486,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
         -------
         ValueError
             Invalid `orf_type`. Choices=['prot','nucl']
+
         """
         if not self.orfs_called:
             self.call_orfs(cpus=cpus)
@@ -408,6 +519,7 @@ Taxonomy filepath: {self.taxonomy_fpath}
 
         TODO: get_kmers should handle both files and SeqRecords...
         NOTE: above TODO should be handled in kmers.py not here...
+
         """
         out_specified = out is not None
         out_exists = os.path.exists(out) if out else False
@@ -617,7 +729,7 @@ def main():
         level=logger.DEBUG)
 
     parser = argparse.ArgumentParser(description="""
-    This handles filtering by length and taxon as well as ORF calling,
+    This script handles filtering by length and taxon as well as ORF calling,
     and various metagenome statistics.
     """,
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
