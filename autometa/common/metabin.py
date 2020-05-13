@@ -265,7 +265,7 @@ class MetaBin:
 
         """
         # COMBAK: Add checkpointing checksum check here
-        if os.path.exists(fpath) and os.stat(fpath).st_size > 0:
+        if os.path.exists(fpath) and os.path.getsize(fpath) > 0:
             return True
         return False
 
@@ -325,18 +325,17 @@ class MetaBin:
             If True, will output autometa related information (the default is True).
 
         """
-
         print('Metabin Details\n'
             '________________________\n'
             f'Num. Contigs: {self.nseqs:,} / {self.nallseqs:,} ({self.seqs_pct:4.2f}% of total metagenome)\n'
             f'Num. Nucl. ORFs: {self.nnucls:,}\n'
             f'Num. Prot. ORFs: {self.nprots:,}\n'
             f'Size: {self.size:,}bp / {self.totalsize:,}bp ({self.size_pct:4.2f}% of total metagenome)\n'
-            f'Mean GC content: {self.length_weighted_gc:4.2f}%\n'
-            '________________________\n'
-            )
-        if autometa_details:
-            print(
+            f'Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n'
+            '________________________\n')
+        if not autometa_details:
+            return
+        print(
             'Autometa Details\n'
             '________________________\n'
             f'Metagenome: {self.assembly}\n'
