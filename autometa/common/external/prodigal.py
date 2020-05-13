@@ -40,7 +40,7 @@ from autometa.config.environ import get_versions
 logger = logging.getLogger(__name__)
 
 
-def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
+def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     """Calls ORFs from provided input assembly
 
     Parameters
@@ -78,7 +78,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
             for line in fh:
                 lines += line.decode()
         assembly = assembly.rstrip('.gz')
-        with open(assembly,'w') as fh:
+        with open(assembly, 'w') as fh:
             fh.write(lines)
     for fpath in [nucls_out, prots_out]:
         if os.path.exists(fpath) and not force:
@@ -88,7 +88,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         # parallel log should indicate time & dataset. i.e. time_dataset.prodigal.parallel.log
         log = os.path.join(outdir, 'prodigal.parallel.log')
         outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
-        tmpdir = os.path.join(outdir,'tmp')
+        tmpdir = os.path.join(outdir, 'tmp')
         if not os.path.exists(tmpdir):
             os.makedirs(tmpdir)
         tmpnucl = '.'.join([outprefix, '{#}', 'fna'])
@@ -98,30 +98,30 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         jobs = f'-j{cpus}'
         cmd = [
             'parallel',
-            '--retries','4',
-            '--joblog',log,
+            '--retries', '4',
+            '--joblog', log,
             jobs,
             '--pipe',
             '--recstart',
             '\'>\'',
             '--linebuffer',
             'prodigal',
-            '-a',tmpprot_fpath,
-            '-d',tmpnucl_fpath,
+            '-a', tmpprot_fpath,
+            '-d', tmpnucl_fpath,
             '-q',
-            '-p','meta',
+            '-p', 'meta',
             '-m',
-            '-o',os.devnull,
-            '<',assembly,
-            '2>',os.devnull,
+            '-o', os.devnull,
+            '<', assembly,
+            '2>', os.devnull,
         ]
     else:
         cmd = [
             'prodigal',
-            '-i',assembly,
-            '-a',prots_out,
-            '-d',nucls_out,
-            '-p','meta',
+            '-i', assembly,
+            '-a', prots_out,
+            '-d', nucls_out,
+            '-p', 'meta',
             '-m',
             '-q',
         ]
@@ -130,7 +130,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
     if parallel:
         try:
             returncode = subprocess.call(" ".join(cmd), shell=True)
-            tmpfpaths = glob(os.path.join(tmpdir,'*.faa'))
+            tmpfpaths = glob(os.path.join(tmpdir, '*.faa'))
             lines = ''
             for fp in tmpfpaths:
                 with open(fp) as fh:
@@ -170,6 +170,7 @@ def run(assembly, nucls_out, prots_out, force=False,cpus=0,parallel=True):
         except (IOError, ValueError):
             raise IOError(f'InvalidFileFormat: {fp}')
     return nucls_out, prots_out
+
 
 def contigs_from_headers(fpath):
     """Get ORF id to contig id translations using prodigal assigned ID from
@@ -223,12 +224,14 @@ def contigs_from_headers(fpath):
     translations = {}
     for record in SeqIO.parse(fpath, 'fasta'):
         if version < 2.6:
-            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
+            orf_id = record.description.split(
+                '#')[-1].split(';')[0].strip().replace('ID=', '')
             contig_id = record.id.replace(f'_{orf_id}', '')
         else:
-            contig_id = record.id.rsplit('_',1)[0]
-        translations.update({record.id:contig_id})
+            contig_id = record.id.rsplit('_', 1)[0]
+        translations.update({record.id: contig_id})
     return translations
+
 
 def orf_records_from_contigs(contigs, fpath):
     """Retrieve list of *ORFs headers* from `contigs`. Prodigal annotated ORFs
@@ -261,14 +264,16 @@ def orf_records_from_contigs(contigs, fpath):
     records = []
     for record in SeqIO.parse(fpath, 'fasta'):
         if version < 2.6:
-            orf_id = record.description.split('#')[-1].split(';')[0].strip().replace('ID=','')
+            orf_id = record.description.split(
+                '#')[-1].split(';')[0].strip().replace('ID=', '')
             contig_id = record.id.replace(f'_{orf_id}', '')
         else:
-            contig_id = record.id.rsplit('_',1)[0]
+            contig_id = record.id.rsplit('_', 1)[0]
         if contig_id not in contigs:
             continue
         records.append(record)
     return records
+
 
 def main(args):
     if args.verbose:
@@ -280,7 +285,9 @@ def main(args):
         force=args.force,
         cpus=args.cpus,
         parallel=args.parallel)
-    logger.info(f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
+    logger.info(
+        f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
+
 
 if __name__ == '__main__':
     import argparse
@@ -289,15 +296,16 @@ if __name__ == '__main__':
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Calls ORFs with provided input assembly')
+    parser = argparse.ArgumentParser(
+        description='Calls ORFs with provided input assembly')
     parser.add_argument('assembly', help='</path/to/assembly>', type=str)
     parser.add_argument('nucls_out', help='</path/to/nucls.out>', type=str)
     parser.add_argument('prots_out', help='</path/to/prots.out>', type=str)
     parser.add_argument('--force', help="force overwrite of ORFs out filepaths",
-        action='store_true')
+                        action='store_true')
     parser.add_argument('--cpus', help='num cpus to use', type=int, default=0)
     parser.add_argument('--parallel', help="Enable GNU parallel",
-        action='store_true', default=False)
+                        action='store_true', default=False)
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
     main(args)

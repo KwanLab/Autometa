@@ -86,7 +86,12 @@ def main():
         format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Concise description of script.')
+    # Note: If you do not have any defaults corresponding to your parameters,
+    # you may remove the formatter class: ArgumentDefaultsHelpFormatter
+    # to reduce help text verbosity.
+    parser = argparse.ArgumentParser(
+        description='Concise description of script.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('positional',help='<help text of positional arg>')
     parser.add_argument('--optional',help='<help text of optional arg>')
     parser.add_argument(

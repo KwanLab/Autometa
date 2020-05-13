@@ -27,6 +27,7 @@ Configuration handling for Autometa environment.
 import logging
 import os
 import sys
+import shutil
 import subprocess
 
 from configparser import ConfigParser
@@ -50,42 +51,6 @@ EXECUTABLES = [
     'bedtools',
 ]
 
-def which(program):
-    """Finds the full path for an executable and checks read permissions exist.
-
-    See: https://stackoverflow.com/a/377028
-
-    Returns:
-        The path if it was valid or None if not
-
-    Parameters
-    ----------
-    program : str
-        the program to check
-
-    Returns
-    -------
-    str
-        </path/to/executable/> or ''
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
-
-    """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return ''
 
 def find_executables():
     """Retrieves executable file paths by looking in Autometa dependent executables.
@@ -96,7 +61,8 @@ def find_executables():
         {executable:</path/to/executable>, ...}
 
     """
-    return {exe:which(exe) for exe in EXECUTABLES}
+    return {exe: shutil.which(exe, mode=os.X_OK) for exe in EXECUTABLES}
+
 
 def diamond():
     """Get diamond version.
@@ -107,14 +73,15 @@ def diamond():
         version of diamond
 
     """
-    exe = which('diamond')
+    exe = shutil.which('diamond', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'version'],
+        [exe, 'version'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     # stdout = b'diamond version 0.9.24\n'
     return stdout.decode().split()[-1]
+
 
 def hmmsearch():
     """Get hmmsearch version.
@@ -124,15 +91,16 @@ def hmmsearch():
     str
         version of hmmsearch
     """
-    exe = which('hmmsearch')
+    exe = shutil.which('hmmsearch', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def hmmpress():
     """Get hmmpress version.
@@ -142,15 +110,16 @@ def hmmpress():
     str
         version of hmmpress
     """
-    exe = which('hmmpress')
+    exe = shutil.which('hmmpress', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def hmmscan():
     """Get hmmscan version.
@@ -160,15 +129,16 @@ def hmmscan():
     str
         version of hmmscan
     """
-    exe = which('hmmscan')
+    exe = shutil.which('hmmscan', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'-h'],
+        [exe, '-h'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode().split('#')[2]
     # stdout = ' HMMER 3.2.1 (June 2018); http://hmmer.org/\n'
     return stdout.strip().split()[1]
+
 
 def prodigal():
     """Get prodigal version.
@@ -178,14 +148,15 @@ def prodigal():
     str
         version of prodigal
     """
-    exe = which('prodigal')
+    exe = shutil.which('prodigal', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'-v'],
+        [exe, '-v'],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     # stderr = b'\nProdigal V2.6.3: February, 2016\n\n'
-    return stderr.decode().strip().split(':')[0].replace('Prodigal V','')
+    return stderr.decode().strip().split(':')[0].replace('Prodigal V', '')
+
 
 def bowtie2():
     """Get bowtie2 version.
@@ -195,14 +166,15 @@ def bowtie2():
     str
         version of bowtie2
     """
-    exe = which('bowtie2')
+    exe = shutil.which('bowtie2', mode=os.X_OK)
     proc = subprocess.Popen(
-        [exe,'--version'],
+        [exe, '--version'],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
     # stdout 'bowtie2-align-s version 2.3.5\n64-bit\n
     return stdout.decode().split()[2]
+
 
 def samtools():
     """Get samtools version.
@@ -212,12 +184,14 @@ def samtools():
     str
         version of samtools
     """
-    exe = which('samtools')
-    proc = subprocess.Popen([exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    exe = shutil.which('samtools', mode=os.X_OK)
+    proc = subprocess.Popen(
+        [exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     stderr = stderr.decode().strip().split('\n')[1]
     # stderr = 'Version: 1.10 (using htslib 1.10.2)'
     return stderr.split()[1]
+
 
 def bedtools():
     """Get bedtools version.
@@ -227,7 +201,7 @@ def bedtools():
     str
         version of bedtools
     """
-    exe = which('bedtools')
+    exe = shutil.which('bedtools', mode=os.X_OK)
     proc = subprocess.Popen(
         [exe, '--version'],
         stdout=subprocess.PIPE,
@@ -236,14 +210,18 @@ def bedtools():
     # stdout = b'bedtools v2.29.2\n'
     return stdout.decode().strip().split()[-1].strip('v')
 
+
 def get_versions(program=None):
-    """Retrieve versions from all required executable dependencies.
+    """
+    Retrieve versions from all required executable dependencies.
     If `program` is provided will only return version for `program`.
+
+    See: https://stackoverflow.com/a/834451/12671809
 
     Parameters
     ----------
-    program : str
-        the program to retrieve the version.
+    program : str, optional
+        the program to retrieve the version, by default None
 
     Returns
     -------
@@ -257,36 +235,28 @@ def get_versions(program=None):
         `program` is not a string
     KeyError
         `program` is not an executable dependency.
-
     """
-    dispatcher = {
-        'prodigal':prodigal,
-        'diamond':diamond,
-        'hmmsearch':hmmsearch,
-        'hmmpress':hmmpress,
-        'hmmscan':hmmscan,
-        'prodigal':prodigal,
-        'bowtie2':bowtie2,
-        'samtools':samtools,
-        'bedtools':bedtools,
-    }
     if program:
-        exe_name = os.path.basename(program)
         if type(program) is not str:
-            raise ValueError(f'program is not string. given:{type(program)}')
-        if exe_name not in dispatcher:
+            raise TypeError(f'program is not string. given:{type(program)}')
+        exe_name = os.path.basename(program)
+        if exe_name not in globals():
             raise KeyError(f'{exe_name} not in executables')
-        return dispatcher[exe_name]()
+        return globals()[exe_name]()
     versions = {}
     executables = find_executables()
-    for exe,found in executables.items():
+    for exe, found in executables.items():
         if found:
-            version = dispatcher[exe]()
+            # get_version accesses the location of the function for that program, eg. find the location of bedtools()
+            # get_version() wraps the location and execute that function, eg. execute bedtools()
+            get_version = globals()[exe]
+            version = get_version()
         else:
             logger.warning(f'VersionUnavailable {exe}')
             version = 'ExecutableNotFound'
-        versions.update({exe:version})
+        versions.update({exe: version})
     return versions
+
 
 def configure(config=DEFAULT_CONFIG):
     """Checks executable dependencies necessary to run autometa.
@@ -318,7 +288,7 @@ def configure(config=DEFAULT_CONFIG):
     executables = find_executables()
     versions = get_versions()
     satisfied = True
-    for executable,found in executables.items():
+    for executable, found in executables.items():
         version = versions.get(executable)
         if not config.has_option('environ', executable) and not found:
             satisfied = False
@@ -328,7 +298,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('environ', executable, found)
             config.set('versions', executable, version)
         user_executable = config.get('environ', executable)
-        if not which(user_executable):
+        if not shutil.which(user_executable, mode=os.X_OK):
             logger.debug(f'{executable}: {found} (version: {version})')
             config.set('environ', executable, found)
             config.set('versions', executable, version)
@@ -337,6 +307,7 @@ def configure(config=DEFAULT_CONFIG):
             config.set('versions', user_executable, version)
     return config, satisfied
 
+
 def main():
     import argparse
     import logging as logger
@@ -344,16 +315,20 @@ def main():
         format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
-    parser = argparse.ArgumentParser('Configure executables.config')
+    parser = argparse.ArgumentParser(
+        description='Configure executables.config')
     parser.add_argument('--infpath',
-        help='</path/to/output/executables.config>', required=True)
+                        help='</path/to/output/executables.config>', required=True)
     parser.add_argument('--out',
-        help='</path/to/output/executables.config>')
+                        help='</path/to/output/executables.config>')
     args = parser.parse_args()
-    config,satisfied = configure(infpath=args.infpath)
+    user_config = get_config(args.infpath)
+    config, satisfied = configure(config=user_config)
     if not args.out:
-        import sys;sys.exit(0)
+        import sys
+        sys.exit(0)
     put_config(config, args.out)
+
 
 if __name__ == '__main__':
     main()
