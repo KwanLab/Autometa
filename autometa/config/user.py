@@ -304,7 +304,7 @@ class AutometaUser:
             do_pca=mgargs.parameters.do_pca,
             pca_dims=mgargs.parameters.pca_dims,
             embedding_method=mgargs.parameters.embedding_method,
-            coverage=coverages,
+            coverage=mgargs.files.coverages,
             domain=mgargs.parameters.kingdom,
             taxonomy=mgargs.files.taxonomy,
             reverse=mgargs.parameters.reversed,

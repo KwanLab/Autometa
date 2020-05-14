@@ -41,7 +41,7 @@ from functools import lru_cache
 from autometa.common import kmers
 from autometa.common import coverage
 from autometa.common.external import prodigal
-from autometa.common.mag import MAG
+from autometa.common.metabin import MetaBin
 from autometa.common.utilities import timeit
 from autometa.common.utilities import gunzip
 from autometa.taxonomy.majority_vote import majority_vote
@@ -653,7 +653,7 @@ class Metagenome:
         Returns
         -------
         dict
-            {'bacteria':MAG, ...}
+            {'bacteria':MetaBin, ...}
 
         Raises
         -------
@@ -682,7 +682,7 @@ class Metagenome:
         kingdoms = dict(list(self.taxonomy.groupby('superkingdom')))
         bins = {}
         for kingdom, df in kingdoms.items():
-            bins.update({kingdom:MAG(self.assembly, df.index.tolist())})
+            bins.update({kingdom:MetaBin(self.assembly, df.index.tolist())})
         return bins
 
     def write_ranks(self, rank='superkingdom'):
