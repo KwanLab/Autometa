@@ -76,7 +76,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         hmmscan failed
     """
     # OPTIMIZE: we want to extend parallel to grid computing (workqueue?) via --sshlogin?
-    if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
         raise FileExistsError(f'{outfpath}. Use force to overwrite!')
     if parallel:
         outdir = os.path.dirname(os.path.realpath(outfpath))
@@ -206,7 +206,7 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     for fp in [infpath, cutoffs]:
         if not os.path.exists(fp):
             raise FileNotFoundError(f'{fp} not found')
-    if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
         raise FileExistsError(f'{outfpath} already exists')
     hmmtab_header = ['sname', 'sacc', 'orf', 'score']
     col_indices = [0, 1, 2, 5]
