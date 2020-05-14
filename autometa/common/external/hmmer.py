@@ -136,7 +136,7 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
         logger.error(f'Args:{cmd} ReturnCode:{proc.returncode}')
         raise err
     if not os.path.exists(outfpath):
-        raise OSError(f'{outfpath} not written.')
+        raise FileNotFoundError(f'{outfpath} not written.')
     return outfpath
 
 
@@ -256,20 +256,23 @@ def main():
                         action='store_true')
     parser.add_argument('--cpus', help='num cpus to use', default=0, type=int)
     parser.add_argument(
-        '--parallel', help="Enable GNU parallel", action='store_true')
+        '--parallel', help="enable GNU parallel", action='store_true')
     parser.add_argument('--verbose', help="add verbosity", action='store_true')
     args = parser.parse_args()
 
     if args.verbose:
         logger.setLevel(logger.DEBUG)
-    result = hmmscan(
-        orfs=args.orfs,
-        hmmdb=args.hmmdb,
-        outfpath=args.hmmscan,
-        cpus=args.cpus,
-        force=args.force,
-        parallel=args.parallel,
-        log=args.log)
+    if os.path.exists(args.hmmscan) and os.stat(args.hmmscan).st_size > 0 and not args.force:
+        result = args.hmmscan
+    else:
+        result = hmmscan(
+            orfs=args.orfs,
+            hmmdb=args.hmmdb,
+            outfpath=args.hmmscan,
+            cpus=args.cpus,
+            force=args.force,
+            parallel=args.parallel,
+            log=args.log)
 
     result = filter_markers(
         infpath=result,
