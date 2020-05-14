@@ -26,8 +26,9 @@ Functions related to running hmmer on metagenome sequences
 
 import logging
 import os
-import subprocess
 import shutil
+import subprocess
+import sys
 import tempfile
 
 import pandas as pd
@@ -110,23 +111,30 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, log=None)
                str(cpus), '--tblout', outfpath, hmmdb, orfs]
     logger.debug(f'cmd: {" ".join(cmd)}')
     if parallel:
-        returncode = subprocess.call(' '.join(cmd), shell=True)
+        proc = subprocess.run(' '.join(cmd), shell=True)
         tmp_fpaths = glob(os.path.join(tmp_dirpath, '*.txt'))
+        lines = ''
+        buffer_limit = 60000
         with open(outfpath, 'w') as out:
             for fp in tmp_fpaths:
                 with open(fp) as fh:
                     for line in fh:
-                        out.write(line)
+                        lines += line
+                        if sys.getsizeof(lines) >= buffer_limit:
+                            out.write(lines)
+                            lines = ''
+            out.write(lines)
         shutil.rmtree(tmp_dirpath)
     else:
-        with open(os.devnull, 'w') as STDOUT, open(os.devnull, 'w') as STDERR:
-            proc = subprocess.run(cmd, stdout=STDOUT, stderr=STDERR)
-        returncode = proc.returncode
-    if returncode == 141:
+        proc = subprocess.run(
+            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        proc.check_returncode()
+    except subprocess.CalledProcessError as err:
         logger.warning(f'Make sure your hmm profiles are pressed!')
         logger.warning(f'hmmpress -f {hmmdb}')
-        logger.error(f'Args:{cmd} ReturnCode:{returncode}')
-        raise OSError(f'hmmscan: Args:{cmd} ReturnCode:{returncode}')
+        logger.error(f'Args:{cmd} ReturnCode:{proc.returncode}')
+        raise err
     if not os.path.exists(outfpath):
         raise OSError(f'{outfpath} not written.')
     return outfpath
@@ -254,18 +262,14 @@ def main():
 
     if args.verbose:
         logger.setLevel(logger.DEBUG)
-    try:
-        result = hmmscan(
-            orfs=args.orfs,
-            hmmdb=args.hmmdb,
-            outfpath=args.hmmscan,
-            cpus=args.cpus,
-            force=args.force,
-            parallel=args.parallel,
-            log=args.log)
-    except FileExistsError as err:
-        logger.debug(err)
-        result = args.hmmscan
+    result = hmmscan(
+        orfs=args.orfs,
+        hmmdb=args.hmmdb,
+        outfpath=args.hmmscan,
+        cpus=args.cpus,
+        force=args.force,
+        parallel=args.parallel,
+        log=args.log)
 
     result = filter_markers(
         infpath=result,
