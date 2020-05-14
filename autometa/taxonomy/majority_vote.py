@@ -221,15 +221,15 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
     Parameters
     ----------
     fasta : str
-        </path/to/prot/orfs.faa>
+        Path to ORFs fasta containing amino-acid sequences to be annotated.
     ncbi_dir : str
-        </path/to/ncbi/dir>
+        Path to NCBI databases directory.
     outdir : str
-        <path/to/output/dir>
+        Path to output directory to store intermediate results.
     votes_fname : str
-        <votes.tsv filename>
+        Output filename of assigned taxids. Note: Will be written to `outdir`.
     lca_fname : str, optional
-        <lca.tsv filename> (the default is </path/to/`outdir`/`fasta`.lca.tsv).
+        Filename to assign LCA results. Note: Will be written to `outdir`.
     **kwargs : dict
         Further parameters that may be passed along to LCA, LCA.blast2lca and
         rank_taxids as dicts of key-value pairs.
@@ -240,11 +240,10 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         * LCA.blast2lca: blast=None (str), hits_fpath=None (str), force=False (bool)
         * rank_taxids: verbose=False (bool)
 
-
     Returns
     -------
     str
-        </path/to/`outdir`/`votes_fname`>
+        Path to assigned taxids table. e.g. </path/to/`outdir`/`votes_fname`>.
 
     """
     lca = LCA(
@@ -302,12 +301,12 @@ def write_votes(results, outfpath):
         raise FileExistsError(outfpath)
     lines = 'contig\ttaxid\n'
     fh = open(outfpath, 'w')
-    count = 0
     for contig, taxid in results.items():
-        if count >= 60000:
+        if sys.getsizeof(lines) >= 60000:
             fh.write(lines)
             lines = ''
         lines += f'{contig}\t{taxid}\n'
+    fh.write(lines)
     fh.close()
     return outfpath
 
