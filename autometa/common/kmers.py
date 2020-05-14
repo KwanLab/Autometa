@@ -349,7 +349,7 @@ def embed(kmers=None, embedded=None, n_components=2, do_pca=True, pca_dimensions
 
         * `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
         * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
-        * `tsne.bh_sne` <https://pypi.org/project/tsne/>`_
+        * `tsne.bh_sne <https://pypi.org/project/tsne/>`_
 
     Parameters
     ----------

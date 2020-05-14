@@ -41,9 +41,8 @@ from autometa.common.utilities import make_pickle, unpickle, timeit
 
 logger = logging.getLogger(__name__)
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-NCBI_DIR = os.path.join(BASE_DIR, 'databases', 'ncbi')
-
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+NCBI_DIR = os.path.join(BASE_DIR,'databases','ncbi')
 
 class NCBI:
     """Taxonomy utilities for NCBI databases."""
