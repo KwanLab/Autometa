@@ -467,9 +467,12 @@ class LCA(NCBI):
             if count >= 10000:
                 fh.write(lines)
                 lines = ''
+                count = 0
             lines += '\t'.join(map(str, [
                 qseqid, self.name(taxid), self.rank(taxid), taxid]))+'\n'
             count += 1
+        fh.write(lines)
+        fh.close()
         return outfpath
 
     def parse(self, lca_fpath, orfs_fpath):
