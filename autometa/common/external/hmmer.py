@@ -262,7 +262,7 @@ def main():
 
     if args.verbose:
         logger.setLevel(logger.DEBUG)
-    if os.path.exists(args.hmmscan) and os.stat(args.hmmscan).st_size > 0 and not args.force:
+    if os.path.exists(args.hmmscan) and os.path.getsize(args.hmmscan) > 0 and not args.force:
         result = args.hmmscan
     else:
         result = hmmscan(
