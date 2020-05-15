@@ -20,7 +20,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Modified majority vote algorithm (Autometa V1.0)
+This script contains the modified majority vote algorithm used in Autometa version 1.0
 """
 
 
@@ -41,7 +41,7 @@ from autometa.common.utilities import file_length
 logger = logging.getLogger(__name__)
 
 
-def is_consistent_with_other_orfs(taxid, rank, ctg_lcas, ncbi):
+def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
     """Determines whether the majority of proteins in a contig, with rank equal
     to or above the given rank, are common ancestors of the taxid.
 
@@ -50,24 +50,21 @@ def is_consistent_with_other_orfs(taxid, rank, ctg_lcas, ncbi):
     Parameters
     ----------
     taxid : int
-        Description of parameter `taxid`.
+        `taxid` to search against other taxids at `rank` in `rank_counts`.
     rank : str
-        choices: species, genus, family, order, class, phylum, superkingdom
-    ctg_lcas : dict
-        {ctg1:{canonical_rank:{taxid:num_hits,...},...}, ctg2:{...},...}
+        Canonical rank to search in `rank_counts`.
+        Choices: species, genus, family, order, class, phylum, superkingdom.
+    rank_counts : dict
+        LCA canonical rank counts retrieved from ORFs respective to a contig.
+        e.g. {canonical_rank: {taxid: num_hits, ...}, ...}
     ncbi : NCBI instance
-        NCBI object from autometa.taxonomy.ncbi
+        Instance or subclass of NCBI from autometa.taxonomy.ncbi.
 
     Returns
     -------
     boolean
         If the majority of ORFs in a contig are equal or above given rank then
         return True, otherwise return False.
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
 
     """
     rank_index = NCBI.CANONICAL_RANKS.index(rank)
@@ -76,47 +73,46 @@ def is_consistent_with_other_orfs(taxid, rank, ctg_lcas, ncbi):
     consistent = 0
     inconsistent = 0
     for rank_name in ranks_to_consider:
-        if rank_name not in ctg_lcas:
+        if rank_name not in rank_counts:
             continue
-        for ctg_lca in ctg_lcas[rank_name]:
-            if ncbi.is_common_ancestor(ctg_lca, taxid):
-                consistent += ctg_lcas[rank_name][ctg_lca]
+        for rank_taxid, count in rank_counts[rank_name].items():
+            if ncbi.is_common_ancestor(rank_taxid, taxid):
+                consistent += count
             else:
-                inconsistent += ctg_lcas[rank_name][ctg_lca]
+                inconsistent += count
     if consistent > inconsistent:
+        # COMBAK: See issue-#48: This could also return the ratio of consistent
+        # to inconsistent to give the user an idea of the consistency of the
+        # taxon assignments.
         return True
     else:
         return False
 
-
-def lowest_majority(ctg_lcas, ncbi):
-    """Short summary.
+def lowest_majority(rank_counts, ncbi):
+    """Determine the lowest majority given `rank_counts` by first attempting to
+    get a taxid that leads in counts with the highest specificity in terms of
+    canonical rank.
 
     Parameters
     ----------
-    ctg_lcas : dict
-        {canonical_rank:{taxid:num_hits, taxid2:...},rank2:{...},...}
+    rank_counts : dict
+        {canonical_rank:{taxid:num_hits, ...}, rank2: {...}, ...}
     ncbi : NCBI instance
         NCBI object from autometa.taxonomy.ncbi
 
     Returns
     -------
     int
-        taxid that won the lowest majority
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
+        Taxid above the lowest majority threshold.
 
     """
     taxid_totals = {}
     for rank in NCBI.CANONICAL_RANKS:
-        if rank not in ctg_lcas:
+        if rank not in rank_counts:
             continue
         rank_index = NCBI.CANONICAL_RANKS.index(rank)
         ranks_to_consider = NCBI.CANONICAL_RANKS[rank_index:]
-        for taxid in ctg_lcas[rank]:
+        for taxid in rank_counts[rank]:
             # Make a dictionary to total the number of canonical ranks hit
             # while traversing the path so that we can add 'unclassified' to
             # any that don't exist. Later we need to make sure that
@@ -148,8 +144,7 @@ def lowest_majority(ctg_lcas, ncbi):
                 if ranks_in_path[rank_to_consider] == 0:
                     if rank_to_consider not in taxid_totals:
                         taxid_totals[rank_to_consider] = {'unclassified': 1}
-                        continue
-                    if 'unclassified' in taxid_totals[rank_to_consider]:
+                    elif 'unclassified' in taxid_totals[rank_to_consider]:
                         taxid_totals[rank_to_consider]['unclassified'] += 1
                     else:
                         taxid_totals[rank_to_consider]['unclassified'] = 1
@@ -175,19 +170,16 @@ def lowest_majority(ctg_lcas, ncbi):
     # Just in case
     return 1
 
-
-def rank_taxids(ctg_lcas, ncbi_dir, verbose=False):
-    """Majority Voting Algorithm
-
-    Votes for taxids based on modified majority vote system where if a majority
-    does not exist, the lowest majority is voted
+def rank_taxids(ctg_lcas, ncbi, verbose=False):
+    """Votes for taxids based on modified majority vote system where if a
+    majority does not exist, the lowest majority is voted.
 
     Parameters
     ----------
     ctg_lcas : dict
-        Description of parameter `ctg_lcas`.
-    ncbi_dir : str
-        </path/to/ncbi/dir>
+        {ctg1:{canonical_rank:{taxid:num_hits,...},...}, ctg2:{...},...}
+    ncbi : ncbi.NCBI or lca.LCA object
+        instance of NCBI subclass or NCBI containing NCBI methods.
     verbose : bool
         Description of parameter `verbose` (the default is False).
 
@@ -196,13 +188,7 @@ def rank_taxids(ctg_lcas, ncbi_dir, verbose=False):
     dict
         {contig:voted_taxid, contig:voted_taxid, ...}
 
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
-
     """
-    ncbi = NCBI(ncbi_dir, verbose=verbose)
     logging.debug('Ranking taxids')
     n_contigs = len(ctg_lcas) if verbose else None
     disable = False if verbose else True
@@ -217,7 +203,6 @@ def rank_taxids(ctg_lcas, ncbi_dir, verbose=False):
             if rank in ctg_lcas[contig]:
                 ordered_taxids = sorted(
                     ctg_lcas[contig][rank], key=lambda tid: ctg_lcas[contig][rank][tid], reverse=True)
-                # sys.exit()
                 for taxid in ordered_taxids:
                     if is_consistent_with_other_orfs(taxid, rank, ctg_lcas[contig], ncbi):
                         acceptedTaxid = taxid
@@ -230,22 +215,21 @@ def rank_taxids(ctg_lcas, ncbi_dir, verbose=False):
         top_taxids[contig] = acceptedTaxid
     return top_taxids
 
-
 def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs):
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
     Parameters
     ----------
     fasta : str
-        </path/to/prot/orfs.faa>
+        Path to ORFs fasta containing amino-acid sequences to be annotated.
     ncbi_dir : str
-        </path/to/ncbi/dir>
+        Path to NCBI databases directory.
     outdir : str
-        <path/to/output/dir>
+        Path to output directory to store intermediate results.
     votes_fname : str
-        <votes.tsv filename>
+        Output filename of assigned taxids. Note: Will be written to `outdir`.
     lca_fname : str, optional
-        <lca.tsv filename> (the default is </path/to/`outdir`/`fasta`.lca.tsv).
+        Filename to assign LCA results. Note: Will be written to `outdir`.
     **kwargs : dict
         Further parameters that may be passed along to LCA, LCA.blast2lca and
         rank_taxids as dicts of key-value pairs.
@@ -256,23 +240,17 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
         * LCA.blast2lca: blast=None (str), hits_fpath=None (str), force=False (bool)
         * rank_taxids: verbose=False (bool)
 
-
     Returns
     -------
     str
-        </path/to/`outdir`/`votes_fname`>
-
-    Raises
-    -------
-    ExceptionName
-        Why the exception is raised.
+        Path to assigned taxids table. e.g. </path/to/`outdir`/`votes_fname`>.
 
     """
     lca = LCA(
         dbdir=ncbi_dir,
         outdir=outdir,
         usepickle=kwargs.get('usepickle', True),
-        verbose=kwargs.get('verbose', True),
+        verbose=kwargs.get('verbose', False),
         cpus=kwargs.get('cpus', 0)
     )
     if not lca_fname:
@@ -289,17 +267,17 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=fasta)
     # Vote for majority lca taxid from contig lca taxids
+    # We can pass in lca as the ncbi object here, because it is a subclass of NCBI.
     voted_taxids = rank_taxids(
         ctg_lcas=classifications,
-        ncbi_dir=ncbi_dir,
+        ncbi=lca,
         verbose=kwargs.get('verbose', False)
     )
     votes_fpath = os.path.join(outdir, votes_fname)
     return write_votes(voted_taxids, votes_fpath)
 
-
 def write_votes(results, outfpath):
-    """Writes voting results to provided output tab-delimited file path.
+    """Writes voting `results` to provided `outfpath`.
 
     Parameters
     ----------
@@ -315,21 +293,21 @@ def write_votes(results, outfpath):
 
     Raises
     -------
-    ResultsNotFoundError
-        Voting results were empty.
     FileExistsError
         Voting results file already exists
 
     """
-    # if not results:
-    #     raise MajorityVoteError('voting results not found')
-    outlines = 'contig\ttaxid\n'
-    for contig, taxid in results.items():
-        outlines += f'{contig}\t{taxid}\n'
     if os.path.exists(outfpath):
         raise FileExistsError(outfpath)
-    with open(outfpath, 'w') as fh:
-        fh.write(outlines)
+    lines = 'contig\ttaxid\n'
+    fh = open(outfpath, 'w')
+    for contig, taxid in results.items():
+        if sys.getsizeof(lines) >= 60000:
+            fh.write(lines)
+            lines = ''
+        lines += f'{contig}\t{taxid}\n'
+    fh.write(lines)
+    fh.close()
     return outfpath
 
 
@@ -337,18 +315,24 @@ def main():
     import argparse
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     dbdir = os.path.join(basedir, 'databases', 'ncbi')
-    parser = argparse.ArgumentParser(description='modified majority vote')
-    parser.add_argument('fasta', help='</path/to/prot/orfs.faa>')
-    parser.add_argument('outdir', help='<path/to/output/dir>')
-    parser.add_argument('outfname', help='<output filename>')
-    parser.add_argument('--dbdir', help='<path/to/ncbi/dir>', default=dbdir)
-    parser.add_argument('--lca-fname', help='<lca filename>')
-    parser.add_argument('--blast-table', help='</path/to/blastp.tsv>')
-    parser.add_argument('--nopickle', help='do not pickle objects to disk',
-                        action='store_false', default=True)
-    parser.add_argument('--verbose', help="add verbosity", action='store_true',
-                        default=False)
+    parser = argparse.ArgumentParser(
+        description='Script to assign taxonomy via a modified majority voting'
+        ' algorithm.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('fasta', help='Path to ORFs fasta containing amino-acid sequences to be annotated.')
+    parser.add_argument('outdir', help='Path to output directory to store intermediate results.')
+    parser.add_argument('outfname', help='Output filename of assigned taxids.')
+    parser.add_argument('--dbdir', help='Path to NCBI databases directory.', default=dbdir)
+    parser.add_argument('--lca-fname', help='Filename to assign LCA results.')
+    parser.add_argument('--blast-table', help='Path to BLASTP results table. '
+        'Note: Must be results from outfmt=6.')
+    parser.add_argument('--nopickle',
+        help='Prevent serializing intermediate files to disk for later lookup.',
+        action='store_false', default=True)
+    parser.add_argument('--verbose', help="Add verbosity to logging stream.",
+        action='store_true', default=False)
     args = parser.parse_args()
+
     results_fpath = majority_vote(
         fasta=args.fasta,
         ncbi_dir=args.dbdir,
