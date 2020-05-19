@@ -145,7 +145,7 @@ tests/data/*
 !tests/data/metagenome.fna
 
 # visualStudioCode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json

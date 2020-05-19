@@ -103,8 +103,9 @@ def make_pickle(obj, outfpath):
     logger.debug(f'object pickled to {outfpath}')
     return outfpath
 
-def gunzip(infpath, outfpath, delete_original=False, block_size=60000):
-    """Decompress gzipped `infpath` to `outfpath`.
+
+def gunzip(infpath, outfpath, delete_original=False, block_size=65536):
+    """Decompress gzipped `infpath` to `outfpath` and write checksum of `outfpath` upon successful decompression.
 
     Parameters
     ----------
@@ -115,7 +116,7 @@ def gunzip(infpath, outfpath, delete_original=False, block_size=60000):
     delete_original : bool
         Will delete the original file after successfully decompressing `infpath` (Default is False).
     block_size : int
-        Number of lines to read in to memory before writing to `outfpath` (Default is 60000).
+        Amount of `infpath` to read in to memory before writing to `outfpath` (Default is 65536 bytes).
 
     Returns
     -------
@@ -128,17 +129,20 @@ def gunzip(infpath, outfpath, delete_original=False, block_size=60000):
         `outfpath` already exists and is not empty
 
     """
-    logger.debug(f'gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}')
+    logger.debug(
+        f'gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}')
     if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0:
         raise FileExistsError(outfpath)
     lines = ''
     with gzip.open(infpath, 'rt') as fh, open(outfpath, 'w') as out:
-        for i,line in enumerate(fh):
+        for i, line in enumerate(fh):
             lines += line
-            if i >= block_size:
+            if sys.getsizeof(lines) >= block_size:
                 out.write(lines)
                 lines = ''
+        out.write(lines)
     logger.debug(f'gunzipped {infpath} to {outfpath}')
+    write_checksum(outfpath, f'{outfpath}.md5')
     if delete_original:
         os.remove(infpath)
         logger.debug(f'removed original file: {infpath}')
@@ -157,7 +161,7 @@ def untar(tarchive, outdir, member=None):
         </path/tarchive.tar.[compression]>
     outdir : str
         </path/to/output/directory>
-    member : str
+    member : str, optional
         member file to extract.
 
     Returns
@@ -238,6 +242,7 @@ def tarchive_results(outfpath, src_dirpath):
     logger.debug(f'{src_dirpath} tarchived to {outfpath}')
     return outfpath
 
+
 def file_length(fpath, approximate=False):
     """Retrieve the number of lines in `fpath`
 
@@ -281,6 +286,7 @@ def file_length(fpath, approximate=False):
         pass
     fh.close()
     return i+1
+
 
 def calc_checksum(fpath):
     """Retrieve md5 checksum from provided `fpath`.
@@ -329,6 +335,7 @@ def calc_checksum(fpath):
     fh.close()
     return f'{hash} {os.path.basename(fpath)}\n'
 
+
 def read_checksum(fpath):
     """Read checksum from provided checksum formatted `fpath`.
 
@@ -358,6 +365,7 @@ def read_checksum(fpath):
         raise FileNotFoundError(fpath)
     with open(fpath) as fh:
         return fh.readline()
+
 
 def write_checksum(infpath, outfpath):
     """Calculate checksum for `infpath` and write to `outfpath`.
@@ -501,13 +509,14 @@ def update_checkpoints(checkpoint_fp, fpath):
     if valid_checkpoint(checkpoint_fp, fpath):
         return checkpoints
     new_checksum = calc_checksum(fpath)
-    checkpoints.update({fpath:new_checksum})
+    checkpoints.update({fpath: new_checksum})
     outlines = ''
     for fp, chk in checkpoints.items():
         outlines += f'{chk}\t{fp}\n'
     with open(checkpoint_fp, 'w') as fh:
         fh.write(outlines)
-    logger.debug(f'Checkpoints updated: {new_checksum[:16]} {os.path.basename(fpath)}')
+    logger.debug(
+        f'Checkpoints updated: {new_checksum[:16]} {os.path.basename(fpath)}')
     return checkpoints
 
 
@@ -550,4 +559,5 @@ def timeit(func):
 
 if __name__ == '__main__':
     print('This file contains utilities for Autometa pipeline and should not be run directly!')
-    import sys;sys.exit(0)
+    import sys
+    sys.exit(0)

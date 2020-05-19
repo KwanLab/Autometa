@@ -1,6 +1,0 @@
-channels:
-  - defaults
-  - bioconda
-  - conda-forge
-show_channels_urls: True
-default_threads: 6
