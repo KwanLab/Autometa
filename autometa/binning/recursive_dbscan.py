@@ -28,6 +28,7 @@ import logging
 import os
 
 import pandas as pd
+import numpy as np
 
 from Bio import SeqIO
 from sklearn.cluster import DBSCAN
@@ -37,16 +38,17 @@ from autometa.common.markers import Markers
 from autometa.common import kmers
 # TODO: This should be from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
-from autometa.common.exceptions import RecursiveDBSCANError
+from autometa.common.exceptions import BinningError
 from autometa.taxonomy.ncbi import NCBI
 
-pd.set_option('mode.chained_assignment',None)
+pd.set_option('mode.chained_assignment', None)
 
 
 logger = logging.getLogger(__name__)
 
 
-def recursive_dbscan(table, markers_df, domain, completeness_cutoff, purity_cutoff, verbose=False, method='DBSCAN'):
+def recursive_dbscan(table, markers_df, domain, completeness_cutoff,
+                     purity_cutoff, verbose=False, method='DBSCAN'):
     """Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one
     group.
 
@@ -91,16 +93,18 @@ def recursive_dbscan(table, markers_df, domain, completeness_cutoff, purity_cuto
     """
     eps = 0.3
     step = 0.1
-    clustering_rounds = {0:0}
+    clustering_rounds = {0: 0}
     n_clusters = float('inf')
     best_median = float('-inf')
     best_df = pd.DataFrame()
     while n_clusters > 1:
         binned_df = run_dbscan(table, eps, method=method)
-        df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
-        completess_filter = df['completeness'] >= completeness_cutoff
-        purity_filter = df['purity'] >= purity_cutoff
-        median_completeness = df[completess_filter & purity_filter]['completeness'].median()
+        df, metrics_df = add_metrics(
+            df=binned_df, markers_df=markers_df, domain=domain)
+        completeness_filter = metrics_df['completeness'] >= completeness_cutoff
+        purity_filter = metrics_df['purity'] >= purity_cutoff
+        median_completeness = metrics_df[completeness_filter &
+                                         purity_filter]['completeness'].median()
         if median_completeness >= best_median:
             best_median = median_completeness
             best_df = df
@@ -128,33 +132,44 @@ def recursive_dbscan(table, markers_df, domain, completeness_cutoff, purity_cuto
             logger.debug('No complete or pure clusters found')
         return pd.DataFrame(), table
 
-    completess_filter = best_df['completeness'] >= completeness_cutoff
+    completeness_filter = best_df['completeness'] >= completeness_cutoff
     purity_filter = best_df['purity'] >= purity_cutoff
-    complete_and_pure_df = best_df.loc[completess_filter & purity_filter]
-    unclustered_df = best_df.loc[~best_df.index.isin(complete_and_pure_df.index)]
+    complete_and_pure_df = best_df.loc[completeness_filter & purity_filter]
+    unclustered_df = best_df.loc[~best_df.index.isin(
+        complete_and_pure_df.index)]
     if verbose:
         logger.debug(f'Best completeness median: {best_median:4.2f}')
-    logger.debug(f'clustered: {len(complete_and_pure_df)} unclustered: {len(unclustered_df)}')
+    logger.debug(
+        f'clustered: {len(complete_and_pure_df)} unclustered: {len(unclustered_df)}')
     return complete_and_pure_df, unclustered_df
 
-def run_dbscan(df, eps, dropcols=['cluster','purity','completeness'], usecols=['x','y'], method='DBSCAN'):
-    """Run clustering via `method`.
+
+def run_dbscan(df, eps, dropcols=['cluster', 'purity', 'completeness'],
+               method='dbscan'):
+    """Run clustering on `df` via `method` at provided `eps`.
+
+    Notes
+    -----
+
+        * documentation for sklearn `DBSCAN <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_
+        * documentation for `HDBSCAN <https://hdbscan.readthedocs.io/en/latest/index.html>`_
 
     Parameters
     ----------
     df : pd.DataFrame
-        Description of parameter `df`.
+        Contigs with embedded k-mer frequencies as ['x','y'] columns and optionally 'coverage' column
     eps : float
-        Description of parameter `eps`.
-    dropcols : list
-        Drop columns in list from `df` (the default is ['cluster','purity','completeness']).
-    usecols : list
-        Use columns in list for `df`.
-        The default is ['x','y','coverage'] if 'coverage' exists in df.columns.
-        else ['x','y','z'].
-    method : str
-        clustering `method` to perform. (the default is 'DBSCAN').
-        Choices=['DBSCAN','HDBSCAN'] NOTE: 'HDBSCAN' is still under development
+        The maximum distance between two samples for one to be considered
+        as in the neighborhood of the other. This is not a maximum bound
+        on the distances of points within a cluster. This is the most
+        important DBSCAN parameter to choose appropriately for your data set
+        and distance function. See `DBSCAN docs <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_ for more details.
+    dropcols : list, optional
+        Drop columns in list from `df`
+        (the default is ['cluster','purity','completeness']).
+    method : str, optional
+        clustering `method` to perform. (the default is 'dbscan').
+        Choices=['dbscan','hdbscan'] NOTE: 'hdbscan' is still under development
 
     Returns
     -------
@@ -166,21 +181,26 @@ def run_dbscan(df, eps, dropcols=['cluster','purity','completeness'], usecols=['
     ValueError
         sets `usecols` and `dropcols` may not share elements
     ValueError
-        Method is not an available choice: choices=['DBSCAN','HDBSCAN']
+        Method is not an available choice: choices=['dbscan','hdbscan']
     """
-    n_samples = df.shape[0]
-    if n_samples == 1:
-        clusters = pd.Series([pd.NA], index=df.index, name='cluster')
-        return pd.merge(df, clusters, how='left', left_index=True, right_index=True)
     for col in dropcols:
         if col in df.columns:
             df.drop(columns=col, inplace=True)
-    cols = ['x','y']
-    cols.append('coverage') if 'coverage' in df.columns else cols.append('z')
-    X = df.loc[:,cols].to_numpy()
-    if method == 'DBSCAN':
+    n_samples = df.shape[0]
+    if n_samples == 1:
+        clusters = pd.Series([pd.NA], index=df.index, name='cluster')
+        return pd.merge(
+            df, clusters, how='left', left_index=True, right_index=True)
+    cols = ['x', 'y']
+    if 'coverage' in df.columns:
+        cols.append('coverage')
+    if np.any(df.isnull()):
+        raise BinningError(
+            f'df is missing {df.isnull().sum().sum()} kmer/coverage annotations')
+    X = df.loc[:, cols].to_numpy()
+    if method == 'dbscan':
         clustering = DBSCAN(eps=eps, min_samples=1, n_jobs=-1).fit(X)
-    elif method =='HDBSCAN':
+    elif method == 'hdbscan':
         clustering = HDBSCAN(
             cluster_selection_epsilon=eps,
             min_cluster_size=2,
@@ -188,9 +208,11 @@ def run_dbscan(df, eps, dropcols=['cluster','purity','completeness'], usecols=['
             allow_single_cluster=True,
             gen_min_span_tree=True).fit(X)
     else:
-        raise ValueError(f'Method: {method} not a choice. choose b/w DBSCAN & HDBSCAN')
+        raise ValueError(
+            f'Method: {method} not a choice. choose b/w DBSCAN & HDBSCAN')
     clusters = pd.Series(clustering.labels_, index=df.index, name='cluster')
     return pd.merge(df, clusters, how='left', left_index=True, right_index=True)
+
 
 def add_metrics(df, markers_df, domain='bacteria'):
     """Adds the completeness and purity metrics to each respective contig in df.
@@ -198,42 +220,55 @@ def add_metrics(df, markers_df, domain='bacteria'):
     Parameters
     ----------
     df : pd.DataFrame
-        Description of parameter `df`.
+        index='contig' cols=['x','y','coverage','cluster']
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-    domain : str
+    domain : str, optional
         Kingdom to determine metrics (the default is 'bacteria').
         choices=['bacteria','archaea']
 
     Returns
     -------
-    pd.DataFrame
-        DataFrame with added columns - 'completeness' and 'purity'
+    2-tuple
+        `df` with added columns - 'completeness' and 'purity'
+        pd.DataFrame of clusters with their 'completeness' and 'purity'
+
+    Raises
+    -------
+    KeyError
+        `domain` is not "bacteria" or "archaea"
+
     """
-    marker_sets = {'bacteria':139.0, 'archaea':162.0}
-    expected_number = marker_sets.get(domain.lower(), 139)
+    domain = domain.lower()
+    marker_sets = {'bacteria': 139.0, 'archaea': 162.0}
+    if domain not in marker_sets:
+        raise KeyError(f'{domain} is not bacteria or archaea!')
+    expected_number = marker_sets[domain]
     clusters = dict(list(df.groupby('cluster')))
-    metrics = {'purity':{},'completeness':{}}
+    metrics = {'purity': {}, 'completeness': {}}
     for cluster, dff in clusters.items():
         contigs = dff.index.tolist()
         summed_markers = markers_df[markers_df.index.isin(contigs)].sum()
         is_present = summed_markers >= 1
         is_single_copy = summed_markers == 1
         nunique_markers = summed_markers[is_present].index.nunique()
-        num_single_copy_markers = summed_markers[is_single_copy].index.nunique()
+        num_single_copy_markers = summed_markers[is_single_copy].index.nunique(
+        )
         completeness = nunique_markers / expected_number * 100
         # Protect from divide by zero
         if nunique_markers == 0:
             purity = pd.NA
         else:
             purity = num_single_copy_markers / nunique_markers * 100
-        metrics['completeness'].update({cluster:completeness})
-        metrics['purity'].update({cluster:purity})
+        metrics['completeness'].update({cluster: completeness})
+        metrics['purity'].update({cluster: purity})
     metrics_df = pd.DataFrame(metrics, index=clusters.keys())
-    return pd.merge(df, metrics_df,left_on='cluster',right_index=True)
+    merged_df = pd.merge(df, metrics_df, left_on='cluster', right_index=True)
+    return merged_df, metrics_df
+
 
 def get_clusters(master_df, markers_df, domain='bacteria', completeness=20., purity=90.,
-    method='DBSCAN', verbose=False):
+                 method='DBSCAN', verbose=False):
     """Find best clusters retained after applying `completeness` and `purity` filters.
 
     Parameters
@@ -279,9 +314,10 @@ def get_clusters(master_df, markers_df, domain='bacteria', completeness=20., pur
             clusters.append(unclustered_df)
             break
 
-        translation = {c:f'bin_{1+i+num_clusters:04d}' for i,c in
-            enumerate(clustered_df.cluster.unique())}
-        rename_cluster = lambda c: translation[c]
+        translation = {c: f'bin_{1+i+num_clusters:04d}' for i, c in
+                       enumerate(clustered_df.cluster.unique())}
+
+        def rename_cluster(c): return translation[c]
         clustered_df.cluster = clustered_df.cluster.map(rename_cluster)
 
         # All contigs have now been clustered, add the final df of (clustered) contigs
@@ -295,8 +331,9 @@ def get_clusters(master_df, markers_df, domain='bacteria', completeness=20., pur
         master_df = unclustered_df
     return pd.concat(clusters, sort=True)
 
+
 def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
-    taxonomy=True, method='DBSCAN', reverse=True, verbose=False):
+            taxonomy=True, method='DBSCAN', reverse=True, verbose=False):
     """Perform clustering of contigs by provided `method` and use metrics to
     filter clusters that should be retained via `completeness` and `purity`
     thresholds.
@@ -321,8 +358,8 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
         Split canonical ranks and subset based on rank then attempt to find clusters (the default is True).
         taxonomic_levels = [superkingdom,phylum,class,order,family,genus,species]
     method : str
-        Clustering `method` (the default is 'DBSCAN').
-        choices = ['DBSCAN','HDBSCAN']
+        Clustering `method` (the default is 'dbscan').
+        choices = ['dbscan','hdbscan']
     reverse : bool
         True - [superkingdom,phylum,class,order,family,genus,species]
         False - [species,genus,family,order,class,phylum,superkingdom]
@@ -336,13 +373,13 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
 
     Raises
     -------
-    RecursiveDBSCANError
+    BinningError
         No marker information is availble for contigs to be binned.
     """
     # First check needs to ensure we have markers available to check binning quality...
     if master.loc[master.index.isin(markers.index)].empty:
         err = 'No markers for contigs in table. Unable to assess binning quality'
-        raise RecursiveDBSCANError(err)
+        raise BinningError(err)
 
     if not taxonomy:
         return get_clusters(
@@ -368,9 +405,12 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
         unclassified_filter = master[rank] != 'unclassified'
-        n_contigs_in_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().sum()
-        n_taxa = master.loc[unclassified_filter].groupby(rank)[rank].count().index.nunique()
-        logger.info(f'Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)')
+        n_contigs_in_taxa = master.loc[unclassified_filter].groupby(rank)[
+            rank].count().sum()
+        n_taxa = master.loc[unclassified_filter].groupby(
+            rank)[rank].count().index.nunique()
+        logger.info(
+            f'Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)')
         # Group contigs by rank and find best clusters within subset
         for rank_name_txt, dff in master.loc[unclassified_filter].groupby(rank):
             if dff.empty:
@@ -378,14 +418,16 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
             # Only cluster contigs that have not already been assigned a bin.
             # First filter with 'cluster' column
             # Second filter with previous clustering rounds' clustered contigs
-            rank_df = dff.loc[dff['cluster'].isna()] if 'cluster' in dff.columns else dff
+            rank_df = dff.loc[dff['cluster'].isna(
+            )] if 'cluster' in dff.columns else dff
             if clustered_contigs:
                 rank_df = rank_df.loc[~rank_df.index.isin(clustered_contigs)]
             # After all of the filters, are there multiple contigs to cluster?
-            if len(rank_df) <= 1:
+            if rank_df.empty:
                 continue
             # Find best clusters
-            logger.debug(f'Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}')
+            logger.debug(
+                f'Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}')
             clusters_df = get_clusters(
                 rank_df,
                 markers,
@@ -399,16 +441,18 @@ def binning(master, markers, domain='bacteria', completeness=20., purity=90.,
             if clustered.empty:
                 continue
             clustered_contigs.update({contig for contig in clustered.index})
-            translation = {c:f'bin_{1+i+num_clusters:04d}' for i,c in
-                enumerate(clustered.cluster.unique())}
-            rename_cluster = lambda c: translation[c]
+            translation = {c: f'bin_{1+i+num_clusters:04d}'
+                           for i, c in enumerate(clustered.cluster.unique())}
+
+            def rename_cluster(c): return translation[c]
             clustered.cluster = clustered.cluster.map(rename_cluster)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
     clustered_df = pd.concat(clusters, sort=True)
     unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
-    unclustered_df.loc[:,'cluster'] = pd.NA
-    return pd.concat([clustered_df,unclustered_df], sort=True)
+    unclustered_df.loc[:, 'cluster'] = pd.NA
+    return pd.concat([clustered_df, unclustered_df], sort=True)
+
 
 def main():
     import argparse
@@ -418,32 +462,37 @@ def main():
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logger.DEBUG)
     parser = argparse.ArgumentParser(
-        description="Perform decomposition/embedding/clustering via PCA/[TSNE|UMAP]/DBSCAN."
+        description="Perform marker gene guided binning of "
+        "metagenome contigs using annotations (when available) of sequence "
+        "composition, coverage and homology.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('kmers', help='</path/to/kmers.tsv>')
     parser.add_argument('coverage', help='</path/to/coverages.tsv>')
     parser.add_argument('markers', help='</path/to/markers.tsv>')
     parser.add_argument('out', help='</path/to/output.tsv>')
-    parser.add_argument('--embedded-kmers',help='</path/to/embedded_kmers.tsv>')
+    parser.add_argument(
+        '--embedded-kmers',
+        help='</path/to/embedded_kmers.tsv>')
     parser.add_argument(
         '--embedding-method',
         help='Embedding method to use',
-        choices=['TSNE','UMAP'],
-        default='TSNE')
+        choices=['bhsne', 'sksne', 'umap'],
+        default='bhsne')
     parser.add_argument(
-        '--clustering-method',
-        help='Clustering method to use',
-        choices=['DBSCAN','HDBSCAN'],
-        default='DBSCAN')
-    parser.add_argument('--completeness', help='<completeness cutoff>', default=20., type=float)
-    parser.add_argument('--purity', help='<purity cutoff>', default=90., type=float)
+        '--clustering-method', help='Clustering method to use',
+        choices=['dbscan', 'hdbscan'], default='dbscan')
+    parser.add_argument(
+        '--completeness', help='<completeness cutoff>', default=20., type=float)
+    parser.add_argument(
+        '--purity', help='<purity cutoff>', default=90., type=float)
     parser.add_argument('--taxonomy', help='</path/to/taxonomy.tsv>')
     parser.add_argument(
-        '--domain',
-        help='Kingdom to consider (archaea|bacteria)',
-        choices=['bacteria','archaea'],
-        default='bacteria')
-    parser.add_argument('--verbose', action='store_true',default=False,help='log debug information')
+        '--domain', help='Kingdom to consider (archaea|bacteria)',
+        choices=['bacteria', 'archaea'], default='bacteria')
+    parser.add_argument(
+        '--verbose', action='store_true',
+        default=False, help='log debug information')
     args = parser.parse_args()
     # Kmers.load().embed(method=args.embedded_kmers)
     kmers_df = kmers.embed(
@@ -452,7 +501,13 @@ def main():
         method=args.embedding_method)
 
     cov_df = pd.read_csv(args.coverage, sep='\t', index_col='contig')
-    master_df = pd.merge(kmers_df, cov_df[['coverage']], how='left', left_index=True, right_index=True)
+    master_df = pd.merge(
+        kmers_df,
+        cov_df[['coverage']],
+        how='left',
+        left_index=True,
+        right_index=True,
+    )
 
     markers_df = Markers.load(args.markers)
     markers_df = markers_df.convert_dtypes()
@@ -481,8 +536,9 @@ def main():
         verbose=args.verbose)
 
     # Output table
-    outcols=['cluster','completeness','purity']
+    outcols = ['cluster', 'completeness', 'purity']
     master_out[outcols].to_csv(args.out, sep='\t', index=True, header=True)
+
 
 if __name__ == '__main__':
     main()

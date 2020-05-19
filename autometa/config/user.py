@@ -34,7 +34,7 @@ from autometa.config import environ
 from autometa.common import utilities
 
 from autometa.common.metagenome import Metagenome
-from autometa.common.mag import MAG
+from autometa.common.metabin import MetaBin
 from autometa.config.databases import Databases
 from autometa.config.project import Project
 from autometa.common.utilities import timeit
