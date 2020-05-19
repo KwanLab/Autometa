@@ -103,7 +103,7 @@ class NCBI:
         rank : str, optional
             If  provided, will return `taxid` name at `rank`, by default None
             Must be a canonical rank, choices: species, genus, family, order, class, phylum, superkingdom
-            Eg. name(562, 'genus') would return 'Escherichia', where 562 is the taxid for Escherichia coli
+            Eg. self.name(562, 'genus') would return 'Escherichia', where 562 is the taxid for Escherichia coli
 
         Returns
         -------
@@ -312,7 +312,7 @@ class NCBI:
 
     def parse_merged(self):
         """
-        Parses through `merged.dmp` databse and returns a dictionary having old and new taxid
+        Parses through `merged.dmp` database and returns a dictionary having old and new taxid
 
         Parameters
         ----------
