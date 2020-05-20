@@ -112,7 +112,8 @@ class NCBI:
 
         """
         if not self.is_valid_taxid(taxid):
-            return False
+            raise ValueError(
+                f'Taxid must be a positive integer! Given: {taxid}')
         if not rank:
             return self.names.get(taxid, 'unclassified')
         if rank not in set(NCBI.CANONICAL_RANKS):
@@ -126,7 +127,7 @@ class NCBI:
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
-                return self.names.get(ancestor_taxid)
+                return self.names.get(ancestor_taxid, 'unclassified')
             ancestor_taxid = self.parent(ancestor_taxid)
 
     def lineage(self, taxid, canonical=True):
@@ -145,10 +146,11 @@ class NCBI:
         ordered list of dicts
             [{'taxid':taxid, 'rank':rank,'name':'name'}, ...]
         """
-        if not self.is_valid_taxid(taxid):
-            return False
         lineage = []
         while taxid != 1:  # This prevents the 'root' to be added in the list
+            if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
+                taxid = self.parent(taxid)
+                continue
             lineage.append({
                 'taxid': taxid,
                 'name': self.name(taxid),
@@ -174,11 +176,13 @@ class NCBI:
             index = taxid
             columns = [superkingdom,phylum,class,order,family,genus,species]
 
-        .. NOTE::
-            If you would like to merge the returned DataFrame with another
-            DataFrame. Let's say where you retrieved your taxids:
+        NOTE
+        ----
 
-        Example 
+        If you would like to merge the returned DataFrame with another
+        DataFrame. Let's say where you retrieved your taxids:
+
+        Example
         -------
 
         .. code-block:: python
@@ -196,6 +200,8 @@ class NCBI:
         ranked_taxids = {}
         for rank in canonical_ranks:
             for taxid in taxids:
+                # if not self.is_valid_taxid(taxid):
+                #     return False
                 name = self.name(taxid, rank=rank)
                 if taxid not in ranked_taxids:
                     ranked_taxids.update({taxid: {rank: name}})
@@ -215,21 +221,18 @@ class NCBI:
         ----------
         taxid : int
             identifer for a taxon in the Taxonomy Database by NCBI
-            `taxid` to retrieve rank from `nodes` or `merged`
+            `taxid` to retrieve rank from `nodes`
 
         Returns
         -------
-        str
-            rank name if taxid is found in nodes.dmp or merged.dmp else 'unclassified'
+        bool or str
+            Flase if taxid is not valid else rank name if taxid is found in
+            nodes.dmp  else 'unclassified'
         """
         if not self.is_valid_taxid(taxid):
-            return False
-        # We have already checked that the taxid is present in either 'nodes.dmp' or 'merged.dmp'
-        # in the `is_valid_taxid() function` thus we don't need a default value
-        rank_name = self.nodes.get(taxid).get('rank')
-        if rank_name == None:
-            return self.merged.get(taxid).get('rank')
-        return rank_name
+            raise ValueError(
+                f'Taxid must be a positive integer! Given: {taxid}')
+        return self.nodes.get(taxid, {'rank': 'unclassified'}).get('rank')
 
     def parent(self, taxid):
         """
@@ -242,19 +245,17 @@ class NCBI:
 
         Returns
         -------
-        int
-            parent taxid if taxid is found in nodes.dmp or merged.dmp else 1
+        bool or int
+            Flase if taxid is not valid else parent taxid if taxid is found
+            in nodes.dmp otehrwise 1
         """
         if not self.is_valid_taxid(taxid):
-            return False
-        # We have already checked that the taxid is present in either 'nodes.dmp' or 'merged.dmp'
-        # in the `is_valid_taxid() function` thus we don't need a default value
-        parent_taxid = self.nodes.get(taxid).get('parent')
-        if parent_taxid == None:
-            return self.merged.get(taxid).get('parent')
-        return parent_taxid
+            raise ValueError(
+                f'Taxid must be a positive integer! Given: {taxid}')
+        return self.nodes.get(taxid, {'parent': 1}).get('parent')
 
     # @timeit
+
     def parse_names(self):
         """
         Parses through `names.dmp` database and loads taxids' which have scientific names
@@ -286,7 +287,7 @@ class NCBI:
     def parse_nodes(self):
         """
         Parses through `nodes.dmp` database and returns a nested dictionary with child taxid as keys
-        and corresponding parent taxid and rank as items 
+        and corresponding parent taxid and rank as items
 
         Returns
         -------
@@ -350,20 +351,18 @@ class NCBI:
         """
         taxid1_lineage = self.lineage(taxid1)
         taxid2_lineage = self.lineage(taxid2)
-        taxid1_lineage_taxids = set([taxids.get('taxid')
-                                     for taxids in taxid1_lineage])
-        taxid2_lineage_taxids = set([taxids.get('taxid')
-                                     for taxids in taxid2_lineage])
-        print(taxid1_lineage_taxids)
-        print(taxid2_lineage_taxids)
-        common_ancestor = taxid2_lineage_taxids & taxid1_lineage_taxids
-        print(common_ancestor)
+        taxid1_lineage_taxids = {taxids.get('taxid')
+                                 for taxids in taxid1_lineage}
+        taxid2_lineage_taxids = {taxids.get('taxid')
+                                 for taxids in taxid2_lineage}
+        common_ancestor = (taxid2_lineage_taxids.intersection(
+            taxid1_lineage_taxids))
+        common_ancestor.discard(1)  # This discards root if present
         return True if common_ancestor else False
 
     def is_valid_taxid(self, taxid):
         """
-        Checks if the given taxid is a positive interger or not and is present in either 
-        'names.dmp' or 'merged.dmp'
+        Checks if the given taxid is a positive interger or not 
 
         Parameters
         ----------
@@ -372,24 +371,23 @@ class NCBI:
 
         Returns
         -------
-        boolean 
-            True if the 'taxid' is a positive interger and is present in either 'names.dmp' or 'merged.dmp' else False 
+        boolean
+            True if the 'taxid' is a positive interger  else False
         """
-        try:
-            taxid = float(taxid)
-        except ValueError:
-            logger.error(
-                f'Taxid must be a positive integer! Given: {taxid}')
-            return False
-        # `is_integer()` checks if it is something like 12.0 vs. 12.9. `is_integer` returns error if only '12' is used, float(taxid) is needed
-        if not taxid.is_integer() or taxid < 0:
-            logger.error(
-                f'Taxid must be a positive integer! Given: {taxid}')
-            return False
-        # float(taxid) also comes useful here, as '562' would not be found in the database, but float(562) would
-        if not self.names.get(taxid) and not self.merged.get(taxid):
-            logger.error(
-                'Taxid not found in names.dmp and merged.dmp')
+
+        # This check if an interger has been added as str, eg. "562"
+        if isinstance(taxid, str):
+            if taxid.isnumeric() or taxid.replace('.', '', 1).isnumeric():
+                # checks if it is something like 12.0 vs. 12.9.
+                if float(taxid).is_integer():
+                    # See https://stackoverflow.com/a/47764450/12671809
+                    taxid = int(float(taxid))
+                else:
+                    return False
+            else:
+                return False
+        # `is_integer` returns error if only '12' is used, float(taxid) is needed
+        if not float(taxid).is_integer() or taxid < 0:
             return False
         return True
 
@@ -415,17 +413,15 @@ def main():
     args = parser.parse_args()
     ncbi = NCBI(args.ncbi, args.verbose)
     query_taxid_parent = ncbi.parent(taxid=args.query_taxid)
-    # Done to do a plimenary check if taxid is valid or not. Prevents recurvise printing of error statements
-    if query_taxid_parent:
-        logger.info(
-            f'{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n'
-            f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
-            f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
-            f'{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n'
-            f'{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n'
-            f'{args.query_taxid} is_common_ancestor {query_taxid_parent}: '
-            f'{ncbi.is_common_ancestor(taxid1=query_taxid_parent, taxid2=args.query_taxid)}\n'
-        )
+    logger.info(
+        f'{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
+        f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
+        f'{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n'
+        f'{args.query_taxid} is_common_ancestor {query_taxid_parent}: '
+        f'{ncbi.is_common_ancestor(taxid1=query_taxid_parent, taxid2=args.query_taxid)}\n'
+    )
 
 
 if __name__ == '__main__':
