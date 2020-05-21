@@ -108,14 +108,15 @@ class NCBI:
         Returns
         -------
         str
-            Name of provided `taxid` if taxid is found in names.dmp else 'unclassified'
+            Name of provided `taxid` if taxid is found in `names.dmp` else 'unclassified'
 
         Raises
         ------
         ValueError
-            `taxid` is not valid
+            Provided `taxid` is not a positive integer
         """
-        if not self.is_valid_taxid(taxid):
+        taxid = self.is_valid_taxid(taxid)
+        if not taxid:
             raise ValueError(
                 f'Taxid must be a positive integer! Given: {taxid}')
         if not rank:
@@ -158,21 +159,20 @@ class NCBI:
                 'name': self.name(taxid),
                 'rank': self.rank(taxid)})
             taxid = self.parent(taxid)
-        if taxid == 1:
-            lineage.append({
-                'taxid': taxid,
-                'name': self.name(taxid),
-                'rank': self.rank(taxid)})
+        lineage.append({  # adds root
+            'taxid': taxid,
+            'name': self.name(taxid),
+            'rank': self.rank(taxid)})
         return lineage
 
     def get_lineage_dataframe(self, taxids, fillna=True):
         """
         Given an iterable of taxids generate a pandas DataFrame of their canonical
-        lineages.
+        lineages
 
         Parameters
         ----------
-        taxids : dict
+        taxids : iterable
             `taxids` whose lineage dataframe is being returned
         fillna : bool, optional
             Whether to fill the empty cells  with 'unclassified' or not, default True
@@ -183,20 +183,17 @@ class NCBI:
             index = taxid
             columns = [superkingdom,phylum,class,order,family,genus,species]
 
-        NOTE
-        ----
-
-        If you would like to merge the returned DataFrame with another
-        DataFrame. Let's say where you retrieved your taxids:
-
         Example
         -------
+
+        If you would like to merge the returned DataFrame ('this_df') with another
+        DataFrame ('your_df'). Let's say where you retrieved your taxids:
 
         .. code-block:: python
 
             merged_df = pd.merge(
-                your_df,
-                this_df,
+                left=your_df,
+                right=this_df,
                 how='left',
                 left_on=<taxid_column>,
                 right_index=True)
@@ -236,9 +233,10 @@ class NCBI:
         Raises
         ------
         ValueError
-            `taxid` is not valid
+            Provided `taxid` is not a positive integer
         """
-        if not self.is_valid_taxid(taxid):
+        taxid = self.is_valid_taxid(taxid)
+        if not taxid:
             raise ValueError(
                 f'Taxid must be a positive integer! Given: {taxid}')
         return self.nodes.get(taxid, {'rank': 'unclassified'}).get('rank')
@@ -254,24 +252,24 @@ class NCBI:
 
         Returns
         -------
-        int or None
-            Parent `taxid` if found in `nodes.dmp` otherwise None
+        int
+            Parent `taxid` if found in `nodes.dmp` otherwise 1
 
         Raises
         ------
         ValueError
-            `taxid` is not valid
+            Provided `taxid` is not a positive integer
         """
-        if not self.is_valid_taxid(taxid):
+        taxid = self.is_valid_taxid(taxid)
+        if not taxid:
             raise ValueError(
                 f'Taxid must be a positive integer! Given: {taxid}')
-        return self.nodes.get(taxid, {'parent': None}).get('parent')
+        return self.nodes.get(taxid, {'parent': 1}).get('parent')
 
     # @timeit
-
     def parse_names(self):
         """
-        Parses through `names.dmp` database and loads taxids' with scientific names
+        Parses through `names.dmp` database and loads taxids with scientific names
 
         Returns
         -------
@@ -299,7 +297,7 @@ class NCBI:
     # @timeit
     def parse_nodes(self):
         """
-        Parse the `nodes.dmp` database to be used later by :func:`~ncbi.NCBI.parent`, :func:`~ncbi.NCBI.lineage`
+        Parse the `nodes.dmp` database to be used later by :py:func: `autometa.taxonomy.ncbi.NCBI.parent`, :py:func: `autometa.taxonomy.ncbi.NCBI.rank`
         Note: This is performed when a new NCBI class instance is constructed
 
         Returns
@@ -325,7 +323,7 @@ class NCBI:
 
     def parse_merged(self):
         """
-        Parse the `nodes.dmp` database 
+        Parse the `merged.dmp` database 
         Note: This is performed when a new NCBI class instance is constructed
 
         Returns
@@ -354,9 +352,9 @@ class NCBI:
         Parameters
         ----------
         taxid_A : int
-            identifer for a taxon in the Taxonomy Database by NCBI
+            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
         taxid_B : int
-            identifer for a taxon in the Taxonomy Database by NCBI
+            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
 
         Returns
         -------
@@ -367,8 +365,8 @@ class NCBI:
                                   for taxids in self.lineage(taxid_A)}
         taxid_B_lineage_taxids = {taxids.get('taxid')
                                   for taxids in self.lineage(taxid_B)}
-        common_ancestor = (taxid_B_lineage_taxids.intersection(
-            taxid_A_lineage_taxids))
+        common_ancestor = taxid_B_lineage_taxids.intersection(
+            taxid_A_lineage_taxids)
         common_ancestor.discard(1)  # This discards root
         return True if common_ancestor else False
 
@@ -378,22 +376,22 @@ class NCBI:
 
         Parameters
         ----------
-        taxid : int
-            identifer for a taxon in the Taxonomy Database by NCBI
+        `taxid` : int
+            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
 
         Returns
         -------
-        boolean
-            True if the 'taxid' is a positive interger  else False
+        `taxid` or boolean
+            `taxid` if the 'taxid' is a positive integer else False
         """
 
         # This check if an interger has been added as str, eg. "562"
         if isinstance(taxid, str):
             if taxid.isnumeric() or taxid.replace('.', '', 1).isnumeric():
                 # checks if it is something like 12.0 vs. 12.9.
-                if float(taxid).is_integer():
+                if float(taxid).is_integer() and float(taxid).is_integer() > 0:
                     # See https://stackoverflow.com/a/47764450/12671809
-                    taxid = int(float(taxid))
+                    return int(float(taxid))
                 else:
                     return False
             else:
@@ -401,14 +399,10 @@ class NCBI:
         # `is_integer` returns error if only '12' is used, float(taxid) is needed
         if not float(taxid).is_integer() or taxid < 0:
             return False
-        return True
+        return int(taxid)
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(
-        description='file containing Autometa NCBI utilities class')
     print('file containing Autometa NCBI utilities class')
-    args = parser.parse_args()
     import sys
     sys.exit(1)
