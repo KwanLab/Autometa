@@ -12,7 +12,7 @@ NCBI
 
 * taxdump.tar.gz - `link <ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`__
     
-    - required files within taxdump archive are *nodes.dmp*, *names.dmp* and *merged.dmp*
+    - required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
 * prot.accession2taxid.gz - `link <ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`__
 
 Markers
