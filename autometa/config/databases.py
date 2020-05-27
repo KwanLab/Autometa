@@ -83,22 +83,18 @@ class Databases:
     """
 
     SECTIONS = {
-        'ncbi': [
-            'nodes',
-            'names',
-            'merged',
-            'accession2taxid',
-            'nr',
-        ],
-        'markers': [
-            'bacteria_single_copy',
-            'bacteria_single_copy_cutoffs',
-            'archaea_single_copy',
-            'archaea_single_copy_cutoffs',
+        "ncbi": ["nodes", "names", "merged", "accession2taxid", "nr",],
+        "markers": [
+            "bacteria_single_copy",
+            "bacteria_single_copy_cutoffs",
+            "archaea_single_copy",
+            "archaea_single_copy_cutoffs",
         ],
     }
 
-    def __init__(self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), upgrade=False):
+    def __init__(
+        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), upgrade=False
+    ):
         """
 
         At instantiation of Databases instance, if any of the respective
@@ -123,27 +119,27 @@ class Databases:
 
         """
         if not isinstance(config, ConfigParser):
-            raise TypeError(f'config is not ConfigParser : {type(config)}')
+            raise TypeError(f"config is not ConfigParser : {type(config)}")
         if not isinstance(dryrun, bool):
-            raise TypeError(f'dryrun must be boolean. type: {type(dryrun)}')
+            raise TypeError(f"dryrun must be boolean. type: {type(dryrun)}")
 
         self.config = config
         self.dryrun = dryrun
         self.nproc = nproc
         self.upgrade = upgrade
-        if self.config.get('common', 'home_dir') == 'None':
+        if self.config.get("common", "home_dir") == "None":
             # neccessary if user not running databases through the user
             # endpoint. where :func:`~autometa.config.init_default` would've been called.
-            self.config.set('common', 'home_dir', AUTOMETA_DIR)
-        if not self.config.has_section('databases'):
-            self.config.add_section('databases')
+            self.config.set("common", "home_dir", AUTOMETA_DIR)
+        if not self.config.has_section("databases"):
+            self.config.add_section("databases")
         for section in Databases.SECTIONS:
-            if self.config.has_option('databases', section):
+            if self.config.has_option("databases", section):
                 continue
-            outdir = DEFAULT_CONFIG.get('databases', section)
-            self.config.set('databases', section, outdir)
-        self.ncbi_dir = self.config.get('databases', 'ncbi')
-        self.markers_dir = self.config.get('databases', 'markers')
+            outdir = DEFAULT_CONFIG.get("databases", section)
+            self.config.set("databases", section, outdir)
+        self.ncbi_dir = self.config.get("databases", "ncbi")
+        self.markers_dir = self.config.get("databases", "markers")
         for outdir in {self.ncbi_dir, self.markers_dir}:
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
@@ -194,27 +190,28 @@ class Databases:
             Failed to connect to host for provided `option`.
 
         """
-        if section not in {'ncbi', 'markers'}:
+        if section not in {"ncbi", "markers"}:
             raise ValueError(
-                f'"section" must be "ncbi" or "markers". Provided: {section}')
-        if section == 'ncbi':
-            host = self.config.get(section, 'host')
-            ftp_fullpath = self.config.get('checksums', option)
+                f'"section" must be "ncbi" or "markers". Provided: {section}'
+            )
+        if section == "ncbi":
+            host = self.config.get(section, "host")
+            ftp_fullpath = self.config.get("checksums", option)
             chksum_fpath = ftp_fullpath.split(host)[-1]
             with FTP(host) as ftp, tempfile.TemporaryFile() as fp:
                 ftp.login()
-                result = ftp.retrbinary(f'RETR {chksum_fpath}', fp.write)
-                if not result.startswith('226 Transfer complete'):
-                    raise ConnectionError(f'{chksum_fpath} download failed')
+                result = ftp.retrbinary(f"RETR {chksum_fpath}", fp.write)
+                if not result.startswith("226 Transfer complete"):
+                    raise ConnectionError(f"{chksum_fpath} download failed")
                 ftp.quit()
                 fp.seek(0)
                 checksum = fp.read().decode()
-        elif section == 'markers':
-            url = self.config.get('checksums', option)
+        elif section == "markers":
+            url = self.config.get("checksums", option)
             with requests.Session() as session:
                 resp = session.get(url)
                 if not resp.ok:
-                    raise ConnectionError(f'Failed to retrieve {url}')
+                    raise ConnectionError(f"Failed to retrieve {url}")
                 checksum = resp.text
         return checksum
 
@@ -231,38 +228,37 @@ class Databases:
             config updated option:'nr' in section:'ncbi'.
 
         """
-        db_infpath = self.config.get('ncbi', 'nr')
-        db_infpath_md5 = f'{db_infpath}.md5'
-        db_outfpath = db_infpath.replace('.gz', '.dmnd')
+        db_infpath = self.config.get("ncbi", "nr")
+        db_infpath_md5 = f"{db_infpath}.md5"
+        db_outfpath = db_infpath.replace(".gz", ".dmnd")
         checksums_match = False
         if os.path.exists(db_infpath_md5) and os.path.exists(db_outfpath):
             # If nr.dmnd.md5 exists, then we will check if nr.gz.md5 is matching
             current_checksum = read_checksum(db_infpath_md5)
             current_hash, __ = current_checksum.split()
-            host = self.config.get('ncbi', 'host')
-            remote_checksum = self.get_remote_checksum(host, 'nr')
+            host = self.config.get("ncbi", "host")
+            remote_checksum = self.get_remote_checksum("ncbi", "nr")
             remote_hash, __ = remote_checksum.split()
             if current_hash == remote_hash:
-                logger.debug(f'nr checksums match, skipping...')
+                logger.debug(f"nr checksums match, skipping...")
                 checksums_match = True
-        dmnd_md5 = f'{db_outfpath}.md5'
+        dmnd_md5 = f"{db_outfpath}.md5"
         do_not_upgrade = os.path.exists(db_outfpath) and not self.upgrade
         if self.dryrun or do_not_upgrade or checksums_match:
-            self.config.set('ncbi', 'nr', db_outfpath)
-            logger.debug(f'{dmnd_md5} exists: {os.path.exists(dmnd_md5)}')
-            logger.debug(f'set ncbi nr: {db_outfpath}')
+            self.config.set("ncbi", "nr", db_outfpath)
+            logger.debug(f"{dmnd_md5} exists: {os.path.exists(dmnd_md5)}")
+            logger.debug(f"set ncbi nr: {db_outfpath}")
             return
-        diamond.makedatabase(
-            fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
+        diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
         # Write checksum for nr.dmnd
         write_checksum(db_outfpath, dmnd_md5)
 
-        if os.path.basename(db_infpath) == 'nr.gz':
+        if os.path.basename(db_infpath) == "nr.gz":
             # nr.gz will be removed after successful nr.dmnd construction
             os.remove(db_infpath)
 
-        self.config.set('ncbi', 'nr', db_outfpath)
-        logger.debug(f'set ncbi nr: {db_outfpath}')
+        self.config.set("ncbi", "nr", db_outfpath)
+        logger.debug(f"set ncbi nr: {db_outfpath}")
 
     def extract_taxdump(self):
         """Extract autometa required files from ncbi taxdump.tar.gz archive
@@ -273,8 +269,7 @@ class Databases:
         was originally supplied as `True` to the Databases instance, then the
         previous files will be replaced by the new taxdump files.
 
-        After successful extraction of the files, a checksum will be written of the
-        archive for future checking and then the archive will be removed to save user disk space.
+        After successful extraction of the files, a checksum will be written of the archive for future checking.
 
         Returns
         -------
@@ -282,17 +277,17 @@ class Databases:
             Will update `self.config` section `ncbi` with options 'nodes','names','merged'
 
         """
-        taxdump_fpath = self.config.get('ncbi', 'taxdump')
+        taxdump_fpath = self.config.get("ncbi", "taxdump")
         taxdump_files = [
-            ('nodes', 'nodes.dmp'),
-            ('names', 'names.dmp'),
-            ('merged', 'merged.dmp'),
+            ("nodes", "nodes.dmp"),
+            ("names", "names.dmp"),
+            ("merged", "merged.dmp"),
         ]
         for option, fname in taxdump_files:
             outfpath = os.path.join(self.ncbi_dir, fname)
             if self.dryrun:
-                logger.debug(f'UPDATE (ncbi,{option}): {outfpath}')
-                self.config.set('ncbi', option, outfpath)
+                logger.debug(f"UPDATE (ncbi,{option}): {outfpath}")
+                self.config.set("ncbi", option, outfpath)
                 continue
             # Only update the taxdump files if the user says to do an update.
             if self.upgrade and os.path.exists(outfpath):
@@ -300,14 +295,10 @@ class Databases:
             # Only extract the taxdump files if this is not a "dryrun"
             if not os.path.exists(outfpath):
                 outfpath = untar(taxdump_fpath, self.ncbi_dir, fname)
-            write_checksum(outfpath, f'{outfpath}.md5')
+            write_checksum(outfpath, f"{outfpath}.md5")
 
-            logger.debug(f'UPDATE (ncbi,{option}): {outfpath}')
-            self.config.set('ncbi', option, outfpath)
-
-        if self.dryrun:
-            return
-        os.remove(taxdump_fpath)
+            logger.debug(f"UPDATE (ncbi,{option}): {outfpath}")
+            self.config.set("ncbi", option, outfpath)
 
     def download_ncbi_files(self, options):
         """Download NCBI database files.
@@ -328,35 +319,44 @@ class Databases:
             NCBI file download failed.
 
         """
+        host = self.config.get("ncbi", "host")
+        ftp_fpath = ftp_fullpath.split(host)[-1]
         for option in options:
-            host = self.config.get('ncbi', 'host')
-            ftp_fullpath = self.config.get('database_urls', option)
-            ftp_fpath = ftp_fullpath.split(host)[-1]
+            ftp_fullpath = self.config.get("database_urls", option)
 
-            if self.config.has_option('ncbi', option) and self.config.get('ncbi', option) is not None:
-                outfpath = self.config.get('ncbi', option)
+            if (
+                self.config.has_option("ncbi", option)
+                and self.config.get("ncbi", option) is not None
+            ):
+                outfpath = self.config.get("ncbi", option)
             else:
                 outfname = os.path.basename(ftp_fpath)
                 outfpath = os.path.join(self.ncbi_dir, outfname)
 
-            logger.debug(f'UPDATE: (ncbi,{option}): {outfpath}')
-            self.config.set('ncbi', option, outfpath)
+            logger.debug(f"UPDATE: (ncbi,{option}): {outfpath}")
+            self.config.set("ncbi", option, outfpath)
 
             if self.dryrun:
                 return
 
-            with FTP(host) as ftp, open(outfpath, 'wb') as fp:
+            with FTP(host) as ftp, open(outfpath, "wb") as fp:
                 ftp.login()
-                logger.debug(f'starting {option} download')
-                result = ftp.retrbinary(f'RETR {ftp_fpath}', fp.write)
-                if not result.startswith('226 Transfer complete'):
-                    raise ConnectionError(f'{option} download failed')
+                logger.debug(f"starting {option} download")
+                result = ftp.retrbinary(f"RETR {ftp_fpath}", fp.write)
+                if not result.startswith("226 Transfer complete"):
+                    raise ConnectionError(f"{option} download failed")
                 ftp.quit()
-            checksum_outfpath = f'{outfpath}.md5'
+            checksum_outfpath = f"{outfpath}.md5"
             write_checksum(outfpath, checksum_outfpath)
-        if 'taxdump' in options:
+            current_checksum = read_checksum(checksum_outfpath)
+            current_hash, __ = current_checksum.split()
+            remote_checksum = self.get_remote_checksum("ncbi", option)
+            remote_hash, __ = remote_checksum.split()
+            if current_checksum != remote_hash:
+                raise ConnectionError(f"{option} download failed")
+        if "taxdump" in options:
             self.extract_taxdump()
-        if 'nr' in options:
+        if "nr" in options:
             self.format_nr()
 
     def press_hmms(self):
@@ -367,26 +367,26 @@ class Databases:
         NoneType
 
         """
-        hmm_search_str = os.path.join(self.markers_dir, '*.h3?')
+        hmm_search_str = os.path.join(self.markers_dir, "*.h3?")
         # First search for pressed hmms to remove from list to hmmpress
-        pressed_hmms = set(
+        pressed_hmms = {
             os.path.realpath(os.path.splitext(fp)[0])
             for fp in glob(hmm_search_str)
-            if not fp.endswith('.md5')
-        )
+            if not fp.endswith(".md5")
+        }
         # Now retrieve all hmms in markers directory
         hmms = (
             os.path.join(self.markers_dir, fn)
             for fn in os.listdir(self.markers_dir)
-            if fn.endswith('.hmm')
+            if fn.endswith(".hmm")
         )
         # Filter by hmms not already pressed
         hmms = (fpath for fpath in hmms if fpath not in pressed_hmms)
         # Press hmms and write checksums of their indices
         for hmm_fp in hmms:
             hmmer.hmmpress(hmm_fp)
-            for index_fp in glob(f'{hmm_fp}.h3?'):
-                write_checksum(index_fp, f'{index_fp}.md5')
+            for index_fp in glob(f"{hmm_fp}.h3?"):
+                write_checksum(index_fp, f"{index_fp}.md5")
 
     def download_markers(self, options):
         """Download markers database files and amend user config to reflect this.
@@ -409,26 +409,33 @@ class Databases:
         """
         for option in options:
             # First retrieve the markers file url from `option` in `markers` section
-            url = self.config.get('database_urls', option)
-            if self.config.has_option('markers', option):
-                outfpath = self.config.get('markers', option)
+            url = self.config.get("database_urls", option)
+            if self.config.has_option("markers", option):
+                outfpath = self.config.get("markers", option)
             else:
                 outfname = os.path.basename(url)
                 outfpath = os.path.join(self.markers_dir, outfname)
 
             if self.dryrun:
-                logger.debug(f'UPDATE: (markers,{option}): {outfpath}')
-                self.config.set('markers', option, outfpath)
+                logger.debug(f"UPDATE: (markers,{option}): {outfpath}")
+                self.config.set("markers", option, outfpath)
                 continue
 
             # Retrieve markers file and write contents to `outfpath`
-            with requests.Session() as session, open(outfpath, 'w') as fh:
+            with requests.Session() as session, open(outfpath, "w") as fh:
                 resp = session.get(url)
                 if not resp.ok:
-                    raise ConnectionError(f'Failed to retrieve {url}')
+                    raise ConnectionError(f"Failed to retrieve {url}")
                 fh.write(resp.text)
-            self.config.set('markers', option, outfpath)
-            write_checksum(outfpath, f'{outfpath}.md5')
+            self.config.set("markers", option, outfpath)
+            checksum_outfpath = f"{outfpath}.md5"
+            write_checksum(outfpath, checksum_outfpath)
+            current_checksum = read_checksum(checksum_outfpath)
+            current_hash, __ = current_checksum.split()
+            remote_checksum = self.get_remote_checksum("markers", option)
+            remote_hash, __ = remote_checksum.split()
+            if current_checksum != remote_hash:
+                raise ConnectionError(f"{option} download failed")
         self.press_hmms()
 
     def get_missing(self, section=None):
@@ -464,7 +471,7 @@ class Databases:
         # Log missing options
         for section, options in missing.items():
             for option in options:
-                logger.debug(f'MISSING: ({section},{option})')
+                logger.debug(f"MISSING: ({section},{option})")
         return missing
 
     def download_missing(self, section=None):
@@ -488,8 +495,10 @@ class Databases:
             Provided `section` does not match 'ncbi' and 'markers'.
 
         """
-        dispatcher = {'ncbi': self.download_ncbi_files,
-                      'markers': self.download_markers}
+        dispatcher = {
+            "ncbi": self.download_ncbi_files,
+            "markers": self.download_markers,
+        }
         if section and section not in dispatcher:
             raise ValueError(f'{section} does not match "ncbi" or "markers"')
         if section:
@@ -528,15 +537,14 @@ class Databases:
                     # Skip user added options not required by Autometa
                     continue
                 # nodes.dmp, names.dmp and merged.dmp are all in taxdump.tar.gz
-                option = 'taxdump' if option in {
-                    'nodes', 'names', 'merged'} else option
+                option = "taxdump" if option in {"nodes", "names", "merged"} else option
                 fpath = self.config.get(section, option)
-                fpath_md5 = f'{fpath}.md5'
+                fpath_md5 = f"{fpath}.md5"
                 # We can not checksum a file that does not exist.
                 if not os.path.exists(fpath) and not os.path.exists(fpath_md5):
                     continue
                 # To not waste time checking the taxdump files 3 times.
-                if option == 'taxdump' and taxdump_checked:
+                if option == "taxdump" and taxdump_checked:
                     continue
                 if os.path.exists(fpath_md5):
                     current_checksum = read_checksum(fpath_md5)
@@ -550,10 +558,10 @@ class Databases:
                     # Do not mark file as invalid if a connection error occurs.
                     logger.warning(err)
                     continue
-                if option == 'taxdump':
+                if option == "taxdump":
                     taxdump_checked = True
                 if remote_hash == current_hash:
-                    logger.debug(f'{option} checksums match, skipping...')
+                    logger.debug(f"{option} checksums match, skipping...")
                     continue
                 if section in invalid:
                     invalid[section].add(option)
@@ -562,7 +570,7 @@ class Databases:
         # Log invalid options
         for section, options in invalid.items():
             for option in options:
-                logger.debug(f'INVALID: ({section},{option})')
+                logger.debug(f"INVALID: ({section},{option})")
         return invalid
 
     def fix_invalid_checksums(self, section=None):
@@ -585,8 +593,10 @@ class Databases:
             Failed to connect to `section` host site.
 
         """
-        dispatcher = {'ncbi': self.download_ncbi_files,
-                      'markers': self.download_markers}
+        dispatcher = {
+            "ncbi": self.download_ncbi_files,
+            "markers": self.download_markers,
+        }
         if section and section not in dispatcher:
             raise ValueError(f'{section} does not match "ncbi" or "markers"')
         if section:
@@ -640,43 +650,68 @@ def main():
     import logging as logger
 
     logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
 
     parser = argparse.ArgumentParser(
-        description='Main script to configure Autometa database dependencies.',
+        description="Main script to configure Autometa database dependencies.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        epilog='By default, with no arguments, will download/format databases into default databases directory.')
-    parser.add_argument('--config',
-                        help='</path/to/input/database.config>', default=DEFAULT_FPATH)
-    parser.add_argument('--dryrun',
-                        help='Log configuration actions but do not perform them.',
-                        action='store_true', default=False)
-    parser.add_argument('--update', help='Update all out-of-date databases.',
-                        action='store_true', default=False)
-    parser.add_argument('--update-markers', help='Update out-of-date markers databases.',
-                        action='store_true', default=False)
-    parser.add_argument('--update-ncbi', help='Update out-of-date ncbi databases.',
-                        action='store_true', default=False)
-    parser.add_argument('--check-dependencies',
-                        help='Check database dependencies are satisfied.',
-                        action='store_true', default=False)
+        epilog="By default, with no arguments, will download/format databases into default databases directory.",
+    )
     parser.add_argument(
-        '--no-checksum',
-        help='Do not perform checksum comparisons to validate integrity of database files',
-        action='store_true', default=False)
-    parser.add_argument('--nproc',
-                        help='num. cpus to use for DB formatting.', type=int, default=mp.cpu_count())
-    parser.add_argument('--out', help='</path/to/output/database.config>')
+        "--config", help="</path/to/input/database.config>", default=DEFAULT_FPATH
+    )
+    parser.add_argument(
+        "--dryrun",
+        help="Log configuration actions but do not perform them.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--update",
+        help="Update all out-of-date databases.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--update-markers",
+        help="Update out-of-date markers databases.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--update-ncbi",
+        help="Update out-of-date ncbi databases.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--check-dependencies",
+        help="Check database dependencies are satisfied.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--no-checksum",
+        help="Do not perform remote checksum comparisons to validate integrity of database files",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--nproc",
+        help="num. cpus to use for DB formatting.",
+        type=int,
+        default=mp.cpu_count(),
+    )
+    parser.add_argument("--out", help="</path/to/output/database.config>")
     args = parser.parse_args()
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config,
-        dryrun=args.dryrun,
-        nproc=args.nproc,
-        upgrade=args.update)
+        config=config, dryrun=args.dryrun, nproc=args.nproc, upgrade=args.update
+    )
 
     compare_checksums = False
     for update_section in [args.update, args.update_markers, args.update_ncbi]:
@@ -684,17 +719,19 @@ def main():
             compare_checksums = True
 
     if args.update_markers:
-        section = 'markers'
+        section = "markers"
     elif args.update_ncbi:
-        section = 'ncbi'
+        section = "ncbi"
     else:
         section = None
 
     if args.check_dependencies:
         dbs_satisfied = dbs.satisfied(
-            section=section, compare_checksums=compare_checksums)
-        logger.info(f'Database dependencies satisfied: {dbs_satisfied}')
+            section=section, compare_checksums=compare_checksums
+        )
+        logger.info(f"Database dependencies satisfied: {dbs_satisfied}")
         import sys
+
         sys.exit(0)
 
     # logger.debug(f'Configuring databases')
@@ -702,10 +739,11 @@ def main():
 
     if not args.out:
         import sys
+
         sys.exit(0)
     put_config(config, args.out)
-    logger.info(f'{args.out} written.')
+    logger.info(f"{args.out} written.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
