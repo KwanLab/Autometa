@@ -42,45 +42,45 @@ from autometa.common.utilities import make_pickle, unpickle, timeit
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-NCBI_DIR = os.path.join(BASE_DIR, 'databases', 'ncbi')
+NCBI_DIR = os.path.join(BASE_DIR, "databases", "ncbi")
 
 
 class NCBI:
     """Taxonomy utilities for NCBI databases."""
 
     CANONICAL_RANKS = [
-        'species',
-        'genus',
-        'family',
-        'order',
-        'class',
-        'phylum',
-        'superkingdom',
-        'root'
+        "species",
+        "genus",
+        "family",
+        "order",
+        "class",
+        "phylum",
+        "superkingdom",
+        "root",
     ]
 
     def __init__(self, dirpath, verbose=False):
         self.dirpath = dirpath
         self.verbose = verbose
         self.disable = not self.verbose
-        self.names_fpath = os.path.join(self.dirpath, 'names.dmp')
-        self.nodes_fpath = os.path.join(self.dirpath, 'nodes.dmp')
-        self.merged_fpath = os.path.join(self.dirpath, 'merged.dmp')
+        self.names_fpath = os.path.join(self.dirpath, "names.dmp")
+        self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
+        self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
         self.accession2taxid_fpath = os.path.join(
-            self.dirpath, 'prot.accession2taxid')
-        acc2taxid_gz = '.'.join([self.accession2taxid_fpath, 'gz'])
+            self.dirpath, "prot.accession2taxid")
+        acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
         if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(acc2taxid_gz):
             self.accession2taxid_fpath = acc2taxid_gz
-        self.nr_fpath = os.path.join(self.dirpath, 'nr.gz')
+        self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
-        nr_dmnd_fname = '.'.join([nr_bname, 'dmnd'])
+        nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
         nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
         if os.path.exists(nr_dmnd_fpath):
             self.nr_fpath = nr_dmnd_fpath
-        if 'dmnd' not in os.path.basename(self.nr_fpath):
+        if "dmnd" not in os.path.basename(self.nr_fpath):
             # This check should probably be in the dependencies/databases file...
             logger.warning(
-                f'DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!')
+                f"DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!")
         self.nodes = self.parse_nodes()
         self.names = self.parse_names()
         self.merged = self.parse_merged()
@@ -116,19 +116,16 @@ class NCBI:
             Provided `taxid` is not a positive integer
         """
         taxid = self.is_valid_taxid(taxid)
-        if not taxid:
-            raise ValueError(
-                f'Taxid must be a positive integer! Given: {taxid}')
         if not rank:
-            return self.names.get(taxid, 'unclassified')
+            return self.names.get(taxid, "unclassified")
         if rank not in set(NCBI.CANONICAL_RANKS):
-            logger.warning(f'{rank} not in canonical ranks!')
+            logger.warning(f"{rank} not in canonical ranks!")
             return None
         ancestor_taxid = taxid
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
-                return self.names.get(ancestor_taxid, 'unclassified')
+                return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
         if ancestor_taxid == 1:
             return self.names.get(ancestor_taxid)
@@ -154,15 +151,14 @@ class NCBI:
             if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
                 taxid = self.parent(taxid)
                 continue
-            lineage.append({
-                'taxid': taxid,
-                'name': self.name(taxid),
-                'rank': self.rank(taxid)})
+            lineage.append(
+                {
+                    "taxid": taxid,
+                    "name": self.name(taxid),
+                    "rank": self.rank(taxid),
+                }
+            )
             taxid = self.parent(taxid)
-        lineage.append({  # adds root
-            'taxid': taxid,
-            'name': self.name(taxid),
-            'rank': self.rank(taxid)})
         return lineage
 
     def get_lineage_dataframe(self, taxids, fillna=True):
@@ -199,7 +195,7 @@ class NCBI:
                 right_index=True)
         """
         canonical_ranks = [r for r in reversed(NCBI.CANONICAL_RANKS)]
-        canonical_ranks.remove('root')
+        canonical_ranks.remove("root")
         taxids = list(set(taxids))
         ranked_taxids = {}
         for rank in canonical_ranks:
@@ -210,25 +206,25 @@ class NCBI:
                 else:
                     ranked_taxids[taxid].update({rank: name})
         df = pd.DataFrame(ranked_taxids).transpose()
-        df.index.name = 'taxid'
+        df.index.name = "taxid"
         if fillna:
-            df.fillna(value='unclassified', inplace=True)
+            df.fillna(value="unclassified", inplace=True)
         return df
 
     def rank(self, taxid):
         """
-        Return the respective rank of provided `taxid`. If the taxid is deprecated, suppressed, 
+        Return the respective rank of provided `taxid`. If the taxid is deprecated, suppressed,
         withdrawn from NCBI (basically old) the updated rank will be retrieved
 
         Parameters
         ----------
         taxid : int
-            `taxid` to retrieve rank from `nodes.dmp`    
+            `taxid` to retrieve rank from `nodes.dmp`
 
         Returns
         -------
         str
-            'rank name' if taxid is found in nodes.dmp and 'unclassified' if not 
+            'rank name' if taxid is found in nodes.dmp and 'unclassified' if not
 
         Raises
         ------
@@ -236,10 +232,7 @@ class NCBI:
             Provided `taxid` is not a positive integer
         """
         taxid = self.is_valid_taxid(taxid)
-        if not taxid:
-            raise ValueError(
-                f'Taxid must be a positive integer! Given: {taxid}')
-        return self.nodes.get(taxid, {'rank': 'unclassified'}).get('rank')
+        return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
     def parent(self, taxid):
         """
@@ -255,16 +248,9 @@ class NCBI:
         int
             Parent `taxid` if found in `nodes.dmp` otherwise 1
 
-        Raises
-        ------
-        ValueError
-            Provided `taxid` is not a positive integer
         """
         taxid = self.is_valid_taxid(taxid)
-        if not taxid:
-            raise ValueError(
-                f'Taxid must be a positive integer! Given: {taxid}')
-        return self.nodes.get(taxid, {'parent': 1}).get('parent')
+        return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
     # @timeit
     def parse_names(self):
@@ -278,26 +264,26 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing names from {self.names_fpath}')
+            logger.debug(f"Processing names from {self.names_fpath}")
         names = {}
         fh = open(self.names_fpath)
-        for line in tqdm(fh, disable=self.disable, desc='parsing names', leave=False):
+        for line in tqdm(fh, disable=self.disable, desc="parsing names", leave=False):
             taxid, name, __, classification = line.strip(
-                '\t|\n').split('\t|\t')[:4]
+                "\t|\n").split("\t|\t")[:4]
             taxid = int(taxid)
             name = name.lower()
             # Only add scientific name entries
-            if classification == 'scientific name':
+            if classification == "scientific name":
                 names.update({taxid: name})
         fh.close()
         if self.verbose:
-            logger.debug('names loaded')
+            logger.debug("names loaded")
         return names
 
     # @timeit
     def parse_nodes(self):
         """
-        Parse the `nodes.dmp` database to be used later by :py:func: `autometa.taxonomy.ncbi.NCBI.parent`, :py:func: `autometa.taxonomy.ncbi.NCBI.rank`
+        Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.NCBI.parent`, :func:`autometa.taxonomy.ncbi.NCBI.rank`
         Note: This is performed when a new NCBI class instance is constructed
 
         Returns
@@ -307,23 +293,23 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing nodes from {self.nodes_fpath}')
+            logger.debug(f"Processing nodes from {self.nodes_fpath}")
         fh = open(self.nodes_fpath)
         __ = fh.readline()  # root line
-        nodes = {1: {'parent': 1, 'rank': 'root'}}
-        for line in tqdm(fh, disable=self.disable, desc='parsing nodes', leave=False):
-            child, parent, rank = line.split('\t|\t')[:3]
+        nodes = {1: {"parent": 1, "rank": "root"}}
+        for line in tqdm(fh, disable=self.disable, desc="parsing nodes", leave=False):
+            child, parent, rank = line.split("\t|\t")[:3]
             parent, child = map(int, [parent, child])
             rank = rank.lower()
-            nodes.update({child: {'parent': parent, 'rank': rank}})
+            nodes.update({child: {"parent": parent, "rank": rank}})
         fh.close()
         if self.verbose:
-            logger.debug('nodes loaded')
+            logger.debug("nodes loaded")
         return nodes
 
     def parse_merged(self):
         """
-        Parse the `merged.dmp` database 
+        Parse the `merged.dmp` database
         Note: This is performed when a new NCBI class instance is constructed
 
         Returns
@@ -333,16 +319,17 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing nodes from {self.merged_fpath}')
+            logger.debug(f"Processing nodes from {self.merged_fpath}")
         fh = open(self.merged_fpath)
         merged = {}
-        for line in tqdm(fh, disable=self.disable, desc='parsing merged', leave=False):
+        for line in tqdm(
+                fh, disable=self.disable, desc="parsing merged", leave=False):
             old_taxid, new_taxid = [
-                int(taxid) for taxid in line.strip('\t|\n').split('\t|\t')]
+                int(taxid) for taxid in line.strip("\t|\n").split("\t|\t")]
             merged.update({old_taxid: new_taxid})
         fh.close()
         if self.verbose:
-            logger.debug('merged loaded')
+            logger.debug("merged loaded")
         return merged
 
     def is_common_ancestor(self, taxid_A, taxid_B):
@@ -361,48 +348,50 @@ class NCBI:
         boolean
             True if taxids share a common ancestor else False
         """
-        taxid_A_lineage_taxids = {taxids.get('taxid')
-                                  for taxids in self.lineage(taxid_A)}
-        taxid_B_lineage_taxids = {taxids.get('taxid')
-                                  for taxids in self.lineage(taxid_B)}
-        common_ancestor = taxid_B_lineage_taxids.intersection(
-            taxid_A_lineage_taxids)
+        A_lineage_taxids = {taxids.get("taxid")
+                            for taxids in self.lineage(taxid_A)}
+        B_lineage_taxids = {taxids.get("taxid")
+                            for taxids in self.lineage(taxid_B)}
+        common_ancestor = B_lineage_taxids.intersection(A_lineage_taxids)
         common_ancestor.discard(1)  # This discards root
         return True if common_ancestor else False
 
     def is_valid_taxid(self, taxid):
         """
-        Checks if the given taxid is a positive interger or not 
+        Checks if the given `taxid` is a positive interger or not
 
         Parameters
         ----------
-        `taxid` : int
-            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
+        taxid : int
+            identifer for a taxon in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
 
         Returns
         -------
-        `taxid` or boolean
-            `taxid` if the 'taxid' is a positive integer else False
-        """
+        taxid
+            `taxid` if the `taxid` is a positive integer
 
-        # This check if an interger has been added as str, eg. "562"
+        Raises
+        ------
+        ValueError
+            Provided `taxid` is not a positive integer
+        """
+        # This checks if an integer has been added as str, eg. "562"
         if isinstance(taxid, str):
-            if taxid.isnumeric() or taxid.replace('.', '', 1).isnumeric():
-                # checks if it is something like 12.0 vs. 12.9.
-                if float(taxid).is_integer() and float(taxid).is_integer() > 0:
-                    # See https://stackoverflow.com/a/47764450/12671809
-                    return int(float(taxid))
-                else:
-                    return False
-            else:
-                return False
+            # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9.
+            if (taxid.isnumeric() or taxid.replace(".", "", 1).isnumeric()) and float(taxid).is_integer() and float(taxid) > 0:
+                # See https://stackoverflow.com/a/47764450/12671809
+                return int(float(taxid))
+            raise ValueError(
+                f"Taxid must be a positive integer! Given: {taxid}")
         # `is_integer` returns error if only '12' is used, float(taxid) is needed
         if not float(taxid).is_integer() or taxid < 0:
-            return False
+            raise ValueError(
+                f"Taxid must be a positive integer! Given: {taxid}")
         return int(taxid)
 
 
-if __name__ == '__main__':
-    print('file containing Autometa NCBI utilities class')
+if __name__ == "__main__":
+    print("file containing Autometa NCBI utilities class")
     import sys
+
     sys.exit(1)
