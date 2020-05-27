@@ -33,7 +33,6 @@ import tempfile
 import multiprocessing as mp
 
 from configparser import ConfigParser
-from configparser import ExtendedInterpolation
 from ftplib import FTP
 from glob import glob
 
@@ -62,28 +61,32 @@ class Databases:
     Parameters
     ----------
     config : config.ConfigParser
-        Config containing database dependency information (the default is DEFAULT_CONFIG).
+        Config containing database dependency information.
+        (the default is DEFAULT_CONFIG).
+
     dryrun : bool
-        Run through database checking without performing downloads/formatting (the default is False).
+        Run through database checking without performing
+        downloads/formatting (the default is False).
+
     nproc : int
-        Number of processors to use to perform database formatting. (the default is mp.cpu_count()).
+        Number of processors to use to perform database formatting.
+        (the default is mp.cpu_count()).
+
     upgrade : bool
-        Overwrite existing databases with more up-to-date database files. (the default is False).
+        Overwrite existing databases with more up-to-date database
+        files. (the default is False).
 
     Attributes
     ----------
-    ncbi_dir : str
-        </path/to/databases/ncbi>
-    markers_dir : str
-        </path/to/databases/markers>
-    SECTIONS : dict
-        keys are `sections` respective to database config sections and values
-        are options within the `sections`.
+    ncbi_dir : str </path/to/databases/ncbi> markers_dir : str
+        </path/to/databases/markers> SECTIONS : dict keys are `sections`
+        respective to database config sections and values are options within
+        the `sections`.
 
     """
 
     SECTIONS = {
-        "ncbi": ["nodes", "names", "merged", "accession2taxid", "nr",],
+        "ncbi": ["nodes", "names", "merged", "accession2taxid", "nr"],
         "markers": [
             "bacteria_single_copy",
             "bacteria_single_copy_cutoffs",
@@ -93,7 +96,11 @@ class Databases:
     }
 
     def __init__(
-        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), upgrade=False
+        self,
+        config=DEFAULT_CONFIG,
+        dryrun=False,
+        nproc=mp.cpu_count(),
+        upgrade=False,
     ):
         """
 
@@ -104,13 +111,18 @@ class Databases:
         Parameters
         ----------
         config : config.ConfigParser
-            Config containing database dependency information (the default is DEFAULT_CONFIG).
+            Config containing database dependency information.
+            (the default is DEFAULT_CONFIG).
         dryrun : bool
-            Run through database checking without performing downloads/formatting (the default is False).
+            Run through database checking without performing downloads/
+            formatting (the default is False).
+
         nproc : int
-            Number of processors to use to perform database formatting. (the default is mp.cpu_count()).
+            Number of processors to use to perform database formatting.
+            (the default is mp.cpu_count()).
         upgrade : bool
-            Overwrite existing databases with more up-to-date database files. (the default is False).
+            Overwrite existing databases with more up-to-date database files.
+            (the default is False).
 
         Returns
         -------
@@ -129,7 +141,8 @@ class Databases:
         self.upgrade = upgrade
         if self.config.get("common", "home_dir") == "None":
             # neccessary if user not running databases through the user
-            # endpoint. where :func:`~autometa.config.init_default` would've been called.
+            # endpoint. where :func:`~autometa.config.init_default` would've
+            # been called.
             self.config.set("common", "home_dir", AUTOMETA_DIR)
         if not self.config.has_section("databases"):
             self.config.add_section("databases")
@@ -153,7 +166,8 @@ class Databases:
             section to retrieve for `checksums` section.
             Choices include: 'ncbi' and 'markers'.
         compare_checksums : bool, optional
-            Also check if database information is up-to-date with current hosted databases. (default is False).
+            Also check if database information is up-to-date with current
+            hosted databases. (default is False).
 
         Returns
         -------
@@ -169,7 +183,8 @@ class Databases:
         return not any_missing and not any_invalid
 
     def get_remote_checksum(self, section, option):
-        """Get the checksum from provided `section` respective to `option` in `self.config`.
+        """Get the checksum from provided `section` respective to `option` in
+        `self.config`.
 
         Parameters
         ----------
@@ -177,7 +192,8 @@ class Databases:
             section to retrieve for `checksums` section.
             Choices include: 'ncbi' and 'markers'.
         option : str
-            `option` in `checksums` section corresponding to the section checksum file.
+            `option` in `checksums` section corresponding to the section
+            checksum file.
 
         Returns
         -------
@@ -220,7 +236,9 @@ class Databases:
         in `ncbi` section in user config.
 
         NOTE: The checksum 'nr.dmnd.md5' will only be generated if nr.dmnd
-        construction is successful. If the provided `nr` option in `ncbi` is 'nr.gz' the database will be removed after successful database formatting.
+        construction is successful. If the provided `nr` option in `ncbi` is
+        'nr.gz' the database will be removed after successful database
+        formatting.
 
         Returns
         -------
@@ -233,14 +251,14 @@ class Databases:
         db_outfpath = db_infpath.replace(".gz", ".dmnd")
         checksums_match = False
         if os.path.exists(db_infpath_md5) and os.path.exists(db_outfpath):
-            # If nr.dmnd.md5 exists, then we will check if nr.gz.md5 is matching
+            # If nr.dmnd.md5 exists, then we will check if nr.gz.md5 is
+            # matching
             current_checksum = read_checksum(db_infpath_md5)
             current_hash, __ = current_checksum.split()
-            host = self.config.get("ncbi", "host")
             remote_checksum = self.get_remote_checksum("ncbi", "nr")
             remote_hash, __ = remote_checksum.split()
             if current_hash == remote_hash:
-                logger.debug(f"nr checksums match, skipping...")
+                logger.debug("nr checksums match, skipping...")
                 checksums_match = True
         dmnd_md5 = f"{db_outfpath}.md5"
         do_not_upgrade = os.path.exists(db_outfpath) and not self.upgrade
@@ -249,7 +267,9 @@ class Databases:
             logger.debug(f"{dmnd_md5} exists: {os.path.exists(dmnd_md5)}")
             logger.debug(f"set ncbi nr: {db_outfpath}")
             return
-        diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
+        diamond.makedatabase(
+            fasta=db_infpath, database=db_outfpath, nproc=self.nproc
+        )
         # Write checksum for nr.dmnd
         write_checksum(db_outfpath, dmnd_md5)
 
@@ -262,19 +282,22 @@ class Databases:
 
     def extract_taxdump(self):
         """Extract autometa required files from ncbi taxdump.tar.gz archive
-        into ncbi databases directory and update user config with extracted paths.
+        into ncbi databases directory and update user config with extracted
+        paths.
 
         This only extracts nodes.dmp, names.dmp and merged.dmp from
         taxdump.tar.gz if the files do not already exist. If `upgrade`
         was originally supplied as `True` to the Databases instance, then the
         previous files will be replaced by the new taxdump files.
 
-        After successful extraction of the files, a checksum will be written of the archive for future checking.
+        After successful extraction of the files, a checksum will be written
+        of the archive for future checking.
 
         Returns
         -------
         NoneType
-            Will update `self.config` section `ncbi` with options 'nodes','names','merged'
+            Will update `self.config` section `ncbi` with options 'nodes',
+            'names','merged'
 
         """
         taxdump_fpath = self.config.get("ncbi", "taxdump")
@@ -320,9 +343,9 @@ class Databases:
 
         """
         host = self.config.get("ncbi", "host")
-        ftp_fpath = ftp_fullpath.split(host)[-1]
         for option in options:
             ftp_fullpath = self.config.get("database_urls", option)
+            ftp_fpath = ftp_fullpath.split(host)[-1]
 
             if (
                 self.config.has_option("ncbi", option)
@@ -408,7 +431,7 @@ class Databases:
 
         """
         for option in options:
-            # First retrieve the markers file url from `option` in `markers` section
+            # First retrieve the markers file url from `option` in `markers`
             url = self.config.get("database_urls", option)
             if self.config.has_option("markers", option):
                 outfpath = self.config.get("markers", option)
@@ -513,19 +536,18 @@ class Databases:
     def compare_checksums(self, section=None):
         """Get all invalid database files in `options` from `section`
         in config. An md5 checksum comparison will be performed between the
-        current and file's remote md5 to ensure file integrity prior to checking
-        the respective file as valid.
+        current and file's remote md5 to ensure file integrity prior to
+        checking the respective file as valid.
 
         Parameters
         ----------
-        section : str, optional
-            Configure provided `section`. Choices include 'markers' and 'ncbi'.
-            (default will download/format all database directories)
+        section : str, optional Configure provided `section` Choices include
+            'markers' and 'ncbi'. (default will download/format all database
+            directories)
 
         Returns
         -------
-        dict
-            {section:{option, option,...}, section:{...}, ...}
+        dict {section:{option, option,...}, section:{...}, ...}
 
         """
         sections = [section] if section else Databases.SECTIONS.keys()
@@ -537,7 +559,11 @@ class Databases:
                     # Skip user added options not required by Autometa
                     continue
                 # nodes.dmp, names.dmp and merged.dmp are all in taxdump.tar.gz
-                option = "taxdump" if option in {"nodes", "names", "merged"} else option
+                option = (
+                    "taxdump"
+                    if option in {"nodes", "names", "merged"}
+                    else option
+                )
                 fpath = self.config.get(section, option)
                 fpath_md5 = f"{fpath}.md5"
                 # We can not checksum a file that does not exist.
@@ -614,28 +640,27 @@ class Databases:
 
         Download and format databases for all options in each section.
 
-        This will only perform the download and formatting if `self.dryrun` is False.
-        This will update out-of-date databases if `self.upgrade` is True.
+        This will only perform the download and formatting if `self.dryrun` is
+        False. This will update out-of-date databases if `self.upgrade` is
+        True.
 
         Parameters
         ----------
-        section : str, optional
-            Configure provided `section`. Choices include 'markers' and 'ncbi'.
-            (default will download/format all database directories)
-        no_checksum : bool, optional
-            Do not perform checksum comparisons (Default is False).
+        section : str, optional Configure provided `section`. Choices include
+            'markers' and 'ncbi'. (default will download/format all database
+            directories) no_checksum : bool, optional Do not perform checksum
+            comparisons (Default is False).
 
         Returns
         -------
-        configparser.ConfigParser
-            config with updated options in respective databases sections.
+        configparser.ConfigParser config with updated options in respective
+            databases sections.
 
         Raises
         -------
-        ValueError
-            Provided `section` does not match 'ncbi' or 'markers'.
-        ConnectionError
-            A connection issue occurred when connecting to NCBI or GitHub.
+        ValueError Provided `section` does not match 'ncbi' or 'markers'.
+            ConnectionError A connection issue occurred when connecting to NCBI
+            or GitHub.
 
         """
         self.download_missing(section=section)
@@ -658,10 +683,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="Main script to configure Autometa database dependencies.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        epilog="By default, with no arguments, will download/format databases into default databases directory.",
+        epilog="By default, with no arguments, will download/format databases "
+        "into default databases directory.",
     )
     parser.add_argument(
-        "--config", help="</path/to/input/database.config>", default=DEFAULT_FPATH
+        "--config",
+        help="</path/to/input/database.config>",
+        default=DEFAULT_FPATH,
     )
     parser.add_argument(
         "--dryrun",
@@ -695,7 +723,8 @@ def main():
     )
     parser.add_argument(
         "--no-checksum",
-        help="Do not perform remote checksum comparisons to validate integrity of database files",
+        help="Do not perform remote checksum comparisons to validate databases"
+        "are up-to-date.",
         action="store_true",
         default=False,
     )
@@ -710,7 +739,10 @@ def main():
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config, dryrun=args.dryrun, nproc=args.nproc, upgrade=args.update
+        config=config,
+        dryrun=args.dryrun,
+        nproc=args.nproc,
+        upgrade=args.update,
     )
 
     compare_checksums = False
