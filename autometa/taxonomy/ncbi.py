@@ -94,7 +94,7 @@ class NCBI:
 
     def name(self, taxid, rank=None):
         """
-        Parses through the `names.dmp` in search of the given `taxid` and returns its name
+        Parses through the names.dmp in search of the given `taxid` and returns its name
 
         Parameters
         ----------
@@ -108,7 +108,7 @@ class NCBI:
         Returns
         -------
         str
-            Name of provided `taxid` if taxid is found in `names.dmp` else 'unclassified'
+            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
 
         Raises
         ------
@@ -131,14 +131,14 @@ class NCBI:
 
     def lineage(self, taxid, canonical=True):
         """
-        Returns the lineage of taxids encountered when traversing to root
+        Returns the lineage of `taxids` encountered when traversing to root
 
         Parameters
         ----------
         taxid : int
             `taxid` in nodes.dmp, whose lineage is being returned
         canonical : bool, optional
-            Returns the names of all the canonical ranks when True and an empty list when False, by default True
+            Lineage includes both canonical and non-canonical ranks when False, and only the canonical ranks when True 
 
         Returns
         -------
@@ -212,13 +212,13 @@ class NCBI:
 
     def rank(self, taxid):
         """
-        Return the respective rank of provided `taxid`. If the taxid is deprecated, suppressed,
+        Return the respective rank of provided `taxid`. If the `taxid` is deprecated, suppressed,
         withdrawn from NCBI (basically old) the updated rank will be retrieved
 
         Parameters
         ----------
         taxid : int
-            `taxid` to retrieve rank from `nodes.dmp`
+            `taxid` to retrieve rank from nodes.dmp
 
         Returns
         -------
@@ -245,7 +245,7 @@ class NCBI:
         Returns
         -------
         int
-            Parent taxid if found in `nodes.dmp` otherwise 1
+            Parent taxid if found in nodes.dmp otherwise 1
 
         """
         taxid = self.is_valid_taxid(taxid)
@@ -254,7 +254,7 @@ class NCBI:
     # @timeit
     def parse_names(self):
         """
-        Parses through `names.dmp` database and loads taxids with scientific names
+        Parses through names.dmp database and loads taxids with scientific names
 
         Returns
         -------
@@ -308,7 +308,7 @@ class NCBI:
 
     def parse_merged(self):
         """
-        Parse the `merged.dmp` database
+        Parse the merged.dmp database
         Note: This is performed when a new NCBI class instance is constructed
 
         Returns
@@ -338,9 +338,9 @@ class NCBI:
         Parameters
         ----------
         taxid_A : int
-            taxid in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
+            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
         taxid_B : int
-            taxid in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
+            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
@@ -362,7 +362,7 @@ class NCBI:
         Parameters
         ----------
         taxid : int
-            identifer for a taxon in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
+            identifer for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
