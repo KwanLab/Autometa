@@ -24,12 +24,13 @@ File containing definition of the NCBI class and containing functions useful for
 """
 
 
+import gzip
 import logging
 import os
-import gzip
+import pickle
+import string
 import subprocess
 import sys
-import pickle
 
 import numpy as np
 import pandas as pd
@@ -357,7 +358,8 @@ class NCBI:
 
     def is_valid_taxid(self, taxid):
         """
-        Checks if the given `taxid` is a positive integer or not
+        Checks if the given `taxid` is a positive integer or not. In case the
+        taxid provided is in the form of a string the function will cast the string as an integer
 
         Parameters
         ----------
@@ -379,13 +381,17 @@ class NCBI:
             invalid_chars = set(string.punctuation + string.ascii_letters)
             invalid_chars.discard('.')
             if {char for char in taxid if char in invalid_chars} or taxid.count('.') > 1:
-                raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")            
+                raise ValueError(
+                    f"taxid contains invalid character(s)! Given: {taxid}")
             taxid = float(taxid)
+        # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9
         if isinstance(taxid, bool) or (isinstance(taxid, float) and not taxid.is_integer()):
-            raise ValueError(f"taxid must be a positive integer! Given: {taxid}")
+            raise ValueError(
+                f"taxid must be a positive integer! Given: {taxid}")
         taxid = int(taxid)
         if taxid <= 0:
-            raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
+            raise ValueError(
+                f"Taxid must be a positive integer! Given: {taxid}")
         return taxid
 
 
