@@ -120,15 +120,14 @@ class NCBI:
             return self.names.get(taxid, "unclassified")
         if rank not in set(NCBI.CANONICAL_RANKS):
             logger.warning(f"{rank} not in canonical ranks!")
-            return None
+            return "unclassified"
         ancestor_taxid = taxid
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
                 return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
-        if ancestor_taxid == 1:
-            return self.names.get(ancestor_taxid)
+        return self.names.get(ancestor_taxid, "unclassified")
 
     def lineage(self, taxid, canonical=True):
         """
@@ -224,7 +223,7 @@ class NCBI:
         Returns
         -------
         str
-            'rank name' if taxid is found in nodes.dmp and 'unclassified' if not
+            rank name if taxid is found in nodes.dmp else "unclassified"
 
         Raises
         ------
@@ -241,12 +240,12 @@ class NCBI:
         Parameters
         ----------
         taxid : int
-            `taxid` whose parent `taxid` is being returned from `nodes.dmp`
+           child taxid to retrieve parent
 
         Returns
         -------
         int
-            Parent `taxid` if found in `nodes.dmp` otherwise 1
+            Parent taxid if found in `nodes.dmp` otherwise 1
 
         """
         taxid = self.is_valid_taxid(taxid)
@@ -339,20 +338,20 @@ class NCBI:
         Parameters
         ----------
         taxid_A : int
-            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
+            taxid in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
         taxid_B : int
-            identifer for a taxon in NCI taxonomy databses - `nodes.dmp`, `names.dmp` or `merged.dmp`
+            taxid in NCBI taxonomy databases - `nodes.dmp`, `names.dmp` or `merged.dmp`
 
         Returns
         -------
         boolean
             True if taxids share a common ancestor else False
         """
-        A_lineage_taxids = {taxids.get("taxid")
-                            for taxids in self.lineage(taxid_A)}
-        B_lineage_taxids = {taxids.get("taxid")
-                            for taxids in self.lineage(taxid_B)}
-        common_ancestor = B_lineage_taxids.intersection(A_lineage_taxids)
+        lineage_a_taxids = {ancestor.get("taxid")
+                            for ancestor in self.lineage(taxid_A)}
+        lineage_b_taxids = {ancestor.get("taxid")
+                            for ancestor in self.lineage(taxid_B)}
+        common_ancestor = lineage_b_taxids.intersection(lineage_a_taxids)
         common_ancestor.discard(1)  # This discards root
         return True if common_ancestor else False
 
