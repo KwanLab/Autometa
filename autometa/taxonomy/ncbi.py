@@ -357,7 +357,7 @@ class NCBI:
 
     def is_valid_taxid(self, taxid):
         """
-        Checks if the given `taxid` is a positive interger or not
+        Checks if the given `taxid` is a positive integer or not
 
         Parameters
         ----------
@@ -366,7 +366,7 @@ class NCBI:
 
         Returns
         -------
-        taxid
+        int
             `taxid` if the `taxid` is a positive integer
 
         Raises
@@ -376,17 +376,17 @@ class NCBI:
         """
         # This checks if an integer has been added as str, eg. "562"
         if isinstance(taxid, str):
-            # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9.
-            if (taxid.isnumeric() or taxid.replace(".", "", 1).isnumeric()) and float(taxid).is_integer() and float(taxid) > 0:
-                # See https://stackoverflow.com/a/47764450/12671809
-                return int(float(taxid))
-            raise ValueError(
-                f"Taxid must be a positive integer! Given: {taxid}")
-        # `is_integer` returns error if only '12' is used, float(taxid) is needed
-        if not float(taxid).is_integer() or taxid < 0:
-            raise ValueError(
-                f"Taxid must be a positive integer! Given: {taxid}")
-        return int(taxid)
+            invalid_chars = set(string.punctuation + string.ascii_letters)
+            invalid_chars.discard('.')
+            if {char for char in taxid if char in invalid_chars} or taxid.count('.') > 1:
+                raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")            
+            taxid = float(taxid)
+        if isinstance(taxid, bool) or (isinstance(taxid, float) and not taxid.is_integer()):
+            raise ValueError(f"taxid must be a positive integer! Given: {taxid}")
+        taxid = int(taxid)
+        if taxid <= 0:
+            raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
+        return taxid
 
 
 if __name__ == "__main__":
