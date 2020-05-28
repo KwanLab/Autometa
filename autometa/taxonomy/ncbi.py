@@ -380,7 +380,7 @@ class NCBI:
         if isinstance(taxid, str):
             invalid_chars = set(string.punctuation + string.ascii_letters)
             invalid_chars.discard('.')
-            if {char for char in taxid if char in invalid_chars} or taxid.count('.') > 1:
+            if set(taxid).intersection(invalid_chars) or taxid.count('.') > 1:
                 raise ValueError(
                     f"taxid contains invalid character(s)! Given: {taxid}")
             taxid = float(taxid)
