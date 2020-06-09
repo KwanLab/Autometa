@@ -28,6 +28,8 @@ import gzip
 import logging
 import os
 import subprocess
+import shutil
+import tempfile
 
 import multiprocessing as mp
 
@@ -36,12 +38,8 @@ from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle, file_length
 from autometa.common.external import prodigal
-from autometa.taxonomy.ncbi import NCBI
 
 logger = logging.getLogger(__name__)
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-NCBI_DIR = os.path.join(BASE_DIR, "databases", "ncbi")
 
 
 class DiamondResult:
@@ -124,11 +122,11 @@ class DiamondResult:
         Operator overloading to return the representation of the class object 
 
         Returns
-        -------
+        ------- 
         str
             Representation of the class object
         """
-        return self.__class__.__name__, self.qseqid
+        return f"Class: {self.__class__.__name__}, Query seqID: {self.qseqid}"
 
     def __str__(self):
         """
@@ -144,17 +142,17 @@ class DiamondResult:
 
     def __eq__(self, other_hit):
         """
-        Operator overloading to compare two objects of the class
+        Operator overloading to compare two objects of the DiamondResult class
 
         Parameters
         ----------
-        other_hit : Dict 
-            Other sseqid hit dictionary to compare with
+        other_hit : DiamondResult object 
+            Other DiamondResult object to compare with
 
         Returns
         -------
         Boolean
-            True if both dcitionaries are equal else False
+            True if qseqid corresponding to both DiamondResult objects are equal, else False
         """
         if self.qseqid == other_hit.qseqid:
             return True
@@ -163,31 +161,18 @@ class DiamondResult:
 
     def __add__(self, other_hit):
         """
-        Operator overloading to update (add) the sseqids dictionary with the other sseqid hit dictionary
-        for a specific query sequence
+        Operator overloading to update (add) the sseqids dictionary with the other sseqid hit dictionary.
+        The addition will only be successful if both the DiamondResult objects have the same qseqid
 
         Parameters
         ----------
-        other_hit : Dict 
-            {
-            sseqid: {
-                "pident": float(pident),
-                "length": int(length),
-                "mismatch": int(mismatch),
-                "gapopen": int(gapopen),
-                "qstart": int(qstart),
-                "qend": int(qend),
-                "sstart": int(sstart),
-                "send": int(send),
-                "evalue": float(evalue),
-                "bitscore": float(bitscore),
-            }
+        other_hit : DiamondResult object
+            Other DiamondResult object to add 
 
         Returns
         -------
-        Dict
-            {qseqid: {DiamondResult}, ...}
-            
+        DiamondResult object
+            Another sseqid dict as now been added (updated) to the sseqids dict in the object
         """
         assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
         self.sseqids.update(other_hit.sseqids)
@@ -195,33 +180,25 @@ class DiamondResult:
 
     def __sub__(self, other_hit):
         """
-        Operator overloading to remove (subtract) the other sseqid hits dictionary from the sseqids dictionary
-        for a specific query sequence
+        Operator overloading to remove (subtract) the other sseqid hits dictionary from the sseqids dictionary.
+        The subtraction will only be successful if both the DiamondResult objects have the same qseqid
 
         Parameters
         ----------
         other_hit : Dict 
-            {
-            sseqid: {
-                "pident": float(pident),
-                "length": int(length),
-                "mismatch": int(mismatch),
-                "gapopen": int(gapopen),
-                "qstart": int(qstart),
-                "qend": int(qend),
-                "sstart": int(sstart),
-                "send": int(send),
-                "evalue": float(evalue),
-                "bitscore": float(bitscore),
-            }
+            Other DiamondResult object to subtract
 
         Returns
         -------
-        Dict
-            {qseqid: {DiamondResult}, ...}
+        DiamondResult object
+            A sseqid dict as now been subtracted (removed) from the sseqids dict in the object
         """
         assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
-        self.sseqids.pop(list(other_hit.sseqids.keys())[0])
+        try:
+            self.sseqids.pop(list(other_hit.sseqids.keys())[0])
+        except KeyError as err:
+            print("Given key is not present!")
+            raise err
         return self
 
     def get_top_hit(self):
@@ -237,7 +214,7 @@ class DiamondResult:
         return top_hit
 
 
-def makedatabase(fasta, database, nproc=mp.cpu_count()):
+def makedatabase(fasta, database, cpus=mp.cpu_count()):
     """
     Creates a database against which the query sequence would be blasted
 
@@ -247,25 +224,25 @@ def makedatabase(fasta, database, nproc=mp.cpu_count()):
         Path to fasta file whose database needs to be made
         e.g. '<path/to/fasta/file>'
     database : str
-        Path to the output  nr database file
+        Path to the output diamond formatted database file
         e.g. '<path/to/database/file>'
-    nproc : int, optional
+    cpus : int, optional
         Number of processors to be used. By default uses all the processors of the system 
 
     Returns
     -------
     str
-        Path to Diamond database
+        Path to diamond formatted database
 
     Raises
     ------
-    CalledProcessError
-        Failed to create Diamond database
+    subprocess.CalledProcessError
+        Failed to create diamond formatted database
     """
-    cmd = f"diamond makedb --in {fasta} --db {database} -p {nproc}"
+    cmd = f"diamond makedb --in {fasta} --db {database} -p {cpus}"
     logger.debug(f"{cmd}")
     proc = subprocess.run(
-        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, text=True
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True
     )
     try:
         proc.check_returncode()
@@ -281,8 +258,8 @@ def blast(
     blast_type="blastp",
     evalue=float("1e-5"),
     maxtargetseqs=200,
-    nproc=mp.cpu_count(),
-    tmpdir=os.curdir,
+    cpus=mp.cpu_count(),
+    tmpdir=tempfile.mkdtemp(),
     force=False,
     verbose=False,
 ):
@@ -292,7 +269,7 @@ def blast(
     Parameters
     ----------
     fasta : str
-        Path to fasta file having the query sequence. May be amino acid or nucleotide sequences
+        Path to fasta file having the query sequences. May be amino acid or nucleotide sequences
         '</path/to/fasta/file>' 
     database : str
         Path to diamond formatted database
@@ -304,14 +281,14 @@ def blast(
         blastp to align protein query sequences against a protein reference database,
         blastx to align translated DNA query sequences against a protein reference database, by default 'blastp'
     evalue : float, optional
-        cutoff e-value to count hit as significant,, by default float('1e-5')
+        cutoff e-value to count hit as significant, by default float('1e-5')
     maxtargetseqs : int, optional
         max number of target sequences to retrieve per query by diamond, by default 200
-    nproc : int, optional
+    cpus : int, optional
         Number of processors to be used, by default uses all the processors of the system
     tmpdir : str, optional
         Path to temporary directory
-        '</path/to/temporary/directory>' by default os.curdir
+        '</path/to/temporary/directory>' by default tempfile.mkdtemp()
     force : bool, optional
         overwrite existing diamond results, by default False
     verbose : bool, optional
@@ -330,6 +307,8 @@ def blast(
         provided `blast_type` is not 'blastp' or 'blastx'
     OSError
         Diamond execution failed
+    subprocess.CalledProcessError
+        Failed to run blast
     """
     if not os.path.exists(fasta):
         raise FileNotFoundError(fasta)
@@ -356,7 +335,7 @@ def blast(
         "--max-target-seqs",
         maxtargetseqs,
         "--threads",
-        nproc,
+        cpus,
         "--outfmt",
         "6",
         "--out",
@@ -368,16 +347,17 @@ def blast(
     if verbose:
         logger.debug(f'RunningDiamond: {" ".join(cmd)}')
     proc = subprocess.run(
-        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, text=True
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False
     )
     try:
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
         raise err
+    shutil.rmtree(tmpdir, ignore_errors=True)
     return outfpath
 
 
-def parse(results, bitscr_thresh=0.9, verbose=False):
+def parse(results, top_pct=0.9, verbose=False):
     """
     Retrieve diamond results from output table
 
@@ -385,8 +365,8 @@ def parse(results, bitscr_thresh=0.9, verbose=False):
     ----------
     results : str
         </path/to/blastp/outfmt6/output/file>
-    bitscr_thresh : 0 < float <= 1, optional
-        bitscore filter applied to each qseqid, by default 0.9
+    top_pct : 0 < float <= 1, optional
+        bitscore filter applied to each sseqid, by default 0.9
         Used to determine whether the bitscore is above a threshold value. 
         For example, if it is 0.9 then only bitscores >= 0.9 * the top bitscore are accepted
     verbose : bool, optional
@@ -402,7 +382,7 @@ def parse(results, bitscr_thresh=0.9, verbose=False):
     FileNotFoundError
         diamond results table does not exist
     ValueError
-        bitscr_thresh value is not a float or not in range of 0 to 1
+        top_pct value is not a float or not in range of 0 to 1
     """
     disable = False if verbose else True
     # boolean toggle --> keeping above vs. below because I think this is more readable.
@@ -412,14 +392,14 @@ def parse(results, bitscr_thresh=0.9, verbose=False):
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
-        float(bitscr_thresh)
+        float(top_pct)
     except ValueError:
         raise ValueError(
-            f"bitscr_thresh must be a float! Input: {bitscr_thresh} Type: {type(bitscr_thresh)}"
+            f"top_pct must be a float! Input: {top_pct} Type: {type(top_pct)}"
         )
-    in_range = 0.0 < bitscr_thresh <= 1.0
+    in_range = 0.0 < top_pct <= 1.0
     if not in_range:
-        raise ValueError(f"bitscr_thresh not in range(0,1)! Input: {bitscr_thresh}")
+        raise ValueError(f"top_pct not in range(0,1)! Input: {top_pct}")
     hits = {}
     temp = set()
     n_lines = file_length(results) if verbose else None
@@ -459,20 +439,16 @@ def parse(results, bitscr_thresh=0.9, verbose=False):
                 topbitscore = bitscore
                 temp = set([hit.qseqid])
                 continue
-            if bitscore >= bitscr_thresh * topbitscore:
-                import pdb
-
-                pdb.set_trace()
+            if bitscore >= top_pct * topbitscore:
                 hits[hit.qseqid] += hit
     return hits
 
 
 def add_taxids(hits, database, verbose=True):
     """
-    Translates accessions to taxid translations from prot.accession2taxid.gz
-    If an accession number is no longer available (either due to being suppressed, 
-    deprecated or removed by NCBI), then merged.dmp is searched. If not found even there
-    then None is returned.
+    Translates accessions to taxids from prot.accession2taxid.gz. If an accession number is no 
+    longer available in prot.accesssion2taxid.gz (either due to being suppressed, deprecated or
+    removed by NCBI), then None is returned as the taxid for the corresponsing sseqid.
 
 
     # TODO: Should maybe write a wrapper for this to run on all of the NCBI
@@ -541,14 +517,11 @@ def add_taxids(hits, database, verbose=True):
     fh.close()
     n_qseqids = len(hits)
     desc = f"Translating {n_qseqids} qseqids' accessions to taxids"
-    ncbi = NCBI(NCBI_DIR, verbose)  # Instantiating the NCBI class
     for qseqid, hit in tqdm(
         hits.items(), disable=disable, total=n_qseqids, desc=desc, leave=False
     ):
         for sseqid in hit.sseqids:
             taxid = acc2taxids.get(sseqid)
-            if not taxid:
-                taxid = ncbi.merged.get(taxid, taxid)
             hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
 
@@ -582,12 +555,14 @@ def main():
         type=int,
     )
     parser.add_argument(
-        "--nproc", help="number of processors to use", default=mp.cpu_count(), type=int
+        "--cpus", help="number of processors to use", default=mp.cpu_count(), type=int
     )
-    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>", default=os.curdir)
     parser.add_argument(
-        "--bitscr-thresh",
-        help="threshold above which bitscores will be selected",
+        "--tmpdir", help="</path/to/tmp/directory>", default=tempfile.mkdtemp()
+    )
+    parser.add_argument(
+        "--top_percentile",
+        help="pecentile above which hits will be retreived",
         default=0.9,
     )
     parser.add_argument(
@@ -602,12 +577,12 @@ def main():
         blast_type=args.blast_type,
         evalue=args.evalue,
         maxtargetseqs=args.maxtargetseqs,
-        nproc=args.nproc,
+        cpus=args.cpus,
         tmpdir=args.tmpdir,
         force=args.force,
         verbose=args.verbose,
     )
-    hits = parse(results=result, bitscr_thresh=args.bitscr_thresh, verbose=args.verbose)
+    hits = parse(results=result, top_pct=args.top_percentile, verbose=args.verbose)
     hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
     fname, __ = os.path.splitext(os.path.basename(args.outfile))
     dirpath = os.path.dirname(os.path.realpath(args.outfile))
