@@ -84,7 +84,7 @@ conda install -c maxibor tsne
 Now download Autometa.
 
 ```
-git clone https://bitbucket.org/jason_c_kwan/autometa
+git clone https://github.com/KwanLab/Autometa
 ```
 
 You should now add the autometa/pipeline directory to your $PATH environmental variable
