@@ -6,7 +6,7 @@ The lowest common ancestor refers to the ORF most closely associated with other 
 
 LCA has been exclusively tested in Linux and MacOS X environments.
 
-LCA is contained in the [Autometa repository][https://bitbucket.org/jason_c_kwan/autometa].
+LCA is contained in the [Autometa repository][https://github.com/KwanLab/Autometa].
 
 ### Prerequisites
 
@@ -118,7 +118,7 @@ _Example application of failure information tracking:_
 
 ## License
 
-see the [LICENSE.md](https://bitbucket.org/jason_c_kwan/autometa/src/99af693e1bf5da219de005053bde5bc0e2417fd8/LICENSE.txt?at=master&fileviewer=file-view-default) file for details
+see the [LICENSE.md](https://github.com/KwanLab/Autometa/blob/master/LICENSE.txt) file for details
 
 ## Acknowledgments
 
@@ -141,4 +141,4 @@ ___
 Range Minimum Query (RMQ):
 Following the generation of the sparse table, respective ORFs from the BLAST query are reduced by the RMQ algorithm to determine the LCA. The RMQ algorithm utilizes the generated tree of tax IDs, sparse table and features of each tax ID. i.e. depth and location within the tree of tax IDs. The RMQ algorithm will look at the ORFs in pairs reducing to a final lowest common ancestor. Upon receiving the ORF list input, the RMQ algorithm will look at ORF pairs, determine the tax IDs between the two and return the closest tax ID to the root. Each ORF pair has an array of tax IDs linking the relation between the two. The array of tax IDs between the two ORFs is investigated for a lowest common ancestor. An LCA is returned and subsequent RMQ is performed between the returned LCA and the next ORF until a final LCA is reached. As more divergent ORFs are introduced the LCA will get higher until the lowest common ancestor is the root.
 
-[AutometaRepo]:(https://bitbucket.org/jason_c_kwan/autometa)
+[AutometaRepo]:(https://github.com/KwanLab/Autometa/)
