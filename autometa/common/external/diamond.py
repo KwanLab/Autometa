@@ -194,11 +194,11 @@ class DiamondResult:
             A sseqid dict as now been subtracted (removed) from the sseqids dict in the object
         """
         assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
-        try:
-            self.sseqids.pop(list(other_hit.sseqids.keys())[0])
-        except KeyError as err:
-            print("Given key is not present!")
-            raise err
+        for key in list(other_hit.sseqids.keys()):
+            try:
+                self.sseqids.pop(key)
+            except KeyError as err:
+                raise err
         return self
 
     def get_top_hit(self):
@@ -305,16 +305,13 @@ def blast(
         `fasta` file does not exist
     ValueError
         provided `blast_type` is not 'blastp' or 'blastx'
-    OSError
-        Diamond execution failed
     subprocess.CalledProcessError
         Failed to run blast
     """
     if not os.path.exists(fasta):
         raise FileNotFoundError(fasta)
     if os.path.exists(outfpath) and not force:
-        empty = not os.stat(outfpath).st_size
-        if not empty:
+        if not os.path.getsize(outfpath):
             if verbose:
                 logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
             return outfpath
@@ -322,7 +319,7 @@ def blast(
     if blast_type not in ["blastp", "blastx"]:
         raise ValueError(f"blast_type must be blastp or blastx. Given: {blast_type}")
     if verbose:
-        logger.debug(f"Diamond{blast_type.title()} {fasta} against {database}")
+        logger.debug(f"Diamond{blast_type} {fasta} against {database}")
     cmd = [
         "diamond",
         blast_type,
@@ -343,6 +340,7 @@ def blast(
         "--tmpdir",
         tmpdir,
     ]
+    # this is done as when cmd is a list each element should be a string
     cmd = [str(c) for c in cmd]
     if verbose:
         logger.debug(f'RunningDiamond: {" ".join(cmd)}')
@@ -357,7 +355,7 @@ def blast(
     return outfpath
 
 
-def parse(results, top_pct=0.9, verbose=False):
+def parse(results, top_percentile=0.9, verbose=False):
     """
     Retrieve diamond results from output table
 
@@ -365,7 +363,7 @@ def parse(results, top_pct=0.9, verbose=False):
     ----------
     results : str
         </path/to/blastp/outfmt6/output/file>
-    top_pct : 0 < float <= 1, optional
+    top_percentile : 0 < float <= 1, optional
         bitscore filter applied to each sseqid, by default 0.9
         Used to determine whether the bitscore is above a threshold value. 
         For example, if it is 0.9 then only bitscores >= 0.9 * the top bitscore are accepted
@@ -382,7 +380,7 @@ def parse(results, top_pct=0.9, verbose=False):
     FileNotFoundError
         diamond results table does not exist
     ValueError
-        top_pct value is not a float or not in range of 0 to 1
+        top_percentile value is not a float or not in range of 0 to 1
     """
     disable = False if verbose else True
     # boolean toggle --> keeping above vs. below because I think this is more readable.
@@ -392,14 +390,14 @@ def parse(results, top_pct=0.9, verbose=False):
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
-        float(top_pct)
+        float(top_percentile)
     except ValueError:
         raise ValueError(
-            f"top_pct must be a float! Input: {top_pct} Type: {type(top_pct)}"
+            f"top_percentile must be a float! Input: {top_percentile} Type: {type(top_percentile)}"
         )
-    in_range = 0.0 < top_pct <= 1.0
+    in_range = 0.0 < top_percentile <= 1.0
     if not in_range:
-        raise ValueError(f"top_pct not in range(0,1)! Input: {top_pct}")
+        raise ValueError(f"top_percentile not in range(0,1)! Input: {top_percentile}")
     hits = {}
     temp = set()
     n_lines = file_length(results) if verbose else None
@@ -439,7 +437,7 @@ def parse(results, top_pct=0.9, verbose=False):
                 topbitscore = bitscore
                 temp = set([hit.qseqid])
                 continue
-            if bitscore >= top_pct * topbitscore:
+            if bitscore >= top_percentile * topbitscore:
                 hits[hit.qseqid] += hit
     return hits
 
@@ -561,8 +559,8 @@ def main():
         "--tmpdir", help="</path/to/tmp/directory>", default=tempfile.mkdtemp()
     )
     parser.add_argument(
-        "--top_percentile",
-        help="pecentile above which hits will be retreived",
+        "--top-percentile",
+        help="percentile above which hits will be retrieved",
         default=0.9,
     )
     parser.add_argument(
@@ -582,7 +580,9 @@ def main():
         force=args.force,
         verbose=args.verbose,
     )
-    hits = parse(results=result, top_pct=args.top_percentile, verbose=args.verbose)
+    hits = parse(
+        results=result, top_percentile=args.top_percentile, verbose=args.verbose
+    )
     hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
     fname, __ = os.path.splitext(os.path.basename(args.outfile))
     dirpath = os.path.dirname(os.path.realpath(args.outfile))
