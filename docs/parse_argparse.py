@@ -57,7 +57,7 @@ def get_argparse_block(fpath):
         argparse block between (and includes) import argparse and args = parser.parse_args() to be written to a temporary file
     """
     writing = False
-    outlines = "import os\nimport multiprocessing as mp\n"
+    outlines = "import os\nimport multiprocessing as mp\nimport tempfile\n"
     with open(fpath) as fh:
         for line in fh:
             line = line.strip()
