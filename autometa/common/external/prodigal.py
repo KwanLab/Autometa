@@ -29,6 +29,7 @@ import logging
 import os
 import subprocess
 import shutil
+import tempfile
 
 from glob import glob
 from Bio import SeqIO
@@ -38,6 +39,93 @@ from autometa.config.environ import get_versions
 
 
 logger = logging.getLogger(__name__)
+
+
+def aggregate_orfs(search_str, outfpath):
+    tmpfpaths = glob(search_str)
+    lines = ""
+    for fp in tmpfpaths:
+        with open(fp) as fh:
+            for line in fh:
+                lines += line
+    out = open(outfpath, "w")
+    out.write(lines)
+    out.close()
+
+
+def annotate_sequential(assembly, prots_out, nucls_out):
+    cmd = [
+        "prodigal",
+        "-i",
+        assembly,
+        "-a",
+        prots_out,
+        "-d",
+        nucls_out,
+        "-p",
+        "meta",
+        "-m",
+        "-q",
+    ]
+    cmd = [str(arg) for arg in cmd]
+    cmdline = subprocess.list2cmdline(cmd)
+    proc = subprocess.run(
+        cmdline,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        shell=True,
+        check=True,
+    )
+
+
+def annotate_parallel(assembly, prots_out, nucls_out, cpus):
+    outdir = os.path.dirname(os.path.realpath(nucls_out))
+    log = os.path.join(outdir, "prodigal.parallel.log")
+    outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
+    tmpdir = tempfile.mkdtemp(dir=outdir)
+    # tmpdir = os.path.join(outdir, "tmp")
+    if not os.path.exists(tmpdir):
+        os.makedirs(tmpdir)
+    tmpnucl = ".".join([outprefix, "{#}", "fna"])
+    tmpprot = ".".join([outprefix, "{#}", "faa"])
+    tmpnucl_fpath = os.path.join(tmpdir, tmpnucl)
+    tmpprot_fpath = os.path.join(tmpdir, tmpprot)
+    jobs = f"-j{cpus}"
+    cmd = [
+        "parallel",
+        "--retries",
+        "4",
+        "--joblog",
+        log,
+        jobs,
+        "--pipe",
+        "--recstart",
+        "'>'",
+        "--linebuffer",
+        "prodigal",
+        "-a",
+        tmpprot_fpath,
+        "-d",
+        tmpnucl_fpath,
+        "-q",
+        "-p",
+        "meta",
+        "-m",
+        "-o",
+        os.devnull,
+        "<",
+        assembly,
+        "2>",
+        os.devnull,
+    ]
+    cmd = [str(arg) for arg in cmd]
+    cmdline = subprocess.list2cmdline(cmd)
+    proc = subprocess.run(cmdline, shell=True, check=True)
+    search_path = os.path.join(tmpdir, "*.faa")
+    aggregate_orfs(search_path, prots_out)
+    search_path = os.path.join(tmpdir, "*.fna")
+    aggregate_orfs(search_path, nucls_out)
+    shutil.rmtree(tmpdir)
 
 
 def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
@@ -67,108 +155,42 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     -------
     FileExistsError
         `nucls_out` or `prots_out` already exists
+    subprocess.CalledProcessError
+        prodigal Failed
     ChildProcessError
-        Prodigal Failed
+        `nucls_out` or `prots_out` not written
+    IOError
+        `nucls_out` or `prots_out` incorrectly formatted
     """
     if not os.path.exists(assembly):
-        raise FileNotFoundError(f'{assembly} does not exists!')
-    if assembly.endswith('.gz'):
+        raise FileNotFoundError(f"{assembly} does not exists!")
+    if assembly.endswith(".gz"):
         with gzip.open(assembly) as fh:
-            lines = ''
+            lines = ""
             for line in fh:
                 lines += line.decode()
-        assembly = assembly.rstrip('.gz')
-        with open(assembly, 'w') as fh:
+        assembly = assembly.rstrip(".gz")
+        with open(assembly, "w") as fh:
             fh.write(lines)
     for fpath in [nucls_out, prots_out]:
         if os.path.exists(fpath) and not force:
-            raise FileExistsError(f'{fpath} To overwrite use --force')
+            raise FileExistsError(f"{fpath} To overwrite use --force")
     if parallel:
-        outdir = os.path.dirname(os.path.realpath(nucls_out))
-        # parallel log should indicate time & dataset. i.e. time_dataset.prodigal.parallel.log
-        log = os.path.join(outdir, 'prodigal.parallel.log')
-        outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
-        tmpdir = os.path.join(outdir, 'tmp')
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-        tmpnucl = '.'.join([outprefix, '{#}', 'fna'])
-        tmpprot = '.'.join([outprefix, '{#}', 'faa'])
-        tmpnucl_fpath = os.path.join(tmpdir, tmpnucl)
-        tmpprot_fpath = os.path.join(tmpdir, tmpprot)
-        jobs = f'-j{cpus}'
-        cmd = [
-            'parallel',
-            '--retries', '4',
-            '--joblog', log,
-            jobs,
-            '--pipe',
-            '--recstart',
-            '\'>\'',
-            '--linebuffer',
-            'prodigal',
-            '-a', tmpprot_fpath,
-            '-d', tmpnucl_fpath,
-            '-q',
-            '-p', 'meta',
-            '-m',
-            '-o', os.devnull,
-            '<', assembly,
-            '2>', os.devnull,
-        ]
+        annotate_parallel(
+            assembly=assembly, prots_out=prots_out, nucls_out=nucls_out, cpus=cpus
+        )
     else:
-        cmd = [
-            'prodigal',
-            '-i', assembly,
-            '-a', prots_out,
-            '-d', nucls_out,
-            '-p', 'meta',
-            '-m',
-            '-q',
-        ]
-    cmd = [str(arg) for arg in cmd]
-    logger.debug(f'cmd: {" ".join(cmd)}')
-    if parallel:
-        try:
-            returncode = subprocess.call(" ".join(cmd), shell=True)
-            tmpfpaths = glob(os.path.join(tmpdir, '*.faa'))
-            lines = ''
-            for fp in tmpfpaths:
-                with open(fp) as fh:
-                    for line in fh:
-                        lines += line
-            out = open(prots_out, 'w')
-            out.write(lines)
-            out.close()
-            tmpfpaths = glob(os.path.join(tmpdir, '*.fna'))
-            lines = ''
-            for fp in tmpfpaths:
-                with open(fp) as fh:
-                    for line in fh:
-                        lines += line
-            out = open(nucls_out, 'w')
-            out.write(lines)
-            out.close()
-        except Exception as err:
-            # COMBAK: Should probably be more descriptive as to what errors could occur here.
-            logger.exception(err)
-        finally:
-            shutil.rmtree(tmpdir)
-    else:
-        with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
-            proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
-            returncode = proc.returncode
-    if returncode:
-        logger.warning(f'Args:{cmd} ReturnCode:{returncode}')
-        # COMBAK: Check all possible return codes for GNU parallel
+        annotate_sequential(assembly=assembly, prots_out=prots_out, nucls_out=nucls_out)
     for fp in [nucls_out, prots_out]:
-        if not os.path.exists(fp) or os.stat(fp).st_size == 0:
-            raise ChildProcessError(f'{fp} not written')
+        if not os.path.exists(fp) or os.path.getsize(fp) == 0:
+            raise ChildProcessError(f"{fp} not written")
         try:
+            # Fasta file format check by simply reading orf annotations
             with open(fp) as fh:
                 for _ in SimpleFastaParser(fh):
                     pass
         except (IOError, ValueError):
-            raise IOError(f'InvalidFileFormat: {fp}')
+            raise IOError(f"InvalidFileFormat: {fp}")
     return nucls_out, prots_out
 
 
@@ -216,19 +238,23 @@ def contigs_from_headers(fpath):
         contigs translated from prodigal ORF description.  {orf_id:contig_id, ...}
 
     """
-    version = get_versions('prodigal')
-    if version.count('.') >= 2:
-        version = float('.'.join(version.split('.')[:2]))
+    version = get_versions("prodigal")
+    if version.count(".") >= 2:
+        version = float(".".join(version.split(".")[:2]))
     else:
         version = float(version)
     translations = {}
-    for record in SeqIO.parse(fpath, 'fasta'):
+    for record in SeqIO.parse(fpath, "fasta"):
         if version < 2.6:
-            orf_id = record.description.split(
-                '#')[-1].split(';')[0].strip().replace('ID=', '')
-            contig_id = record.id.replace(f'_{orf_id}', '')
+            orf_id = (
+                record.description.split("#")[-1]
+                .split(";")[0]
+                .strip()
+                .replace("ID=", "")
+            )
+            contig_id = record.id.replace(f"_{orf_id}", "")
         else:
-            contig_id = record.id.rsplit('_', 1)[0]
+            contig_id = record.id.rsplit("_", 1)[0]
         translations.update({record.id: contig_id})
     return translations
 
@@ -255,20 +281,24 @@ def orf_records_from_contigs(contigs, fpath):
         Why the exception is raised.
 
     """
-    version = get_versions('prodigal')
-    if version.count('.') >= 2:
-        version = float('.'.join(version.split('.')[:2]))
+    version = get_versions("prodigal")
+    if version.count(".") >= 2:
+        version = float(".".join(version.split(".")[:2]))
     else:
         version = float(version)
 
     records = []
-    for record in SeqIO.parse(fpath, 'fasta'):
+    for record in SeqIO.parse(fpath, "fasta"):
         if version < 2.6:
-            orf_id = record.description.split(
-                '#')[-1].split(';')[0].strip().replace('ID=', '')
-            contig_id = record.id.replace(f'_{orf_id}', '')
+            orf_id = (
+                record.description.split("#")[-1]
+                .split(";")[0]
+                .strip()
+                .replace("ID=", "")
+            )
+            contig_id = record.id.replace(f"_{orf_id}", "")
         else:
-            contig_id = record.id.rsplit('_', 1)[0]
+            contig_id = record.id.rsplit("_", 1)[0]
         if contig_id not in contigs:
             continue
         records.append(record)
@@ -276,36 +306,38 @@ def orf_records_from_contigs(contigs, fpath):
 
 
 def main(args):
-    if args.verbose:
-        logger.setLevel(logger.DEBUG)
     nucls_out, prots_out = run(
         assembly=args.assembly,
         nucls_out=args.nucls_out,
         prots_out=args.prots_out,
         force=args.force,
         cpus=args.cpus,
-        parallel=args.parallel)
-    logger.info(
-        f'written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}')
+        parallel=args.parallel,
+    )
+    logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
+        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
     parser = argparse.ArgumentParser(
-        description='Calls ORFs with provided input assembly')
-    parser.add_argument('assembly', help='</path/to/assembly>', type=str)
-    parser.add_argument('nucls_out', help='</path/to/nucls.out>', type=str)
-    parser.add_argument('prots_out', help='</path/to/prots.out>', type=str)
-    parser.add_argument('--force', help="force overwrite of ORFs out filepaths",
-                        action='store_true')
-    parser.add_argument('--cpus', help='num cpus to use', type=int, default=0)
-    parser.add_argument('--parallel', help="Enable GNU parallel",
-                        action='store_true', default=False)
-    parser.add_argument('--verbose', help="add verbosity", action='store_true')
+        description="Calls ORFs with provided input assembly"
+    )
+    parser.add_argument("assembly", help="</path/to/assembly>", type=str)
+    parser.add_argument("nucls_out", help="</path/to/nucls.out>", type=str)
+    parser.add_argument("prots_out", help="</path/to/prots.out>", type=str)
+    parser.add_argument(
+        "--force", help="force overwrite of ORFs out filepaths", action="store_true"
+    )
+    parser.add_argument("--cpus", help="num cpus to use", type=int, default=0)
+    parser.add_argument(
+        "--parallel", help="Enable GNU parllel", action="store_true", default=False
+    )
     args = parser.parse_args()
     main(args)
