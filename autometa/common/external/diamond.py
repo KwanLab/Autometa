@@ -28,7 +28,6 @@ import gzip
 import logging
 import os
 import subprocess
-import shutil
 import tempfile
 
 import multiprocessing as mp
@@ -173,8 +172,15 @@ class DiamondResult:
         -------
         DiamondResult object
             Another sseqid dict as now been added (updated) to the sseqids dict in the object
+
+        Raises
+        ------
+        AssertionError
+            Query sequences are not equal
         """
-        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
+        assert (
+            self == other_hit
+        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
         self.sseqids.update(other_hit.sseqids)
         return self
 
@@ -192,8 +198,15 @@ class DiamondResult:
         -------
         DiamondResult object
             A sseqid dict as now been subtracted (removed) from the sseqids dict in the object
+        
+        Raises
+        ------
+        AssertionError
+            Query sequences are not equal
         """
-        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
+        assert (
+            self == other_hit
+        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
         for key in list(other_hit.sseqids.keys()):
             try:
                 self.sseqids.pop(key)
@@ -351,7 +364,6 @@ def blast(
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
         raise err
-    shutil.rmtree(tmpdir, ignore_errors=True)
     return outfpath
 
 
@@ -555,9 +567,7 @@ def main():
     parser.add_argument(
         "--cpus", help="number of processors to use", default=mp.cpu_count(), type=int
     )
-    parser.add_argument(
-        "--tmpdir", help="</path/to/tmp/directory>", default=tempfile.mkdtemp()
-    )
+    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>")
     parser.add_argument(
         "--top-percentile",
         help="percentile above which hits will be retrieved",
