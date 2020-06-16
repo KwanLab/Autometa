@@ -94,7 +94,7 @@ You should now add the autometa/pipeline directory to your $PATH environmental v
 As an alternative to doing all the above manually, we have provided an Autometa Docker image. First install [Docker](https://www.docker.com), then run the following commands:
 
 ```
-git clone https://bitbucket.org/jason_c_kwan/autometa
+git clone https://github.com/KwanLab/Autometa.git
 docker pull jasonkwan/autometa:latest
 ```
 
