@@ -68,13 +68,9 @@ def annotate_sequential(assembly, prots_out, nucls_out):
         "-q",
     ]
     cmd = [str(arg) for arg in cmd]
-    cmdline = subprocess.list2cmdline(cmd)
+    logger.debug(" ".join(cmd))
     proc = subprocess.run(
-        cmdline,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        shell=True,
-        check=True,
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
     )
 
 
@@ -83,7 +79,6 @@ def annotate_parallel(assembly, prots_out, nucls_out, cpus):
     log = os.path.join(outdir, "prodigal.parallel.log")
     outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
     tmpdir = tempfile.mkdtemp(dir=outdir)
-    # tmpdir = os.path.join(outdir, "tmp")
     if not os.path.exists(tmpdir):
         os.makedirs(tmpdir)
     tmpnucl = ".".join([outprefix, "{#}", "fna"])
@@ -120,6 +115,7 @@ def annotate_parallel(assembly, prots_out, nucls_out, cpus):
     ]
     cmd = [str(arg) for arg in cmd]
     cmdline = subprocess.list2cmdline(cmd)
+    logger.debug(cmdline)
     proc = subprocess.run(cmdline, shell=True, check=True)
     search_path = os.path.join(tmpdir, "*.faa")
     aggregate_orfs(search_path, prots_out)
@@ -305,24 +301,12 @@ def orf_records_from_contigs(contigs, fpath):
     return records
 
 
-def main(args):
-    nucls_out, prots_out = run(
-        assembly=args.assembly,
-        nucls_out=args.nucls_out,
-        prots_out=args.prots_out,
-        force=args.force,
-        cpus=args.cpus,
-        parallel=args.parallel,
-    )
-    logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
-
-
-if __name__ == "__main__":
+def main():
     import argparse
     import logging as logger
 
     logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
@@ -340,4 +324,17 @@ if __name__ == "__main__":
         "--parallel", help="Enable GNU parllel", action="store_true", default=False
     )
     args = parser.parse_args()
-    main(args)
+
+    nucls_out, prots_out = run(
+        assembly=args.assembly,
+        nucls_out=args.nucls_out,
+        prots_out=args.prots_out,
+        force=args.force,
+        cpus=args.cpus,
+        parallel=args.parallel,
+    )
+    logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
+
+
+if __name__ == "__main__":
+    main()

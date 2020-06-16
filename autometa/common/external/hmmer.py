@@ -81,7 +81,7 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
         logger.warning(f"Make sure your hmm profiles are pressed! hmmpress -f {hmmdb}")
-        logger.error(f"Args:{cmd} ReturnCode:{proc.returncode}")
+        logger.error(f"Args:{cmdline} ReturnCode:{proc.returncode}")
         raise err
     tmp_fpaths = glob(os.path.join(tmp_dirpath, "*.txt"))
     lines = ""
@@ -100,11 +100,8 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
 
 def annotate_sequential(orfs, hmmdb, outfpath, cpus):
     cmd = ["hmmscan", "--cpu", str(cpus), "--tblout", outfpath, hmmdb, orfs]
-    cmdline = subprocess.list2cmdline(cmd)
-    logger.debug(cmdline)
-    proc = subprocess.run(
-        cmdline, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True
-    )
+    logger.debug(" ".join(cmd))
+    proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
@@ -175,17 +172,16 @@ def hmmpress(fpath):
     -------
     FileNotFoundError
         `fpath` not found.
-    ChildProcessError
+    subprocess.CalledProcessError
         hmmpress failed
     """
     if not os.path.exists(fpath):
         raise FileNotFoundError(fpath)
-    cmd = f"hmmpress -f {fpath}"
-    logger.debug(cmd)
-    with open(os.devnull, "w") as STDOUT, open(os.devnull, "w") as STDERR:
-        retcode = subprocess.call(cmd, stdout=STDOUT, stderr=STDERR, shell=True)
-    if retcode:
-        raise ChildProcessError(f"{cmd} failed with returncode: {retcode}")
+    cmd = ["hmmpress", "-f", fpath]
+    logger.debug(" ".join(cmd))
+    proc = subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+    )
     return fpath
 
 
@@ -256,7 +252,7 @@ def main():
     import logging as logger
 
     logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
