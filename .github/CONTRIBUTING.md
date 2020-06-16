@@ -8,14 +8,16 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 [Contributing Code](#contributing-code)
 
 [How Can I Contribute?](#how-can-i-contribute)
-  * [Reporting Bugs](#reporting-bugs)
-  * [Suggesting Enhancements](#suggesting-enhancements)
-  * [Submitting pull requests](#pull-requests)
+
+* [Reporting Bugs](#reporting-bugs)
+* [Suggesting Enhancements](#suggesting-enhancements)
+* [Submitting pull requests](#pull-requests)
 
 [Style guides](#style-guides)
-  * [git commit messages](#git-commit-messages)
-  * [documentation style guide](#documentation-style-guide)
-  * [python style guide](#python-style-guide)
+
+* [git commit messages](#git-commit-messages)
+* [documentation style guide](#documentation-style-guide)
+* [python style guide](#python-style-guide)
 
 ### Contributing Code
 
@@ -23,8 +25,9 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 2. <details><summary>Add the KwanLab as the upstream remote.</summary><code>
     git remote add upstream https://github.com/KwanLab/Autometa.git</code></details>
 3. Update your local repository with the most recent updates from the Kwan Lab.
-    - <details><summary>Update your local repository.</summary><code>git pull upstream master</code></details>
-    - <details><summary>Push changes to update your remote repository.</summary><code>git push origin master</code></details>
+  - <details><summary>Update your local repository.</summary><code>git pull upstream master</code></details>
+  - <details><summary>Push changes to update your remote repository.</summary><code>git push origin master</code></details>
+  - <details><summary>Ensure pre-commit hooks are installed.</summary><code>conda install pre-commit -y; pre-commit install</code></details>
 4. <details><summary>Check out a branch corresponding to the feature you wish to add.</summary><code>git checkout -b your-new-feature master</code></details>
 5. File an issue with the feature you plan on adding. This will open a channel of
 communication with the core developers. See [suggesting enhancements](#suggesting-enhancements) for details.
@@ -58,7 +61,7 @@ Please follow these steps to have your contribution considered by the maintainer
 
 1. Follow all instructions in respective [bug_fix](https://github.com/KwanLab/Autometa/blob/master/.github/PULL_REQUEST_TEMPLATE/bug_fix.md) or [feature_change](https://github.com/KwanLab/Autometa/blob/master/.github/PULL_REQUEST_TEMPLATE/feature_change.md) templates.
 2. Follow the [style guides](#style-guides).
->Note: If writing a new file, a template.py file is provided within the autometa code base to help follow the structure requested by the Autometa team.
+>Note: If writing a new file, a `template.py` file is provided within the autometa code base to help follow the structure requested by the Autometa team.
 Please copy and rename this file before you start writing your feature.
 The template file may be found [here](https://github.com/KwanLab/Autometa/blob/dev/docs/template.py), or you may find it within your cloned repository under 'Autometa/docs/template.py'
 
@@ -74,17 +77,17 @@ While the above must be satisfied, additional prerequisites may be present, depe
 * Limit the first line to 72 characters or less
 * Reference issues and pull requests liberally after the first line
 * Consider starting the commit message with an applicable emoji:
-    * :art: `:art:` when improving the format/structure of the code
-    * :racehorse: `:racehorse:` when improving performance
-    * :memo: `:memo:` when writing docs
-    * :penguin: `:penguin:` when fixing something on Linux
-    * :apple: `:apple:` when fixing something on macOS
-    * :bug: `:bug:` when fixing a bug
-    * :fire: `:fire:` when removing code or files
-    * :green_heart: `:green_heart:` when fixing the CI build
-    * :white_check_mark: `:white_check_mark:` when adding tests
-    * :arrow_up: `:arrow_up:` when upgrading dependencies
-    * :arrow_down: `:arrow_down:` when downgrading dependencies
+  * :art: `:art:` when improving the format/structure of the code
+  * :racehorse: `:racehorse:` when improving performance
+  * :memo: `:memo:` when writing docs
+  * :penguin: `:penguin:` when fixing something on Linux
+  * :apple: `:apple:` when fixing something on macOS
+  * :bug: `:bug:` when fixing a bug
+  * :fire: `:fire:` when removing code or files
+  * :green_heart: `:green_heart:` when fixing the CI build
+  * :white_check_mark: `:white_check_mark:` when adding tests
+  * :arrow_up: `:arrow_up:` when upgrading dependencies
+  * :arrow_down: `:arrow_down:` when downgrading dependencies
 
 ### Documentation Style Guide
 
@@ -96,10 +99,11 @@ documenting files within the source code is required. The Autometa team follows 
 
 ### Python Style Guide
 
-When in doubt, you may reference:
-
-* google's python [style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
-* [PEP8](https://www.python.org/dev/peps/pep-0008/)
+We have moved all development to using the [black](black.readthedocs.io) formatter and run
+[pre-commit](https://pre-commit.com/) hooks with black such that all of the fuss with formatting according to code
+specifications can be ignored! When first cloning the repository, you should first install
+pre-commit and run `pre-commit install`. This will ensure any commits you make will be
+formatted appropriately.
 
 ### Notifying the Team
 
