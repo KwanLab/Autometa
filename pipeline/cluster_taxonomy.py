@@ -283,7 +283,10 @@ for i,line in enumerate(tqdm(contig_table_lines, total=number_of_lines)):
 		else:
 			cluster = line_list[cluster_index]
 		length = line_list[length_index]
-		taxid = int(float(line_list[taxid_index]))
+		try:
+			taxid = int(float(line_list[taxid_index]))
+		except ValueError:
+			taxid = 'unclassified'
 
 		taxRank = None
 		if taxid == 'unclassified':
