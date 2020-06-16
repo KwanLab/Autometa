@@ -27,5 +27,5 @@ Wrapper to run Autometa from base directory without installing.
 
 from autometa.__main__ import entrypoint
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     entrypoint()
