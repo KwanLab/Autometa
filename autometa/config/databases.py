@@ -96,11 +96,7 @@ class Databases:
     }
 
     def __init__(
-        self,
-        config=DEFAULT_CONFIG,
-        dryrun=False,
-        nproc=mp.cpu_count(),
-        upgrade=False,
+        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), upgrade=False,
     ):
         """
 
@@ -260,16 +256,21 @@ class Databases:
             if current_hash == remote_hash:
                 logger.debug("nr checksums match, skipping...")
                 checksums_match = True
+
         dmnd_md5 = f"{db_outfpath}.md5"
+        if os.path.exists(dmnd_md5) and os.path.exists(db_outfpath):
+            dmnd_md5_hash = read_checksum(dmnd_md5).split()[0]
+            db_outfpath_hash = calc_checksum(db_outfpath).split()[0]
+            if dmnd_md5_hash != db_outfpath_hash:
+                write_checksum(db_outfpath, dmnd_md5)
+
         do_not_upgrade = os.path.exists(db_outfpath) and not self.upgrade
         if self.dryrun or do_not_upgrade or checksums_match:
             self.config.set("ncbi", "nr", db_outfpath)
             logger.debug(f"{dmnd_md5} exists: {os.path.exists(dmnd_md5)}")
             logger.debug(f"set ncbi nr: {db_outfpath}")
             return
-        diamond.makedatabase(
-            fasta=db_infpath, database=db_outfpath, nproc=self.nproc
-        )
+        diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
         # Write checksum for nr.dmnd
         write_checksum(db_outfpath, dmnd_md5)
 
@@ -338,14 +339,15 @@ class Databases:
 
         Raises
         -------
+        subprocess.CalledProcessError
+            NCBI file download with rsync failed.
         ConnectionError
-            NCBI file download failed.
+            NCBI file checksums do not match after file transfer.
 
         """
         host = self.config.get("ncbi", "host")
         for option in options:
             ftp_fullpath = self.config.get("database_urls", option)
-            ftp_fpath = ftp_fullpath.split(host)[-1]
 
             if (
                 self.config.has_option("ncbi", option)
@@ -353,7 +355,7 @@ class Databases:
             ):
                 outfpath = self.config.get("ncbi", option)
             else:
-                outfname = os.path.basename(ftp_fpath)
+                outfname = os.path.basename(ftp_fullpath)
                 outfpath = os.path.join(self.ncbi_dir, outfname)
 
             logger.debug(f"UPDATE: (ncbi,{option}): {outfpath}")
@@ -362,13 +364,12 @@ class Databases:
             if self.dryrun:
                 return
 
-            with FTP(host) as ftp, open(outfpath, "wb") as fp:
-                ftp.login()
-                logger.debug(f"starting {option} download")
-                result = ftp.retrbinary(f"RETR {ftp_fpath}", fp.write)
-                if not result.startswith("226 Transfer complete"):
-                    raise ConnectionError(f"{option} download failed")
-                ftp.quit()
+            rsync_fpath = ftp_fullpath.replace("ftp", "rsync")
+            cmd = ["rsync", "--quiet", "--archive", rsync_fpath, outfpath]
+            logger.debug(f"starting {option} download")
+            subprocess.run(
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+            )
             checksum_outfpath = f"{outfpath}.md5"
             write_checksum(outfpath, checksum_outfpath)
             current_checksum = read_checksum(checksum_outfpath)
@@ -559,11 +560,7 @@ class Databases:
                     # Skip user added options not required by Autometa
                     continue
                 # nodes.dmp, names.dmp and merged.dmp are all in taxdump.tar.gz
-                option = (
-                    "taxdump"
-                    if option in {"nodes", "names", "merged"}
-                    else option
-                )
+                option = "taxdump" if option in {"nodes", "names", "merged"} else option
                 fpath = self.config.get(section, option)
                 fpath_md5 = f"{fpath}.md5"
                 # We can not checksum a file that does not exist.
@@ -687,9 +684,7 @@ def main():
         "into default databases directory.",
     )
     parser.add_argument(
-        "--config",
-        help="</path/to/input/database.config>",
-        default=DEFAULT_FPATH,
+        "--config", help="</path/to/input/database.config>", default=DEFAULT_FPATH,
     )
     parser.add_argument(
         "--dryrun",
@@ -739,10 +734,7 @@ def main():
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config,
-        dryrun=args.dryrun,
-        nproc=args.nproc,
-        upgrade=args.update,
+        config=config, dryrun=args.dryrun, nproc=args.nproc, upgrade=args.update,
     )
 
     compare_checksums = False
