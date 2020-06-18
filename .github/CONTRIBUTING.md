@@ -59,7 +59,7 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 
 6. <details>
       <summary>Ensure pre-commit hooks are installed.</summary>
-      <code>conda install pre-commit -y</code>
+      <code>conda install -c conda-forge pre-commit</code>
       <br>
       <code>pre-commit install</code>
    </details>
