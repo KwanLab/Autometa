@@ -31,6 +31,7 @@ import subprocess
 import sys
 import tempfile
 
+import multiprocessing as mp
 import pandas as pd
 
 from glob import glob
@@ -63,6 +64,8 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
         "--recstart",
         "'>'",
         "hmmscan",
+        "--cpu",
+        "0",
         "-o",
         os.devnull,
         "--tblout",
@@ -82,6 +85,7 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
     except subprocess.CalledProcessError as err:
         logger.warning(f"Make sure your hmm profiles are pressed! hmmpress -f {hmmdb}")
         logger.error(f"Args:{cmdline} ReturnCode:{proc.returncode}")
+        shutil.rmtree(tmp_dirpath)
         raise err
     tmp_fpaths = glob(os.path.join(tmp_dirpath, "*.txt"))
     lines = ""
@@ -110,7 +114,9 @@ def annotate_sequential(orfs, hmmdb, outfpath, cpus):
         raise err
 
 
-def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True):
+def hmmscan(
+    orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, gnu_parallel=False
+):
     """Runs hmmscan on dataset ORFs and provided hmm database.
 
     Parameters
@@ -126,7 +132,10 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True):
     force : bool, optional
         Overwrite existing `outfpath` (the default is False).
     parallel : bool, optional
-        Will parallelize hmmscan using GNU parallel (the default is True).
+        Will use multithreaded parallelization offered by hmmscan (the default is True).
+    gnu_parallel : bool, optional
+        Will parallelize hmmscan using GNU parallel (the default is False).
+        Note: Only one of `parallel` and `gnu_parallel` may be provided as True
     log : str, optional
         </path/to/parallel.log> (the default is None). If provided will write
         parallel log to `log`.
@@ -138,18 +147,25 @@ def hmmscan(orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True):
 
     Raises
     -------
+    ValueError
+        Both `parallel` and `gnu_parallel` were provided as True
     FileExistsError
         `outfpath` already exists
     subprocess.CalledProcessError
         hmmscan failed
     """
+    if gnu_parallel and parallel:
+        raise ValueError("Both parallel and gnu_parallel were provided as True")
     # OPTIMIZE: we want to extend parallel to grid computing (workqueue?) via --sshlogin?
     if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
         raise FileExistsError(f"{outfpath}. Use force to overwrite!")
-    if parallel:
+    if gnu_parallel:
         annotate_parallel(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus)
-    else:
+    elif parallel:
+        cpus = mp.cpu_count() if not cpus else cpus
         annotate_sequential(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus)
+    else:
+        annotate_sequential(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=0)
     if not os.path.exists(outfpath):
         raise FileNotFoundError(f"{outfpath} not written.")
     return outfpath
@@ -268,7 +284,15 @@ def main():
         "--force", help="force overwrite of out filepath", action="store_true"
     )
     parser.add_argument("--cpus", help="num cpus to use", default=0, type=int)
-    parser.add_argument("--parallel", help="enable GNU parallel", action="store_true")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--parallel",
+        help="enable hmmer multithreaded parallelization",
+        action="store_true",
+    )
+    group.add_argument(
+        "--gnu-parallel", help="enable GNU parallelization", action="store_true"
+    )
     args = parser.parse_args()
 
     if (
@@ -285,6 +309,7 @@ def main():
             cpus=args.cpus,
             force=args.force,
             parallel=args.parallel,
+            gnu_parallel=args.gnu_parallel,
         )
 
     result = filter_markers(
