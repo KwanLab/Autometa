@@ -26,6 +26,8 @@ Cluster contigs recursively searching for bins with highest completeness and pur
 
 import logging
 import os
+import shutil
+import tempfile
 
 import pandas as pd
 import numpy as np
@@ -197,6 +199,7 @@ def recursive_dbscan(
             columns = ['x,'y','z','coverage','cluster','purity','completeness']
     """
     eps = 0.3
+    step = 0.1
     clustering_rounds = {0: 0}
     n_clusters = float("inf")
     best_median = float("-inf")
@@ -220,7 +223,7 @@ def recursive_dbscan(
             clustering_rounds[n_clusters] = 1
         # We speed this up if we are getting a lot of tables with the same number of clusters
         if clustering_rounds[n_clusters] > 10:
-            eps *= 10
+            step *= 10
         if median_completeness == 0:
             clustering_rounds[0] += 1
         if clustering_rounds[0] >= 10:
@@ -230,7 +233,7 @@ def recursive_dbscan(
                 f"EPS: {eps:3.2f} Clusters: {n_clusters:,}"
                 f" Completeness: Median={median_completeness:4.2f} Best={best_median:4.2f}"
             )
-        eps += 0.1
+        eps += step
     if best_df.empty:
         if verbose:
             logger.debug("No complete or pure clusters found")
@@ -248,14 +251,20 @@ def recursive_dbscan(
     return complete_and_pure_df, unclustered_df
 
 
-def run_hdbscan(df, min_cluster_size, dropcols=["cluster", "purity", "completeness"]):
-    """Run clustering on `df` at provided `eps`.
+def run_hdbscan(
+    df,
+    min_cluster_size,
+    min_samples,
+    cache_dir=None,
+    dropcols=["cluster", "purity", "completeness"],
+):
+    """Run clustering on `df` at provided `min_cluster_size`.
 
     Notes
     -----
 
         * reasoning for parameter: `cluster_selection_method <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html#leaf-clustering>`_
-        * reasoning for parameter: `cluster_selection_method <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html#leaf-clustering>`_
+        * reasoning for parameters: `min_cluster_size and min_samples <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html>`_
         * documentation for `HDBSCAN <https://hdbscan.readthedocs.io/en/latest/index.html>`_
 
     Parameters
@@ -263,11 +272,12 @@ def run_hdbscan(df, min_cluster_size, dropcols=["cluster", "purity", "completene
     df : pd.DataFrame
         Contigs with embedded k-mer frequencies as ['x','y'] columns and optionally 'coverage' column
     min_cluster_size : int
-        The maximum distance between two samples for one to be considered
-        as in the neighborhood of the other. This is not a maximum bound
-        on the distances of points within a cluster. This is the most
-        important DBSCAN parameter to choose appropriately for your data set
-        and distance function. See `DBSCAN docs <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_ for more details.
+        The minimum size of clusters; single linkage splits that contain
+        fewer points than this will be considered points "falling out" of a
+        cluster rather than a cluster splitting into two new clusters.
+    min_samples : int
+        The number of samples in a neighborhood for a point to be
+        considered a core point.
     dropcols : list, optional
         Drop columns in list from `df`
         (the default is ['cluster','purity','completeness']).
@@ -298,13 +308,12 @@ def run_hdbscan(df, min_cluster_size, dropcols=["cluster", "purity", "completene
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
     X = df.loc[:, cols].to_numpy()
-    min_samples = int(np.ceil(min_cluster_size / 4))
     clusterer = HDBSCAN(
-        # cluster_selection_epsilon=eps,
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         cluster_selection_method="leaf",
         allow_single_cluster=True,
+        memory=cache_dir,
     ).fit(X)
     clusters = pd.Series(clusterer.labels_, index=df.index, name="cluster")
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
@@ -344,15 +353,23 @@ def recursive_hdbscan(
             index = contig
             columns = ['x,'y','z','coverage','cluster','purity','completeness']
     """
-
+    max_min_cluster_size = 10000
+    max_min_samples = 10
     min_cluster_size = 2
-    clustering_rounds = {0: 0}
+    min_samples = 1
     n_clusters = float("inf")
     best_median = float("-inf")
     best_df = pd.DataFrame()
+    cache_dir = tempfile.mkdtemp()
     while n_clusters > 1:
-        binned_df = run_hdbscan(table, min_cluster_size)
+        binned_df = run_hdbscan(
+            table,
+            min_cluster_size=min_cluster_size,
+            min_samples=min_samples,
+            cache_dir=cache_dir,
+        )
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
+
         completeness_filter = metrics_df["completeness"] >= completeness_cutoff
         purity_filter = metrics_df["purity"] >= purity_cutoff
         median_completeness = metrics_df[completeness_filter & purity_filter][
@@ -361,25 +378,31 @@ def recursive_hdbscan(
         if median_completeness >= best_median:
             best_median = median_completeness
             best_df = df
-        # Count the number of clusters
+
         n_clusters = df["cluster"].nunique()
-        if n_clusters in clustering_rounds:
-            clustering_rounds[n_clusters] += 1
-        else:
-            clustering_rounds[n_clusters] = 1
-        # We speed this up if we are getting a lot of tables with the same number of clusters
-        if clustering_rounds[n_clusters] > 10:
-            min_cluster_size *= 2
-        if median_completeness == 0:
-            clustering_rounds[0] += 1
-        if clustering_rounds[0] >= 10:
-            break
+
         if verbose:
             logger.debug(
-                f"min_cluster_size: {min_cluster_size:3.2f} Clusters: {n_clusters:,}"
-                f" Completeness: Median={median_completeness:4.2f} Best={best_median:4.2f}"
+                f"(min_samples, min_cluster_size): ({min_samples}, {min_cluster_size}) clusters: {n_clusters}"
+                f" median completeness (current, best): ({median_completeness:4.2f}, {best_median:4.2f})"
             )
-        min_cluster_size += 5
+
+        if min_cluster_size >= max_min_cluster_size:
+            shutil.rmtree(cache_dir)
+            cache_dir = tempfile.mkdtemp()
+            min_samples += 1
+            min_cluster_size = 2
+        else:
+            min_cluster_size += 10
+
+        if metrics_df[completeness_filter & purity_filter].empty:
+            min_cluster_size += 100
+
+        if min_samples >= max_min_samples:
+            max_min_cluster_size *= 2
+
+    shutil.rmtree(cache_dir)
+
     if best_df.empty:
         if verbose:
             logger.debug("No complete or pure clusters found")
@@ -439,7 +462,6 @@ def get_clusters(
     if method not in recursive_clusterers:
         raise ValueError(f"Method: {method} not a choice. choose b/w dbscan & hdbscan")
     clusterer = recursive_clusterers[method]
-    logger.info(f"clustering with {clusterer.__name__}")
 
     # Continue while unclustered are remaining
     # break when either clustered_df or unclustered_df is empty
@@ -535,6 +557,7 @@ def binning(
             "No markers for contigs in table. Unable to assess binning quality"
         )
 
+    logger.info(f"Using {method} clustering method")
     if not taxonomy:
         return get_clusters(
             master_df=master,
