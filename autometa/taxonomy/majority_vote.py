@@ -88,6 +88,7 @@ def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
     else:
         return False
 
+
 def lowest_majority(rank_counts, ncbi):
     """Determine the lowest majority given `rank_counts` by first attempting to
     get a taxid that leads in counts with the highest specificity in terms of
@@ -118,7 +119,8 @@ def lowest_majority(rank_counts, ncbi):
             # any that don't exist. Later we need to make sure that
             # 'unclassified' doesn't ever win
             ranks_in_path = {
-                rank_to_consider: 0 for rank_to_consider in ranks_to_consider}
+                rank_to_consider: 0 for rank_to_consider in ranks_to_consider
+            }
             # We need to add to taxid_totals for each taxid in the tax_path
             current_taxid = taxid
             current_rank = rank
@@ -143,11 +145,11 @@ def lowest_majority(rank_counts, ncbi):
             for rank_to_consider in ranks_to_consider:
                 if ranks_in_path[rank_to_consider] == 0:
                     if rank_to_consider not in taxid_totals:
-                        taxid_totals[rank_to_consider] = {'unclassified': 1}
-                    elif 'unclassified' in taxid_totals[rank_to_consider]:
-                        taxid_totals[rank_to_consider]['unclassified'] += 1
+                        taxid_totals[rank_to_consider] = {"unclassified": 1}
+                    elif "unclassified" in taxid_totals[rank_to_consider]:
+                        taxid_totals[rank_to_consider]["unclassified"] += 1
                     else:
-                        taxid_totals[rank_to_consider]['unclassified'] = 1
+                        taxid_totals[rank_to_consider]["unclassified"] = 1
     # If there are any gaps in the taxonomy paths for any of the proteins in the contig,
     # we need to add 'unclassified' to the relevant canonical taxonomic rank.
     # However, we must never allow 'unclassified' to win! (That just won't really tell us anything)
@@ -164,11 +166,12 @@ def lowest_majority(rank_counts, ncbi):
             if taxid_votes > taxid_leader_votes:
                 taxid_leader = taxid
                 taxid_leader_votes = taxid_votes
-        majority_threshold = float(total_votes)/2
-        if taxid_leader_votes > majority_threshold and taxid_leader != 'unclassified':
+        majority_threshold = float(total_votes) / 2
+        if taxid_leader_votes > majority_threshold and taxid_leader != "unclassified":
             return taxid_leader
     # Just in case
     return 1
+
 
 def rank_taxids(ctg_lcas, ncbi, verbose=False):
     """Votes for taxids based on modified majority vote system where if a
@@ -189,12 +192,14 @@ def rank_taxids(ctg_lcas, ncbi, verbose=False):
         {contig:voted_taxid, contig:voted_taxid, ...}
 
     """
-    logging.debug('Ranking taxids')
+    logging.debug("Ranking taxids")
     n_contigs = len(ctg_lcas) if verbose else None
     disable = False if verbose else True
-    desc = 'Ranking taxids' if verbose else None
+    desc = "Ranking taxids" if verbose else None
     top_taxids = {}
-    for contig in tqdm(ctg_lcas, disable=disable, total=n_contigs, desc=desc, leave=False):
+    for contig in tqdm(
+        ctg_lcas, disable=disable, total=n_contigs, desc=desc, leave=False
+    ):
         acceptedTaxid = None
         for rank in NCBI.CANONICAL_RANKS:
             if acceptedTaxid is not None:
@@ -202,9 +207,14 @@ def rank_taxids(ctg_lcas, ncbi, verbose=False):
             # Order in descending order of votes
             if rank in ctg_lcas[contig]:
                 ordered_taxids = sorted(
-                    ctg_lcas[contig][rank], key=lambda tid: ctg_lcas[contig][rank][tid], reverse=True)
+                    ctg_lcas[contig][rank],
+                    key=lambda tid: ctg_lcas[contig][rank][tid],
+                    reverse=True,
+                )
                 for taxid in ordered_taxids:
-                    if is_consistent_with_other_orfs(taxid, rank, ctg_lcas[contig], ncbi):
+                    if is_consistent_with_other_orfs(
+                        taxid, rank, ctg_lcas[contig], ncbi
+                    ):
                         acceptedTaxid = taxid
                         break
         # If acceptedTaxid is still None at this point, there was some kind of
@@ -214,6 +224,7 @@ def rank_taxids(ctg_lcas, ncbi, verbose=False):
             acceptedTaxid = lowest_majority(ctg_lcas[contig], ncbi)
         top_taxids[contig] = acceptedTaxid
     return top_taxids
+
 
 def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs):
     """Wrapper for modified majority voting algorithm from Autometa 1.0
@@ -249,32 +260,31 @@ def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs
     lca = LCA(
         dbdir=ncbi_dir,
         outdir=outdir,
-        usepickle=kwargs.get('usepickle', True),
-        verbose=kwargs.get('verbose', False),
-        cpus=kwargs.get('cpus', 0)
+        usepickle=kwargs.get("usepickle", True),
+        verbose=kwargs.get("verbose", False),
+        cpus=kwargs.get("cpus", 0),
     )
     if not lca_fname:
         fname, ext = os.path.splitext(os.path.basename(fasta))
-        lca_fname = '.'.join([fname, 'lca.tsv'])
+        lca_fname = ".".join([fname, "lca.tsv"])
     lca_fpath = os.path.join(outdir, lca_fname)
     lca_fpath = lca.blast2lca(
         fasta=fasta,
         outfpath=lca_fpath,
-        blast=kwargs.get('blast'),
-        hits_fpath=kwargs.get('hits'),
-        force=kwargs.get('force', False)
+        blast=kwargs.get("blast"),
+        hits_fpath=kwargs.get("hits"),
+        force=kwargs.get("force", False),
     )
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=fasta)
     # Vote for majority lca taxid from contig lca taxids
     # We can pass in lca as the ncbi object here, because it is a subclass of NCBI.
     voted_taxids = rank_taxids(
-        ctg_lcas=classifications,
-        ncbi=lca,
-        verbose=kwargs.get('verbose', False)
+        ctg_lcas=classifications, ncbi=lca, verbose=kwargs.get("verbose", False)
     )
     votes_fpath = os.path.join(outdir, votes_fname)
     return write_votes(voted_taxids, votes_fpath)
+
 
 def write_votes(results, outfpath):
     """Writes voting `results` to provided `outfpath`.
@@ -299,13 +309,13 @@ def write_votes(results, outfpath):
     """
     if os.path.exists(outfpath):
         raise FileExistsError(outfpath)
-    lines = 'contig\ttaxid\n'
-    fh = open(outfpath, 'w')
+    lines = "contig\ttaxid\n"
+    fh = open(outfpath, "w")
     for contig, taxid in results.items():
         if sys.getsizeof(lines) >= 60000:
             fh.write(lines)
-            lines = ''
-        lines += f'{contig}\t{taxid}\n'
+            lines = ""
+        lines += f"{contig}\t{taxid}\n"
     fh.write(lines)
     fh.close()
     return outfpath
@@ -313,24 +323,42 @@ def write_votes(results, outfpath):
 
 def main():
     import argparse
+
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir, 'databases', 'ncbi')
+    dbdir = os.path.join(basedir, "databases", "ncbi")
     parser = argparse.ArgumentParser(
-        description='Script to assign taxonomy via a modified majority voting'
-        ' algorithm.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('fasta', help='Path to ORFs fasta containing amino-acid sequences to be annotated.')
-    parser.add_argument('outdir', help='Path to output directory to store intermediate results.')
-    parser.add_argument('outfname', help='Output filename of assigned taxids.')
-    parser.add_argument('--dbdir', help='Path to NCBI databases directory.', default=dbdir)
-    parser.add_argument('--lca-fname', help='Filename to assign LCA results.')
-    parser.add_argument('--blast-table', help='Path to BLASTP results table. '
-        'Note: Must be results from outfmt=6.')
-    parser.add_argument('--nopickle',
-        help='Prevent serializing intermediate files to disk for later lookup.',
-        action='store_false', default=True)
-    parser.add_argument('--verbose', help="Add verbosity to logging stream.",
-        action='store_true', default=False)
+        description="Script to assign taxonomy via a modified majority voting"
+        " algorithm.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "fasta",
+        help="Path to ORFs fasta containing amino-acid sequences to be annotated.",
+    )
+    parser.add_argument(
+        "outdir", help="Path to output directory to store intermediate results."
+    )
+    parser.add_argument("outfname", help="Output filename of assigned taxids.")
+    parser.add_argument(
+        "--dbdir", help="Path to NCBI databases directory.", default=dbdir
+    )
+    parser.add_argument("--lca-fname", help="Filename to assign LCA results.")
+    parser.add_argument(
+        "--blast-table",
+        help="Path to BLASTP results table. " "Note: Must be results from outfmt=6.",
+    )
+    parser.add_argument(
+        "--nopickle",
+        help="Prevent serializing intermediate files to disk for later lookup.",
+        action="store_false",
+        default=True,
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Add verbosity to logging stream.",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
     results_fpath = majority_vote(
@@ -341,8 +369,9 @@ def main():
         blast=args.blast_table,
         lca_fname=args.lca_fname,
         usepickle=args.nopickle,
-        verbose=args.verbose)
+        verbose=args.verbose,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
