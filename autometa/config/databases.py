@@ -245,31 +245,37 @@ class Databases:
         db_infpath = self.config.get("ncbi", "nr")
         db_infpath_md5 = f"{db_infpath}.md5"
         db_outfpath = db_infpath.replace(".gz", ".dmnd")
+
+        db_outfpath_exists = os.path.exists(db_outfpath)
+        if db_outfpath_exists:
+            db_outfpath_hash, __ = calc_checksum(db_outfpath).split()
+
         checksums_match = False
-        if os.path.exists(db_infpath_md5) and os.path.exists(db_outfpath):
-            # If nr.dmnd.md5 exists, then we will check if nr.gz.md5 is
-            # matching
-            current_checksum = read_checksum(db_infpath_md5)
-            current_hash, __ = current_checksum.split()
-            remote_checksum = self.get_remote_checksum("ncbi", "nr")
-            remote_hash, __ = remote_checksum.split()
+        # Check database and database checksum is up-to-date
+        if os.path.exists(db_infpath_md5) and db_outfpath_exists:
+            # Check if the current db md5 is up-to-date with the remote db md5
+            current_hash, __ = read_checksum(db_infpath_md5).split()
+            remote_hash, __ = self.get_remote_checksum("ncbi", "nr").split()
             if current_hash == remote_hash:
-                logger.debug("nr checksums match, skipping...")
+                checksums_match = True
+            # Check if the current db md5 matches the calc'd db checksum
+            if db_outfpath_hash == current_hash:
                 checksums_match = True
 
         dmnd_md5 = f"{db_outfpath}.md5"
-        if os.path.exists(dmnd_md5) and os.path.exists(db_outfpath):
-            dmnd_md5_hash = read_checksum(dmnd_md5).split()[0]
-            db_outfpath_hash = calc_checksum(db_outfpath).split()[0]
-            if dmnd_md5_hash != db_outfpath_hash:
-                write_checksum(db_outfpath, dmnd_md5)
+        if os.path.exists(dmnd_md5) and db_outfpath_exists:
+            dmnd_md5_hash, __ = read_checksum(dmnd_md5).split()
+            if db_outfpath_hash == dmnd_md5_hash:
+                checksums_match = True
 
-        do_not_upgrade = os.path.exists(db_outfpath) and not self.upgrade
+        do_not_upgrade = db_outfpath_exists and not self.upgrade
         if self.dryrun or do_not_upgrade or checksums_match:
+            if checksums_match:
+                logger.debug("nr checksums match, skipping...")
             self.config.set("ncbi", "nr", db_outfpath)
-            logger.debug(f"{dmnd_md5} exists: {os.path.exists(dmnd_md5)}")
             logger.debug(f"set ncbi nr: {db_outfpath}")
             return
+
         diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
         # Write checksum for nr.dmnd
         write_checksum(db_outfpath, dmnd_md5)
