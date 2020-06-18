@@ -31,16 +31,16 @@ class AutometaException(Exception):
     def __init__(self, value):
         self.value = value
 
-    issue_request = '''
+    issue_request = """
     An error was encountered!
 
     Please help us fix your problem!
 
     You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
-    '''
+    """
 
     def __str__(self):
-        return f'{self.value}\n\n{issue_request}'
+        return f"{self.value}\n\n{issue_request}"
 
 
 class KmerFormatError(AutometaException):
@@ -51,8 +51,10 @@ class KmerFormatError(AutometaException):
         self.fpath = fpath
 
     def __str__(self):
-        return f'{self.fpath} does not contain a \"contig\" column. '\
-            'Ensure the k-mer matrix was properly generated.'
+        return (
+            f'{self.fpath} does not contain a "contig" column. '
+            "Ensure the k-mer matrix was properly generated."
+        )
 
 
 class KmerEmbeddingError(AutometaException):
@@ -75,11 +77,14 @@ class RecursiveDBSCANError(AutometaException):
         return self.value
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(
-        description='file containing utilities functions for Autometa pipeline')
-    print('file containing utilities functions for Autometa pipeline')
+        description="file containing utilities functions for Autometa pipeline"
+    )
+    print("file containing utilities functions for Autometa pipeline")
     args = parser.parse_args()
     import sys
+
     sys.exit(1)

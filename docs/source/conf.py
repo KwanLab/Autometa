@@ -14,7 +14,7 @@ from datetime import datetime
 
 sys.path.append(os.path.abspath("./_ext"))
 
-for dirpath, dirnames, filenames in os.walk('../../', topdown=True):
+for dirpath, dirnames, filenames in os.walk("../../", topdown=True):
     sys.path.insert(0, os.path.abspath(dirpath))
 
 autodoc_mock_imports = ["Bio", "hdbscan", "tsne", "sklearn", "umap", "tqdm"]
@@ -23,13 +23,12 @@ import parse_argparse  # nopep8
 
 # -- Project information -----------------------------------------------------
 
-project = 'Autometa'
-copyright = (
-    f'2016 - {datetime.now().year}, Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan')
-author = 'Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan'
+project = "Autometa"
+copyright = f"2016 - {datetime.now().year}, Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan"
+author = "Ian J. Miller, Evan R. Rees, Izaak Miller, Shaurya Chanana, Siddharth Uppal, Kyle Wolf, Jason C. Kwan"
 
 # The short X.Y version.
-version = '2.0'
+version = "2.0"
 
 # The full version, including alpha/beta/rc tags
 release = version
@@ -42,10 +41,10 @@ release = version
 # ones.
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'sphinx_rtd_theme',
-    'sphinx.ext.napoleon',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.todo",
+    "sphinx_rtd_theme",
+    "sphinx.ext.napoleon",
 ]
 
 todo_include_todos = True
@@ -53,7 +52,7 @@ todo_include_todos = True
 autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -61,18 +60,18 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
-source_encoding = 'utf-8-sig'
+source_encoding = "utf-8-sig"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
-highlight_language = 'shell'
+highlight_language = "shell"
 
 # -- Options for HTML output -------------------------------------------------
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -84,24 +83,23 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 
-if not os.path.isdir('_static'):
-    os.mkdir('_static')
+if not os.path.isdir("_static"):
+    os.mkdir("_static")
 
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # If not None, a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
 # The empty string is equivalent to '%b %d, %Y'.
 
-html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = "%b %d, %Y"
 
 
 def setup(app):
     # Register a sphinx.ext.autodoc.between listener to ignore everything
     # between lines that contain the word COPYRIGHT
     # Exclude COPYRIGHT block in scripts using the autodoc between function
-    app.connect('autodoc-process-docstring',
-                between('^.*COPYRIGHT.*$', exclude=True))
+    app.connect("autodoc-process-docstring", between("^.*COPYRIGHT.*$", exclude=True))
     return app
 
 
@@ -117,8 +115,7 @@ def sphinx_apidoc(header="Developer API"):
     """
 
     source_dir = os.path.dirname(__file__)
-    pkg_dir = os.path.join(os.path.dirname(
-        os.path.dirname(source_dir)), "autometa")
+    pkg_dir = os.path.join(os.path.dirname(os.path.dirname(source_dir)), "autometa")
     dest_dir = os.path.join(source_dir, "API_documentation")
     cmd = f"sphinx-apidoc --force --output-dir {dest_dir} {pkg_dir} --doc-project '{header}'"
     subprocess.call(cmd, shell=True)

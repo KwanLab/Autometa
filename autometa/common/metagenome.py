@@ -45,7 +45,7 @@ from autometa.common.metabin import MetaBin
 from autometa.common.utilities import timeit
 from autometa.common.utilities import gunzip
 from autometa.taxonomy.majority_vote import majority_vote
-from autometa.taxonomy.ncbi import NCBI,NCBI_DIR
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 
 # TODO: Should place all imports of Database paths to a config module so they
 # all exist in one place
@@ -118,9 +118,19 @@ class Metagenome:
     * self.write_ranks()
 
     """
-    def __init__(self, assembly, outdir, nucl_orfs_fpath, prot_orfs_fpath,
-        taxonomy_fpath, taxon_method='majority_vote', fwd_reads=None,
-        rev_reads=None, se_reads=None):
+
+    def __init__(
+        self,
+        assembly,
+        outdir,
+        nucl_orfs_fpath,
+        prot_orfs_fpath,
+        taxonomy_fpath,
+        taxon_method="majority_vote",
+        fwd_reads=None,
+        rev_reads=None,
+        se_reads=None,
+    ):
         self.assembly = os.path.realpath(assembly)
         self.fwd_reads = fwd_reads
         self.rev_reads = rev_reads
@@ -131,7 +141,11 @@ class Metagenome:
         self.prot_orfs_fpath = prot_orfs_fpath
         self.taxonomy_fpath = taxonomy_fpath
         self.taxonomy_fname = os.path.basename(self.taxonomy_fpath)
-        self.taxonomy = pd.read_csv(self.taxonomy_fpath,sep='\t',index_col='contig') if self.taxonomy_assigned else None
+        self.taxonomy = (
+            pd.read_csv(self.taxonomy_fpath, sep="\t", index_col="contig")
+            if self.taxonomy_assigned
+            else None
+        )
 
     def __repr__(self):
         return str(self)
@@ -151,7 +165,7 @@ class Metagenome:
 
         """
         with open(self.assembly) as fh:
-            return [seq for title,seq in SimpleFastaParser(fh)]
+            return [seq for title, seq in SimpleFastaParser(fh)]
 
     @property
     @lru_cache(maxsize=None)
@@ -164,7 +178,7 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        return [seq for seq in SeqIO.parse(self.assembly, 'fasta')]
+        return [seq for seq in SeqIO.parse(self.assembly, "fasta")]
 
     @property
     def nseqs(self):
@@ -189,7 +203,7 @@ class Metagenome:
             GC percentage weighted by contig length.
 
         """
-        weights = [len(seq)/self.size for seq in self.sequences]
+        weights = [len(seq) / self.size for seq in self.sequences]
         gc_counts = [SeqUtils.GC(seq) for seq in self.sequences]
         return np.average(a=gc_counts, weights=weights)
 
@@ -215,7 +229,7 @@ class Metagenome:
             record ID of the largest sequence in `assembly`.
 
         """
-        max = float('-inf')
+        max = float("-inf")
         largest = None
         for rec in self.seqrecords:
             if len(rec) > max:
@@ -255,7 +269,7 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        return self.orfs(orf_type='nucl')
+        return self.orfs(orf_type="nucl")
 
     @property
     @lru_cache(maxsize=None)
@@ -268,7 +282,7 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        return self.orfs(orf_type='prot')
+        return self.orfs(orf_type="prot")
 
     @property
     def taxonomy_assigned(self):
@@ -290,11 +304,14 @@ class Metagenome:
 
         """
         # COMBAK: Add checkpointing checksum check here
-        if os.path.exists(self.taxonomy_fpath) and os.path.getsize(self.taxonomy_fpath) > 0:
+        if (
+            os.path.exists(self.taxonomy_fpath)
+            and os.path.getsize(self.taxonomy_fpath) > 0
+        ):
             return True
         return False
 
-    def fragmentation_metric(self, quality_measure=.50):
+    def fragmentation_metric(self, quality_measure=0.50):
         """Describes the quality of assembled genomes that are fragmented in
         contigs of different length.
 
@@ -334,30 +351,31 @@ class Metagenome:
         NoneType
 
         """
-        print('Metagenome Details\n'
-            '________________________\n'
-            f'Assembly: {self.assembly}\n'
-            f'Num. Sequences: {self.nseqs:,}\n'
-            f'Size: {self.size:,} bp\n'
-            f'N50: {self.fragmentation_metric():,} bp\n'
-            f'N10: {self.fragmentation_metric(.1):,} bp\n'
-            f'N90: {self.fragmentation_metric(.9):,} bp\n'
-            f'Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n'
-            f'Largest sequence: {self.largest_seq}\n'
-            '________________________\n'
+        print(
+            "Metagenome Details\n"
+            "________________________\n"
+            f"Assembly: {self.assembly}\n"
+            f"Num. Sequences: {self.nseqs:,}\n"
+            f"Size: {self.size:,} bp\n"
+            f"N50: {self.fragmentation_metric():,} bp\n"
+            f"N10: {self.fragmentation_metric(.1):,} bp\n"
+            f"N90: {self.fragmentation_metric(.9):,} bp\n"
+            f"Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n"
+            f"Largest sequence: {self.largest_seq}\n"
+            "________________________\n"
         )
         if not autometa_details:
             return
         print(
-            'Autometa Details\n'
-            '________________________\n'
-            f'Outdir: {self.outdir}\n'
-            f'ORFs called: {self.orfs_called}\n'
-            f'Prots filepath: {self.prot_orfs_fpath}\n'
-            f'Nucl filepath: {self.nucl_orfs_fpath}\n'
-            f'Taxonomy method: {self.taxon_method}\n'
-            f'Taxonomy assigned: {self.taxonomy_assigned}\n'
-            f'Taxonomy filepath: {self.taxonomy_fpath}\n'
+            "Autometa Details\n"
+            "________________________\n"
+            f"Outdir: {self.outdir}\n"
+            f"ORFs called: {self.orfs_called}\n"
+            f"Prots filepath: {self.prot_orfs_fpath}\n"
+            f"Nucl filepath: {self.nucl_orfs_fpath}\n"
+            f"Taxonomy method: {self.taxon_method}\n"
+            f"Taxonomy assigned: {self.taxonomy_assigned}\n"
+            f"Taxonomy filepath: {self.taxonomy_fpath}\n"
         )
 
     @timeit
@@ -391,25 +409,27 @@ class Metagenome:
         """
         if not isinstance(cutoff, numbers.Number) or isinstance(cutoff, bool):
             # https://stackoverflow.com/a/4187220/13118765
-            raise TypeError(f'cutoff: {cutoff} must be a float or int')
+            raise TypeError(f"cutoff: {cutoff} must be a float or int")
         if cutoff <= 0:
-            raise ValueError(f'cutoff: {cutoff} must be a positive real number')
+            raise ValueError(f"cutoff: {cutoff} must be a positive real number")
         if os.path.exists(out):
             raise FileExistsError(out)
         outdir = os.path.dirname(out)
-        gunzipped_fname = os.path.basename(self.assembly.rstrip('.gz'))
+        gunzipped_fname = os.path.basename(self.assembly.rstrip(".gz"))
         gunzipped_fpath = os.path.join(outdir, gunzipped_fname)
-        if self.assembly.endswith('.gz'):
+        if self.assembly.endswith(".gz"):
             if not os.path.exists(gunzipped_fpath):
                 gunzip(self.assembly, gunzipped_fpath)
             self.assembly = gunzipped_fpath
-        logger.info(f'Getting contigs greater than or equal to {cutoff:,} bp')
+        logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
         records = [seq for seq in self.seqrecords if len(seq) >= cutoff]
         if self.orfs_called:
-            msg = (f'{self.nucl_orfs_fpath} and {self.prot_orfs_fpath} have already been called!'
-                'Call orfs again to retrieve only ORFs corresponding to filtered assembly')
+            msg = (
+                f"{self.nucl_orfs_fpath} and {self.prot_orfs_fpath} have already been called!"
+                "Call orfs again to retrieve only ORFs corresponding to filtered assembly"
+            )
             logger.warning(msg)
-        SeqIO.write(records, out, 'fasta')
+        SeqIO.write(records, out, "fasta")
         return Metagenome(
             assembly=out,
             outdir=self.outdir,
@@ -418,7 +438,8 @@ class Metagenome:
             taxonomy_fpath=self.taxonomy_fpath,
             fwd_reads=self.fwd_reads,
             rev_reads=self.rev_reads,
-            taxon_method=self.taxon_method)
+            taxon_method=self.taxon_method,
+        )
 
     def call_orfs(self, force=False, cpus=0, parallel=True):
         """Calls ORFs on Metagenome assembly.
@@ -446,11 +467,11 @@ class Metagenome:
             ORF calling failed.
 
         """
-        for arg, argname in zip([force, parallel],['force','parallel']):
+        for arg, argname in zip([force, parallel], ["force", "parallel"]):
             if not isinstance(arg, bool) and isinstance(arg, numbers.Number):
-                raise TypeError(f'{argname} must be a boolean!')
+                raise TypeError(f"{argname} must be a boolean!")
         if not isinstance(cpus, int) or isinstance(cpus, bool):
-            raise TypeError(f'cpus:({cpus}) must be an integer!')
+            raise TypeError(f"cpus:({cpus}) must be an integer!")
 
         # COMBAK: Add checkpointing checksum check here
         try:
@@ -468,7 +489,7 @@ class Metagenome:
             logger.exception(err)
         return nucls_fp, prots_fp
 
-    def orfs(self, orf_type='prot', cpus=0):
+    def orfs(self, orf_type="prot", cpus=0):
         """Retrieves ORFs after being called from self.call_orfs.
 
         Parameters
@@ -490,14 +511,23 @@ class Metagenome:
         """
         if not self.orfs_called:
             self.call_orfs(cpus=cpus)
-        if orf_type not in {'prot','nucl'}:
+        if orf_type not in {"prot", "nucl"}:
             raise ValueError('orf_type must be "prot" or "nucl"!')
-        orfs_fpath = self.prot_orfs_fpath if orf_type == 'prot' else self.nucl_orfs_fpath
-        return [orf for orf in SeqIO.parse(orfs_fpath, 'fasta')]
+        orfs_fpath = (
+            self.prot_orfs_fpath if orf_type == "prot" else self.nucl_orfs_fpath
+        )
+        return [orf for orf in SeqIO.parse(orfs_fpath, "fasta")]
 
     @timeit
-    def get_kmers(self, kmer_size=5, multiprocess=True, out=None, normalized=None,
-        force=False, nproc=1):
+    def get_kmers(
+        self,
+        kmer_size=5,
+        multiprocess=True,
+        out=None,
+        normalized=None,
+        force=False,
+        nproc=1,
+    ):
         """Counts k-mer frequencies using provided `kmer_size`.
 
         Parameters
@@ -527,10 +557,10 @@ class Metagenome:
         case2 = out_specified and out_exists and force
         case3 = out_specified and not out_exists
         if case1:
-            logger.warning(f'FileExists: {out} force to overwrite. [retrieving]')
-            return pd.read_csv(out, sep='\t', index_col='contig')
+            logger.warning(f"FileExists: {out} force to overwrite. [retrieving]")
+            return pd.read_csv(out, sep="\t", index_col="contig")
         normalize_kmers = True if normalized else False
-        logger.info(f'Counting {kmer_size}-mers. Normalize: {normalize_kmers}')
+        logger.info(f"Counting {kmer_size}-mers. Normalize: {normalize_kmers}")
         kmers_df = kmers.count(
             assembly=self.assembly,
             kmer_size=kmer_size,
@@ -538,10 +568,10 @@ class Metagenome:
             nproc=nproc,
         )
         if case2 or case3:
-            kmers_df.to_csv(out, sep='\t', header=True, index=True)
+            kmers_df.to_csv(out, sep="\t", header=True, index=True)
         if normalize_kmers:
             normalized_df = kmers.normalize(kmers_df)
-            normalized_df.to_csv(normalized, sep='\t', header=True, index=True)
+            normalized_df.to_csv(normalized, sep="\t", header=True, index=True)
             return normalized_df
         else:
             return kmers_df
@@ -577,10 +607,10 @@ class Metagenome:
             fwd_reads=self.fwd_reads,
             rev_reads=self.rev_reads,
             se_reads=self.se_reads,
-            sam=kwargs.get('sam'),
-            bam=kwargs.get('bam'),
-            lengths=kwargs.get('lengths'),
-            bed=kwargs.get('bed'),
+            sam=kwargs.get("sam"),
+            bam=kwargs.get("bam"),
+            lengths=kwargs.get("lengths"),
+            bed=kwargs.get("bed"),
         )
 
     @timeit
@@ -610,27 +640,32 @@ class Metagenome:
             Provided `method` not yet implemented.
 
         """
-        logger.debug(f'assigning taxonomy via {method}')
+        logger.debug(f"assigning taxonomy via {method}")
         if not self.orfs_called:
-            cpus = kwargs.get('cpus',0)
+            cpus = kwargs.get("cpus", 0)
             try:
                 self.call_orfs(force=force, cpus=cpus)
             except FileExistsError as err:
                 logger.warning(err)
         if self.taxonomy_assigned and not force:
-            logger.debug(f'FileExistsError: {self.taxonomy_fpath}. Use force to overwrite. skipping...')
-            return pd.read_csv(self.taxonomy_fpath, sep='\t', index_col='contig')
-        if method == 'majority_vote':
+            logger.debug(
+                f"FileExistsError: {self.taxonomy_fpath}. Use force to overwrite. skipping..."
+            )
+            return pd.read_csv(self.taxonomy_fpath, sep="\t", index_col="contig")
+        if method == "majority_vote":
             self.taxonomy_fpath = majority_vote(
                 fasta=self.prot_orfs_fpath,
-                ncbi_dir=kwargs.get('ncbi',NCBI_DIR),
+                ncbi_dir=kwargs.get("ncbi", NCBI_DIR),
                 outdir=self.outdir,
                 votes_fname=self.taxonomy_fname,
                 *args,
-                **kwargs)
+                **kwargs,
+            )
         else:
-            raise NotImplementedError(f'method: {method}\nargs:{args}\nkwargs: {kwargs}')
-        return pd.read_csv(self.taxonomy_fpath,sep='\t',index_col='contig')
+            raise NotImplementedError(
+                f"method: {method}\nargs:{args}\nkwargs: {kwargs}"
+            )
+        return pd.read_csv(self.taxonomy_fpath, sep="\t", index_col="contig")
 
     @timeit
     def get_kingdoms(self, **kwargs):
@@ -662,30 +697,33 @@ class Metagenome:
 
         """
         if not self.taxonomy_assigned:
-            logger.info('Assigning taxonomy. This may take a while...')
+            logger.info("Assigning taxonomy. This may take a while...")
             self.taxonomy = self.assign_taxonomy(method=self.taxon_method, **kwargs)
         if self.taxonomy.shape[1] <= 2:
             # taxonomy_fp should only contain contig and taxid columns from voting method
-            ncbi = NCBI(kwargs.get('ncbi',NCBI_DIR))
-            dff = ncbi.get_lineage_dataframe(self.taxonomy['taxid'].unique().tolist())
+            ncbi = NCBI(kwargs.get("ncbi", NCBI_DIR))
+            dff = ncbi.get_lineage_dataframe(self.taxonomy["taxid"].unique().tolist())
             self.taxonomy = pd.merge(
                 left=self.taxonomy,
                 right=dff,
-                how='left',
-                left_on='taxid',
-                right_index=True)
-            self.taxonomy.to_csv(self.taxonomy_fpath,sep='\t',index=True,header=True)
+                how="left",
+                left_on="taxid",
+                right_index=True,
+            )
+            self.taxonomy.to_csv(self.taxonomy_fpath, sep="\t", index=True, header=True)
             # COMBAK: Add checkpointing checksum check here
-            logger.debug(f'Added canonical rank names to {self.taxonomy_fpath}')
-        if 'superkingdom' not in self.taxonomy.columns:
-            raise KeyError(f'superkingdom is not in taxonomy columns {self.taxonomy.columns}')
-        kingdoms = dict(list(self.taxonomy.groupby('superkingdom')))
+            logger.debug(f"Added canonical rank names to {self.taxonomy_fpath}")
+        if "superkingdom" not in self.taxonomy.columns:
+            raise KeyError(
+                f"superkingdom is not in taxonomy columns {self.taxonomy.columns}"
+            )
+        kingdoms = dict(list(self.taxonomy.groupby("superkingdom")))
         bins = {}
         for kingdom, df in kingdoms.items():
-            bins.update({kingdom:MetaBin(self.assembly, df.index.tolist())})
+            bins.update({kingdom: MetaBin(self.assembly, df.index.tolist())})
         return bins
 
-    def write_ranks(self, rank='superkingdom'):
+    def write_ranks(self, rank="superkingdom"):
         """Write fastas split by `rank`.
 
         Parameters
@@ -705,85 +743,132 @@ class Metagenome:
 
         """
         if rank not in NCBI.CANONICAL_RANKS:
-            raise ValueError(f'rank: {rank} not in {NCBI.CANONICAL_RANKS}')
+            raise ValueError(f"rank: {rank} not in {NCBI.CANONICAL_RANKS}")
         fpaths = []
         for rank_name, dff in self.taxonomy.groupby(rank):
             records = [r for r in self.seqrecords if r.id in dff.index]
-            rank_name = rank_name.replace(' ','_')
-            rank_name_fname = '.'.join([rank_name.title(),'fna'])
+            rank_name = rank_name.replace(" ", "_")
+            rank_name_fname = ".".join([rank_name.title(), "fna"])
             rank_name_fpath = os.path.join(self.outdir, rank_name_fname)
             if not records:
-                logger.warning(f'No records to write to {rank_name_fpath}')
+                logger.warning(f"No records to write to {rank_name_fpath}")
             else:
-                n_written = SeqIO.write(records, rank_name_fpath, 'fasta')
-                logger.debug(f'Wrote {n_written} records to {rank_name_fpath}')
+                n_written = SeqIO.write(records, rank_name_fpath, "fasta")
+                logger.debug(f"Wrote {n_written} records to {rank_name_fpath}")
                 fpaths.append(rank_name_fpath)
         return fpaths
+
 
 def main():
     import argparse
     import logging as logger
-    logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
 
-    parser = argparse.ArgumentParser(description="""
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+
+    parser = argparse.ArgumentParser(
+        description="""
     This script handles filtering by length and taxon as well as ORF calling,
     and various metagenome statistics.
     """,
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('assembly', help='Path to metagenome assembly (nucleotide fasta).')
-    parser.add_argument('outdir', help='Output directory to store annotations.')
-    parser.add_argument('nucls',
-        help='Path to nucleotide ORFs corresponding to `assembly.` '
-        '(Will write to path if ORFs do not exist).',
-        type=str)
-    parser.add_argument('prots',
-        help='Path to amino acid ORFs corresponding to `assembly.` '
-        '(Will write to path if ORFs do not exist).',
-        type=str)
-    parser.add_argument('--filter',
-        help='Filter to apply to metagenome. You may supply multiple filters.',
-        choices=['length','taxon'], nargs='*')
-    parser.add_argument('--cutoff', help='Cutoff to apply to length filter',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "assembly", help="Path to metagenome assembly (nucleotide fasta)."
+    )
+    parser.add_argument("outdir", help="Output directory to store annotations.")
+    parser.add_argument(
+        "nucls",
+        help="Path to nucleotide ORFs corresponding to `assembly.` "
+        "(Will write to path if ORFs do not exist).",
+        type=str,
+    )
+    parser.add_argument(
+        "prots",
+        help="Path to amino acid ORFs corresponding to `assembly.` "
+        "(Will write to path if ORFs do not exist).",
+        type=str,
+    )
+    parser.add_argument(
+        "--filter",
+        help="Filter to apply to metagenome. You may supply multiple filters.",
+        choices=["length", "taxon"],
+        nargs="*",
+    )
+    parser.add_argument(
+        "--cutoff",
+        help="Cutoff to apply to length filter",
         default=3000,
         type=int,
-        metavar='<int>')
-    parser.add_argument('--length-fname',
-        help='Filename to assign fasta after applying length filter.',
-        default='`assembly`.filtered.fna')
-    parser.add_argument('--taxon-method', default='majority_vote',
-        choices=['majority_vote'])
-    parser.add_argument('--taxon-fname',
-        help='Filename to assign voted taxonomy annotation.',
-        default='taxonomy_vote.tsv')
-    parser.add_argument('--ncbi',
-        help='Path to NCBI databases directory.',
-        default=NCBI_DIR)
-    parser.add_argument('--pickle', help='Whether to serialize taxonomy-specific files',
-        action='store_true', default=False)
-    parser.add_argument('--blast',
-        help='Path to diamond blast results.tsv. (outfmt=6) '
-        '(Will write to path if it does not exist).',
-        default=None)
-    parser.add_argument('--hits',
-        help='Path to diamond blast hits.pkl.gz. '
-        '(Will write to path if it does not exist).',
-        default=None)
+        metavar="<int>",
+    )
+    parser.add_argument(
+        "--length-fname",
+        help="Filename to assign fasta after applying length filter.",
+        default="`assembly`.filtered.fna",
+    )
+    parser.add_argument(
+        "--taxon-method", default="majority_vote", choices=["majority_vote"]
+    )
+    parser.add_argument(
+        "--taxon-fname",
+        help="Filename to assign voted taxonomy annotation.",
+        default="taxonomy_vote.tsv",
+    )
+    parser.add_argument(
+        "--ncbi", help="Path to NCBI databases directory.", default=NCBI_DIR
+    )
+    parser.add_argument(
+        "--pickle",
+        help="Whether to serialize taxonomy-specific files",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--blast",
+        help="Path to diamond blast results.tsv. (outfmt=6) "
+        "(Will write to path if it does not exist).",
+        default=None,
+    )
+    parser.add_argument(
+        "--hits",
+        help="Path to diamond blast hits.pkl.gz. "
+        "(Will write to path if it does not exist).",
+        default=None,
+    )
     # Eventually will need to create a subparser for the taxon assignment methods
     # to include help information and required parameters according to method.
-    parser.add_argument('--cpus', help='Number of cpus to use when performing '
-        'annotations (Default will use all possible if `--parallel` is supplied).',
-        default=0, type=int)
-    parser.add_argument('--parallel', help='Use GNU parallel when performing annotations.',
-        action='store_true', default=False)
-    parser.add_argument('--force', help="Overwrite existing files",
-        action='store_true', default=False)
-    parser.add_argument('--verbose', help="Log more information to terminal.",
-        action='store_true', default=False)
-    parser.add_argument('--stats', help="Print various metagenome assembly statistics.",
-        action='store_true', default=False)
+    parser.add_argument(
+        "--cpus",
+        help="Number of cpus to use when performing "
+        "annotations (Default will use all possible if `--parallel` is supplied).",
+        default=0,
+        type=int,
+    )
+    parser.add_argument(
+        "--parallel",
+        help="Use GNU parallel when performing annotations.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--force", help="Overwrite existing files", action="store_true", default=False
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Log more information to terminal.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--stats",
+        help="Print various metagenome assembly statistics.",
+        action="store_true",
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -794,27 +879,29 @@ def main():
         prot_orfs_fpath=args.prots,
         nucl_orfs_fpath=args.nucls,
         taxonomy_fpath=taxonomy_fpath,
-        taxon_method=args.taxon_method)
+        taxon_method=args.taxon_method,
+    )
 
-    if args.filter and 'length' in args.filter:
-        if args.length_fname != '`assembly`.filtered.fna':
+    if args.filter and "length" in args.filter:
+        if args.length_fname != "`assembly`.filtered.fna":
             length_filtered_fpath = os.path.join(raw_mg.outdir, args.length_fname)
         else:
             basename = os.path.basename(raw_mg.assembly)
             fname = os.path.splitext(basename)[0]
-            length_fname = f'{fname}.filtered.fna'
+            length_fname = f"{fname}.filtered.fna"
             length_filtered_fpath = os.path.join(raw_mg.outdir, length_fname)
         try:
             mg = raw_mg.length_filter(out=length_filtered_fpath, cutoff=args.cutoff)
         except FileExistsError as err:
-            logger.warning(f'FileExistsError: {length_filtered_fpath}. Skipping...')
+            logger.warning(f"FileExistsError: {length_filtered_fpath}. Skipping...")
             mg = Metagenome(
                 assembly=length_filtered_fpath,
                 outdir=raw_mg.outdir,
                 nucl_orfs_fpath=raw_mg.nucl_orfs_fpath,
                 prot_orfs_fpath=raw_mg.prot_orfs_fpath,
                 taxonomy_fpath=raw_mg.taxonomy_fpath,
-                taxon_method=raw_mg.taxon_method)
+                taxon_method=raw_mg.taxon_method,
+            )
     else:
         mg = raw_mg
 
@@ -823,15 +910,13 @@ def main():
 
     try:
         mg.call_orfs(
-            force=args.force,
-            cpus=args.cpus,
-            parallel=args.parallel,
+            force=args.force, cpus=args.cpus, parallel=args.parallel,
         )
     except FileExistsError as err:
-        logger.warning(f'FileExistsError: {mg.prots_out}. Skipping...')
+        logger.warning(f"FileExistsError: {mg.prots_out}. Skipping...")
 
-    if args.filter and 'taxon' in args.filter:
-        logger.info(f'TaxonAssignment - method:{args.taxon_method}')
+    if args.filter and "taxon" in args.filter:
+        logger.info(f"TaxonAssignment - method:{args.taxon_method}")
         mg.get_kingdoms(
             cpus=args.cpus,
             ncbi=args.ncbi,
@@ -842,5 +927,6 @@ def main():
             force=args.force,
         )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

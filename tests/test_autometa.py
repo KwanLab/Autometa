@@ -7,7 +7,7 @@ import shutil
 
 class AutometaTestCase(unittest.TestCase):
     def setUp(self):
-        self.metagenome = Metagenome('The Metagenome')
+        self.metagenome = Metagenome("The Metagenome")
 
     def tearDown(self):
         shutil.rmtree(self.outdir)
