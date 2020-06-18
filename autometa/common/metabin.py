@@ -36,7 +36,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio import SeqUtils
 from functools import lru_cache
 
-from autometa.common.markers import Markers,MARKERS_DIR
+from autometa.common.markers import Markers, MARKERS_DIR
 from autometa.common import kmers
 from autometa.common.utilities import timeit
 from autometa.common.external import prodigal
@@ -81,11 +81,13 @@ class MetaBin:
         self.assembly = os.path.realpath(assembly)
         self.basename = os.path.basename(self.assembly)
         self.root = os.path.splitext(self.basename)[0]
-        self.outdir = os.path.realpath(outdir) if outdir else os.path.dirname(self.assembly)
-        nucls_ext = 'orfs.fna'
-        prots_ext = 'orfs.faa'
-        self.nucls_fname = '.'.join([self.root, nucls_ext])
-        self.prots_fname = '.'.join([self.root, prots_ext])
+        self.outdir = (
+            os.path.realpath(outdir) if outdir else os.path.dirname(self.assembly)
+        )
+        nucls_ext = "orfs.fna"
+        prots_ext = "orfs.faa"
+        self.nucls_fname = ".".join([self.root, nucls_ext])
+        self.prots_fname = ".".join([self.root, prots_ext])
         self.nucl_orfs_fpath = os.path.join(self.outdir, self.nucls_fname)
         self.prot_orfs_fpath = os.path.join(self.outdir, self.prots_fname)
         self.contigs = contigs
@@ -103,7 +105,7 @@ class MetaBin:
 
         """
         with open(self.assembly) as fh:
-            return [seq for title,seq in SimpleFastaParser(fh)]
+            return [seq for title, seq in SimpleFastaParser(fh)]
 
     @property
     @lru_cache(maxsize=None)
@@ -116,8 +118,9 @@ class MetaBin:
             list of SeqIO [SeqRecords, ...]
 
         """
-        return [seq for seq in SeqIO.parse(self.assembly, 'fasta')
-            if seq.id in self.contigs]
+        return [
+            seq for seq in SeqIO.parse(self.assembly, "fasta") if seq.id in self.contigs
+        ]
 
     @property
     @lru_cache(maxsize=None)
@@ -194,7 +197,7 @@ class MetaBin:
             GC percentage weighted by contig length.
 
         """
-        weights = [len(rec.seq)/self.size for rec in self.seqrecords]
+        weights = [len(rec.seq) / self.size for rec in self.seqrecords]
         gc_content = [SeqUtils.GC(rec.seq) for rec in self.seqrecords]
         return np.average(a=gc_content, weights=weights)
 
@@ -234,7 +237,7 @@ class MetaBin:
         """
         if not self.nucl_orfs_exist:
             return np.nan
-        return len(self.get_orfs('nucl'))
+        return len(self.get_orfs("nucl"))
 
     @property
     def nprots(self):
@@ -248,7 +251,7 @@ class MetaBin:
         """
         if not self.prot_orfs_exist:
             return np.nan
-        return len(self.get_orfs('prot'))
+        return len(self.get_orfs("prot"))
 
     def prepared(self, fpath):
         """Check whether `fpath` exists and is valid via checksum in checkpoints.
@@ -269,7 +272,7 @@ class MetaBin:
             return True
         return False
 
-    def get_orfs(self, orf_type='prot'):
+    def get_orfs(self, orf_type="prot"):
         """Retrieve ORFs corresponding to MetaBin.
 
         Parameters
@@ -292,17 +295,17 @@ class MetaBin:
             This will correspond to `orf_type`
 
         """
-        orfs_fpaths = {'prot':self.prot_orfs_fpath, 'nucl':self.nucl_orfs_fpath}
+        orfs_fpaths = {"prot": self.prot_orfs_fpath, "nucl": self.nucl_orfs_fpath}
         if orf_type not in orfs_fpaths:
-            raise KeyError(f'{orf_type} not in {orfs_fpaths}')
+            raise KeyError(f"{orf_type} not in {orfs_fpaths}")
         orfs_fpath = orfs_fpaths[orf_type]
         if not self.prepared(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
         return prodigal.orf_records_from_contigs(
-            contigs=self.contigs,
-            fpath=self.prot_orfs_fpath)
+            contigs=self.contigs, fpath=self.prot_orfs_fpath
+        )
 
-    def write_orfs(self, fpath, orf_type='prot'):
+    def write_orfs(self, fpath, orf_type="prot"):
         """Write `orf_type` ORFs from `contigs` to `fpath`.
 
         Parameters
@@ -314,7 +317,7 @@ class MetaBin:
 
         """
         records = self.get_orfs(orf_type=orf_type)
-        SeqIO.write(records, fpath, 'fasta')
+        SeqIO.write(records, fpath, "fasta")
 
     def describe(self, autometa_details=True):
         """Describe various statistics of the MetaBin instance.
@@ -325,27 +328,30 @@ class MetaBin:
             If True, will output autometa related information (the default is True).
 
         """
-        print('Metabin Details\n'
-            '________________________\n'
-            f'Num. Contigs: {self.nseqs:,} / {self.nallseqs:,} ({self.seqs_pct:4.2f}% of total metagenome)\n'
-            f'Num. Nucl. ORFs: {self.nnucls:,}\n'
-            f'Num. Prot. ORFs: {self.nprots:,}\n'
-            f'Size: {self.size:,}bp / {self.totalsize:,}bp ({self.size_pct:4.2f}% of total metagenome)\n'
-            f'Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n'
-            '________________________\n')
+        print(
+            "Metabin Details\n"
+            "________________________\n"
+            f"Num. Contigs: {self.nseqs:,} / {self.nallseqs:,} ({self.seqs_pct:4.2f}% of total metagenome)\n"
+            f"Num. Nucl. ORFs: {self.nnucls:,}\n"
+            f"Num. Prot. ORFs: {self.nprots:,}\n"
+            f"Size: {self.size:,}bp / {self.totalsize:,}bp ({self.size_pct:4.2f}% of total metagenome)\n"
+            f"Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n"
+            "________________________\n"
+        )
         if not autometa_details:
             return
         print(
-            'Autometa Details\n'
-            '________________________\n'
-            f'Metagenome: {self.assembly}\n'
-            f'Nucl. ORFs filepath: {self.nucl_orfs_fpath}\n'
-            f'Prot. ORFs filepath: {self.prot_orfs_fpath}\n'
-            f'Nucl. ORFs called: {self.nucl_orfs_exist}\n'
-            f'Prot. ORFs called: {self.prot_orfs_exist}\n')
+            "Autometa Details\n"
+            "________________________\n"
+            f"Metagenome: {self.assembly}\n"
+            f"Nucl. ORFs filepath: {self.nucl_orfs_fpath}\n"
+            f"Prot. ORFs filepath: {self.prot_orfs_fpath}\n"
+            f"Nucl. ORFs called: {self.nucl_orfs_exist}\n"
+            f"Prot. ORFs called: {self.prot_orfs_exist}\n"
+        )
 
     @timeit
-    def get_binning(self, method='recursive_dbscan', **kwargs):
+    def get_binning(self, method="recursive_dbscan", **kwargs):
         """Retrieve binning results from provided `method`.
 
         Note: Most required arguments should be provided in `kwargs`, this is
@@ -382,56 +388,58 @@ class MetaBin:
             Provided `method` is not yet implemented.
 
         """
-        if method == 'recursive_dbscan':
+        if method == "recursive_dbscan":
             try:
                 embedded_df = kmers.embed(
-                    kmers=kwargs.get('kmers'),
-                    embedded=kwargs.get('embedded'),
-                    do_pca=kwargs.get('do_pca',True),
-                    pca_dimensions=kwargs.get('pca_dims',50),
-                    method=kwargs.get('embedding_method','bhsne'),
-                    perplexity=kwargs.get('perplexity',30),
+                    kmers=kwargs.get("kmers"),
+                    embedded=kwargs.get("embedded"),
+                    do_pca=kwargs.get("do_pca", True),
+                    pca_dimensions=kwargs.get("pca_dims", 50),
+                    method=kwargs.get("embedding_method", "bhsne"),
+                    perplexity=kwargs.get("perplexity", 30),
                 )
             except ValueError as error:
                 logger.exception(error)
             master_df = embedded_df
-            coverage_fp = kwargs.get('coverage')
+            coverage_fp = kwargs.get("coverage")
             if coverage_fp:
-                coverage_df = pd.read_csv(coverage_fp, sep='\t', index_col='contig')
+                coverage_df = pd.read_csv(coverage_fp, sep="\t", index_col="contig")
                 master_df = pd.merge(
                     master_df,
                     coverage_df,
-                    how='left',
+                    how="left",
                     left_index=True,
-                    right_index=True)
-            taxonomy_fp = kwargs.get('taxonomy')
+                    right_index=True,
+                )
+            taxonomy_fp = kwargs.get("taxonomy")
             if taxonomy_fp:
-                taxa_df = pd.read_csv(taxonomy_fp, sep='\t', index_col='contig')
+                taxa_df = pd.read_csv(taxonomy_fp, sep="\t", index_col="contig")
                 master_df = pd.merge(
                     left=master_df,
                     right=taxa_df,
-                    how='left',
+                    how="left",
                     left_index=True,
-                    right_index=True)
+                    right_index=True,
+                )
             master_df = self.subset_df(master_df)
             master_df = master_df.convert_dtypes()
-            use_taxonomy = True if 'taxid' in master_df else False
-            markers = self.markers(kwargs.get('domain','bacteria'))
+            use_taxonomy = True if "taxid" in master_df else False
+            markers = self.markers(kwargs.get("domain", "bacteria"))
             logger.info(f'Binning {kwargs.get("domain")} with {method}')
             return recursive_dbscan.binning(
                 master=master_df,
                 markers=markers,
-                domain=kwargs.get('domain','bacteria'),
-                completeness=kwargs.get('completeness',20.),
-                purity=kwargs.get('purity',90.),
+                domain=kwargs.get("domain", "bacteria"),
+                completeness=kwargs.get("completeness", 20.0),
+                purity=kwargs.get("purity", 90.0),
                 taxonomy=use_taxonomy,
-                method='DBSCAN',
-                reverse=kwargs.get('reverse',True)
+                method="DBSCAN",
+                reverse=kwargs.get("reverse", True),
             )
-        raise NotImplementedError(f'{method} not yet implemented')
+        raise NotImplementedError(f"{method} not yet implemented")
 
     @timeit
-    def markers(self, kingdom='bacteria', dbdir=MARKERS_DIR, force=False):
+    def markers(self, kingdom="bacteria", dbdir=MARKERS_DIR, force=False):
         f"""Retrieve Markers dataframe using orfs called from `orf_caller` and
         annotated belonging to provided `kingdom`.
 
@@ -452,8 +460,8 @@ class MetaBin:
 
         """
 
-        logger.debug(f'Retrieving markers for {kingdom} kingdom')
-        orfs_fp = os.path.join(self.outdir, f'{kingdom.lower()}.orfs.faa')
+        logger.debug(f"Retrieving markers for {kingdom} kingdom")
+        orfs_fp = os.path.join(self.outdir, f"{kingdom.lower()}.orfs.faa")
         if (not os.path.exists(orfs_fp)) or (os.path.exists(orfs_fp) and force):
             self.write_orfs(orfs_fp)
         markers = Markers(orfs_fp, kingdom=kingdom, dbdir=dbdir)
@@ -475,36 +483,47 @@ class MetaBin:
 
         """
         if type(df) not in [pd.DataFrame, pd.Series]:
-            raise TypeError(f'Unable to subset df. {type(df)} is not Series or DataFrame')
+            raise TypeError(
+                f"Unable to subset df. {type(df)} is not Series or DataFrame"
+            )
         if type(df) is pd.DataFrame:
             return df[df.index.isin(self.contigs)]
         elif type(df) is str and self.prepared(df):
-            df = pd.read_csv(df, sep='\t', index_col='contig')
+            df = pd.read_csv(df, sep="\t", index_col="contig")
         return df[df.index.isin(self.contigs)]
+
 
 def main():
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description='Autometa MetaBin Class')
-    parser.add_argument('--assembly', help='</path/to/metagenome.fasta>', required=True)
-    parser.add_argument('--contigs', help='list of contigs in MetaBin',nargs='+', required=True)
-    parser.add_argument('--domain', help='kingdom to use for binning', default='bacteria')
-    parser.add_argument('--kmers', help='</path/to/kmers.tsv')
-    parser.add_argument('--taxonomy', help='</path/to/taxonomy_vote.tsv')
-    parser.add_argument('--coverage', help='</path/to/coverages.tsv')
+        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+    parser = argparse.ArgumentParser(description="Autometa MetaBin Class")
+    parser.add_argument("--assembly", help="</path/to/metagenome.fasta>", required=True)
+    parser.add_argument(
+        "--contigs", help="list of contigs in MetaBin", nargs="+", required=True
+    )
+    parser.add_argument(
+        "--domain", help="kingdom to use for binning", default="bacteria"
+    )
+    parser.add_argument("--kmers", help="</path/to/kmers.tsv")
+    parser.add_argument("--taxonomy", help="</path/to/taxonomy_vote.tsv")
+    parser.add_argument("--coverage", help="</path/to/coverages.tsv")
     args = parser.parse_args()
     mag = MetaBin(args.assembly, args.contigs)
 
     mag.get_binning(
-        method='recursive_dbscan',
+        method="recursive_dbscan",
         kmers=args.kmers,
         domain=args.domain,
         taxonomy=args.taxonomy,
-        coverage=args.coverage)
+        coverage=args.coverage,
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

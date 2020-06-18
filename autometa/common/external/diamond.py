@@ -32,7 +32,7 @@ import subprocess
 from itertools import chain
 from tqdm import tqdm
 
-from autometa.common.utilities import make_pickle,file_length
+from autometa.common.utilities import make_pickle, file_length
 from autometa.common.external import prodigal
 
 logger = logging.getLogger(__name__)
@@ -77,21 +77,34 @@ class DiamondResult:
 
     """
 
-    def __init__(self, qseqid, sseqid, pident, length, mismatch, gapopen,
-        qstart, qend, sstart, send, evalue, bitscore):
+    def __init__(
+        self,
+        qseqid,
+        sseqid,
+        pident,
+        length,
+        mismatch,
+        gapopen,
+        qstart,
+        qend,
+        sstart,
+        send,
+        evalue,
+        bitscore,
+    ):
         self.qseqid = qseqid
         self.sseqids = {
-            sseqid:{
-                'pident':float(pident),
-                'length':int(length),
-                'mismatch':int(mismatch),
-                'gapopen':int(gapopen),
-                'qstart':int(qstart),
-                'qend':int(qend),
-                'sstart':int(sstart),
-                'send':int(send),
-                'evalue':float(evalue),
-                'bitscore':float(bitscore),
+            sseqid: {
+                "pident": float(pident),
+                "length": int(length),
+                "mismatch": int(mismatch),
+                "gapopen": int(gapopen),
+                "qstart": int(qstart),
+                "qend": int(qend),
+                "sstart": int(sstart),
+                "send": int(send),
+                "evalue": float(evalue),
+                "bitscore": float(bitscore),
             }
         }
 
@@ -108,35 +121,47 @@ class DiamondResult:
             return False
 
     def __add__(self, other_hit):
-        assert self == other_hit, f'qseqids do not match! {self} & {other_hit}'
+        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
         self.sseqids.update(other_hit.sseqids)
         return self
 
     def __sub__(self, other_hit):
-        assert self == other_hit, f'qseqids do not match! {self} & {other_hit}'
+        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
         self.sseqids.pop(other_hit.sseqid)
         return self
 
     def get_top_hit(self):
-        top_bitscore = float('-Inf')
+        top_bitscore = float("-Inf")
         top_hit = None
-        for sseqid,attrs in self.sseqids.items():
-            if attrs.get('bitscore', float('-Inf')) >= top_bitscore:
-                top_bitscore = attrs.get('bitscore')
+        for sseqid, attrs in self.sseqids.items():
+            if attrs.get("bitscore", float("-Inf")) >= top_bitscore:
+                top_bitscore = attrs.get("bitscore")
                 top_hit = sseqid
         return top_hit
 
+
 def makedatabase(fasta, database, nproc=1):
-    cmd = f'diamond makedb --in {fasta} --db {database} -p {nproc}'
-    logger.debug(f'{cmd}')
-    with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
+    cmd = f"diamond makedb --in {fasta} --db {database} -p {nproc}"
+    logger.debug(f"{cmd}")
+    with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
         retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
     if retcode:
-        raise OSError(f'DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}')
+        raise OSError(f"DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}")
     return database
 
-def blast(fasta, database, outfpath, blast_type='blastp', evalue=float('1e-5'),
-    maxtargetseqs=200, cpus=0, tmpdir=os.curdir, force=False, verbose=False):
+
+def blast(
+    fasta,
+    database,
+    outfpath,
+    blast_type="blastp",
+    evalue=float("1e-5"),
+    maxtargetseqs=200,
+    cpus=0,
+    tmpdir=os.curdir,
+    force=False,
+    verbose=False,
+):
     """Performs diamond blastp search using fasta against diamond formatted database
 
     Parameters
@@ -182,40 +207,42 @@ def blast(fasta, database, outfpath, blast_type='blastp', evalue=float('1e-5'),
         empty = not os.stat(outfpath).st_size
         if not empty:
             if verbose:
-                logger.warning(f'FileExistsError: {outfpath}. To overwrite use --force')
+                logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
             return outfpath
     blast_type = blast_type.lower()
-    if blast_type not in ['blastp','blastx']:
-        raise ValueError(f'blast_type must be blastp or blastx. Given: {blast_type}')
+    if blast_type not in ["blastp", "blastx"]:
+        raise ValueError(f"blast_type must be blastp or blastx. Given: {blast_type}")
     if verbose:
-        logger.debug(f'Diamond{blast_type.title()} {fasta} against {database}')
+        logger.debug(f"Diamond{blast_type.title()} {fasta} against {database}")
     cmd = [
-        'diamond',
-        'blastp',
-        '--query',
+        "diamond",
+        "blastp",
+        "--query",
         fasta,
-        '--db',
+        "--db",
         database,
-        '--evalue',
+        "--evalue",
         evalue,
-        '--max-target-seqs',
+        "--max-target-seqs",
         maxtargetseqs,
-        '--threads',
+        "--threads",
         cpus,
-        '--outfmt',
-        '6',
-        '--out',
+        "--outfmt",
+        "6",
+        "--out",
         outfpath,
-        '--tmpdir',
-        tmpdir]
+        "--tmpdir",
+        tmpdir,
+    ]
     cmd = [str(c) for c in cmd]
     if verbose:
         logger.debug(f'RunningDiamond: {" ".join(cmd)}')
-    with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
+    with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
         proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
     if proc.returncode:
-        raise OSError(f'DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}')
+        raise OSError(f"DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}")
     return outfpath
+
 
 def parse(results, top_pct=0.9, verbose=False):
     """Retrieve diamond results from output table
@@ -243,22 +270,26 @@ def parse(results, top_pct=0.9, verbose=False):
     # boolean toggle --> keeping above vs. below because I think this is more readable.
     # disable = not verbose
     if verbose:
-        logger.debug(f'Parsing accessions from {os.path.basename(results)}')
+        logger.debug(f"Parsing accessions from {os.path.basename(results)}")
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
         float(top_pct)
     except ValueError as err:
-        raise ValueError(f'top_pct must be a float! Input: {top_pct} Type: {type(top_pct)}')
+        raise ValueError(
+            f"top_pct must be a float! Input: {top_pct} Type: {type(top_pct)}"
+        )
     in_range = 0.0 < top_pct <= 1.0
     if not in_range:
-        raise ValueError(f'top_pct not in range(0,1)! Input: {top_pct}')
+        raise ValueError(f"top_pct not in range(0,1)! Input: {top_pct}")
     hits = {}
     temp = set()
     n_lines = file_length(results) if verbose else None
     with open(results) as fh:
-        for line in tqdm(fh, disable=disable, total=n_lines, desc='Parsing Accessions',leave=False):
-            llist = line.rstrip().split('\t')
+        for line in tqdm(
+            fh, disable=disable, total=n_lines, desc="Parsing Accessions", leave=False
+        ):
+            llist = line.rstrip().split("\t")
             qseqid = llist[0]
             sseqid = llist[1]
             pident = llist[2]
@@ -283,15 +314,17 @@ def parse(results, top_pct=0.9, verbose=False):
                 sstart=sstart,
                 send=send,
                 evalue=evalue,
-                bitscore=bitscore)
+                bitscore=bitscore,
+            )
             if hit.qseqid not in temp:
-                hits.update({hit.qseqid:hit})
+                hits.update({hit.qseqid: hit})
                 topbitscore = bitscore
                 temp = set([hit.qseqid])
                 continue
             if bitscore >= top_pct * topbitscore:
                 hits[hit.qseqid] += hit
     return hits
+
 
 def add_taxids(hits, database, verbose=True):
     """Translates accessions to taxid translations from prot.accession2taxid.gz
@@ -343,33 +376,40 @@ def add_taxids(hits, database, verbose=True):
     if not os.path.exists(database):
         raise FileNotFoundError(database)
     # OPTIMIZE: prot.accession2taxid.gz database is almost 1 billion lines...
-    accessions = set(chain.from_iterable([hit.sseqids.keys() for qseqid,hit in hits.items()]))
-    fh = gzip.open(database) if database.endswith('.gz') else open(database)
+    accessions = set(
+        chain.from_iterable([hit.sseqids.keys() for qseqid, hit in hits.items()])
+    )
+    fh = gzip.open(database) if database.endswith(".gz") else open(database)
     __ = fh.readline()
     if verbose:
-        logger.debug(f'Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while...')
-    is_gzipped = True if database.endswith('.gz') else False
+        logger.debug(
+            f"Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while..."
+        )
+    is_gzipped = True if database.endswith(".gz") else False
     n_lines = file_length(database) if verbose else None
-    desc = f'Parsing {os.path.basename(database)}'
+    desc = f"Parsing {os.path.basename(database)}"
     acc2taxids = {}
     for line in tqdm(fh, disable=disable, desc=desc, total=n_lines, leave=False):
         line = line.decode() if is_gzipped else line
-        acc_num, acc_ver, taxid, _ = line.split('\t')
+        acc_num, acc_ver, taxid, _ = line.split("\t")
         taxid = int(taxid)
         if acc_num in accessions:
-            acc2taxids.update({acc_num:taxid})
+            acc2taxids.update({acc_num: taxid})
         if acc_ver in accessions:
-            acc2taxids.update({acc_ver:taxid})
+            acc2taxids.update({acc_ver: taxid})
     fh.close()
     n_qseqids = len(hits)
-    desc = f'Translating {n_qseqids} qseqids\' accessions to taxids'
-    for qseqid,hit in tqdm(hits.items(), disable=disable, total=n_qseqids, desc=desc, leave=False):
+    desc = f"Translating {n_qseqids} qseqids' accessions to taxids"
+    for qseqid, hit in tqdm(
+        hits.items(), disable=disable, total=n_qseqids, desc=desc, leave=False
+    ):
         for sseqid in hit.sseqids:
             taxid = acc2taxids.get(sseqid)
             # if taxid is None:
             #     raise DatabasesOutOfDateError(f'{sseqid} deprecated/suppressed/removed')
-            hit.sseqids[sseqid].update({'taxid':taxid})
+            hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
+
 
 def main(args):
     result = blast(
@@ -382,39 +422,54 @@ def main(args):
         cpus=args.cpus,
         tmpdir=args.tmpdir,
         force=args.force,
-        verbose=args.verbose)
+        verbose=args.verbose,
+    )
     hits = parse(results=result, top_pct=args.top_pct, verbose=args.verbose)
-    hits = add_taxids(
-        hits=hits,
-        database=args.acc2taxids,
-        verbose=args.verbose)
-    fname,__ = os.path.splitext(os.path.basename(args.outfile))
+    hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
+    fname, __ = os.path.splitext(os.path.basename(args.outfile))
     dirpath = os.path.dirname(os.path.realpath(args.outfile))
-    hits_fname = '.'.join([fname, 'pkl.gz'])
+    hits_fname = ".".join([fname, "pkl.gz"])
     hits_fpath = os.path.join(dirpath, hits_fname)
     pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
-    logger.debug(f'{len(hits):,} diamond hits serialized to {pickled_fpath}')
+    logger.debug(f"{len(hits):,} diamond hits serialized to {pickled_fpath}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import argparse
     import os
-    parser = argparse.ArgumentParser(description="""
+
+    parser = argparse.ArgumentParser(
+        description="""
     Retrieves blastp hits with provided input assembly
-    """)
-    parser.add_argument('fasta', help='</path/to/faa/file>')
-    parser.add_argument('database', help='</path/to/diamond/formatted/database>')
-    parser.add_argument('acc2taxids', help='</path/to/ncbi/prot.accession2taxid.gz>')
-    parser.add_argument('outfile', help='</path/to/diamond/output/file>')
-    parser.add_argument('blast_type', help='[blastp]: A.A -> A.A. [blastx]: Nucl. -> A.A.',
-        default='blastp',choices=['blastp','blastx'])
-    parser.add_argument('--evalue', help='diamond evalue threshold', default=float('1e-5'))
-    parser.add_argument('--maxtargetseqs',
-        help='max target sequences to retrieve per query', default=200, type=int)
-    parser.add_argument('--cpus', help='num cpus to use', default=0, type=int)
-    parser.add_argument('--tmpdir', help='</path/to/tmp/directory>', default=os.curdir)
-    parser.add_argument('--top-pct', help='top percentage of hits to retrieve', default=0.9)
-    parser.add_argument('--force', help='force overwrite of diamond output table',
-        action='store_true')
-    parser.add_argument('--verbose', help='add verbosity', action='store_true')
+    """
+    )
+    parser.add_argument("fasta", help="</path/to/faa/file>")
+    parser.add_argument("database", help="</path/to/diamond/formatted/database>")
+    parser.add_argument("acc2taxids", help="</path/to/ncbi/prot.accession2taxid.gz>")
+    parser.add_argument("outfile", help="</path/to/diamond/output/file>")
+    parser.add_argument(
+        "blast_type",
+        help="[blastp]: A.A -> A.A. [blastx]: Nucl. -> A.A.",
+        default="blastp",
+        choices=["blastp", "blastx"],
+    )
+    parser.add_argument(
+        "--evalue", help="diamond evalue threshold", default=float("1e-5")
+    )
+    parser.add_argument(
+        "--maxtargetseqs",
+        help="max target sequences to retrieve per query",
+        default=200,
+        type=int,
+    )
+    parser.add_argument("--cpus", help="num cpus to use", default=0, type=int)
+    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>", default=os.curdir)
+    parser.add_argument(
+        "--top-pct", help="top percentage of hits to retrieve", default=0.9
+    )
+    parser.add_argument(
+        "--force", help="force overwrite of diamond output table", action="store_true"
+    )
+    parser.add_argument("--verbose", help="add verbosity", action="store_true")
     args = parser.parse_args()
     main(args)
