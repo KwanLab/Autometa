@@ -70,6 +70,36 @@ class DiamondResult:
         evalue,
         bitscore,
     ):
+        """
+        Instantiates the DiamondResult class
+
+        Parameters
+        ----------
+        qseqid : str
+            query sequence ID
+        sseqid : str
+            subject sequence ID
+        pident : float
+            Percentage of identical matches.
+        length : int
+            Alignment length.
+        mismatch : int
+            Number of mismatches.
+        gapopen : int
+            Number of gap openings.
+        qstart : int
+            Start of alignment in query.
+        qend : int
+            End of alignment in query.
+        sstart : int
+            Start of alignment in subject.
+        send : int
+            End of alignment in subject sequence.
+        evalue : float
+            Expect value.
+        bitscore : float
+            Bitscore.
+        """
         self.qseqid = qseqid
         self.sseqids = {
             sseqid: {
@@ -129,16 +159,67 @@ class DiamondResult:
             return False
 
     def __add__(self, other_hit):
-        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
+        """
+        Operator overloading to update (add) the sseqids dictionary with the other sseqid hit dictionary.
+        The addition will only be successful if both the DiamondResult objects have the same qseqid
+
+        Parameters
+        ----------
+        other_hit : DiamondResult object
+            Other DiamondResult object to add
+
+        Returns
+        -------
+        DiamondResult object
+            Another sseqid dict as now been added (updated) to the sseqids dict in the object
+
+        Raises
+        ------
+        AssertionError
+            Query sequences are not equal
+        """
+        assert (
+            self == other_hit
+        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
         self.sseqids.update(other_hit.sseqids)
         return self
 
     def __sub__(self, other_hit):
-        assert self == other_hit, f"qseqids do not match! {self} & {other_hit}"
-        self.sseqids.pop(other_hit.sseqid)
+        """
+        Operator overloading to remove (subtract) the other sseqid hits dictionary from the sseqids dictionary.
+        The subtraction will only be successful if both the DiamondResult objects have the same qseqid
+
+        Parameters
+        ----------
+        other_hit : Dict
+            Other DiamondResult object to subtract
+
+        Returns
+        -------
+        DiamondResult object
+            A sseqid dict as now been subtracted (removed) from the sseqids dict in the object
+
+        Raises
+        ------
+        AssertionError
+            Query sequences are not equal
+        """
+        assert (
+            self == other_hit
+        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
+        for sseqid in other_hit.sseqids.keys():
+            try:
+                self.sseqids.pop(sseqid)
+            except KeyError:
+                raise KeyError(
+                    "The query sequence corresponsing to the DiamondResult is not present!"
+                )
         return self
 
     def get_top_hit(self):
+        """
+        Returns the subject sequene ID with the highest bitscore amongst all the subject sequence that hit a query
+        """
         top_bitscore = float("-Inf")
         top_hit = None
         for sseqid, attrs in self.sseqids.items():
@@ -148,13 +229,36 @@ class DiamondResult:
         return top_hit
 
 
-def makedatabase(fasta, database, nproc=1):
-    cmd = f"diamond makedb --in {fasta} --db {database} -p {nproc}"
-    logger.debug(f"{cmd}")
-    with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
-        retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-    if retcode:
-        raise OSError(f"DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}")
+def makedatabase(fasta, database, cpus=mp.cpu_count()):
+    """
+    Creates a database against which the query sequence would be blasted
+
+    Parameters
+    ----------
+    fasta : str
+        Path to fasta file whose database needs to be made
+        e.g. '<path/to/fasta/file>'
+    database : str
+        Path to the output diamond formatted database file
+        e.g. '<path/to/database/file>'
+    cpus : int, optional
+        Number of processors to be used. By default uses all the processors of the system
+
+    Returns
+    -------
+    str
+        Path to diamond formatted database
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        Failed to create diamond formatted database
+    """
+    cmd = ["diamond", "makedb", "--in", fasta, "--db", database, "-p", str(cpus)]
+    logger.debug(" ".join(cmd))
+    subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+    )
     return database
 
 
@@ -165,12 +269,13 @@ def blast(
     blast_type="blastp",
     evalue=float("1e-5"),
     maxtargetseqs=200,
-    cpus=0,
-    tmpdir=os.curdir,
+    cpus=mp.cpu_count(),
+    tmpdir=tempfile.mkdtemp(),
     force=False,
     verbose=False,
 ):
-    """Performs diamond blastp search using fasta against diamond formatted database
+    """
+    Performs diamond blastp search using query sequence against diamond formatted database
 
     Parameters
     ----------
@@ -217,18 +322,19 @@ def blast(
     if not os.path.exists(fasta):
         raise FileNotFoundError(fasta)
     if os.path.exists(outfpath) and not force:
-        if not os.path.getsize(outfpath):
-            if verbose:
-                logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
+        if os.path.getsize(outfpath) and verbose:
+            logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
             return outfpath
     blast_type = blast_type.lower()
     if blast_type not in ["blastp", "blastx"]:
         raise ValueError(f"blast_type must be blastp or blastx. Given: {blast_type}")
+    if tmpdir == None:
+        tmpdir = tempfile.mkdtemp()
     if verbose:
-        logger.debug(f"Diamond{blast_type.title()} {fasta} against {database}")
+        logger.debug(f"Diamond{blast_type} {fasta} against {database}")
     cmd = [
         "diamond",
-        "blastp",
+        blast_type,
         "--query",
         fasta,
         "--db",
@@ -246,18 +352,19 @@ def blast(
         "--tmpdir",
         tmpdir,
     ]
+    # this is done as when cmd is a list each element should be a string
     cmd = [str(c) for c in cmd]
     if verbose:
         logger.debug(f'RunningDiamond: {" ".join(cmd)}')
-    with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
-        proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
-    if proc.returncode:
-        raise OSError(f"DiamondFailed:\nArgs:{proc.args}\nReturnCode:{proc.returncode}")
+    subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+    )
     return outfpath
 
 
-def parse(results, top_pct=0.9, verbose=False):
-    """Retrieve diamond results from output table
+def parse(results, top_percentile=0.9, verbose=False):
+    """
+    Retrieve diamond results from output table
 
     Parameters
     ----------
@@ -290,14 +397,14 @@ def parse(results, top_pct=0.9, verbose=False):
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
-        float(top_pct)
-    except ValueError as err:
+        float(top_percentile)
+    except ValueError:
         raise ValueError(
-            f"top_pct must be a float! Input: {top_pct} Type: {type(top_pct)}"
+            f"top_percentile must be a float! Input: {top_percentile} Type: {type(top_percentile)}"
         )
-    in_range = 0.0 < top_pct <= 1.0
+    in_range = 0.0 < top_percentile <= 1.0
     if not in_range:
-        raise ValueError(f"top_pct not in range(0,1)! Input: {top_pct}")
+        raise ValueError(f"top_percentile not in range(0,1)! Input: {top_percentile}")
     hits = {}
     temp = set()
     n_lines = file_length(results) if verbose else None
@@ -395,18 +502,17 @@ def add_taxids(hits, database, verbose=True):
     accessions = set(
         chain.from_iterable([hit.sseqids.keys() for qseqid, hit in hits.items()])
     )
-    fh = gzip.open(database) if database.endswith(".gz") else open(database)
-    __ = fh.readline()
+    # "rt" open the database in text mode instead of binary. Now it can be handled like a text file
+    fh = gzip.open(database, "rt") if database.endswith(".gz") else open(database)
+    __ = fh.readline()  # remove the first line as it just gives the description
     if verbose:
         logger.debug(
             f"Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while..."
         )
-    is_gzipped = True if database.endswith(".gz") else False
     n_lines = file_length(database) if verbose else None
     desc = f"Parsing {os.path.basename(database)}"
     acc2taxids = {}
     for line in tqdm(fh, disable=disable, desc=desc, total=n_lines, leave=False):
-        line = line.decode() if is_gzipped else line
         acc_num, acc_ver, taxid, _ = line.split("\t")
         taxid = int(taxid)
         if acc_num in accessions:
@@ -421,43 +527,19 @@ def add_taxids(hits, database, verbose=True):
     ):
         for sseqid in hit.sseqids:
             taxid = acc2taxids.get(sseqid)
-            # if taxid is None:
-            #     raise DatabasesOutOfDateError(f'{sseqid} deprecated/suppressed/removed')
             hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
 
 
-def main(args):
-    result = blast(
-        fasta=args.fasta,
-        database=args.database,
-        outfpath=args.outfile,
-        blast_type=args.blast_type,
-        evalue=args.evalue,
-        maxtargetseqs=args.maxtargetseqs,
-        cpus=args.cpus,
-        tmpdir=args.tmpdir,
-        force=args.force,
-        verbose=args.verbose,
-    )
-    hits = parse(results=result, top_pct=args.top_pct, verbose=args.verbose)
-    hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
-    fname, __ = os.path.splitext(os.path.basename(args.outfile))
-    dirpath = os.path.dirname(os.path.realpath(args.outfile))
-    hits_fname = ".".join([fname, "pkl.gz"])
-    hits_fpath = os.path.join(dirpath, hits_fname)
-    pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
-    logger.debug(f"{len(hits):,} diamond hits serialized to {pickled_fpath}")
-
-
-if __name__ == "__main__":
-    import argparse
+def main():
     import os
+    import argparse
 
     parser = argparse.ArgumentParser(
         description="""
     Retrieves blastp hits with provided input assembly
-    """
+    """,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("fasta", help="</path/to/faa/file>")
     parser.add_argument("database", help="</path/to/diamond/formatted/database>")
@@ -478,14 +560,43 @@ if __name__ == "__main__":
         default=200,
         type=int,
     )
-    parser.add_argument("--cpus", help="num cpus to use", default=0, type=int)
-    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>", default=os.curdir)
     parser.add_argument(
-        "--top-pct", help="top percentage of hits to retrieve", default=0.9
+        "--cpus", help="number of processors to use", default=mp.cpu_count(), type=int
+    )
+    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>")
+    parser.add_argument(
+        "--top-percentile",
+        help="percentile above which hits will be retrieved",
+        default=0.9,
     )
     parser.add_argument(
         "--force", help="force overwrite of diamond output table", action="store_true"
     )
     parser.add_argument("--verbose", help="add verbosity", action="store_true")
     args = parser.parse_args()
-    main(args)
+    result = blast(
+        fasta=args.fasta,
+        database=args.database,
+        outfpath=args.outfile,
+        blast_type=args.blast_type,
+        evalue=args.evalue,
+        maxtargetseqs=args.maxtargetseqs,
+        cpus=args.cpus,
+        tmpdir=args.tmpdir,
+        force=args.force,
+        verbose=args.verbose,
+    )
+    hits = parse(
+        results=result, top_percentile=args.top_percentile, verbose=args.verbose
+    )
+    hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
+    fname, __ = os.path.splitext(os.path.basename(args.outfile))
+    dirpath = os.path.dirname(os.path.realpath(args.outfile))
+    hits_fname = ".".join([fname, "pkl.gz"])
+    hits_fpath = os.path.join(dirpath, hits_fname)
+    pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
+    logger.debug(f"{len(hits):,} diamond hits serialized to {pickled_fpath}")
+
+
+if __name__ == "__main__":
+    main()
