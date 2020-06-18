@@ -57,14 +57,14 @@ def unpickle(fpath):
         Why the exception is raised.
 
     """
-    logger.debug(f'unpickling {fpath}')
-    if fpath.endswith('.gz'):
-        fh = gzip.open(fpath, 'rb')
+    logger.debug(f"unpickling {fpath}")
+    if fpath.endswith(".gz"):
+        fh = gzip.open(fpath, "rb")
     else:
-        fh = open(fpath, 'rb')
+        fh = open(fpath, "rb")
     obj = pickle.load(file=fh)
     fh.close()
-    logger.debug(f'{fpath} object unpickled')
+    logger.debug(f"{fpath} object unpickled")
     return obj
 
 
@@ -90,14 +90,14 @@ def make_pickle(obj, outfpath):
         Why the exception is raised.
 
     """
-    logger.debug(f'pickling object to {outfpath}')
-    if outfpath.endswith('.gz'):
-        fh = gzip.open(outfpath, 'wb')
+    logger.debug(f"pickling object to {outfpath}")
+    if outfpath.endswith(".gz"):
+        fh = gzip.open(outfpath, "wb")
     else:
-        fh = open(outfpath, 'wb')
+        fh = open(outfpath, "wb")
     pickle.dump(obj=obj, file=fh)
     fh.close()
-    logger.debug(f'object pickled to {outfpath}')
+    logger.debug(f"object pickled to {outfpath}")
     return outfpath
 
 
@@ -123,16 +123,17 @@ def gunzip(infpath, outfpath):
 
     """
     logger.debug(
-        f'gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}')
+        f"gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}"
+    )
     if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
         raise FileExistsError(outfpath)
-    lines = ''
+    lines = ""
     with gzip.open(infpath) as fh:
         for line in fh:
             lines += line.decode()
-    with open(outfpath, 'w') as out:
+    with open(outfpath, "w") as out:
         out.write(lines)
-    logger.debug(f'gunzipped {infpath} to {outfpath}')
+    logger.debug(f"gunzipped {infpath} to {outfpath}")
     return outfpath
 
 
@@ -167,32 +168,32 @@ def untar(tarchive, outdir, member=None):
     """
     if not member and not outdir:
         raise ValueError(
-            f'`member` or `outdir` must be passed: member={member} outdir={outdir}')
-    logger.debug(f'decompressing tarchive {tarchive} to {outdir}')
+            f"`member` or `outdir` must be passed: member={member} outdir={outdir}"
+        )
+    logger.debug(f"decompressing tarchive {tarchive} to {outdir}")
     outfpath = os.path.join(outdir, member) if member else None
     if member and os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
         raise FileExistsError(outfpath)
     if not tarfile.is_tarfile(tarchive):
-        raise ValueError(f'{tarchive} is not a tar archive')
-    if tarchive.endswith('.tar.gz') or tarchive.endswith('.tgz'):
-        compression = 'gz'
-    elif tarchive.endswith('.tar.bz2'):
-        compression = 'bz2'
+        raise ValueError(f"{tarchive} is not a tar archive")
+    if tarchive.endswith(".tar.gz") or tarchive.endswith(".tgz"):
+        compression = "gz"
+    elif tarchive.endswith(".tar.bz2"):
+        compression = "bz2"
     else:
-        compression = '*'
-    with tarfile.open(tarchive, f'r:{compression}') as tar:
+        compression = "*"
+    with tarfile.open(tarchive, f"r:{compression}") as tar:
         if member:
             try:
                 tar.extract(member=member, path=outdir)
             except KeyError as err:
-                raise KeyError(
-                    f'member not in tarchive : {member} : {tarchive}')
+                raise KeyError(f"member not in tarchive : {member} : {tarchive}")
         else:
             tar.extractall(outdir)
     if member:
-        logger.debug(f'{member} extracted to {outdir}')
+        logger.debug(f"{member} extracted to {outdir}")
         return outfpath
-    logger.debug(f'{tarchive} decompressed to {outdir}')
+    logger.debug(f"{tarchive} decompressed to {outdir}")
     return outdir
 
 
@@ -219,12 +220,12 @@ def tarchive_results(outfpath, src_dirpath):
     FileExistsError
         `outfpath` already exists
     """
-    logger.debug(f'tar archiving {src_dirpath} to {outfpath}')
+    logger.debug(f"tar archiving {src_dirpath} to {outfpath}")
     if os.path.exists(outfpath):
         raise FileExistsError(outfpath)
     with tarfile.open(outfpath, "w:gz") as tar:
         tar.add(src_dirpath, arcname=os.path.basename(src_dirpath))
-    logger.debug(f'{src_dirpath} tarchived to {outfpath}')
+    logger.debug(f"{src_dirpath} tarchived to {outfpath}")
     return outfpath
 
 
@@ -252,14 +253,14 @@ def file_length(fpath):
     """
     if not os.path.exists(fpath):
         raise FileNotFoundError(fpath)
-    if fpath.endswith('.gz'):
-        fh = gzip.open(fpath, 'rb')
+    if fpath.endswith(".gz"):
+        fh = gzip.open(fpath, "rb")
     else:
-        fh = open(fpath, 'rb')
+        fh = open(fpath, "rb")
     for i, l in enumerate(fh):
         pass
     fh.close()
-    return i+1
+    return i + 1
 
 
 def get_checksum(fpath):
@@ -285,6 +286,7 @@ def get_checksum(fpath):
     TypeError
         `fpath` is not a string
     """
+
     def sha(block):
         hasher = hashlib.sha256()
         for bytes in block:
@@ -302,7 +304,7 @@ def get_checksum(fpath):
         raise TypeError(type(fpath))
     if not os.path.exists(fpath):
         raise FileNotFoundError(fpath)
-    fh = open(fpath, 'rb')
+    fh = open(fpath, "rb")
     cksum = sha(blockiter(fh))
     fh.close()
     return cksum
@@ -332,12 +334,12 @@ def valid_checkpoint(checkpoint_fp, fpath):
     """
     for fp in [checkpoint_fp, fpath]:
         if not type(fp) is str:
-            raise TypeError(f'{fp} is type: {type(fp)}')
+            raise TypeError(f"{fp} is type: {type(fp)}")
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
     with open(checkpoint_fp) as fh:
         for line in fh:
-            prev_chksum, fp = line.split('\t')
+            prev_chksum, fp = line.split("\t")
             fp = fp.strip()
             if os.path.basename(fp) == os.path.basename(fpath):
                 # If filepaths never match, prev_chksum and new_chksum will not match.
@@ -371,24 +373,25 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
         Raises an error if the `fpaths` list is empty or None
     """
     if not os.path.exists(checkpoint_fp):
-        logger.debug(f'{checkpoint_fp} not found... Writing')
+        logger.debug(f"{checkpoint_fp} not found... Writing")
         if not fpaths:
             raise ValueError(
-                f'Cannot populate empty {checkpoint_fp}. {fpaths} is empty.')
-        outlines = ''
+                f"Cannot populate empty {checkpoint_fp}. {fpaths} is empty."
+            )
+        outlines = ""
         for fpath in fpaths:
             try:
                 checksum = get_checksum(fpath)
             except FileNotFoundError as err:
-                checksum = ''
-            outlines += f'{checksum}\t{fpath}\n'
-        with open(checkpoint_fp, 'w') as fh:
+                checksum = ""
+            outlines += f"{checksum}\t{fpath}\n"
+        with open(checkpoint_fp, "w") as fh:
             fh.write(outlines)
-        logger.debug(f'Written: {checkpoint_fp}')
+        logger.debug(f"Written: {checkpoint_fp}")
     checkpoints = {}
     with open(checkpoint_fp) as fh:
         for line in fh:
-            chk, fp = line.split('\t')
+            chk, fp = line.split("\t")
             fp = fp.strip()
             checkpoints.update({fp: chk})
     return checkpoints
@@ -415,13 +418,14 @@ def update_checkpoints(checkpoint_fp, fpath):
         return checkpoints
     new_checksum = get_checksum(fpath)
     checkpoints.update({fpath: new_checksum})
-    outlines = ''
+    outlines = ""
     for fp, chk in checkpoints.items():
-        outlines += f'{chk}\t{fp}\n'
-    with open(checkpoint_fp, 'w') as fh:
+        outlines += f"{chk}\t{fp}\n"
+    with open(checkpoint_fp, "w") as fh:
         fh.write(outlines)
     logger.debug(
-        f'Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}')
+        f"Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}"
+    )
     return checkpoints
 
 
@@ -451,22 +455,27 @@ def timeit(func):
     function
         timer decorated `func`.
     """
+
     @wraps(func)
     def wrapper(*args, **kwds):
         start = time.time()
         obj = func(*args, **kwds)
         end = time.time()
         time_taken = end - start
-        logger.info(f'{func.__name__} took {time_taken:.2f} seconds')
+        logger.info(f"{func.__name__} took {time_taken:.2f} seconds")
         return obj
+
     return wrapper
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(
-        description='file containing utilities functions for Autometa pipeline')
-    print('file containing utilities functions for Autometa pipeline')
+        description="file containing utilities functions for Autometa pipeline"
+    )
+    print("file containing utilities functions for Autometa pipeline")
     args = parser.parse_args()
     import sys
+
     sys.exit(1)

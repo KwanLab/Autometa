@@ -2,7 +2,7 @@
 Databases
 =========
 
-Autometa comes packaged with the necessary markers 
+Autometa comes packaged with the necessary markers
 files and will download and format NCBI files during the first run.
 
 NCBI
@@ -11,7 +11,7 @@ NCBI
 * non-redundant protein database (nr) - `link <ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`__
 
 * taxdump.tar.gz - `link <ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`__
-    
+
     - required files within taxdump tarchive are *nodes.dmp*, *names.dmp* and *merged.dmp*
 * prot.accession2taxid.gz - `link <ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`__
 

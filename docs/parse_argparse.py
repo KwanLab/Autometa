@@ -120,9 +120,7 @@ def get_usage(argparse_lines):
     try:
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
-        print(
-            f"Error while running --help on these argparse lines: \n {argparse_lines}"
-        )
+        print(f"Error while running --help on these argparse lines \n {argparse_lines}")
         raise err
     wrapper = textwrap.TextWrapper(
         initial_indent="\t", subsequent_indent="\t", width=80
@@ -143,7 +141,7 @@ def make_rst_dir(fpath):
     with <docs/source/scripts/> and creates these directories
 
     We are finding the index of autometa from reverse, as sometimes there may be multiple
-    occurunces of 'autometa' in a single file path, and always the last occurence will point to 
+    occurunces of 'autometa' in a single file path, and always the last occurence will point to
     the autometa package and that is what we want
 
     Parameters
@@ -229,7 +227,7 @@ def write_main_header(root, dirname):
 
 def write_main_files(rst_scripts_dirpath):
     """
-    Creates the main.rst files, writes their header, links the parent toc tree with the 
+    Creates the main.rst files, writes their header, links the parent toc tree with the
     sub-directories and the scripts that directory has
 
     Parameters
