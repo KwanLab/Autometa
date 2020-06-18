@@ -39,4 +39,3 @@ You can now activate the conda environment using
 Now download autometa to your desired directory using:
 
     ``git clone https://github.com/KwanLab/Autometa.git``
-

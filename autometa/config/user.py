@@ -67,10 +67,10 @@ class AutometaUser:
         self.nproc = nproc
         self.user_config = user_config
         self.config = config.get_config(self.user_config)
-        if not self.config.has_section('common'):
-            self.config.add_section('common')
-        if not self.config.has_option('common', 'home_dir'):
-            self.config.set('common', 'home_dir', self.home_dir)
+        if not self.config.has_section("common"):
+            self.config.add_section("common")
+        if not self.config.has_option("common", "home_dir"):
+            self.config.set("common", "home_dir", self.home_dir)
 
     def __str__(self):
         return self.user_config
@@ -99,18 +99,18 @@ class AutometaUser:
 
         # Execution env
         self.config, exe_satisfied = environ.configure(self.config)
-        logger.info(f'Executable dependencies satisfied: {exe_satisfied}')
+        logger.info(f"Executable dependencies satisfied: {exe_satisfied}")
         # Database env
         dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc)
         self.config = dbs.configure()
-        logger.info(f'Database dependencies satisfied: {dbs.satisfied}')
+        logger.info(f"Database dependencies satisfied: {dbs.satisfied}")
         if dryrun:
             return
 
         if not dbs.satisfied:
-            raise LookupError('Database dependencies not satisfied!')
+            raise LookupError("Database dependencies not satisfied!")
         if not exe_satisfied:
-            raise LookupError('Executable dependencies not satisfied!')
+            raise LookupError("Executable dependencies not satisfied!")
 
         self.save()
 
@@ -181,15 +181,15 @@ class AutometaUser:
         if not os.path.exists(workspace):
             os.makedirs(workspace)
         # 3. check project exists
-        proj_name = f'project_{mgargs.parameters.project:03d}'
+        proj_name = f"project_{mgargs.parameters.project:03d}"
         project_dirpath = os.path.realpath(os.path.join(workspace, proj_name))
-        project_config_fp = os.path.join(project_dirpath, 'project.config')
+        project_config_fp = os.path.join(project_dirpath, "project.config")
         if not os.path.exists(project_dirpath) or not os.path.exists(project_config_fp):
             project = self.new_project(project_config_fp)
         else:
             project = Project(project_config_fp)
         # 4. check whether existing or new run with metagenome_num
-        metagenome = f'metagenome_{mgargs.parameters.metagenome_num:03d}'
+        metagenome = f"metagenome_{mgargs.parameters.metagenome_num:03d}"
         if metagenome not in project.metagenomes:
             mgargs = project.add(fpath)
             project.save()
@@ -200,8 +200,8 @@ class AutometaUser:
         new_chksum = utilities.get_checksum(fpath)
         if old_chksum != new_chksum:
             mgargs = project.update(
-                metagenome_num=mgargs.parameters.metagenome_num,
-                fpath=fpath)
+                metagenome_num=mgargs.parameters.metagenome_num, fpath=fpath
+            )
         project.save()
         return mgargs
 
@@ -233,18 +233,18 @@ class AutometaUser:
             fwd_reads=mgargs.files.fwd_reads,
             rev_reads=mgargs.files.rev_reads,
             se_reads=mgargs.files.se_reads,
-            taxon_method=mgargs.parameters.taxon_method)
+            taxon_method=mgargs.parameters.taxon_method,
+        )
 
         try:
             # Original (raw) file should not be manipulated so return new object
             mg = mg.length_filter(
-                out=mgargs.files.length_filtered,
-                cutoff=mgargs.parameters.length_cutoff)
+                out=mgargs.files.length_filtered, cutoff=mgargs.parameters.length_cutoff
+            )
             # COMBAK: Checkpoint length filtered
         except FileExistsError as err:
             # COMBAK: Checkpoint length filtered
-            logger.debug(
-                f'{mgargs.files.length_filtered} already exists. Continuing..')
+            logger.debug(f"{mgargs.files.length_filtered} already exists. Continuing..")
             mg = Metagenome(
                 assembly=mgargs.files.length_filtered,
                 outdir=mgargs.parameters.outdir,
@@ -254,7 +254,8 @@ class AutometaUser:
                 fwd_reads=mgargs.files.fwd_reads,
                 rev_reads=mgargs.files.rev_reads,
                 se_reads=mgargs.files.se_reads,
-                taxon_method=mgargs.parameters.taxon_method)
+                taxon_method=mgargs.parameters.taxon_method,
+            )
         # I.e. asynchronous execution here (work-queue tasks)
         mg.get_kmers(
             kmer_size=mgargs.parameters.kmer_size,
@@ -262,7 +263,8 @@ class AutometaUser:
             out=mgargs.files.kmer_counts,
             multiprocess=mgargs.parameters.kmer_multiprocess,
             nproc=mgargs.parameters.cpus,
-            force=mgargs.parameters.force)
+            force=mgargs.parameters.force,
+        )
         # COMBAK: Checkpoint kmers
 
         coverages = mg.get_coverages(
@@ -271,7 +273,8 @@ class AutometaUser:
             sam=mgargs.files.sam,
             bam=mgargs.files.bam,
             lengths=mgargs.files.lengths,
-            bed=mgargs.files.bed)
+            bed=mgargs.files.bed,
+        )
         # COMBAK: Checkpoint coverages
 
         if mgargs.parameters.do_taxonomy:
@@ -282,19 +285,18 @@ class AutometaUser:
                 blast=mgargs.files.blastp,
                 hits=mgargs.files.blastp_hits,
                 force=mgargs.parameters.force,
-                cpus=mgargs.parameters.cpus)
+                cpus=mgargs.parameters.cpus,
+            )
 
             if not mgargs.parameters.kingdom in kingdoms:
                 recovered_kingdoms = ", ".join(kingdoms.keys())
                 raise KeyError(
-                    f'{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}')
+                    f"{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}"
+                )
 
             mag = kingdoms.get(mgargs.parameters.kingdom)
         else:
-            mag = MAG(
-                assembly=mg.assembly,
-                contigs=mg.seqrecords,
-                outdir=mg.outdir)
+            mag = MAG(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
 
         # Perform binning
         bins_df = mag.get_binning(
@@ -309,48 +311,55 @@ class AutometaUser:
             taxonomy=mgargs.files.taxonomy,
             reverse=mgargs.parameters.reversed,
         )
-        binning_cols = ['cluster', 'completeness', 'purity']
+        binning_cols = ["cluster", "completeness", "purity"]
         bins_df[binning_cols].to_csv(
-            mgargs.files.binning,
-            sep='\t',
-            index=True,
-            header=True)
+            mgargs.files.binning, sep="\t", index=True, header=True
+        )
 
 
 def main():
     import argparse
     import multiprocessing as mp
     import logging as logger
-    parser = argparse.ArgumentParser(description="""
+
+    parser = argparse.ArgumentParser(
+        description="""
     Configures the Autometa user environment/databases.
     Running without args will download and format Autometa database dependencies.
     """,
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config',
-                        help=f'Path to an Autometa default.config file.',
-                        default=config.DEFAULT_FPATH)
-    parser.add_argument('--dryrun',
-                        help='Log configuration without performing updates.',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--debug',
-                        help='Stream debugging information to terminal.',
-                        action='store_true')
-    parser.add_argument('--cpus',
-                        help=f'Num. cpus to use when updating/constructing databases.',
-                        default=mp.cpu_count(), type=int)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--config",
+        help=f"Path to an Autometa default.config file.",
+        default=config.DEFAULT_FPATH,
+    )
+    parser.add_argument(
+        "--dryrun",
+        help="Log configuration without performing updates.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--debug", help="Stream debugging information to terminal.", action="store_true"
+    )
+    parser.add_argument(
+        "--cpus",
+        help=f"Num. cpus to use when updating/constructing databases.",
+        default=mp.cpu_count(),
+        type=int,
+    )
     args = parser.parse_args()
 
     level = logger.DEBUG if args.debug else logger.INFO
     logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=level)
-    user = AutometaUser(
-        user_config=args.config,
-        nproc=args.cpus)
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=level,
+    )
+    user = AutometaUser(user_config=args.config, nproc=args.cpus)
     user.configure(args.dryrun)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

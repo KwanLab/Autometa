@@ -42,44 +42,47 @@ from autometa.common.utilities import make_pickle, unpickle, timeit
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-NCBI_DIR = os.path.join(BASE_DIR,'databases','ncbi')
+NCBI_DIR = os.path.join(BASE_DIR, "databases", "ncbi")
+
 
 class NCBI:
     """Taxonomy utilities for NCBI databases."""
 
     CANONICAL_RANKS = [
-        'species',
-        'genus',
-        'family',
-        'order',
-        'class',
-        'phylum',
-        'superkingdom',
-        'root'
+        "species",
+        "genus",
+        "family",
+        "order",
+        "class",
+        "phylum",
+        "superkingdom",
+        "root",
     ]
 
     def __init__(self, dirpath, verbose=False):
         self.dirpath = dirpath
         self.verbose = verbose
         self.disable = not self.verbose
-        self.names_fpath = os.path.join(self.dirpath, 'names.dmp')
-        self.nodes_fpath = os.path.join(self.dirpath, 'nodes.dmp')
-        self.merged_fpath = os.path.join(self.dirpath, 'merged.dmp')
-        self.accession2taxid_fpath = os.path.join(
-            self.dirpath, 'prot.accession2taxid')
-        acc2taxid_gz = '.'.join([self.accession2taxid_fpath, 'gz'])
-        if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(acc2taxid_gz):
+        self.names_fpath = os.path.join(self.dirpath, "names.dmp")
+        self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
+        self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
+        self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
+        acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
+        if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
+            acc2taxid_gz
+        ):
             self.accession2taxid_fpath = acc2taxid_gz
-        self.nr_fpath = os.path.join(self.dirpath, 'nr.gz')
+        self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
-        nr_dmnd_fname = '.'.join([nr_bname, 'dmnd'])
+        nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
         nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
         if os.path.exists(nr_dmnd_fpath):
             self.nr_fpath = nr_dmnd_fpath
-        if 'dmnd' not in os.path.basename(self.nr_fpath):
+        if "dmnd" not in os.path.basename(self.nr_fpath):
             # This check should probably be in the dependencies/databases file...
             logger.warning(
-                f'DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!')
+                f"DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!"
+            )
         self.nodes = self.parse_nodes()
         self.names = self.parse_names()
         self.merged = self.parse_merged()
@@ -118,19 +121,18 @@ class NCBI:
         try:
             taxid = int(taxid)
         except ValueError as err:
-            logger.error(
-                f'Taxid must be an integer! {taxid} type --> {type(taxid)}')
+            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
             return None
         if not rank:
-            return self.names.get(taxid, 'unclassified')
+            return self.names.get(taxid, "unclassified")
         if rank not in set(NCBI.CANONICAL_RANKS):
-            logger.warning(f'{rank} not in canonical ranks!')
+            logger.warning(f"{rank} not in canonical ranks!")
             return None
         ancestor_taxid = taxid
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
-                return self.names.get(ancestor_taxid, 'unclassified')
+                return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
 
     def lineage(self, taxid, canonical=True):
@@ -154,18 +156,16 @@ class NCBI:
         try:
             taxid = int(taxid)
         except ValueError as err:
-            logger.error(
-                f'Taxid must be an integer! {taxid} type --> {type(taxid)}')
+            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
             return None
         lineage = []
         while taxid != 1:
             if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
                 taxid = self.parent(taxid)
                 continue
-            lineage.append({
-                'taxid': taxid,
-                'name': self.name(taxid),
-                'rank': self.rank(taxid)})
+            lineage.append(
+                {"taxid": taxid, "name": self.name(taxid), "rank": self.rank(taxid)}
+            )
             taxid = self.parent(taxid)
         return lineage
 
@@ -191,7 +191,7 @@ class NCBI:
 
         """
         canonical_ranks = [r for r in reversed(NCBI.CANONICAL_RANKS)]
-        canonical_ranks.remove('root')
+        canonical_ranks.remove("root")
         taxids = list(set(taxids))
         taxids_ = {}
         for rank in canonical_ranks:
@@ -202,9 +202,9 @@ class NCBI:
                 else:
                     taxids_[taxid].update({rank: name})
         df = pd.DataFrame(taxids_).transpose()
-        df.index.name = 'taxid'
+        df.index.name = "taxid"
         if fillna:
-            df.fillna(value='unclassified', inplace=True)
+            df.fillna(value="unclassified", inplace=True)
         return df
 
     def rank(self, taxid):
@@ -230,10 +230,9 @@ class NCBI:
         try:
             taxid = int(taxid)
         except ValueError as err:
-            logger.error(
-                f'Taxid must be an integer! {taxid} type --> {type(taxid)}')
+            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
             return None
-        return self.nodes.get(taxid, {'rank': 'unclassified'}).get('rank')
+        return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
     def parent(self, taxid):
         """Retrieve the parent taxid of provided taxid
@@ -252,10 +251,9 @@ class NCBI:
         try:
             taxid = int(taxid)
         except ValueError as err:
-            logger.error(
-                f'Taxid must be an integer! {taxid} type --> {type(taxid)}')
+            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
             return None
-        return self.nodes.get(taxid, {'parent': 1}).get('parent')
+        return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
     # @timeit
     def parse_names(self):
@@ -280,21 +278,20 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing names from {self.names_fpath}')
+            logger.debug(f"Processing names from {self.names_fpath}")
         names = {}
         fh = open(self.names_fpath)
-        for line in tqdm(fh, disable=self.disable, desc='parsing names', leave=False):
-            taxid, name, __, classification = line.strip(
-                '\t|\n').split('\t|\t')[:4]
+        for line in tqdm(fh, disable=self.disable, desc="parsing names", leave=False):
+            taxid, name, __, classification = line.strip("\t|\n").split("\t|\t")[:4]
             taxid = int(taxid)
             name = name.lower()
             # Only add scientific name entries
-            is_scientific = classification == 'scientific name'
+            is_scientific = classification == "scientific name"
             if is_scientific:
                 names.update({taxid: name})
         fh.close()
         if self.verbose:
-            logger.debug('names loaded')
+            logger.debug("names loaded")
         return names
 
     # @timeit
@@ -318,18 +315,18 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing nodes from {self.nodes_fpath}')
+            logger.debug(f"Processing nodes from {self.nodes_fpath}")
         fh = open(self.nodes_fpath)
         __ = fh.readline()  # root line
-        nodes = {1: {'parent': 1, 'rank': 'root'}}
-        for line in tqdm(fh, disable=self.disable, desc='parsing nodes', leave=False):
-            child, parent, rank = line.split('\t|\t')[:3]
+        nodes = {1: {"parent": 1, "rank": "root"}}
+        for line in tqdm(fh, disable=self.disable, desc="parsing nodes", leave=False):
+            child, parent, rank = line.split("\t|\t")[:3]
             parent, child = map(int, [parent, child])
             rank = rank.lower()
-            nodes.update({child: {'parent': parent, 'rank': rank}})
+            nodes.update({child: {"parent": parent, "rank": rank}})
         fh.close()
         if self.verbose:
-            logger.debug('nodes loaded')
+            logger.debug("nodes loaded")
         return nodes
 
     def parse_merged(self):
@@ -352,16 +349,17 @@ class NCBI:
 
         """
         if self.verbose:
-            logger.debug(f'Processing nodes from {self.merged_fpath}')
+            logger.debug(f"Processing nodes from {self.merged_fpath}")
         fh = open(self.merged_fpath)
         merged = {}
-        for line in tqdm(fh, disable=self.disable, desc='parsing merged', leave=False):
+        for line in tqdm(fh, disable=self.disable, desc="parsing merged", leave=False):
             old_taxid, new_taxid = [
-                int(taxid) for taxid in line.strip('\t|\n').split('\t|\t')]
+                int(taxid) for taxid in line.strip("\t|\n").split("\t|\t")
+            ]
             merged.update({old_taxid: new_taxid})
         fh.close()
         if self.verbose:
-            logger.debug('merged loaded')
+            logger.debug("merged loaded")
         return merged
 
     def is_common_ancestor(self, parent_taxid, child_taxid):
@@ -390,34 +388,36 @@ class NCBI:
 def main():
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser(
-        description='Autometa NCBI utilities class')
-    parser.add_argument('ncbi', help='</path/to/ncbi/database/directory>')
+        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+    parser = argparse.ArgumentParser(description="Autometa NCBI utilities class")
+    parser.add_argument("ncbi", help="</path/to/ncbi/database/directory>")
     parser.add_argument(
-        '--query-taxid',
-        help='query taxid to test NCBI class functionality',
+        "--query-taxid",
+        help="query taxid to test NCBI class functionality",
         default=1222,
         type=int,
     )
-    parser.add_argument('--verbose', help="add verbosity",
-                        action='store_true', default=True)
+    parser.add_argument(
+        "--verbose", help="add verbosity", action="store_true", default=True
+    )
     args = parser.parse_args()
     ncbi = NCBI(args.ncbi, args.verbose)
     query_taxid_parent = ncbi.parent(taxid=args.query_taxid)
     logger.info(
-        f'{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n'
+        f"{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n"
         f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
         f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
-        f'{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n'
-        f'{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n'
-        f'{args.query_taxid} is_common_ancestor {query_taxid_parent}: '
-        f'{ncbi.is_common_ancestor(parent_taxid=query_taxid_parent, child_taxid=args.query_taxid)}\n'
+        f"{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n"
+        f"{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n"
+        f"{args.query_taxid} is_common_ancestor {query_taxid_parent}: "
+        f"{ncbi.is_common_ancestor(parent_taxid=query_taxid_parent, child_taxid=args.query_taxid)}\n"
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

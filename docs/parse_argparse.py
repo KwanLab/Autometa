@@ -77,12 +77,10 @@ def get_argparse_block(fpath):
                 usage = f"(usage='{fname}', "
                 line = line.replace("(", usage)
             # Regex is used to capture the constant string eg. config.DEFAULT_FPATH then convert it to a string eg. "config.DEFAULT_FPATH"
-            match = re.search(
-                r"default=([a-z]*\.?[A-Z]+_?[A-Z]+[_A-Z]*)", line)
+            match = re.search(r"default=([a-z]*\.?[A-Z]+_?[A-Z]+[_A-Z]*)", line)
             if match:
                 cap_const = match.group(1)
-                line = line.replace(
-                    cap_const, f'"{cap_const}"')
+                line = line.replace(cap_const, f'"{cap_const}"')
             outlines += f"{line}\n"
     return outlines
 
@@ -107,20 +105,21 @@ def get_usage(argparse_lines):
         indented arparse output after running the `--help` command
     """
     __, tmp_fpath = tempfile.mkstemp()
-    with open(tmp_fpath, 'w') as outfh:
+    with open(tmp_fpath, "w") as outfh:
         outfh.write(argparse_lines)
     cmd = f"python {tmp_fpath} -h"
     # capture the argparse output
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE,
-                          stderr=subprocess.DEVNULL, shell=True, text=True)
+    proc = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, text=True
+    )
     try:
         proc.check_returncode()
     except subprocess.CalledProcessError as err:
-        print(
-            f"Error while running --help on these argparse lines \n {argparse_lines}")
+        print(f"Error while running --help on these argparse lines \n {argparse_lines}")
         raise err
     wrapper = textwrap.TextWrapper(
-        initial_indent="\t", subsequent_indent="\t", width=80)
+        initial_indent="\t", subsequent_indent="\t", width=80
+    )
     wrapped_lines = ""
     # splitlines is required because wrapped_lines.stdout is just as big line with \n in between.
     # without this line would go through each character and not each line
@@ -128,7 +127,7 @@ def get_usage(argparse_lines):
         # writing the indented text to the final rst files, this will be dislayed in html
         wrapped_lines += wrapper.fill(line) + "\n"
     os.remove(tmp_fpath)
-    return (wrapped_lines)
+    return wrapped_lines
 
 
 def make_rst_dir(fpath):
@@ -137,7 +136,7 @@ def make_rst_dir(fpath):
     with <docs/source/scripts/> and creates these directories
 
     We are finding the index of autometa from reverse, as sometimes there may be multiple
-    occurunces of 'autometa' in a single file path, and always the last occurence will point to 
+    occurunces of 'autometa' in a single file path, and always the last occurence will point to
     the autometa package and that is what we want
 
     Parameters
@@ -169,7 +168,7 @@ def make_rst_dir(fpath):
     # path now has "~/Autometa/docs/source/scripts/comon/external" instead of autometa
     if not os.path.exists(rst_dirpath):
         os.makedirs(rst_dirpath)
-    return (rst_dirpath)
+    return rst_dirpath
 
 
 def write_usage(fpath, rst_dirpath, wrapped_lines):
@@ -193,9 +192,8 @@ def write_usage(fpath, rst_dirpath, wrapped_lines):
     # extract the "kmers" of kmers.py
     fname = os.path.splitext(basename)[0]
     rst_fname = fname + ".rst"  # make it kmers.rst
-    rst_fpath = os.path.join(
-        rst_dirpath, rst_fname)
-    frmt_header = "="*len(basename)
+    rst_fpath = os.path.join(rst_dirpath, rst_fname)
+    frmt_header = "=" * len(basename)
     header = f"{frmt_header}\n{basename}\n{frmt_header}\n\n.. code-block:: shell\n"
     with open(rst_fpath, "w") as fh_rst:
         fh_rst.write(f"{header}\n{wrapped_lines}")
@@ -215,7 +213,7 @@ def write_main_header(root, dirname):
     """
     main_rst_fname = dirname + "_main.rst"  # making a file external_main
     main_rst_fpath = os.path.join(root, dirname, main_rst_fname)
-    frmt_header = "="*len(dirname)
+    frmt_header = "=" * len(dirname)
     header = f"{frmt_header}\n{dirname}\n{frmt_header}\n\n.. toctree::\n"
     header += f"\t:maxdepth: 2\n\t:caption: Table of Contents\n\n"
     with open(main_rst_fpath, "w") as fh:
@@ -224,7 +222,7 @@ def write_main_header(root, dirname):
 
 def write_main_files(rst_scripts_dirpath):
     """
-    Creates the main.rst files, writes their header, links the parent toc tree with the 
+    Creates the main.rst files, writes their header, links the parent toc tree with the
     sub-directories and the scripts that directory has
 
     Parameters
@@ -274,7 +272,7 @@ def write_usage_toctree(rst_scripts_dirpath):
         e.g. '</path/to/docs/source/scripts>'
     """
     usage_fpath = os.path.join(rst_scripts_dirpath, "usage.rst")
-    frmt_header = "="*len("usage")
+    frmt_header = "=" * len("usage")
     header = f"{frmt_header}\nUsage\n{frmt_header}\n\n.. toctree::\n"
     header += f"\t:maxdepth: 3\n\t:caption: Table of Contents\n\n"
     if os.path.exists(usage_fpath):
@@ -309,8 +307,7 @@ def remove_empty_dir():
     """
     Removes any empty directory that may have been added by mistake
     """
-    pkg_dirpath = os.path.join(os.path.dirname(
-        os.path.dirname(__file__)), "autometa")
+    pkg_dirpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "autometa")
     for root, _, __ in os.walk(pkg_dirpath):
         # If the list is empty, then this will evaluate to false, and if it contains elements, it will evaluate to true
         if not os.listdir(root):
@@ -318,12 +315,12 @@ def remove_empty_dir():
 
 
 def main():
-    rst_scripts_dirpath = os.path.join(
-        os.path.dirname(__file__), "source", "scripts")
+    rst_scripts_dirpath = os.path.join(os.path.dirname(__file__), "source", "scripts")
     remove_existing_docs(rst_scripts_dirpath)
     remove_empty_dir()
-    pkg_scripts_search_str = os.path.join(os.path.dirname(
-        os.path.dirname(__file__)), "autometa", "**", "*.py")
+    pkg_scripts_search_str = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "autometa", "**", "*.py"
+    )
     for fpath in glob.glob(pkg_scripts_search_str, recursive=True):
         exclude_dirs = ["validation"]
         if "__" in fpath:  # do not include __init__ and __main__.py files
@@ -338,5 +335,5 @@ def main():
     write_usage_toctree(rst_scripts_dirpath)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
