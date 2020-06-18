@@ -117,6 +117,10 @@ def hmmscan(
 ):
     """Runs hmmscan on dataset ORFs and provided hmm database.
 
+    Note
+    ----
+    Only one of `parallel` and `gnu_parallel` may be provided as True
+
     Parameters
     ----------
     orfs : str
@@ -133,10 +137,6 @@ def hmmscan(
         Will use multithreaded parallelization offered by hmmscan (the default is True).
     gnu_parallel : bool, optional
         Will parallelize hmmscan using GNU parallel (the default is False).
-        Note: Only one of `parallel` and `gnu_parallel` may be provided as True
-    log : str, optional
-        </path/to/parallel.log> (the default is None). If provided will write
-        parallel log to `log`.
 
     Returns
     -------
@@ -151,6 +151,7 @@ def hmmscan(
         `outfpath` already exists
     subprocess.CalledProcessError
         hmmscan failed
+
     """
     if gnu_parallel and parallel:
         raise ValueError("Both parallel and gnu_parallel were provided as True")
