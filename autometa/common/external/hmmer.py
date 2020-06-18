@@ -79,12 +79,10 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
     ]
     cmdline = subprocess.list2cmdline(cmd)
     logger.debug(cmdline)
-    proc = subprocess.run(cmdline, shell=True)
     try:
-        proc.check_returncode()
+        subprocess.run(cmdline, shell=True, check=True)
     except subprocess.CalledProcessError as err:
         logger.warning(f"Make sure your hmm profiles are pressed! hmmpress -f {hmmdb}")
-        logger.error(f"Args:{cmdline} ReturnCode:{proc.returncode}")
         shutil.rmtree(tmp_dirpath)
         raise err
     tmp_fpaths = glob(os.path.join(tmp_dirpath, "*.txt"))
@@ -105,12 +103,12 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
 def annotate_sequential(orfs, hmmdb, outfpath, cpus):
     cmd = ["hmmscan", "--cpu", str(cpus), "--tblout", outfpath, hmmdb, orfs]
     logger.debug(" ".join(cmd))
-    proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        proc.check_returncode()
+        subprocess.run(
+            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+        )
     except subprocess.CalledProcessError as err:
         logger.warning(f"Make sure your hmm profiles are pressed! hmmpress -f {hmmdb}")
-        logger.error(f"Args:{cmd} ReturnCode:{proc.returncode}")
         raise err
 
 
@@ -195,7 +193,7 @@ def hmmpress(fpath):
         raise FileNotFoundError(fpath)
     cmd = ["hmmpress", "-f", fpath]
     logger.debug(" ".join(cmd))
-    proc = subprocess.run(
+    subprocess.run(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
     )
     return fpath

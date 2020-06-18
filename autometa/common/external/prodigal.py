@@ -69,7 +69,7 @@ def annotate_sequential(assembly, prots_out, nucls_out):
     ]
     cmd = [str(arg) for arg in cmd]
     logger.debug(" ".join(cmd))
-    proc = subprocess.run(
+    subprocess.run(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
     )
 
@@ -116,7 +116,7 @@ def annotate_parallel(assembly, prots_out, nucls_out, cpus):
     cmd = [str(arg) for arg in cmd]
     cmdline = subprocess.list2cmdline(cmd)
     logger.debug(cmdline)
-    proc = subprocess.run(cmdline, shell=True, check=True)
+    subprocess.run(cmdline, shell=True, check=True)
     search_path = os.path.join(tmpdir, "*.faa")
     aggregate_orfs(search_path, prots_out)
     search_path = os.path.join(tmpdir, "*.fna")
