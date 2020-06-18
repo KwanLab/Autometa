@@ -29,6 +29,7 @@ import logging
 import os
 import subprocess
 import shutil
+import tempfile
 
 from glob import glob
 from Bio import SeqIO
@@ -38,6 +39,89 @@ from autometa.config.environ import get_versions
 
 
 logger = logging.getLogger(__name__)
+
+
+def aggregate_orfs(search_str, outfpath):
+    tmpfpaths = glob(search_str)
+    lines = ""
+    for fp in tmpfpaths:
+        with open(fp) as fh:
+            for line in fh:
+                lines += line
+    out = open(outfpath, "w")
+    out.write(lines)
+    out.close()
+
+
+def annotate_sequential(assembly, prots_out, nucls_out):
+    cmd = [
+        "prodigal",
+        "-i",
+        assembly,
+        "-a",
+        prots_out,
+        "-d",
+        nucls_out,
+        "-p",
+        "meta",
+        "-m",
+        "-q",
+    ]
+    cmd = [str(arg) for arg in cmd]
+    logger.debug(" ".join(cmd))
+    subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+    )
+
+
+def annotate_parallel(assembly, prots_out, nucls_out, cpus):
+    outdir = os.path.dirname(os.path.realpath(nucls_out))
+    log = os.path.join(outdir, "prodigal.parallel.log")
+    outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
+    tmpdir = tempfile.mkdtemp(dir=outdir)
+    if not os.path.exists(tmpdir):
+        os.makedirs(tmpdir)
+    tmpnucl = ".".join([outprefix, "{#}", "fna"])
+    tmpprot = ".".join([outprefix, "{#}", "faa"])
+    tmpnucl_fpath = os.path.join(tmpdir, tmpnucl)
+    tmpprot_fpath = os.path.join(tmpdir, tmpprot)
+    jobs = f"-j{cpus}"
+    cmd = [
+        "parallel",
+        "--retries",
+        "4",
+        "--joblog",
+        log,
+        jobs,
+        "--pipe",
+        "--recstart",
+        "'>'",
+        "--linebuffer",
+        "prodigal",
+        "-a",
+        tmpprot_fpath,
+        "-d",
+        tmpnucl_fpath,
+        "-q",
+        "-p",
+        "meta",
+        "-m",
+        "-o",
+        os.devnull,
+        "<",
+        assembly,
+        "2>",
+        os.devnull,
+    ]
+    cmd = [str(arg) for arg in cmd]
+    cmdline = subprocess.list2cmdline(cmd)
+    logger.debug(cmdline)
+    subprocess.run(cmdline, shell=True, check=True)
+    search_path = os.path.join(tmpdir, "*.faa")
+    aggregate_orfs(search_path, prots_out)
+    search_path = os.path.join(tmpdir, "*.fna")
+    aggregate_orfs(search_path, nucls_out)
+    shutil.rmtree(tmpdir)
 
 
 def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
@@ -67,8 +151,12 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     -------
     FileExistsError
         `nucls_out` or `prots_out` already exists
+    subprocess.CalledProcessError
+        prodigal Failed
     ChildProcessError
-        Prodigal Failed
+        `nucls_out` or `prots_out` not written
+    IOError
+        `nucls_out` or `prots_out` incorrectly formatted
     """
     if not os.path.exists(assembly):
         raise FileNotFoundError(f"{assembly} does not exists!")
@@ -84,98 +172,16 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
         if os.path.exists(fpath) and not force:
             raise FileExistsError(f"{fpath} To overwrite use --force")
     if parallel:
-        outdir = os.path.dirname(os.path.realpath(nucls_out))
-        # parallel log should indicate time & dataset. i.e. time_dataset.prodigal.parallel.log
-        log = os.path.join(outdir, "prodigal.parallel.log")
-        outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
-        tmpdir = os.path.join(outdir, "tmp")
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-        tmpnucl = ".".join([outprefix, "{#}", "fna"])
-        tmpprot = ".".join([outprefix, "{#}", "faa"])
-        tmpnucl_fpath = os.path.join(tmpdir, tmpnucl)
-        tmpprot_fpath = os.path.join(tmpdir, tmpprot)
-        jobs = f"-j{cpus}"
-        cmd = [
-            "parallel",
-            "--retries",
-            "4",
-            "--joblog",
-            log,
-            jobs,
-            "--pipe",
-            "--recstart",
-            "'>'",
-            "--linebuffer",
-            "prodigal",
-            "-a",
-            tmpprot_fpath,
-            "-d",
-            tmpnucl_fpath,
-            "-q",
-            "-p",
-            "meta",
-            "-m",
-            "-o",
-            os.devnull,
-            "<",
-            assembly,
-            "2>",
-            os.devnull,
-        ]
+        annotate_parallel(
+            assembly=assembly, prots_out=prots_out, nucls_out=nucls_out, cpus=cpus
+        )
     else:
-        cmd = [
-            "prodigal",
-            "-i",
-            assembly,
-            "-a",
-            prots_out,
-            "-d",
-            nucls_out,
-            "-p",
-            "meta",
-            "-m",
-            "-q",
-        ]
-    cmd = [str(arg) for arg in cmd]
-    logger.debug(f'cmd: {" ".join(cmd)}')
-    if parallel:
-        try:
-            returncode = subprocess.call(" ".join(cmd), shell=True)
-            tmpfpaths = glob(os.path.join(tmpdir, "*.faa"))
-            lines = ""
-            for fp in tmpfpaths:
-                with open(fp) as fh:
-                    for line in fh:
-                        lines += line
-            out = open(prots_out, "w")
-            out.write(lines)
-            out.close()
-            tmpfpaths = glob(os.path.join(tmpdir, "*.fna"))
-            lines = ""
-            for fp in tmpfpaths:
-                with open(fp) as fh:
-                    for line in fh:
-                        lines += line
-            out = open(nucls_out, "w")
-            out.write(lines)
-            out.close()
-        except Exception as err:
-            # COMBAK: Should probably be more descriptive as to what errors could occur here.
-            logger.exception(err)
-        finally:
-            shutil.rmtree(tmpdir)
-    else:
-        with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
-            proc = subprocess.run(cmd, stdout=stdout, stderr=stderr)
-            returncode = proc.returncode
-    if returncode:
-        logger.warning(f"Args:{cmd} ReturnCode:{returncode}")
-        # COMBAK: Check all possible return codes for GNU parallel
+        annotate_sequential(assembly=assembly, prots_out=prots_out, nucls_out=nucls_out)
     for fp in [nucls_out, prots_out]:
-        if not os.path.exists(fp) or os.stat(fp).st_size == 0:
+        if not os.path.exists(fp) or os.path.getsize(fp) == 0:
             raise ChildProcessError(f"{fp} not written")
         try:
+            # Fasta file format check by simply reading orf annotations
             with open(fp) as fh:
                 for _ in SimpleFastaParser(fh):
                     pass
@@ -295,26 +301,12 @@ def orf_records_from_contigs(contigs, fpath):
     return records
 
 
-def main(args):
-    if args.verbose:
-        logger.setLevel(logger.DEBUG)
-    nucls_out, prots_out = run(
-        assembly=args.assembly,
-        nucls_out=args.nucls_out,
-        prots_out=args.prots_out,
-        force=args.force,
-        cpus=args.cpus,
-        parallel=args.parallel,
-    )
-    logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
-
-
-if __name__ == "__main__":
+def main():
     import argparse
     import logging as logger
 
     logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
@@ -329,8 +321,20 @@ if __name__ == "__main__":
     )
     parser.add_argument("--cpus", help="num cpus to use", type=int, default=0)
     parser.add_argument(
-        "--parallel", help="Enable GNU parallel", action="store_true", default=False
+        "--parallel", help="Enable GNU parllel", action="store_true", default=False
     )
-    parser.add_argument("--verbose", help="add verbosity", action="store_true")
     args = parser.parse_args()
-    main(args)
+
+    nucls_out, prots_out = run(
+        assembly=args.assembly,
+        nucls_out=args.nucls_out,
+        prots_out=args.prots_out,
+        force=args.force,
+        cpus=args.cpus,
+        parallel=args.parallel,
+    )
+    logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
+
+
+if __name__ == "__main__":
+    main()
