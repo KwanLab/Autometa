@@ -28,7 +28,6 @@ import gzip
 import logging
 import os
 import subprocess
-import tempfile
 
 import multiprocessing as mp
 
@@ -207,12 +206,12 @@ class DiamondResult:
         assert (
             self == other_hit
         ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
-        for sseqid in other_hit.sseqids.keys():
+        for sseqid in other_hit.sseqids:
             try:
                 self.sseqids.pop(sseqid)
             except KeyError:
                 raise KeyError(
-                    "The query sequence corresponsing to the DiamondResult is not present!"
+                    f"Given sseqid: {sseqid} is absent from the corresponding DiamondResult"
                 )
         return self
 
@@ -270,7 +269,7 @@ def blast(
     evalue=float("1e-5"),
     maxtargetseqs=200,
     cpus=mp.cpu_count(),
-    tmpdir=tempfile.mkdtemp(),
+    tmpdir=None,
     force=False,
     verbose=False,
 ):
@@ -299,7 +298,7 @@ def blast(
         Number of processors to be used, by default uses all the processors of the system
     tmpdir : str, optional
         Path to temporary directory
-        '</path/to/temporary/directory>' by default tempfile.mkdtemp()
+        '</path/to/temporary/directory>' by default output directory
     force : bool, optional
         overwrite existing diamond results, by default False
     verbose : bool, optional
@@ -539,10 +538,10 @@ def main():
     """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("fasta", help="</path/to/faa/file>")
-    parser.add_argument("database", help="</path/to/diamond/formatted/database>")
-    parser.add_argument("acc2taxids", help="</path/to/ncbi/prot.accession2taxid.gz>")
-    parser.add_argument("outfile", help="</path/to/diamond/output/file>")
+    parser.add_argument("fasta", help="Path to fasta file having the query sequences")
+    parser.add_argument("database", help="Path to diamond formatted database")
+    parser.add_argument("acc2taxids", help="Path to prot.accession2taxid.gz database")
+    parser.add_argument("outfile", help="Path to output file")
     parser.add_argument(
         "blast_type",
         help="[blastp]: A.A -> A.A. [blastx]: Nucl. -> A.A.",
@@ -561,7 +560,10 @@ def main():
     parser.add_argument(
         "--cpus", help="number of processors to use", default=mp.cpu_count(), type=int
     )
-    parser.add_argument("--tmpdir", help="</path/to/tmp/directory>")
+    parser.add_argument(
+        "--tmpdir",
+        help="Path to directory which will be used for temporary storage by diamond",
+    )
     parser.add_argument(
         "--top-percentile",
         help="percentile above which hits will be retrieved",
