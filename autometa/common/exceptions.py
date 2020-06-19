@@ -67,8 +67,8 @@ class KmerEmbeddingError(AutometaException):
         return self.value
 
 
-class RecursiveDBSCANError(AutometaException):
-    """RecursiveDBSCANError exception class."""
+class BinningError(AutometaException):
+    """BinningError exception class."""
 
     def __init__(self, value):
         self.value = value
