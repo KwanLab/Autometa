@@ -322,16 +322,15 @@ def blast(
     if not os.path.exists(fasta):
         raise FileNotFoundError(fasta)
     if os.path.exists(outfpath) and not force:
-        if os.path.getsize(outfpath) and verbose:
-            logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
+        if os.path.getsize(outfpath):
+            if verbose:
+                logger.warning(f"FileExistsError: {outfpath}. To overwrite use --force")
             return outfpath
     blast_type = blast_type.lower()
     if blast_type not in ["blastp", "blastx"]:
         raise ValueError(f"blast_type must be blastp or blastx. Given: {blast_type}")
-    if tmpdir == None:
-        tmpdir = tempfile.mkdtemp()
     if verbose:
-        logger.debug(f"Diamond{blast_type} {fasta} against {database}")
+        logger.debug(f"diamond {blast_type} {fasta} against {database}")
     cmd = [
         "diamond",
         blast_type,
@@ -349,9 +348,9 @@ def blast(
         "6",
         "--out",
         outfpath,
-        "--tmpdir",
-        tmpdir,
     ]
+    if tmpdir:
+        cmd.extend(["--tmpdir", tmpdir])
     # this is done as when cmd is a list each element should be a string
     cmd = [str(c) for c in cmd]
     if verbose:
@@ -532,7 +531,6 @@ def add_taxids(hits, database, verbose=True):
 
 
 def main():
-    import os
     import argparse
 
     parser = argparse.ArgumentParser(
