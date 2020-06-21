@@ -1,0 +1,47 @@
+---
+name: Support request
+about: Need clarification on a few scripts or the pipeline in general? Ask us!
+---
+
+<!--
+Hi!  Read this; it's important.
+
+This is an issue tracker for Autometa.  File support requests about
+Autometa here.
+-->
+
+### User checklist
+
+- [ ] Are you using the latest release?
+- [ ] Are you using python 3?
+- [ ] Did you check previous issues to see if this has already been mentioned?
+- [ ] Are you using a Mac or Linux machine?
+
+#### Description
+
+<!-- A clear and concise description of what the support request is about. -->
+
+#### Expected Behavior
+
+<!-- Please describe the behavior you are expecting. -->
+
+#### System Environment
+
+<!-- Please provide relevant system environment information. -->
+
+- Operating System:
+- RAM:
+- Disk:
+
+#### Files
+
+<!-- A list of relevant files for this request. This will help people navigate the project and offer some clues of where to start. -->
+
+#### Tasks/Command(s)
+
+<!-- If this issue is describing steps for your workflow, include specific tasks in the order they need to be done. Include links to specific lines of code where you need clarification for each respective task. -->
+
+- [ ] Task 1
+- [ ] Task 2
+- [ ] Task 3
+- [ ] etc.
