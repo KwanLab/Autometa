@@ -45,8 +45,8 @@ class Project:
         self.config_fpath = config_fpath
         self.dirpath = os.path.dirname(os.path.realpath(config_fpath))
         self.config = get_config(self.config_fpath)
-        if not self.config.has_section('metagenomes'):
-            self.config.add_section('metagenomes')
+        if not self.config.has_section("metagenomes"):
+            self.config.add_section("metagenomes")
 
     @property
     def n_metagenomes(self):
@@ -61,7 +61,11 @@ class Project:
         dict
             {metagenome_num:</path/to/metagenome.config>, ...}
         """
-        return {int(k.strip('metagenome_')):v for k,v in self.config.items('metagenomes') if os.path.exists(v)}
+        return {
+            int(k.strip("metagenome_")): v
+            for k, v in self.config.items("metagenomes")
+            if os.path.exists(v)
+        }
 
     def new_metagenome_num(self):
         """Retrieve new minimum metagenome num from metagenomes in project.
@@ -114,46 +118,50 @@ class Project:
         """
         # metagenome_num = 1 + self.n_metagenomes
         metagenome_num = self.new_metagenome_num()
-        metagenome_name = f'metagenome_{metagenome_num:03d}'
+        metagenome_name = f"metagenome_{metagenome_num:03d}"
         metagenome_dirpath = os.path.join(self.dirpath, metagenome_name)
-        mg_config_fpath = os.path.join(metagenome_dirpath, f'{metagenome_name}.config')
+        mg_config_fpath = os.path.join(metagenome_dirpath, f"{metagenome_name}.config")
         # Check presence of metagenome directory and config
         mg_config_present = os.path.exists(mg_config_fpath)
         mg_dir_present = os.path.exists(metagenome_dirpath)
         if not mg_config_present and mg_dir_present:
-            raise FileNotFoundError(f'{mg_config_fpath} is not present but the directory exists! Either remove the directory or locate the config file before continuing.')
+            raise FileNotFoundError(
+                f"{mg_config_fpath} is not present but the directory exists! Either remove the directory or locate the config file before continuing."
+            )
         if mg_dir_present:
             raise IsADirectoryError(metagenome_dirpath)
 
         os.makedirs(metagenome_dirpath)
         mg_config = get_config(fpath)
         # Add database and env for debugging individual metagenome binning runs.
-        for section in ['databases','environ','versions']:
+        for section in ["databases", "environ", "versions"]:
             if not mg_config.has_section(section):
                 mg_config.add_section(section)
-            for option,value in self.config.items(section):
-                mg_config.set(section,option,value)
-        #symlink any files that already exist and were specified
-        for option in mg_config.options('files'):
-            default_fname = os.path.basename(DEFAULT_CONFIG.get('files',option))
-            option_fpath = os.path.realpath(mg_config.get('files',option))
+            for option, value in self.config.items(section):
+                mg_config.set(section, option, value)
+        # symlink any files that already exist and were specified
+        for option in mg_config.options("files"):
+            default_fname = os.path.basename(DEFAULT_CONFIG.get("files", option))
+            option_fpath = os.path.realpath(mg_config.get("files", option))
             if os.path.exists(option_fpath):
-                if option_fpath.endswith('.gz') and not default_fname.endswith('.gz'):
-                    default_fname += '.gz'
+                if option_fpath.endswith(".gz") and not default_fname.endswith(".gz"):
+                    default_fname += ".gz"
                 full_fpath = os.path.join(metagenome_dirpath, default_fname)
-                os.symlink(option_fpath,full_fpath)
+                os.symlink(option_fpath, full_fpath)
             else:
                 full_fpath = os.path.join(metagenome_dirpath, default_fname)
-            mg_config.set('files', option, full_fpath)
-        mg_config.set('parameters','outdir', metagenome_dirpath)
-        mg_config_fpath = os.path.join(metagenome_dirpath, f'{metagenome_name}.config')
-        mg_config.add_section('config')
-        mg_config.set('config','project', self.config_fpath)
-        mg_config.set('config','metagenome', mg_config_fpath)
+            mg_config.set("files", option, full_fpath)
+        mg_config.set("parameters", "outdir", metagenome_dirpath)
+        mg_config_fpath = os.path.join(metagenome_dirpath, f"{metagenome_name}.config")
+        mg_config.add_section("config")
+        mg_config.set("config", "project", self.config_fpath)
+        mg_config.set("config", "metagenome", mg_config_fpath)
         put_config(mg_config, mg_config_fpath)
         # Only write updated project config after successful metagenome configuration.
-        self.config.set('metagenomes',metagenome_name,mg_config_fpath)
-        logger.debug(f'updated {self.config_fpath} metagenome: {metagenome_name} : {mg_config_fpath}')
+        self.config.set("metagenomes", metagenome_name, mg_config_fpath)
+        logger.debug(
+            f"updated {self.config_fpath} metagenome: {metagenome_name} : {mg_config_fpath}"
+        )
         return parse_config(mg_config_fpath)
 
     def update(self, metagenome_num, fpath):
@@ -176,42 +184,52 @@ class Project:
         ValueError
             `metagenome` must be an int and within project config!
         """
-        metagenome = f'metagenome_{metagenome_num:03d}'
-        if not self.config.has_option('metagenomes',metagenome):
-            raise ValueError(f'{metagenome_num} must be an int and within project config!')
-        old_config_fp = self.config.get('metagenomes', metagenome)
+        metagenome = f"metagenome_{metagenome_num:03d}"
+        if not self.config.has_option("metagenomes", metagenome):
+            raise ValueError(
+                f"{metagenome_num} must be an int and within project config!"
+            )
+        old_config_fp = self.config.get("metagenomes", metagenome)
         old_config = get_config(old_config_fp)
         new_config = get_config(fpath)
         for section in new_config.sections():
             if not old_config.has_section(section):
                 old_config.add_section(section)
             for option in new_config.options(section):
-                new_value = new_config.get(section,option)
+                new_value = new_config.get(section, option)
                 # TODO: Update file checksums (checkpoint update)
                 # TODO: Check if new value exists... Otherwise keep old option
-                if section == 'files' and not os.path.exists(new_value):
+                if section == "files" and not os.path.exists(new_value):
                     continue
                 old_config.set(section, option, new_value)
         put_config(old_config, old_config_fp)
-        logger.debug(f'Updated {metagenome}.config with {fpath}')
+        logger.debug(f"Updated {metagenome}.config with {fpath}")
         return parse_config(old_config_fp)
+
 
 def main():
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
-    parser = argparse.ArgumentParser(description="""
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+    parser = argparse.ArgumentParser(
+        description="""
     Contains Project class used to manipulate user's Project.
     main logs status of project.
-    """)
-    parser.add_argument('config',help='</path/to/project.config>')
+    """
+    )
+    parser.add_argument("config", help="</path/to/project.config>")
     args = parser.parse_args()
     project = Project(args.config)
-    logger.info(f'{project.config_fpath} has {project.n_metagenomes} metagenomes in {project.dirpath}')
+    logger.info(
+        f"{project.config_fpath} has {project.n_metagenomes} metagenomes in {project.dirpath}"
+    )
     logger.info(f"metagenome config numbers: {','.join(map(str,project.metagenomes))}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

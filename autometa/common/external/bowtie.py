@@ -46,13 +46,14 @@ def run(cmd):
         True if no returncode from subprocess.call else False
 
     """
-    logger.debug(f'run: {cmd}')
-    with open(os.devnull, 'w') as stdout, open(os.devnull, 'w') as stderr:
+    logger.debug(f"run: {cmd}")
+    with open(os.devnull, "w") as stdout, open(os.devnull, "w") as stderr:
         retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
     if retcode:
-        logger.warning(f'Args:{cmd} ReturnCode:{retcode}')
+        logger.warning(f"Args:{cmd} ReturnCode:{retcode}")
         return False
     return True
+
 
 def build(assembly, out):
     """Build bowtie2 index.
@@ -75,11 +76,12 @@ def build(assembly, out):
     ChildProcessError
         bowtie2-build failed
     """
-    cmd = f'bowtie2-build {assembly} {out}'
+    cmd = f"bowtie2-build {assembly} {out}"
     success = run(cmd)
     if not success:
-        raise ChildProcessError(f'{cmd} failed. {out} not written')
+        raise ChildProcessError(f"{cmd} failed. {out} not written")
     return out
+
 
 def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwargs):
     """Align reads to bowtie2-index `db` (at least one `*_reads` argument is required).
@@ -113,29 +115,30 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwa
     ChildProcessError
         bowtie2 failed
     """
-    exe = f'bowtie2 -x {db}'
-    flags = '-q --phred33 --very-sensitive --no-unal'
-    sam_out = f'-S {sam}'
-    params = [exe,flags,sam_out]
+    exe = f"bowtie2 -x {db}"
+    flags = "-q --phred33 --very-sensitive --no-unal"
+    sam_out = f"-S {sam}"
+    params = [exe, flags, sam_out]
     if type(nproc) is not int or nproc < 0:
-        raise ValueError(f'nproc must be an integer greater than 0. given: {nproc}')
+        raise ValueError(f"nproc must be an integer greater than 0. given: {nproc}")
     # nproc==0 will skip adding -p/--threads flag
     if nproc:
-        params.append(f'-p {nproc}')
+        params.append(f"-p {nproc}")
     reads_provided = False
-    for flag,reads in zip(['-1','-2','-U'],[fwd_reads,rev_reads,se_reads]):
+    for flag, reads in zip(["-1", "-2", "-U"], [fwd_reads, rev_reads, se_reads]):
         if reads:
             reads_provided = True
             params.append(f'{flag} {",".join(reads)}')
     if not reads_provided:
-        raise ValueError(f'At least one fastq file is required!')
+        raise ValueError(f"At least one fastq file is required!")
     if kwargs:
-        params += [f'{flag} {value}' for flag,value in kwargs.items()]
-    cmd =  ' '.join(params)
+        params += [f"{flag} {value}" for flag, value in kwargs.items()]
+    cmd = " ".join(params)
     success = run(cmd)
     if not success:
-        raise ChildProcessError(f'{cmd} failed. {sam} not written')
+        raise ChildProcessError(f"{cmd} failed. {sam} not written")
     return sam
+
 
 def main(args):
     db = build(args.assembly, args.database)
@@ -146,30 +149,37 @@ def main(args):
         rev_reads=args.rev_reads,
         se_reads=args.se_reads,
         nproc=args.nproc,
-        kwargs=args.kwargs)
+        kwargs=args.kwargs,
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
-    desc='''
+        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
+    desc = """
     Align provided reads to metagenome `assembly` and write alignments to `sam`.
-    NOTE: At least one reads file is required.'''
+    NOTE: At least one reads file is required."""
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('assembly', help='</path/to/assembly.fasta>')
-    parser.add_argument('database', help='</path/to/alignment.database>. Will construct database at provided path if not found.')
-    parser.add_argument('sam', help='</path/to/alignment.sam>')
-    parser.add_argument('-1', '--fwd-reads',
-        help='</path/to/forward-reads.fastq>',
-        nargs='*')
-    parser.add_argument('-2', '--rev-reads',
-        help='</path/to/reverse-reads.fastq>',
-        nargs='*')
-    parser.add_argument('-U', '--se-reads',
-        help='</path/to/single-end-reads.fastq>',
-        nargs='*')
-    parser.add_argument('--nproc', help='Num processors to use.', default=1, type=int)
+    parser.add_argument("assembly", help="</path/to/assembly.fasta>")
+    parser.add_argument(
+        "database",
+        help="</path/to/alignment.database>. Will construct database at provided path if not found.",
+    )
+    parser.add_argument("sam", help="</path/to/alignment.sam>")
+    parser.add_argument(
+        "-1", "--fwd-reads", help="</path/to/forward-reads.fastq>", nargs="*"
+    )
+    parser.add_argument(
+        "-2", "--rev-reads", help="</path/to/reverse-reads.fastq>", nargs="*"
+    )
+    parser.add_argument(
+        "-U", "--se-reads", help="</path/to/single-end-reads.fastq>", nargs="*"
+    )
+    parser.add_argument("--nproc", help="Num processors to use.", default=1, type=int)
     args = parser.parse_args()
     main(args)

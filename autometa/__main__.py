@@ -34,7 +34,7 @@ import multiprocessing as mp
 from autometa.config.user import AutometaUser
 
 
-logger = logging.getLogger('autometa')
+logger = logging.getLogger("autometa")
 
 
 def init_logger(fpath=None, verbosity=0):
@@ -73,15 +73,16 @@ def init_logger(fpath=None, verbosity=0):
     }
 
     if type(verbosity) is not int:
-        raise TypeError(f'{verbosity} must be an int! {type(verbosity)}')
+        raise TypeError(f"{verbosity} must be an int! {type(verbosity)}")
     if verbosity and verbosity not in log_levels:
-        raise ValueError(f'{verbosity} not in log_levels: {log_levels}!')
+        raise ValueError(f"{verbosity} not in log_levels: {log_levels}!")
 
     level = log_levels.get(verbosity)
 
     formatter = logging.Formatter(
-        fmt='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
+        fmt="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
     # Construct file/stream logging handlers
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
@@ -94,6 +95,7 @@ def init_logger(fpath=None, verbosity=0):
     logger.addHandler(streamhandler)
     logger.setLevel(logging.DEBUG)
     return logger
+
 
 def main(args):
     """Main logic for running autometa pipeline.
@@ -126,6 +128,7 @@ def main(args):
         # user.process_binning()
     # user.get_pangenomes()
 
+
 def entrypoint():
     """Main entrypoint for autometa pipeline.
 
@@ -139,43 +142,57 @@ def entrypoint():
 
     """
     import argparse
+
     # import time
     cpus = mp.cpu_count()
     parser = argparse.ArgumentParser(
-        description='Main script to run the Autometa pipeline.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('config',
-        help='Path to your metagenome.config file',
-        nargs='*')
-    parser.add_argument('--cpus',
-        help='Num. cpus to use when updating/constructing databases',
-        type=int,
-        default=cpus)
+        description="Main script to run the Autometa pipeline.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("config", help="Path to your metagenome.config file", nargs="*")
     parser.add_argument(
-        '-v', '--verbose', dest='verbosity', action='count', default=0,
-        help='Verbosity (between 1-2 occurrences with more leading to more '
-            'verbose logging). WARN=0, INFO=1, DEBUG=2')
-    parser.add_argument('--log', help='Path to write a log file (e.g. </path/to/autometa.log>)', type=str)
-    parser.add_argument('--check-dependencies',
-        help='Check user executables and databases accessible to Autometa and exit.',
-        action='store_true')
+        "--cpus",
+        help="Num. cpus to use when updating/constructing databases",
+        type=int,
+        default=cpus,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        default=0,
+        help="Verbosity (between 1-2 occurrences with more leading to more "
+        "verbose logging). WARN=0, INFO=1, DEBUG=2",
+    )
+    parser.add_argument(
+        "--log",
+        help="Path to write a log file (e.g. </path/to/autometa.log>)",
+        type=str,
+    )
+    parser.add_argument(
+        "--check-dependencies",
+        help="Check user executables and databases accessible to Autometa and exit.",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     try:
         main(args)
     except KeyboardInterrupt:
-        logger.info('User cancelled run. Exiting...')
+        logger.info("User cancelled run. Exiting...")
         sys.exit(1)
     except Exception as err:
-        issue_request = '''
+        issue_request = """
 
         Please help us fix your problem!
 
         You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
-        '''
+        """
         err.issue_request = issue_request
         logger.exception(err)
         logger.info(err.issue_request)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     entrypoint()
