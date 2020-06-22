@@ -250,35 +250,46 @@ class Databases:
         if db_outfpath_exists:
             db_outfpath_hash, __ = calc_checksum(db_outfpath).split()
 
-        checksums_match = False
+        remote_checksum_matches = False
+        current_nr_checksum_matches = False
         # Check database and database checksum is up-to-date
         if os.path.exists(db_infpath_md5) and db_outfpath_exists:
             # Check if the current db md5 is up-to-date with the remote db md5
             current_hash, __ = read_checksum(db_infpath_md5).split()
             remote_hash, __ = self.get_remote_checksum("ncbi", "nr").split()
-            if current_hash == remote_hash:
-                checksums_match = True
+            if remote_hash == current_hash:
+                remote_checksum_matches = True
             # Check if the current db md5 matches the calc'd db checksum
             if db_outfpath_hash == current_hash:
-                checksums_match = True
+                current_nr_checksum_matches = True
 
-        dmnd_md5 = f"{db_outfpath}.md5"
-        if os.path.exists(dmnd_md5) and db_outfpath_exists:
-            dmnd_md5_hash, __ = read_checksum(dmnd_md5).split()
-            if db_outfpath_hash == dmnd_md5_hash:
-                checksums_match = True
+        db_outfpath_md5 = f"{db_outfpath}.md5"
+        db_outfpath_md5_checksum_matches = False
+        if os.path.exists(db_outfpath_md5) and db_outfpath_exists:
+            db_outfpath_md5_hash, __ = read_checksum(db_outfpath_md5).split()
+            if db_outfpath_hash == db_outfpath_md5_hash:
+                db_outfpath_md5_checksum_matches = True
 
-        do_not_upgrade = db_outfpath_exists and not self.upgrade
-        if self.dryrun or do_not_upgrade or checksums_match:
-            if checksums_match:
-                logger.debug("nr checksums match, skipping...")
-            self.config.set("ncbi", "nr", db_outfpath)
-            logger.debug(f"set ncbi nr: {db_outfpath}")
-            return
+        checksum_checks = ["nr.dmnd.md5", "nr.gz.md5", "remote nr.gz.md5"]
+        checksum_matches = [
+            db_outfpath_md5_checksum_matches,
+            current_nr_checksum_matches,
+            remote_checksum_matches,
+        ]
+        for checksum_match, checksum_check in zip(checksum_matches, checksum_checks):
+            # If the checksums do not match, we need to update the database file.
+            if checksum_match:
+                logger.debug(f"{checksum_check} checksum matches, skipping...")
+                self.config.set("ncbi", "nr", db_outfpath)
+                logger.debug(f"set ncbi nr: {db_outfpath}")
+                return
+            # Only update out-of-date db files if user wants to update via self.upgrade
+            if not self.upgrade and checksum_check == "remote nr.gz.md5":
+                return
 
         diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
         # Write checksum for nr.dmnd
-        write_checksum(db_outfpath, dmnd_md5)
+        write_checksum(db_outfpath, db_outfpath_md5)
 
         if os.path.basename(db_infpath) == "nr.gz":
             # nr.gz will be removed after successful nr.dmnd construction
