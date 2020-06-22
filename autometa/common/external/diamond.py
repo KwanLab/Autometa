@@ -46,9 +46,9 @@ class DiamondResult:
     Allows for better handling of subject sequence IDs that hit to a qseqid.
 
     Includes methods used to modify the DiamondResult object (add or remove sseqid from sseqids dictionary),
-    check if two DiamondResult object have the same qseqid and return a user firendly and unambiguous output
-    from str() ad repr() respectively. Also used to returns the sseqid with the highest bitscore amongst all
-    the subject sequences that hit a query. These methds come in handy when retrieving diamond results from output table.
+    check if two DiamondResult objects have the same qseqid and return a user friendly and unambiguous output
+    from str() ad repr() respectively. Also used to return the sseqid with the highest bitscore amongst all
+    the subject sequences that hit a query. These methods come in handy when retrieving diamond results from output table.
 
     Attributes
     ----------
