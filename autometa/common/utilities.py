@@ -29,8 +29,11 @@ import hashlib
 import logging
 import os
 import pickle
+import sys
 import tarfile
 import time
+
+import numpy as np
 
 from functools import wraps
 
@@ -101,8 +104,8 @@ def make_pickle(obj, outfpath):
     return outfpath
 
 
-def gunzip(infpath, outfpath):
-    """Decompress gzipped `infpath` to `outfpath`.
+def gunzip(infpath, outfpath, delete_original=False, block_size=65536):
+    """Decompress gzipped `infpath` to `outfpath` and write checksum of `outfpath` upon successful decompression.
 
     Parameters
     ----------
@@ -110,6 +113,10 @@ def gunzip(infpath, outfpath):
         </path/to/file.gz>
     outfpath : str
         </path/to/file>
+    delete_original : bool
+        Will delete the original file after successfully decompressing `infpath` (Default is False).
+    block_size : int
+        Amount of `infpath` to read in to memory before writing to `outfpath` (Default is 65536 bytes).
 
     Returns
     -------
@@ -125,15 +132,21 @@ def gunzip(infpath, outfpath):
     logger.debug(
         f"gunzipping {os.path.basename(infpath)} to {os.path.basename(outfpath)}"
     )
-    if os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0:
         raise FileExistsError(outfpath)
     lines = ""
-    with gzip.open(infpath) as fh:
-        for line in fh:
-            lines += line.decode()
-    with open(outfpath, "w") as out:
+    with gzip.open(infpath, "rt") as fh, open(outfpath, "w") as out:
+        for i, line in enumerate(fh):
+            lines += line
+            if sys.getsizeof(lines) >= block_size:
+                out.write(lines)
+                lines = ""
         out.write(lines)
     logger.debug(f"gunzipped {infpath} to {outfpath}")
+    write_checksum(outfpath, f"{outfpath}.md5")
+    if delete_original:
+        os.remove(infpath)
+        logger.debug(f"removed original file: {infpath}")
     return outfpath
 
 
@@ -149,7 +162,7 @@ def untar(tarchive, outdir, member=None):
         </path/tarchive.tar.[compression]>
     outdir : str
         </path/to/output/directory>
-    member : str
+    member : str, optional
         member file to extract.
 
     Returns
@@ -165,6 +178,7 @@ def untar(tarchive, outdir, member=None):
         `tarchive` is not a tar archive
     KeyError
         `member` was not found in `tarchive`
+
     """
     if not member and not outdir:
         raise ValueError(
@@ -172,7 +186,7 @@ def untar(tarchive, outdir, member=None):
         )
     logger.debug(f"decompressing tarchive {tarchive} to {outdir}")
     outfpath = os.path.join(outdir, member) if member else None
-    if member and os.path.exists(outfpath) and os.stat(outfpath).st_size > 0:
+    if member and os.path.exists(outfpath) and os.path.getsize(outfpath) > 0:
         raise FileExistsError(outfpath)
     if not tarfile.is_tarfile(tarchive):
         raise ValueError(f"{tarchive} is not a tar archive")
@@ -219,6 +233,7 @@ def tarchive_results(outfpath, src_dirpath):
     -------
     FileExistsError
         `outfpath` already exists
+
     """
     logger.debug(f"tar archiving {src_dirpath} to {outfpath}")
     if os.path.exists(outfpath):
@@ -229,16 +244,17 @@ def tarchive_results(outfpath, src_dirpath):
     return outfpath
 
 
-def file_length(fpath):
+def file_length(fpath, approximate=False):
     """Retrieve the number of lines in `fpath`
 
-    See:
-    https://stackoverflow.com/questions/845058/how-to-get-line-count-of-a-large-file-cheaply-in-python
+    See: https://stackoverflow.com/q/845058/13118765
 
     Parameters
     ----------
     fpath : str
         Description of parameter `fpath`.
+    approximate: bool
+        If True, will approximate the length of the file from the file size.
 
     Returns
     -------
@@ -253,18 +269,28 @@ def file_length(fpath):
     """
     if not os.path.exists(fpath):
         raise FileNotFoundError(fpath)
-    if fpath.endswith(".gz"):
-        fh = gzip.open(fpath, "rb")
-    else:
-        fh = open(fpath, "rb")
+
+    fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath, "rb")
+    if approximate:
+        lines = []
+        n_sample_lines = 100000
+        for i, l in enumerate(fh):
+            if i > n_sample_lines:
+                break
+            lines.append(sys.getsizeof(l))
+        fh.close()
+        avg_size_per_line = np.average(lines)
+        total_size = os.path.getsize(fpath)
+        return int(np.ceil(total_size / avg_size_per_line))
+
     for i, l in enumerate(fh):
         pass
     fh.close()
     return i + 1
 
 
-def get_checksum(fpath):
-    """Retrieve sha256 checksums from provided `args`.
+def calc_checksum(fpath):
+    """Retrieve md5 checksum from provided `fpath`.
 
     See:
         https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
@@ -277,7 +303,8 @@ def get_checksum(fpath):
     Returns
     -------
     str
-        hexdigest of `fpath` using sha256
+        space-delimited hexdigest of `fpath` using md5sum and basename of `fpath`.
+        e.g. 'hash filename\n'
 
     Raises
     -------
@@ -285,10 +312,11 @@ def get_checksum(fpath):
         Provided `fpath` does not exist
     TypeError
         `fpath` is not a string
+
     """
 
-    def sha(block):
-        hasher = hashlib.sha256()
+    def md5sum(block):
+        hasher = hashlib.md5()
         for bytes in block:
             hasher.update(bytes)
         return hasher.hexdigest()
@@ -300,14 +328,78 @@ def get_checksum(fpath):
                 yield block
                 block = fh.read(blocksize)
 
-    if type(fpath) != str:
+    if not isinstance(fpath, str):
         raise TypeError(type(fpath))
     if not os.path.exists(fpath):
         raise FileNotFoundError(fpath)
     fh = open(fpath, "rb")
-    cksum = sha(blockiter(fh))
+    hash = md5sum(blockiter(fh))
     fh.close()
-    return cksum
+    return f"{hash} {os.path.basename(fpath)}\n"
+
+
+def read_checksum(fpath):
+    """Read checksum from provided checksum formatted `fpath`.
+
+    Note: See `write_checksum` for how a checksum file is generated.
+
+    Parameters
+    ----------
+    fpath : str
+        </path/to/file.md5>
+
+    Returns
+    -------
+    str
+        checksum retrieved from `fpath`.
+
+    Raises
+    -------
+    TypeError
+        Provided `fpath` was not a string.
+    FileNotFoundError
+        Provided `fpath` does not exist.
+
+    """
+    if not isinstance(fpath, str):
+        raise TypeError(type(fpath))
+    if not os.path.exists(fpath):
+        raise FileNotFoundError(fpath)
+    with open(fpath) as fh:
+        return fh.readline()
+
+
+def write_checksum(infpath, outfpath):
+    """Calculate checksum for `infpath` and write to `outfpath`.
+
+    Parameters
+    ----------
+    infpath : str
+        </path/to/input/file>
+    outfpath : str
+        </path/to/output/checksum/file>
+
+    Returns
+    -------
+    NoneType
+        Description of returned object.
+
+    Raises
+    -------
+    FileNotFoundError
+        Provided `infpath` does not exist
+    TypeError
+        `infpath` or `outfpath` is not a string
+
+    """
+    if not os.path.exists(infpath):
+        raise FileNotFoundError(infpath)
+    if not isinstance(outfpath, str):
+        raise TypeError(type(outfpath))
+    checksum = calc_checksum(infpath)
+    with open(outfpath, "w") as fh:
+        fh.write(checksum)
+    logger.debug(f"Wrote {infpath} checksum to {outfpath}")
 
 
 def valid_checkpoint(checkpoint_fp, fpath):
@@ -331,9 +423,10 @@ def valid_checkpoint(checkpoint_fp, fpath):
         Either `fpath` or `checkpoint_fp` does not exist
     TypeError
         Either `fpath` or `checkpoint_fp` is not a string
+
     """
     for fp in [checkpoint_fp, fpath]:
-        if not type(fp) is str:
+        if not isinstance(fp, str):
             raise TypeError(f"{fp} is type: {type(fp)}")
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
@@ -345,8 +438,8 @@ def valid_checkpoint(checkpoint_fp, fpath):
                 # If filepaths never match, prev_chksum and new_chksum will not match.
                 # Giving expected result.
                 break
-    new_chksum = get_checksum(fpath)
-    return True if new_chksum == prev_chksum else False
+    new_chksum = calc_checksum(fpath)
+    return new_chksum == prev_chksum
 
 
 def get_checkpoints(checkpoint_fp, fpaths=None):
@@ -358,7 +451,7 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     ----------
     checkpoint_fp : str
         </path/to/checkpoints.tsv>
-    fpaths : [str, ...]
+    fpaths : [str, ...], optional
         [</path/to/file>, ...]
 
     Returns
@@ -371,6 +464,7 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
     ValueError
         When `checkpoint_fp` first being written, will not populate an empty checkpoints file.
         Raises an error if the `fpaths` list is empty or None
+
     """
     if not os.path.exists(checkpoint_fp):
         logger.debug(f"{checkpoint_fp} not found... Writing")
@@ -381,10 +475,10 @@ def get_checkpoints(checkpoint_fp, fpaths=None):
         outlines = ""
         for fpath in fpaths:
             try:
-                checksum = get_checksum(fpath)
+                checksum = calc_checksum(fpath)
             except FileNotFoundError as err:
                 checksum = ""
-            outlines += f"{checksum}\t{fpath}\n"
+            outlines += checksum
         with open(checkpoint_fp, "w") as fh:
             fh.write(outlines)
         logger.debug(f"Written: {checkpoint_fp}")
@@ -412,20 +506,19 @@ def update_checkpoints(checkpoint_fp, fpath):
     -------
     dict
         {fp:checksum, ...}
+
     """
     checkpoints = get_checkpoints(checkpoint_fp)
     if valid_checkpoint(checkpoint_fp, fpath):
         return checkpoints
-    new_checksum = get_checksum(fpath)
+    new_checksum = calc_checksum(fpath)
     checkpoints.update({fpath: new_checksum})
     outlines = ""
     for fp, chk in checkpoints.items():
         outlines += f"{chk}\t{fp}\n"
     with open(checkpoint_fp, "w") as fh:
         fh.write(outlines)
-    logger.debug(
-        f"Updated checkpoints with {os.path.basename(fpath)} -> {new_checksum[:16]}"
-    )
+    logger.debug(f"Checkpoints updated: {new_checksum[:16]} {os.path.basename(fpath)}")
     return checkpoints
 
 
@@ -469,13 +562,9 @@ def timeit(func):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="file containing utilities functions for Autometa pipeline"
+    print(
+        "This file contains utilities for Autometa pipeline and should not be run directly!"
     )
-    print("file containing utilities functions for Autometa pipeline")
-    args = parser.parse_args()
     import sys
 
-    sys.exit(1)
+    sys.exit(0)
