@@ -42,12 +42,18 @@ logger = logging.getLogger(__name__)
 
 class DiamondResult:
     """
-    DiamondResult class for handling of Diamond result's table
+    DiamondResult class to instantiate a DiamondResult object for each qseqid.
+    Allows for better handling of subject sequence IDs that hit to a qseqid.
+
+    Includes methods used to modify the DiamondResult object (add or remove sseqid from sseqids dictionary),
+    check if two DiamondResult object have the same qseqid and return a user firendly and unambiguous output
+    from str() ad repr() respectively. Also used to returns the sseqid with the highest bitscore amongst all
+    the subject sequences that hit a query. These methds come in handy when retrieving diamond results from output table.
 
     Attributes
     ----------
     sseqids : dict
-        All the subject sequence that hit to the query sequence
+        All the subject sequences that hit to the query sequence
         {sseqid:parameters, sseqid:parameters, ...}
     qseqid: str
         result query sequence ID
@@ -122,7 +128,7 @@ class DiamondResult:
         Returns
         -------
         str
-            Representation of the class object
+            Class name followed by query sequence ID
         """
         return f"Class: {self.__class__.__name__}, Query seqID: {self.qseqid}"
 
@@ -170,7 +176,7 @@ class DiamondResult:
         Returns
         -------
         DiamondResult object
-            Another sseqid dict as now been added (updated) to the sseqids dict in the object
+            DiamondResult object whose sseqids dict has been updated (added) with another sseqid
 
         Raises
         ------
@@ -196,7 +202,7 @@ class DiamondResult:
         Returns
         -------
         DiamondResult object
-            A sseqid dict as now been subtracted (removed) from the sseqids dict in the object
+            DiamondResult object where a sseqid has been removed (subtracted) from the sseqids dict
 
         Raises
         ------
@@ -217,7 +223,7 @@ class DiamondResult:
 
     def get_top_hit(self):
         """
-        Returns the subject sequene ID with the highest bitscore amongst all the subject sequence that hit a query
+        Returns the subject sequence ID with the highest bitscore amongst all the subject sequences that hit a query
         """
         top_bitscore = float("-Inf")
         top_hit = None
@@ -279,14 +285,12 @@ def blast(
     Parameters
     ----------
     fasta : str
-        Path to fasta file having the query sequences. May be amino acid or nucleotide sequences
-        '</path/to/fasta/file>'
+        Path to fasta file having the query sequences. Should be amino acid sequences in case of BLASTP
+        and nucleotide sequences in case of BLASTX
     database : str
         Path to diamond formatted database
-        '</path/to/diamond/formatted/database>'
     outfpath : str
         Path to output file
-        '</path/to/output/file>'
     blast_type : str, optional
         blastp to align protein query sequences against a protein reference database,
         blastx to align translated DNA query sequences against a protein reference database, by default 'blastp'
@@ -297,8 +301,7 @@ def blast(
     cpus : int, optional
         Number of processors to be used, by default uses all the processors of the system
     tmpdir : str, optional
-        Path to temporary directory
-        '</path/to/temporary/directory>' by default output directory
+        Path to temporary directory by default, output directory
     force : bool, optional
         overwrite existing diamond results, by default False
     verbose : bool, optional
@@ -360,16 +363,16 @@ def blast(
     return outfpath
 
 
-def parse(results, top_percentile=0.9, verbose=False):
+def parse(results, bitscore_filter=0.9, verbose=False):
     """
     Retrieve diamond results from output table
 
     Parameters
     ----------
     results : str
-        </path/to/blastp/outfmt6/output/file>
-    top_percentile : 0 < float <= 1, optional
-        bitscore filter applied to each sseqid, by default 0.9
+        Path to BLASTP output file in outfmt9
+    bitscore_filter : 0 < float <= 1, optional
+        Bitscore filter applied to each sseqid, by default 0.9
         Used to determine whether the bitscore is above a threshold value.
         For example, if it is 0.9 then only bitscores >= 0.9 * the top bitscore are accepted
     verbose : bool, optional
@@ -385,7 +388,7 @@ def parse(results, top_percentile=0.9, verbose=False):
     FileNotFoundError
         diamond results table does not exist
     ValueError
-        top_percentile value is not a float or not in range of 0 to 1
+        bitscore_filter value is not a float or not in range of 0 to 1
     """
     disable = False if verbose else True
     # boolean toggle --> keeping above vs. below because I think this is more readable.
@@ -395,14 +398,14 @@ def parse(results, top_percentile=0.9, verbose=False):
     if not os.path.exists(results):
         raise FileNotFoundError(results)
     try:
-        float(top_percentile)
+        float(bitscore_filter)
     except ValueError:
         raise ValueError(
-            f"top_percentile must be a float! Input: {top_percentile} Type: {type(top_percentile)}"
+            f"bitscore_filter must be a float! Input: {bitscore_filter} Type: {type(bitscore_filter)}"
         )
-    in_range = 0.0 < top_percentile <= 1.0
+    in_range = 0.0 < bitscore_filter <= 1.0
     if not in_range:
-        raise ValueError(f"top_percentile not in range(0,1)! Input: {top_percentile}")
+        raise ValueError(f"bitscore_filter not in range(0,1)! Input: {bitscore_filter}")
     hits = {}
     temp = set()
     n_lines = file_length(results) if verbose else None
@@ -442,7 +445,7 @@ def parse(results, top_percentile=0.9, verbose=False):
                 topbitscore = bitscore
                 temp = set([hit.qseqid])
                 continue
-            if bitscore >= top_percentile * topbitscore:
+            if bitscore >= bitscore_filter * topbitscore:
                 hits[hit.qseqid] += hit
     return hits
 
@@ -473,7 +476,6 @@ def add_taxids(hits, database, verbose=True):
         {qseqid: DiamondResult, ...}
     database : str
         Path to prot.accession2taxid.gz database
-        e.g. </path/to/prot.accession2taxid.gz>
     verbose : bool, optional
         log progress to terminal, by default False
 
@@ -565,8 +567,8 @@ def main():
         help="Path to directory which will be used for temporary storage by diamond",
     )
     parser.add_argument(
-        "--top-percentile",
-        help="percentile above which hits will be retrieved",
+        "--bitscore-filter",
+        help="hits with bitscore greater than bitscr-filter*top bitscore will be kept",
         default=0.9,
     )
     parser.add_argument(
@@ -587,7 +589,7 @@ def main():
         verbose=args.verbose,
     )
     hits = parse(
-        results=result, top_percentile=args.top_percentile, verbose=args.verbose
+        results=result, bitscore_filter=args.bitscore_filter, verbose=args.verbose
     )
     hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
     fname, __ = os.path.splitext(os.path.basename(args.outfile))
