@@ -704,7 +704,7 @@ def main():
         action="store_true",
         default=False,
         help="Reverse order at which to split taxonomy by canonical-rank."
-        " Contigs will be split in order of species, genus, family, order, class, phylum, superkingdom.",
+        " When --reverse-ranks given, contigs will be split in order of species, genus, family, order, class, phylum, superkingdom.",
     )
     parser.add_argument(
         "--domain",
