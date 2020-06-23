@@ -301,7 +301,7 @@ def blast(
     cpus : int, optional
         Number of processors to be used, by default uses all the processors of the system
     tmpdir : str, optional
-        Path to temporary directory by default, output directory
+        Path to temporary directory. By default, same as the output directory
     force : bool, optional
         overwrite existing diamond results, by default False
     verbose : bool, optional
