@@ -33,15 +33,6 @@ Autometa here.
 - RAM:
 - Disk:
 
-#### Files
-
-<!-- A list of relevant files for this request. Please include descriptions of any files you have mentioned in the description, tasks/commmands or expected behavior. -->
-
-- File: Description
-- File: Description
-- File: Description
-- etc.
-
 #### Tasks/Command(s)
 
 <!-- If this issue is describing steps for your workflow, include specific tasks in the order they need to be done. If you know where these routines are implemented in the code base, please include links to the lines of code where you need clarification for each respective task. -->
