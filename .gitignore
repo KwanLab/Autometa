@@ -138,13 +138,14 @@ dmypy.json
 autometa/*.pyc
 autometa/taxonomy/*.pyc
 autometa/databases/markers/*.h3*
+autometa/databases/ncbi/*
 
 # databases / testing
 tests/data/*
 !tests/data/metagenome.fna
 
 # visualStudioCode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
