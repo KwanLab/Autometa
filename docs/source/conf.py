@@ -19,7 +19,8 @@ for dirpath, dirnames, filenames in os.walk("../../", topdown=True):
 
 autodoc_mock_imports = ["Bio", "hdbscan", "tsne", "sklearn", "umap", "tqdm"]
 
-import parse_argparse  # nopep8
+# fmt: off
+import parse_argparse  
 
 # -- Project information -----------------------------------------------------
 
@@ -48,7 +49,8 @@ extensions = [
 ]
 
 todo_include_todos = True
-
+# Includes doctrings of functions that begin with double underscore
+napoleon_include_special_with_doc = True
 autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
