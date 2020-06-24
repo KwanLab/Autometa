@@ -1,6 +1,10 @@
 ---
 name: Support request
 about: Need clarification on a few scripts or the pipeline in general? Ask us!
+title: ''
+labels: help wanted
+assignees: ''
+
 ---
 
 <!--
