@@ -68,15 +68,14 @@ def genomecov(ibam, lengths, out, force=False):
         Why the exception is raised.
 
     """
-    cmd = f'bedtools genomecov -ibam {ibam} -g {lengths}'
+    cmd = f"bedtools genomecov -ibam {ibam} -g {lengths}"
     if os.path.exists(out) and not force:
-        logger.debug(f'{out} already exists. skipping...')
+        logger.debug(f"{out} already exists. skipping...")
         return out
-    with open(os.devnull, 'w') as stderr, open(out, 'w') as stdout:
-        retcode = subprocess.call(
-            cmd, stdout=stdout, stderr=stderr, shell=True)
+    with open(os.devnull, "w") as stderr, open(out, "w") as stdout:
+        retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
     if retcode or not os.path.exists(out) or os.stat(out).st_size == 0:
-        raise ChildProcessError(f'bedtools failed: {cmd}')
+        raise ChildProcessError(f"bedtools failed: {cmd}")
     return out
 
 
@@ -107,50 +106,60 @@ def parse(bed, out=None, force=False):
     """
     if out and os.path.exists(out) and not os.stat(out).st_size == 0:
         try:
-            cols = ['contig', 'coverage']
-            return pd.read_csv(out, sep='\t', usecols=cols, index_col='contig')
+            cols = ["contig", "coverage"]
+            return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
         except ValueError as err:
-            raise ValueError(f'InvalidTableFormat: {out}')
+            raise ValueError(f"InvalidTableFormat: {out}")
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
-    names = ['contig', 'depth', 'bases', 'length', 'depth_fraction']
-    df = pd.read_csv(bed, sep='\t', names=names, index_col='contig')
+    names = ["contig", "depth", "bases", "length", "depth_fraction"]
+    df = pd.read_csv(bed, sep="\t", names=names, index_col="contig")
     criterion1 = df.depth != 0
-    criterion2 = df.index != 'genome'
+    criterion2 = df.index != "genome"
     df = df[criterion1 & criterion2]
     df = df.assign(depth_product=lambda x: x.depth * x.bases)
-    dff = df.groupby('contig')['depth_product', 'bases'].sum()
-    dff = dff.assign(coverage=lambda x: x.depth_product/x.bases)
+    dff = df.groupby("contig")["depth_product", "bases"].sum()
+    dff = dff.assign(coverage=lambda x: x.depth_product / x.bases)
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
-        dff.to_csv(out, sep='\t', index=True, header=True)
-        logger.debug(f'{out} written')
-    logger.debug(f'{os.path.basename(out)} shape: {dff.shape}')
-    return dff[['coverage']]
+        dff.to_csv(out, sep="\t", index=True, header=True)
+        logger.debug(f"{out} written")
+    logger.debug(f"{os.path.basename(out)} shape: {dff.shape}")
+    return dff[["coverage"]]
 
 
 def main(args):
-    bed = genomecov(ibam=args.ibam, lengths=args.lengths,
-                    out=args.bed, force=args.force_bed)
+    bed = genomecov(
+        ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed
+    )
     df = parse(bed=bed, out=args.coverage, force=args.force_cov)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
     import logging as logger
+
     logger.basicConfig(
-        format='%(asctime)s : %(name)s : %(levelname)s : %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
+        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument('ibam', help='</path/to/BAM/alignment.bam>')
+    parser.add_argument("ibam", help="</path/to/BAM/alignment.bam>")
     parser.add_argument(
-        'lengths',
-        help='</path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]')
-    parser.add_argument('bed',
-                        help='</path/to/alignment.bed> tab-delimited cols=[contig,length]')
-    parser.add_argument('--coverage', help='</path/to/coverage.tsv>')
-    parser.add_argument('--force-bed', help='force overwrite `bed`',
-                        action='store_true', default=False)
-    parser.add_argument('--force-cov', help='force overwrite `--coverage`',
-                        action='store_true', default=False)
+        "lengths",
+        help="</path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]",
+    )
+    parser.add_argument(
+        "bed", help="</path/to/alignment.bed> tab-delimited cols=[contig,length]"
+    )
+    parser.add_argument("--coverage", help="</path/to/coverage.tsv>")
+    parser.add_argument(
+        "--force-bed", help="force overwrite `bed`", action="store_true", default=False
+    )
+    parser.add_argument(
+        "--force-cov",
+        help="force overwrite `--coverage`",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
     main(args)

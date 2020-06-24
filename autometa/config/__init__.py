@@ -35,8 +35,9 @@ from configparser import ExtendedInterpolation
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), 'default.config')
+DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), "default.config")
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
 
 def get_config(fpath):
     """Load the config provided at `fpath`.
@@ -61,13 +62,15 @@ def get_config(fpath):
     if not os.path.exists(fpath) or os.stat(fpath).st_size == 0:
         raise FileNotFoundError(fpath)
     # https://stackoverflow.com/a/53274707/13118765
-    converters={'list': lambda x: [val.strip() for val in x.split(',')]}
+    converters = {"list": lambda x: [val.strip() for val in x.split(",")]}
     config = ConfigParser(interpolation=ExtendedInterpolation(), converters=converters)
     with open(fpath) as fh:
         config.read_file(fh)
     return config
 
+
 DEFAULT_CONFIG = get_config(fpath=DEFAULT_FPATH)
+
 
 def put_config(config, out):
     """Writes `config` to `out` and updates checkpoints checksum.
@@ -84,9 +87,10 @@ def put_config(config, out):
     NoneType
 
     """
-    with open(out, 'w') as fh:
+    with open(out, "w") as fh:
         config.write(fh)
     # COMBAK: Checkpoint config
+
 
 def update_config(fpath, section, option, value):
     """Update `fpath` in `section` for `option` with `value`.
@@ -108,9 +112,10 @@ def update_config(fpath, section, option, value):
 
     """
     cfg = get_config(fpath)
-    cfg.set(section,option,value)
+    cfg.set(section, option, value)
     put_config(cfg, fpath)
-    logger.debug(f'updated {fpath} [{section}] option: {option} : {value}')
+    logger.debug(f"updated {fpath} [{section}] option: {option} : {value}")
+
 
 def parse_config(fpath=None):
     """Generate argparse namespace (args) from config file.
@@ -132,34 +137,34 @@ def parse_config(fpath=None):
 
     """
     type_converter = {
-         'workspace':str,
-         'project':int,
-         'kingdoms':list,
-         'metagenome_num':int,
-         'length_cutoff':float,
-         'cov_from_spades':bool,
-         'kmer_size':int,
-         'kmer_multiprocess':bool,
-         'kmer_normalize':bool,
-         'do_pca':bool,
-         'pca_dims':int,
-         'embedding_method':str,
-         'do_taxonomy':bool,
-         'taxon_method':str,
-         'reversed':bool,
-         'completeness':float,
-         'purity':float,
-         'binning_method':str,
-         'verbose':bool,
-         'force':bool,
-         'usepickle':bool,
-         'parallel':bool,
-         'cpus':int,
-         'config':str,
-         'resume':bool,
-         'fwd_reads':list,
-         'rev_reads':list,
-         'se_reads':list,
+        "workspace": str,
+        "project": int,
+        "kingdoms": list,
+        "metagenome_num": int,
+        "length_cutoff": float,
+        "cov_from_spades": bool,
+        "kmer_size": int,
+        "kmer_multiprocess": bool,
+        "kmer_normalize": bool,
+        "do_pca": bool,
+        "pca_dims": int,
+        "embedding_method": str,
+        "do_taxonomy": bool,
+        "taxon_method": str,
+        "reversed": bool,
+        "completeness": float,
+        "purity": float,
+        "binning_method": str,
+        "verbose": bool,
+        "force": bool,
+        "usepickle": bool,
+        "parallel": bool,
+        "cpus": int,
+        "config": str,
+        "resume": bool,
+        "fwd_reads": list,
+        "rev_reads": list,
+        "se_reads": list,
     }
     if fpath and (not os.path.exists(fpath) or os.stat(fpath).st_size == 0):
         raise FileNotFoundError(fpath)
@@ -169,21 +174,22 @@ def parse_config(fpath=None):
         if section not in namespace:
             namespace.__dict__[section] = Namespace()
         for key, value in config.items(section):
-            key = key.replace('-', '_')
-            if section not in {'parameters','files'} or key == 'metagenomes':
+            key = key.replace("-", "_")
+            if section not in {"parameters", "files"} or key == "metagenomes":
                 namespace.__dict__[section].__dict__[key] = value
                 continue
             if type_converter.get(key) is not None:
                 if type_converter.get(key) is bool:
-                    value = config.getboolean(section,key)
+                    value = config.getboolean(section, key)
                 elif type_converter.get(key) is int:
                     value = config.getint(section, key)
                 elif type_converter.get(key) is float:
-                    value = config.getfloat(section,key)
+                    value = config.getfloat(section, key)
                 elif type_converter.get(key) is list:
-                    value = config.getlist(section,key)
+                    value = config.getlist(section, key)
             namespace.__dict__[section].__dict__[key] = value
     return namespace
+
 
 def init_default():
     """Set the `home_dir` in autometa's default configuration (default.config)
@@ -197,9 +203,11 @@ def init_default():
 
     """
     cfg = get_config(DEFAULT_FPATH)
-    home_dir = cfg.get('common','home_dir')
+    home_dir = cfg.get("common", "home_dir")
     if not os.path.isdir(home_dir):
-        logger.info(f'Updated {os.path.basename(DEFAULT_FPATH)} ([common],home_dir): {AUTOMETA_DIR}')
-        update_config(DEFAULT_FPATH,'common','home_dir',AUTOMETA_DIR)
+        logger.info(
+            f"Updated {os.path.basename(DEFAULT_FPATH)} ([common],home_dir): {AUTOMETA_DIR}"
+        )
+        update_config(DEFAULT_FPATH, "common", "home_dir", AUTOMETA_DIR)
         home_dir = AUTOMETA_DIR
     return home_dir

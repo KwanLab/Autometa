@@ -76,9 +76,10 @@ def start_master(port, name, password, stats=None, debug=None, transactions=None
         name=name,
         stats_log=stats,
         transactions=transactions,
-        debug_log=debug)
+        debug_log=debug,
+    )
     q.specify_password_file(password)
-    logger.debug(f'({q.name}) wq-master started')
+    logger.debug(f"({q.name}) wq-master started")
     return q
 
 
@@ -89,7 +90,8 @@ def main(args):
         name=args.project_name,
         password=args.password,
         debug_log=args.debug,
-        stats_log=args.stats)
+        stats_log=args.stats,
+    )
 
     # Create a task for the queue
     # task = wq.Task("exe_name infname args outfname")
@@ -165,30 +167,36 @@ def main(args):
 
 
 # Main program
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
     import logging as logger
-    logger.basicConfig(
-        format='[%(asctime)s %(levelname)s] %(name)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logger.DEBUG)
 
-    parser = argparse.ArgumentParser(description="""
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+
+    parser = argparse.ArgumentParser(
+        description="""
     Uses WorkQueue as a task-manager to run different tasks within the Autometa
     pipeline on a scalable computing system.
-    """)
-    parser.add_argument(
-        'password', help='</path/to/work-queue/master/password.txt>')
-    parser.add_argument('project-name', help='<unique project identifier>')
+    """
+    )
+    parser.add_argument("password", help="</path/to/work-queue/master/password.txt>")
+    parser.add_argument("project-name", help="<unique project identifier>")
     # TODO: Allow argparse to handle range of ints for port
-    parser.add_argument('--port', help="""
+    parser.add_argument(
+        "--port",
+        help="""
     The port number to listen on. If zero, then a random port is chosen. A range
      of possible ports (low, hight) can be also specified instead of a single integer.
     """,
-                        default=wq.WORK_QUEUE_DEFAULT_PORT, type=int)
-    parser.add_argument('--stats', help='</path/to/workqueue/stats.log')
-    parser.add_argument(
-        '--transactions', help='</path/to/workqueue/transactions.log')
-    parser.add_argument('--debug', help='</path/to/workqueue/debug.log')
+        default=wq.WORK_QUEUE_DEFAULT_PORT,
+        type=int,
+    )
+    parser.add_argument("--stats", help="</path/to/workqueue/stats.log")
+    parser.add_argument("--transactions", help="</path/to/workqueue/transactions.log")
+    parser.add_argument("--debug", help="</path/to/workqueue/debug.log")
     args = parser.parse_args()
     main(args)
