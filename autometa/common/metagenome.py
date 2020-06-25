@@ -487,6 +487,7 @@ class Metagenome:
             return self.nucl_orfs_fpath, self.prot_orfs_fpath
         except ChildProcessError as err:
             logger.exception(err)
+            raise err
         return nucls_fp, prots_fp
 
     def orfs(self, orf_type="prot", cpus=0):
