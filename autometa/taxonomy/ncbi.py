@@ -408,13 +408,13 @@ class NCBI:
             ) > 1:
                 raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")
             taxid = float(taxid)
-        # a boolean check is needed as something can be a boolean but not necessarily a str, eg. TRUE/FALSE
+        # a boolean check is needed as they will evaluate silently to 0 or 1 when cast as ints. FALSE=0, TRUE=1
         # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9
         # is_integer only takes float as input else raises error, thus isinstance( ,float) is used before it to make sure a float is being passed
         if isinstance(taxid, bool) or (
             isinstance(taxid, float) and not taxid.is_integer()
         ):
-            raise ValueError(f"taxid must be a positive integer! Given: {taxid}")
+            raise ValueError(f"taxid must be an integer! Given: {taxid}")
         taxid = int(taxid)
         if taxid <= 0:
             raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
