@@ -61,10 +61,9 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         raise FileNotFoundError(
             f"The specified path: {sam} is either incorrect or the file is empty"
         )
-    samtools_out_dir = os.path.dirname(os.path.abspath(bam))
     with tempfile.TemporaryDirectory() as tempdir:  # this will delete the temporary files even if program stops in between
-        view_fame = "view_" + os.path.basename(bam)
-        view_fpath = os.path.join(tempdir, view_fame)
+        view_fname = "view_" + os.path.basename(bam)
+        view_fpath = os.path.join(tempdir, view_fname)
         sort_fpath = os.path.join(tempdir, os.path.basename(bam))
         # See https://stackoverflow.com/questions/13332268/how-to-use-subprocess-command-with-pipes
         cmd_view = [
@@ -95,6 +94,7 @@ def sort(sam, bam, cpus=mp.cpu_count()):
             cmd_sort, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,
         )
         shutil.move(sort_fpath, bam)
+    return bam
 
 
 def main():
