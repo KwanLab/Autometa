@@ -39,6 +39,7 @@ from autometa import config
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy.majority_vote import rank_taxids
 from autometa.common.metabin import MetaBin
+from autometa.common.markers import Markers
 
 
 logger = logging.getLogger(__name__)
@@ -85,13 +86,68 @@ def get_and_write_cluster_records(bin_df, mgrecords, outdir):
 
     """
     clusters = {}
-    for cluster, dff in bin_df.groupby("cluster"):
+    for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
+        "cluster"
+    ):
         contigs = set(dff.index)
         records = [rec for rec in mgrecords if rec.id in contigs]
         outfpath = os.path.join(outdir, f"{cluster}.fna")
         SeqIO.write(records, outfpath, "fasta")
         clusters.update({cluster: records})
     return clusters
+
+
+def get_metabin_stats(bin_df, cluster_records, markers_fpath, assembly):
+    stats = []
+    markers_df = Markers.load(markers_fpath)
+    for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
+        "cluster"
+    ):
+        contigs = set(dff.index)
+        seqrecords = cluster_records.get(cluster)
+        metabin = MetaBin(assembly=assembly, contig_ids=contigs, seqrecords=seqrecords)
+        length_weighted_coverage = np.average(
+            a=dff.coverage, weights=dff.length / dff.length.sum()
+        )
+        num_expected_markers = markers_df.shape[1]
+        pfam_counts = markers_df.loc[markers_df.index.isin(dff.index)].sum()
+        if pfam_counts.empty:
+            total_markers = 0
+            num_single_copy_markers = 0
+            num_markers_present = 0
+            completeness = pd.NA
+            purity = pd.NA
+        else:
+            total_markers = pfam_counts.sum()
+            num_single_copy_markers = pfam_counts[pfam_counts == 1].count()
+            num_markers_present = pfam_counts[pfam_counts >= 1].count()
+            completeness = num_markers_present / num_expected_markers * 100
+            purity = num_single_copy_markers / num_markers_present * 100
+
+        stats.append(
+            {
+                "cluster": cluster,
+                "nseqs": metabin.nseqs,
+                "seqs_pct": metabin.seqs_pct,
+                "size (bp)": metabin.size,
+                "size_pct": metabin.size_pct,
+                "N90": metabin.fragmentation_metric(quality_measure=0.9),
+                "N50": metabin.fragmentation_metric(quality_measure=0.5),
+                "N10": metabin.fragmentation_metric(quality_measure=0.1),
+                "length_weighted_gc": metabin.length_weighted_gc,
+                "length_weighted_coverage": length_weighted_coverage,
+                "min_coverage": dff.coverage.min(),
+                "max_coverage": dff.coverage.max(),
+                "completeness": completeness,
+                "purity": purity,
+                "num_total_markers": total_markers,
+                f"num_unique_markers (expected {num_expected_markers})": num_markers_present,
+                "num_single_copy_markers": num_single_copy_markers,
+            }
+        )
+    stats_df = pd.DataFrame(stats)
+    stats_df.set_index("cluster", inplace=True)
+    return stats_df
 
 
 def get_metabin_taxonomies(bin_df, ncbi_dirpath):
@@ -103,7 +159,8 @@ def get_metabin_taxonomies(bin_df, ncbi_dirpath):
         Metagenome args parsed from autometa.config.parse_config
 
     """
-    canonical_ranks = NCBI.CANONICAL_RANKS
+    ncbi = NCBI(dirpath=ncbi_dirpath)
+    canonical_ranks = ncbi.CANONICAL_RANKS
     canonical_ranks.remove("root")
     is_clustered = bin_df.cluster.notnull()
     bin_df = bin_df[is_clustered]
@@ -130,7 +187,6 @@ def get_metabin_taxonomies(bin_df, ncbi_dirpath):
             else:
                 taxonomies[cluster][canonical_rank][taxid] += length
     os.remove(tmpfpath)
-    ncbi = NCBI(dirpath=ncbi_dirpath)
     cluster_taxonomies = rank_taxids(taxonomies, ncbi)
     cluster_taxa_df = pd.Series(data=cluster_taxonomies, name="taxid").to_frame()
     lineage_df = ncbi.get_lineage_dataframe(cluster_taxa_df.taxid.tolist(), fillna=True)
@@ -139,36 +195,6 @@ def get_metabin_taxonomies(bin_df, ncbi_dirpath):
     )
     cluster_taxa_df.index.name = "cluster"
     return cluster_taxa_df
-
-
-def get_metabin_stats(bin_df, cluster_records, assembly):
-    stats = []
-    for cluster, dff in bin_df.groupby("cluster"):
-        contigs = set(dff.index)
-        seqrecords = cluster_records.get(cluster)
-        metabin = MetaBin(assembly=assembly, contig_ids=contigs, seqrecords=seqrecords)
-        length_weighted_coverage = np.average(
-            a=dff.coverage, weights=dff.length / dff.length.sum()
-        )
-        stats.append(
-            {
-                "cluster": cluster,
-                "nseqs": metabin.nseqs,
-                "seqs_pct": metabin.seqs_pct,
-                "size (bp)": metabin.size,
-                "size_pct": metabin.size_pct,
-                "N90": metabin.fragmentation_metric(quality_measure=0.9),
-                "N50": metabin.fragmentation_metric(quality_measure=0.5),
-                "N10": metabin.fragmentation_metric(quality_measure=0.1),
-                "length_weighted_gc": metabin.length_weighted_gc,
-                "length_weighted_coverage": length_weighted_coverage,
-                "min_coverage": dff.coverage.min(),
-                "max_coverage": dff.coverage.max(),
-            }
-        )
-    stats_df = pd.DataFrame(stats)
-    stats_df.set_index("cluster", inplace=True)
-    return stats_df
 
 
 def main():
@@ -206,9 +232,15 @@ def main():
                 bin_df=bin_df, mgrecords=mgrecords, outdir=domain_outdir
             )
             logger.info(f"Retrieving {domain} MetaBins' stats")
+            markers_fpath = (
+                mgargs.files.bacteria_markers
+                if domain == "bacteria"
+                else mgargs.files.archaea_markers
+            )
             df = get_metabin_stats(
                 bin_df=bin_df,
                 cluster_records=cluster_records,
+                markers_fpath=markers_fpath,
                 assembly=mgargs.files.metagenome,
             )
             if os.path.exists(mgargs.files.taxonomy) and os.path.getsize(
@@ -218,7 +250,9 @@ def main():
                 taxa_df = get_metabin_taxonomies(
                     bin_df=bin_df, ncbi_dirpath=mgargs.databases.ncbi
                 )
-                df = pd.merge(df, taxa_df, left_index=True, right_index=True)
+                df = pd.merge(
+                    df, taxa_df, how="left", left_index=True, right_index=True
+                )
 
             outfpath = os.path.join(
                 mgargs.parameters.outdir, "metabins", f"{domain}_metabin_summary.tsv"

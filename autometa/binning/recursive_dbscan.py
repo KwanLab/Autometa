@@ -83,12 +83,11 @@ def add_metrics(df, markers_df, domain="bacteria"):
     clusters = dict(list(df.groupby("cluster")))
     metrics = {"purity": {}, "completeness": {}}
     for cluster, dff in clusters.items():
-        contigs = dff.index.tolist()
-        summed_markers = markers_df[markers_df.index.isin(contigs)].sum()
-        is_present = summed_markers >= 1
-        is_single_copy = summed_markers == 1
-        nunique_markers = summed_markers[is_present].index.nunique()
-        num_single_copy_markers = summed_markers[is_single_copy].index.nunique()
+        pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
+        is_present = pfam_counts >= 1
+        is_single_copy = pfam_counts == 1
+        nunique_markers = pfam_counts[is_present].count()
+        num_single_copy_markers = pfam_counts[is_single_copy].count()
         completeness = nunique_markers / expected_number * 100
         # Protect from divide by zero
         if nunique_markers == 0:
