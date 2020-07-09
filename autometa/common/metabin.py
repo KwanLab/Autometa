@@ -186,6 +186,33 @@ class MetaBin:
         """
         return sum(len(seq) for seq in self.seqrecords)
 
+    def fragmentation_metric(self, quality_measure=0.50):
+        """Describes the quality of assembled genomes that are fragmented in
+        contigs of different length.
+
+        For more information see:
+            http://www.metagenomics.wiki/pdf/definition/assembly/n50
+
+        Parameters
+        ----------
+        quality_measure : 0 < float < 1
+            Description of parameter `quality_measure` (the default is .50).
+            I.e. default measure is N50, but could use .1 for N10 or .9 for N90
+
+        Returns
+        -------
+        int
+            Minimum contig length to cover `quality_measure` of genome (i.e. length
+            weighted median)
+
+        """
+        target_size = self.size * quality_measure
+        lengths = []
+        for length in sorted([len(seq) for seq in self.seqrecords], reverse=True):
+            lengths.append(length)
+            if sum(lengths) > target_size:
+                return length
+
     @property
     @lru_cache(maxsize=None)
     def length_weighted_gc(self):
