@@ -55,6 +55,8 @@ class MetaBin:
         </path/to/metagenome.fasta>
     contig_ids : list
         List of contig ids to manipulate/annotate (must be contained in metagenome).
+    seqrecords : list
+        List of seqrecords to manipulate/annotate (must be contained in metagenome).
     outdir : str, optional
         </path/to/output/directory> (Default is the directory storing the `assembly`).
 
@@ -75,6 +77,12 @@ class MetaBin:
     nseqs : int
         Number of contigs in MetaBin
 
+    Raises
+    ------
+    ValueError
+        One of `contig_ids` or `seqrecords` must be provided
+    ValueError
+        `contig_ids` do not match `seqrecords`
     """
 
     def __init__(self, assembly, contig_ids=[], seqrecords=[], outdir=None):
