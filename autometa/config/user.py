@@ -296,7 +296,9 @@ class AutometaUser:
 
             mag = kingdoms.get(mgargs.parameters.kingdom)
         else:
-            mag = MetaBin(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
+            mag = MetaBin(
+                assembly=mg.assembly, seqrecords=mg.seqrecords, outdir=mg.outdir
+            )
 
         # Perform binning
         bins_df = mag.get_binning(

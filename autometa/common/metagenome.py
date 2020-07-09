@@ -721,7 +721,11 @@ class Metagenome:
         kingdoms = dict(list(self.taxonomy.groupby("superkingdom")))
         bins = {}
         for kingdom, df in kingdoms.items():
-            bins.update({kingdom: MetaBin(self.assembly, df.index.tolist())})
+            contigs = set(df.index)
+            seqrecords = [rec for rec in self.seqrecords if rec.id in contigs]
+            bins.update(
+                {kingdom: MetaBin(assembly=self.assembly, seqrecords=seqrecords)}
+            )
         return bins
 
     def write_ranks(self, rank="superkingdom"):

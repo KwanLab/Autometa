@@ -103,8 +103,15 @@ class MetaBin:
         self.prots_fname = ".".join([self.root, prots_ext])
         self.nucl_orfs_fpath = os.path.join(self.outdir, self.nucls_fname)
         self.prot_orfs_fpath = os.path.join(self.outdir, self.prots_fname)
-        self.contig_ids = contig_ids if contig_ids else self.get_contig_ids()
-        self.seqrecords = seqrecords if seqrecords else self.get_seqrecords()
+        if contig_ids and not seqrecords:
+            self.contig_ids = contig_ids
+            self.seqrecords = self.get_seqrecords()
+        elif seqrecords and not contig_ids:
+            self.seqrecords = seqrecords
+            self.contig_ids = self.get_contig_ids()
+        else:
+            self.seqrecords = seqrecords
+            self.contig_ids = contig_ids
         self.nseqs = len(self.contig_ids)
 
     @property

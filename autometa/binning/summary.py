@@ -44,7 +44,35 @@ from autometa.common.metabin import MetaBin
 logger = logging.getLogger(__name__)
 
 
-def write_clusters(mgargs):
+def merge_annotations(mgargs):
+    binning_fpaths = {
+        "bacteria": mgargs.files.bacteria_binning,
+        "archaea": mgargs.files.archaea_binning,
+    }
+    dataframes = []
+    for fpath in [mgargs.files.lengths, mgargs.files.coverages]:
+        if not os.path.exists(fpath):
+            raise FileNotFoundError(fpath)
+        df = pd.read_csv(fpath, sep="\t", index_col="contig")
+        dataframes.append(df)
+    if os.path.exists(mgargs.files.taxonomy):
+        df = pd.read_csv(mgargs.files.taxonomy, sep="\t", index_col="contig")
+        dataframes.append(df)
+    annotations = {}
+    for domain, fpath in binning_fpaths.items():
+        if not os.path.exists(fpath) or not os.path.getsize(fpath):
+            bin_df = pd.DataFrame()
+        else:
+            bin_df = pd.read_csv(fpath, sep="\t", index_col="contig")
+            for df in dataframes:
+                bin_df = pd.merge(
+                    bin_df, df, how="left", left_index=True, right_index=True
+                )
+        annotations.update({domain: bin_df})
+    return annotations
+
+
+def get_and_write_cluster_records(bin_df, mgrecords, outdir):
     """Write clusters to `outdir` given clusters `df` and metagenome `records`
 
     Parameters
@@ -56,27 +84,17 @@ def write_clusters(mgargs):
         (Default is os.path.join(`mgargs.parameters.outdir`,domain))
 
     """
-    records = [rec for rec in SeqIO.parse(mgargs.files.metagenome, "fasta")]
-    binning_fpaths = {
-        "bacteria": mgargs.files.bacteria_binning,
-        "archaea": mgargs.files.archaea_binning,
-    }
-    for domain, binning_fpath in binning_fpaths.items():
-        if not os.path.exists(binning_fpath):
-            logger.info(f"{binning_fpath} not found, skipping...")
-            continue
-        df = pd.read_csv(binning_fpath, sep="\t", index_col="contig")
-        outdir = os.path.join(mgargs.parameters.outdir, "metabins", domain)
-        if not os.path.isdir(outdir):
-            os.makedirs(outdir)
-        for cluster, dff in df.groupby("cluster"):
-            contigs = set(dff.index)
-            recs = [rec for rec in records if rec.id in contigs]
-            outfpath = os.path.join(outdir, f"{cluster}.fna")
-            SeqIO.write(recs, outfpath, "fasta")
+    clusters = {}
+    for cluster, dff in bin_df.groupby("cluster"):
+        contigs = set(dff.index)
+        records = [rec for rec in mgrecords if rec.id in contigs]
+        outfpath = os.path.join(outdir, f"{cluster}.fna")
+        SeqIO.write(records, outfpath, "fasta")
+        clusters.update({cluster: records})
+    return clusters
 
 
-def get_metabin_taxonomies(mgargs):
+def get_metabin_taxonomies(bin_df, ncbi_dirpath):
     """Write cluster taxonomy table to `mgargs.parameters.outdir`
 
     Parameters
@@ -85,120 +103,71 @@ def get_metabin_taxonomies(mgargs):
         Metagenome args parsed from autometa.config.parse_config
 
     """
-    binning_fpaths = {
-        "bacteria": mgargs.files.bacteria_binning,
-        "archaea": mgargs.files.archaea_binning,
-    }
-    taxa_df = pd.read_csv(mgargs.files.taxonomy, sep="\t", index_col="contig")
-    length_df = pd.read_csv(mgargs.files.lengths, sep="\t", index_col="contig")
-    ncbi = NCBI(dirpath=mgargs.databases.ncbi)
     canonical_ranks = NCBI.CANONICAL_RANKS
     canonical_ranks.remove("root")
-    domain_taxonomies = []
-    for domain, binning_fpath in binning_fpaths.items():
-        if not os.path.exists(binning_fpath):
-            logger.info(f"{binning_fpath} not found, skipping...")
-            continue
-        bin_df = pd.read_csv(binning_fpath, sep="\t", index_col="contig")
-        is_clustered = bin_df.cluster.notnull()
-        bin_df = bin_df[is_clustered]
-        for df in [length_df, taxa_df]:
-            bin_df = pd.merge(bin_df, df, how="left", left_index=True, right_index=True)
-        tmpfpath = tempfile.mktemp()
-        outcols = ["cluster", "length", "taxid"]
-        bin_df[outcols].to_csv(tmpfpath, sep="\t", index=False, header=False)
-        taxonomies = {}
-        with open(tmpfpath) as fh:
-            for line in fh:
-                cluster, length, taxid = line.strip().split("\t")
-                rank = "root"
-                for canonical_rank in canonical_ranks:
-                    if canonical_rank != "unclassified":
-                        rank = canonical_rank
-                        break
-                taxid = int(taxid)
-                length = int(length)
-                if cluster not in taxonomies:
-                    taxonomies.update({cluster: {rank: {taxid: length}}})
-                elif rank not in taxonomies[cluster]:
-                    taxonomies[cluster].update({rank: {taxid: length}})
-                elif taxid not in taxonomies[cluster][rank]:
-                    taxonomies[cluster][rank].update({taxid: length})
-                else:
-                    taxonomies[cluster][rank][taxid] += length
-        os.remove(tmpfpath)
-        cluster_taxonomies = rank_taxids(taxonomies, ncbi)
-        cluster_taxa_df = pd.Series(data=cluster_taxonomies, name="taxid").to_frame()
-        lineage_df = ncbi.get_lineage_dataframe(
-            cluster_taxa_df.taxid.tolist(), fillna=True
-        )
-        cluster_taxa_df = pd.merge(
-            cluster_taxa_df, lineage_df, how="left", left_on="taxid", right_index=True
-        )
-        cluster_taxa_df.index.name = "cluster"
-        cluster_taxa_df.reset_index(inplace=True)
-        domain_taxonomies.append(cluster_taxa_df)
-
-    master_taxa_df = pd.concat(domain_taxonomies, ignore_index=True)
-    outcols = [*reversed(canonical_ranks), "taxid"]
-    outcols.remove("superkingdom")
-    # outfpath = os.path.join(
-    #     mgargs.parameters.outdir, "metabins", "cluster_taxonomy.tsv"
-    # )
-    # master_taxa_df[outcols].to_csv(outfpath, sep="\t", index=False, header=True)
-    master_taxa_df.set_index(["superkingdom", "cluster"], inplace=True)
-    return master_taxa_df[outcols]
+    is_clustered = bin_df.cluster.notnull()
+    bin_df = bin_df[is_clustered]
+    tmpfpath = tempfile.mktemp()
+    outcols = ["cluster", "length", "taxid", *canonical_ranks]
+    bin_df[outcols].to_csv(tmpfpath, sep="\t", index=False, header=False)
+    taxonomies = {}
+    with open(tmpfpath) as fh:
+        for line in fh:
+            llist = line.strip().split("\t")
+            cluster = llist[0]
+            length = int(llist[1])
+            taxid = int(llist[2])
+            ranks = llist[3:]
+            for rank, canonical_rank in zip(ranks, canonical_ranks):
+                if rank != "unclassified":
+                    break
+            if cluster not in taxonomies:
+                taxonomies.update({cluster: {canonical_rank: {taxid: length}}})
+            elif canonical_rank not in taxonomies[cluster]:
+                taxonomies[cluster].update({canonical_rank: {taxid: length}})
+            elif taxid not in taxonomies[cluster][canonical_rank]:
+                taxonomies[cluster][canonical_rank].update({taxid: length})
+            else:
+                taxonomies[cluster][canonical_rank][taxid] += length
+    os.remove(tmpfpath)
+    ncbi = NCBI(dirpath=ncbi_dirpath)
+    cluster_taxonomies = rank_taxids(taxonomies, ncbi)
+    cluster_taxa_df = pd.Series(data=cluster_taxonomies, name="taxid").to_frame()
+    lineage_df = ncbi.get_lineage_dataframe(cluster_taxa_df.taxid.tolist(), fillna=True)
+    cluster_taxa_df = pd.merge(
+        cluster_taxa_df, lineage_df, how="left", left_on="taxid", right_index=True
+    )
+    cluster_taxa_df.index.name = "cluster"
+    return cluster_taxa_df
 
 
-def get_metabin_stats(mgargs):
-    cov_df = pd.read_csv(mgargs.files.coverages, sep="\t", index_col="contig")
-    length_df = pd.read_csv(mgargs.files.lengths, sep="\t", index_col="contig")
-    binning_fpaths = {
-        "bacteria": mgargs.files.bacteria_binning,
-        "archaea": mgargs.files.archaea_binning,
-    }
+def get_metabin_stats(bin_df, cluster_records, assembly):
     stats = []
-    assembly_seqrecords = SeqIO.parse(mgargs.files.metagenome, "fasta")
-    for domain, binning_fpath in binning_fpaths.items():
-        if not os.path.exists(binning_fpath):
-            logger.info(f"{binning_fpath} not found, skipping...")
-            continue
-        bin_df = pd.read_csv(binning_fpath, sep="\t", index_col="contig")
-        for df in [length_df, cov_df]:
-            bin_df = pd.merge(bin_df, df, how="left", left_index=True, right_index=True)
-        for cluster, dff in bin_df.groupby("cluster"):
-            contigs = set(dff.index)
-            seqrecords = [rec for rec in assembly_seqrecords if rec.id in contigs]
-            metabin = MetaBin(
-                assembly=mgargs.files.metagenome,
-                contig_ids=contigs,
-                seqrecords=seqrecords,
-                outdir=mgargs.parameters.outdir,
-            )
-            length_weighted_coverage = np.average(
-                a=dff.coverage, weights=dff.length / dff.length.sum()
-            )
-            stats.append(
-                {
-                    "superkingdom": domain,
-                    "cluster": cluster,
-                    "nseqs": metabin.nseqs,
-                    "seqs_pct": metabin.seqs_pct,
-                    "size (bp)": metabin.size,
-                    "size_pct": metabin.size_pct,
-                    "N90": metabin.fragmentation_metric(quality_measure=0.9),
-                    "N50": metabin.fragmentation_metric(quality_measure=0.5),
-                    "N10": metabin.fragmentation_metric(quality_measure=0.1),
-                    "length_weighted_gc": metabin.length_weighted_gc,
-                    "length_weighted_coverage": length_weighted_coverage,
-                    "min_coverage": dff.coverage.min(),
-                    "max_coverage": dff.coverage.max(),
-                }
-            )
+    for cluster, dff in bin_df.groupby("cluster"):
+        contigs = set(dff.index)
+        seqrecords = cluster_records.get(cluster)
+        metabin = MetaBin(assembly=assembly, contig_ids=contigs, seqrecords=seqrecords)
+        length_weighted_coverage = np.average(
+            a=dff.coverage, weights=dff.length / dff.length.sum()
+        )
+        stats.append(
+            {
+                "cluster": cluster,
+                "nseqs": metabin.nseqs,
+                "seqs_pct": metabin.seqs_pct,
+                "size (bp)": metabin.size,
+                "size_pct": metabin.size_pct,
+                "N90": metabin.fragmentation_metric(quality_measure=0.9),
+                "N50": metabin.fragmentation_metric(quality_measure=0.5),
+                "N10": metabin.fragmentation_metric(quality_measure=0.1),
+                "length_weighted_gc": metabin.length_weighted_gc,
+                "length_weighted_coverage": length_weighted_coverage,
+                "min_coverage": dff.coverage.min(),
+                "max_coverage": dff.coverage.max(),
+            }
+        )
     stats_df = pd.DataFrame(stats)
-    stats_df.set_index(["superkingdom", "cluster"], inplace=True)
-    # outfpath = os.path.join(mgargs.parameters.outdir, "metabins", "cluster_stats.tsv")
-    # stats_df.to_csv(outfpath, sep="\t", index=True, header=True)
+    stats_df.set_index("cluster", inplace=True)
     return stats_df
 
 
@@ -223,20 +192,38 @@ def main():
     config_fpaths = glob(configs_search_str, recursive=True)
     for config_fpath in config_fpaths:
         mgargs = config.parse_config(config_fpath)
+        annotations = merge_annotations(mgargs)
+        mgrecords = [rec for rec in SeqIO.parse(mgargs.files.metagenome, "fasta")]
+        for domain, bin_df in annotations.items():
+            if bin_df.empty:
+                logger.info(f"{domain} bin_df empty, skipping...")
+                continue
+            domain_outdir = os.path.join(mgargs.parameters.outdir, "metabins", domain)
+            if not os.path.isdir(domain_outdir):
+                os.makedirs(domain_outdir)
+            logger.info(f"Writing {domain} MetaBins")
+            cluster_records = get_and_write_cluster_records(
+                bin_df=bin_df, mgrecords=mgrecords, outdir=domain_outdir
+            )
+            logger.info(f"Retrieving {domain} MetaBins' stats")
+            df = get_metabin_stats(
+                bin_df=bin_df,
+                cluster_records=cluster_records,
+                assembly=mgargs.files.metagenome,
+            )
+            if os.path.exists(mgargs.files.taxonomy) and os.path.getsize(
+                mgargs.files.taxonomy
+            ):
+                logger.info(f"Retrieving {domain} MetaBins' taxonomies")
+                taxa_df = get_metabin_taxonomies(
+                    bin_df=bin_df, ncbi_dirpath=mgargs.databases.ncbi
+                )
+                df = pd.merge(df, taxa_df, left_index=True, right_index=True)
 
-        # df = merge_annotations(mgargs)
-        logger.info("Writing MetaBins")
-        write_clusters(mgargs)
-        logger.info("Retrieving MetaBins' taxonomies")
-        taxa_df = get_metabin_taxonomies(mgargs)
-        logger.info("Retrieving MetaBins' stats")
-        stats_df = get_metabin_stats(mgargs)
-
-        df = pd.merge(stats_df, taxa_df, left_index=True, right_index=True)
-        outfpath = os.path.join(
-            mgargs.parameters.outdir, "metabins", "metabin_summary.tsv"
-        )
-        df.to_csv(outfpath, sep="\t", index=True, header=True)
+            outfpath = os.path.join(
+                mgargs.parameters.outdir, "metabins", f"{domain}_metabin_summary.tsv"
+            )
+            df.to_csv(outfpath, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":
