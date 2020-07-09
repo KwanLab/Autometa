@@ -46,6 +46,23 @@ logger = logging.getLogger(__name__)
 
 
 def merge_annotations(mgargs):
+    """Merge all required annotations for binning summaries.
+
+    Parameters
+    ----------
+    mgargs : argparse.Namespace
+        metagenome args parsed from config using `config.parse_config`.
+
+    Returns
+    -------
+    pd.DataFrame
+        index=contig, cols=['cluster','length','coverage','taxid', *canonical_ranks]
+
+    Raises
+    ------
+    FileNotFoundError
+        One of lengths.tsv or coverages.tsv does not exist.
+    """
     binning_fpaths = {
         "bacteria": mgargs.files.bacteria_binning,
         "archaea": mgargs.files.archaea_binning,
@@ -98,6 +115,24 @@ def get_and_write_cluster_records(bin_df, mgrecords, outdir):
 
 
 def get_metabin_stats(bin_df, cluster_records, markers_fpath, assembly):
+    """Retrieve statistics for all clusters recovered from Autometa binning.
+
+    Parameters
+    ----------
+    bin_df : pd.DataFrame
+        Autometa binning table. index=contig, cols=['cluster','length','coverage', ...]
+    cluster_records : dict
+        {cluster:[SeqRecord, ...], cluster:[...], ...}
+    markers_fpath : str
+        </path/to/{domain}.markers.tsv
+    assembly : str
+        </path/to/corresponding/metagenome/assembly.fna
+
+    Returns
+    -------
+    pd.DataFrame
+        dataframe consisting of various metabin statistics indexed by column.
+    """
     stats = []
     markers_df = Markers.load(markers_fpath)
     for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
@@ -151,13 +186,20 @@ def get_metabin_stats(bin_df, cluster_records, markers_fpath, assembly):
 
 
 def get_metabin_taxonomies(bin_df, ncbi_dirpath):
-    """Write cluster taxonomy table to `mgargs.parameters.outdir`
+    """Retrieve taxonomies of all clusters recovered from Autometa binning.
 
     Parameters
     ----------
-     mgargs : argparse.Namespace
-        Metagenome args parsed from autometa.config.parse_config
+    bin_df : pd.DataFrame
+        Autometa binning table. index=contig, cols=['cluster','length','taxid', *canonical_ranks]
+    ncbi_dirpath : str
+        Path to NCBI databases directory
 
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe consisting of cluster taxonomy with taxid and canonical rank.
+        Indexed by cluster
     """
     ncbi = NCBI(dirpath=ncbi_dirpath)
     canonical_ranks = ncbi.CANONICAL_RANKS
