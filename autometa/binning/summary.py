@@ -158,6 +158,7 @@ def get_metabin_stats(mgargs):
         "archaea": mgargs.files.archaea_binning,
     }
     stats = []
+    assembly_seqrecords = SeqIO.parse(mgargs.files.metagenome, "fasta")
     for domain, binning_fpath in binning_fpaths.items():
         if not os.path.exists(binning_fpath):
             logger.info(f"{binning_fpath} not found, skipping...")
@@ -167,9 +168,11 @@ def get_metabin_stats(mgargs):
             bin_df = pd.merge(bin_df, df, how="left", left_index=True, right_index=True)
         for cluster, dff in bin_df.groupby("cluster"):
             contigs = set(dff.index)
+            seqrecords = [rec for rec in assembly_seqrecords if rec.id in contigs]
             metabin = MetaBin(
                 assembly=mgargs.files.metagenome,
-                contigs=contigs,
+                contig_ids=contigs,
+                seqrecords=seqrecords,
                 outdir=mgargs.parameters.outdir,
             )
             length_weighted_coverage = np.average(
