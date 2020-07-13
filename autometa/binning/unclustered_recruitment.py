@@ -27,19 +27,14 @@ Recruit unclustered contigs using metagenome annotations and binning results.
 2. Split contigs by clustered/unclustered
 3. Subset clustered contigs by contigs containing markers
 4. subset features by clustered (subset) and unclustered contigs
-    clustered_features, clustered_labels, unclustered_features, unclustered_labels = split_and_subset_train_data(bin_data, features, labels)
 5. split clustered features into training and test set for estimator performance measure
-    * split clustered contig features into a training and test set (50% random subset via `train_test_split`)
-6. Get predictions:
-    predictions = classifier.predict(unclustered_features)
-7. Jump back to 5 for num_classifications
+    - split clustered contig features into a training and test set (50% random subset via `train_test_split`)
+6. Get trained classifier's predictions on unclustered contigs' features
+7. Jump back to 5 for provided number of classifications
 8. Filter predictions:
     - Keep predictions if prediction count >= confidence threshold
-        Confidence Measure (confidence_threshold is argument parameter):
-        confidence = n_consistent_classifications / n_classifications (Note: n_classifications == n_random_subsamples)
-    - new_bin_purity >= previous_bin_purity calculation:
-        new_marker_counts[new_marker_counts == 1].count() > old_marker_counts[old_marker_counts == 1].count()
-        new_num_single_copy_markers > old_num_single_copy_markers
+        confidence threshold = num. consistent classifications / num. classifications (Note: num. classifications == num. random subsamples)
+    - Keep predictions that do not contaminate previous bins:
 9. Add filtered predictions to clusters
     - Re-select training_data with newly added contigs
 10. Check base termination case:
