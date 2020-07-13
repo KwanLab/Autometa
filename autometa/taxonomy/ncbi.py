@@ -38,6 +38,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle, unpickle, timeit
+from autometa.common.exceptions import DatabaseOutOfSyncError
 
 
 logger = logging.getLogger(__name__)
@@ -145,7 +146,10 @@ class NCBI:
         ValueError
             Provided `taxid` is not a positive integer
         """
-        taxid = self.is_valid_taxid(taxid)
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError:
+            taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
         if rank not in set(NCBI.CANONICAL_RANKS):
@@ -256,7 +260,10 @@ class NCBI:
         ValueError
             Provided `taxid` is not a positive integer
         """
-        taxid = self.is_valid_taxid(taxid)
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError:
+            taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
     def parent(self, taxid):
@@ -273,9 +280,11 @@ class NCBI:
         -------
         int
             Parent taxid if found in nodes.dmp otherwise 1
-
         """
-        taxid = self.is_valid_taxid(taxid)
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError:
+            taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
     # @timeit
@@ -287,7 +296,6 @@ class NCBI:
         -------
         dict
             {taxid:name, ...}
-
         """
         if self.verbose:
             logger.debug(f"Processing names from {self.names_fpath}")
@@ -315,7 +323,6 @@ class NCBI:
         -------
         dict
             {child_taxid:{'parent':parent_taxid,'rank':rank}, ...}
-
         """
         if self.verbose:
             logger.debug(f"Processing nodes from {self.nodes_fpath}")
@@ -378,10 +385,15 @@ class NCBI:
         common_ancestor.discard(1)  # This discards root
         return True if common_ancestor else False
 
-    def is_valid_taxid(self, taxid):
+    def convert_taxid_dtype(self, taxid):
         """
-        Checks if the given `taxid` is a positive integer or not as well as if it is present in nodes.dmp or names.dmp
-        In case the taxid provided is in the form of a string the function will cast the string as an integer
+        Checks if the given `taxid` is a positive integer.
+        In case the `taxid` provided is in the form of a string the function will cast the string as an integer.
+        Checks if the `taxid` is present in either nodes.dmp or names.dmp.
+
+        NOTE
+        ----
+        Function assumes that if the `taxid` is present in either nodes.dmp or names.dmp, then it is present in both of them.
 
         Parameters
         ----------
@@ -392,13 +404,16 @@ class NCBI:
         -------
         int
             `taxid` if the `taxid` is a positive integer and present in either nodes.dmp or names.dmp or
-            new_taxid which is equal to the secondary `taxid` present in merged.dmp
+            merged `taxid`
 
         Raises
         ------
         ValueError
             Provided `taxid` is not a positive integer
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
+        # Checking taxid instance format
         # This checks if an integer has been added as str, eg. "562"
         if isinstance(taxid, str):
             invalid_chars = set(string.punctuation + string.ascii_letters)
@@ -418,13 +433,21 @@ class NCBI:
         taxid = int(taxid)
         if taxid <= 0:
             raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
-        if not self.names.get(taxid) and not self.nodes.get(taxid):
-            new_taxid = self.merged.get(taxid, taxid)
-            if not self.names.get(new_taxid) and not self.nodes.get(new_taxid):
-                logger.warning(
-                    f"Taxid : {taxid} not found in either nodes.dmp or names.dmp !"
-                )
-            return int(new_taxid)
+        # Checking databases
+        if taxid not in self.names and taxid not in self.nodes and taxid in self.merged:
+            taxid = self.merged[taxid]
+            if taxid not in self.names and taxid not in self.nodes:
+                err_message = f"NCBI databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+                logger.warning(err_message)
+                raise DatabaseOutOfSyncError(err_message)
+        elif (
+            taxid not in self.names
+            and taxid not in self.nodes
+            and taxid not in self.merged
+        ):
+            err_message = f"NCBI databases out of sync. {taxid} not in found in any of the NCBI databases - nodes.dmp, names.dmp and merged.dmp."
+            logger.warning(err_message)
+            raise DatabaseOutOfSyncError(err_message)
         return taxid
 
 

@@ -26,10 +26,9 @@ File containing customized AutometaExceptions for more specific exception handli
 
 
 class AutometaException(Exception):
-    """docstring for AutometaException."""
-
-    def __init__(self, value):
-        self.value = value
+    """
+    Base class for other exceptions
+    """
 
     issue_request = """
     An error was encountered!
@@ -39,18 +38,37 @@ class AutometaException(Exception):
     You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
     """
 
+    def __init__(self, value, issue_request):
+        self.value = value
+        self.issue_request = issue_request
+
     def __str__(self):
-        return f"{self.value}\n\n{issue_request}"
+        return f"{self.value}\n\n{self.issue_request}"
 
 
 class KmerFormatError(AutometaException):
-    """KmerFormatError exception class."""
+    """
+    KmerFormatError exception class.
+
+    Parameters
+    ----------
+    AutometaException : class
+        Base class for other exceptions
+    """
 
     def __init__(self, fpath):
-        super(AutometaException, self).__init__(fpath)
         self.fpath = fpath
 
     def __str__(self):
+        """
+        Operator overloading to return the path to k-mers frequency tab-delimited table or
+        k-mers normalized tab-delimited table
+
+        Returns
+        -------
+        str
+            Path to k-mers frequency tab-delimited table or k-mers normalized tab-delimited table
+        """
         return (
             f'{self.fpath} does not contain a "contig" column. '
             "Ensure the k-mer matrix was properly generated."
@@ -58,22 +76,80 @@ class KmerFormatError(AutometaException):
 
 
 class KmerEmbeddingError(AutometaException):
-    """KmerEmbeddingError exception class."""
+    """
+    KmerEmbeddingError exception class.
+
+    Parameters
+    ----------
+    AutometaException : class
+        Base class for other exceptions
+    """
 
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
+        """
+        Operator overloading to return the text message written while raising the error,
+        rather than the message of __str__ by base exception
+
+        Returns
+        -------
+        str
+            Message written alongside raising the exception
+        """
         return self.value
 
 
 class BinningError(AutometaException):
-    """BinningError exception class."""
+    """
+    BinningError exception class.
+
+    Parameters
+    ----------
+    AutometaException : class
+        Base class for other exceptions
+    """
 
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
+        """
+        Operator overloading to return the text message written while raising the error,
+        rather than the message of __str__ by base exception
+
+        Returns
+        -------
+        str
+            Message written alongside raising the exception
+        """
+        return self.value
+
+
+class DatabaseOutOfSyncError(AutometaException):
+    """
+    Raised when NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+
+    Parameters
+    ----------
+    AutometaException : class
+        Base class for other exceptions
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        """
+        Operator overloading to return the text message written while raising the error,
+        rather than the message of __str__ by base exception
+
+        Returns
+        -------
+        str
+            Message written alongside raising the exception
+        """
         return self.value
 
 
