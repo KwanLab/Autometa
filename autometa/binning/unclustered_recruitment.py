@@ -19,45 +19,30 @@ You should have received a copy of the GNU Affero General Public License along
 with Autometa. If not, see <http://www.gnu.org/licenses/>. COPYRIGHT
 
 
+Recruit unclustered contigs using metagenome annotations and binning results.
+
+## Pseudocode for unclustered recruitment algorithm:
+
 1. Retrieve all features from all contigs and load markers
-    * Features include:
-            - 5-mers reduced to 50 dimensions
-            - coverage
-            - binary-encoded taxonomy
-        train_data = get_features(kmers, coverage, taxonomy)
-        features
-        train_data.target
-    * from autometa.common.markers import Markers
-        markers = Markers.load(fpath=args.markers)
-
 2. Split contigs by clustered/unclustered
-    bin_data = split_clustered_unclustered(bin_df)
-
 3. Subset clustered contigs by contigs containing markers
-    bin_data = get_clustered_markers(bin_data=bin_data, markers_df=markers_df)
-
 4. subset features by clustered (subset) and unclustered contigs
     clustered_features, clustered_labels, unclustered_features, unclustered_labels = split_and_subset_train_data(bin_data, features, labels)
-
-4. split clustered features into training and test set for estimator performance measure
+5. split clustered features into training and test set for estimator performance measure
     * split clustered contig features into a training and test set (50% random subset via `train_test_split`)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
-    * Then perform cross validation to measure
-
-5. Get predictions
-
-6. Filter predictions:
+6. Get predictions:
+    predictions = classifier.predict(unclustered_features)
+7. Jump back to 5 for num_classifications
+8. Filter predictions:
     - Keep predictions if prediction count >= confidence threshold
         Confidence Measure (confidence_threshold is argument parameter):
         confidence = n_consistent_classifications / n_classifications (Note: n_classifications == n_random_subsamples)
     - new_bin_purity >= previous_bin_purity calculation:
         new_marker_counts[new_marker_counts == 1].count() > old_marker_counts[old_marker_counts == 1].count()
         new_num_single_copy_markers > old_num_single_copy_markers
-
-7. Add filtered predictions to clusters
+9. Add filtered predictions to clusters
     - Re-select training_data with newly added contigs
-
-9. Check base termination case:
+10. Check base termination case:
     base case is when no filtered predictions are available
     if base case: return table
     else: jump back to 2.
