@@ -505,8 +505,9 @@ def binning(
     completeness=20.0,
     purity=90.0,
     taxonomy=True,
+    starting_rank="superkingdom",
     method="dbscan",
-    reverse=True,
+    reverse_ranks=False,
     verbose=False,
 ):
     """Perform clustering of contigs by provided `method` and use metrics to
@@ -522,23 +523,26 @@ def binning(
         i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-    domain : str
+    domain : str, optional
         Kingdom to determine metrics (the default is 'bacteria').
         choices=['bacteria','archaea']
-    completeness : float
+    completeness : float, optional
         Description of parameter `completeness` (the default is 20.).
-    purity : float
+    purity : float, optional
         Description of parameter `purity` (the default is 90.).
-    taxonomy : bool
+    taxonomy : bool, optional
         Split canonical ranks and subset based on rank then attempt to find clusters (the default is True).
         taxonomic_levels = [superkingdom,phylum,class,order,family,genus,species]
-    method : str
+    starting_rank : str, optional
+        Starting canonical rank at which to begin subsetting taxonomy (the default is superkingdom).
+        Choices are superkingdom, phylum, class, order, family, genus, species.
+    method : str, optional
         Clustering `method` (the default is 'dbscan').
         choices = ['dbscan','hdbscan']
-    reverse : bool
-        True - [superkingdom,phylum,class,order,family,genus,species]
-        False - [species,genus,family,order,class,phylum,superkingdom]
-    verbose : bool
+    reverse_ranks : bool, optional
+        False - [superkingdom,phylum,class,order,family,genus,species] (Default)
+        True - [species,genus,family,order,class,phylum,superkingdom]
+    verbose : bool, optional
         log stats for each recursive_dbscan clustering iteration
 
     Returns
@@ -570,13 +574,16 @@ def binning(
         )
 
     # Use taxonomy method
-    if reverse:
-        # superkingdom, phylum, class, order, family, genus, species
-        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
-    else:
+    if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in NCBI.CANONICAL_RANKS]
+    else:
+        # superkingdom, phylum, class, order, family, genus, species
+        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
     ranks.remove("root")
+    starting_rank_index = ranks.index(starting_rank)
+    ranks = ranks[starting_rank_index:]
+    logger.debug(f"Using ranks: {', '.join(ranks)}")
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
@@ -679,6 +686,27 @@ def main():
     parser.add_argument("--purity", help="<purity cutoff>", default=90.0, type=float)
     parser.add_argument("--taxonomy", help="</path/to/taxonomy.tsv>")
     parser.add_argument(
+        "--starting-rank",
+        help="Canonical rank at which to begin subsetting taxonomy",
+        default="superkingdom",
+        choices=[
+            "superkingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species",
+        ],
+    )
+    parser.add_argument(
+        "--reverse-ranks",
+        action="store_true",
+        default=False,
+        help="Reverse order at which to split taxonomy by canonical-rank."
+        " When --reverse-ranks given, contigs will be split in order of species, genus, family, order, class, phylum, superkingdom.",
+    )
+    parser.add_argument(
         "--domain",
         help="Kingdom to consider (archaea|bacteria)",
         choices=["bacteria", "archaea"],
@@ -719,6 +747,8 @@ def main():
         master=master_df,
         markers=markers_df,
         taxonomy=taxa_present,
+        starting_rank=args.starting_rank,
+        reverse_ranks=args.reverse_ranks,
         domain=args.domain,
         completeness=args.completeness,
         purity=args.purity,
