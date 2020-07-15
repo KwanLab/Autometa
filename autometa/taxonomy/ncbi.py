@@ -387,9 +387,8 @@ class NCBI:
 
     def convert_taxid_dtype(self, taxid):
         """
-        Checks if the given `taxid` is a positive integer.
-        In case the `taxid` provided is in the form of a string the function will cast the string as an integer.
-        Checks if the `taxid` is present in either nodes.dmp or names.dmp.
+        Converts the given `taxid` to integer. It also checks if the given `taxid` is a positive integer and
+        if is is present in either nodes.dmp or names.dmp.
 
         NOTE
         ----
@@ -404,7 +403,7 @@ class NCBI:
         -------
         int
             `taxid` if the `taxid` is a positive integer and present in either nodes.dmp or names.dmp or
-            merged `taxid`
+            taxid recovered from merged.dmp
 
         Raises
         ------

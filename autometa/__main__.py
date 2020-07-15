@@ -98,7 +98,8 @@ def init_logger(fpath=None, verbosity=0):
 
 
 def main(args):
-    """Main logic for running autometa pipeline.
+    """
+    Main logic for running autometa pipeline.
 
     Warning: This should be called by `entrypoint` and not directly.
 
@@ -130,7 +131,8 @@ def main(args):
 
 
 def entrypoint():
-    """Main entrypoint for autometa pipeline.
+    """
+    Main entrypoint for autometa pipeline.
 
     Note, a requirement of packaging and distribution is for entrypoints to not
     require any arguments. This is a wrapper to the main functionality of running
@@ -184,14 +186,16 @@ def entrypoint():
         sys.exit(1)
     except Exception as err:
         issue_request = """
+        An error was encountered!
 
         Please help us fix your problem!
 
         You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
         """
-        err.issue_request = issue_request
+        # err.issue_request = issue_request
         logger.exception(err)
-        logger.info(err.issue_request)
+        logger.info(issue_request)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -21,38 +21,25 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-File containing customized AutometaExceptions for more specific exception handling
+File containing customized AutometaErrors for more specific exception handling
 """
 
 
-class AutometaException(Exception):
+class AutometaError(Exception):
     """
     Base class for other exceptions
     """
 
-    issue_request = """
-    An error was encountered!
-
-    Please help us fix your problem!
-
-    You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
-    """
-
-    def __init__(self, value, issue_request):
-        self.value = value
-        self.issue_request = issue_request
-
-    def __str__(self):
-        return f"{self.value}\n\n{self.issue_request}"
+    pass
 
 
-class KmerFormatError(AutometaException):
+class KmerFormatError(AutometaError):
     """
     KmerFormatError exception class.
 
     Parameters
     ----------
-    AutometaException : class
+    AutometaError : class
         Base class for other exceptions
     """
 
@@ -75,65 +62,41 @@ class KmerFormatError(AutometaException):
         )
 
 
-class KmerEmbeddingError(AutometaException):
+class KmerEmbeddingError(AutometaError):
     """
     KmerEmbeddingError exception class.
 
     Parameters
     ----------
-    AutometaException : class
+    AutometaError : class
         Base class for other exceptions
     """
 
     def __init__(self, value):
         self.value = value
 
-    def __str__(self):
-        """
-        Operator overloading to return the text message written while raising the error,
-        rather than the message of __str__ by base exception
 
-        Returns
-        -------
-        str
-            Message written alongside raising the exception
-        """
-        return self.value
-
-
-class BinningError(AutometaException):
+class BinningError(AutometaError):
     """
     BinningError exception class.
 
     Parameters
     ----------
-    AutometaException : class
+    AutometaError : class
         Base class for other exceptions
     """
 
     def __init__(self, value):
         self.value = value
 
-    def __str__(self):
-        """
-        Operator overloading to return the text message written while raising the error,
-        rather than the message of __str__ by base exception
 
-        Returns
-        -------
-        str
-            Message written alongside raising the exception
-        """
-        return self.value
-
-
-class DatabaseOutOfSyncError(AutometaException):
+class DatabaseOutOfSyncError(AutometaError):
     """
     Raised when NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
 
     Parameters
     ----------
-    AutometaException : class
+    AutometaError : class
         Base class for other exceptions
     """
 
@@ -150,7 +113,16 @@ class DatabaseOutOfSyncError(AutometaException):
         str
             Message written alongside raising the exception
         """
-        return self.value
+        message = """
+
+        NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other.
+
+        To download the databses visit: ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+
+        Required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
+
+        """
+        return message
 
 
 if __name__ == "__main__":
