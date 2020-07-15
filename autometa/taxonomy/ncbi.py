@@ -436,13 +436,13 @@ class NCBI:
         # Checking databases
         if taxid not in self.names and taxid not in self.nodes:
             if taxid not in self.merged:
-                err_message = f"NCBI databases out of sync. {taxid} not in found in any of the NCBI databases - nodes.dmp, names.dmp and merged.dmp."
+                err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp or merged.dmp."
                 logger.warning(err_message)
                 raise DatabaseOutOfSyncError(err_message)
             else:
                 taxid = self.merged[taxid]
                 if taxid not in self.names and taxid not in self.nodes:
-                    err_message = f"NCBI databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+                    err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
                     logger.warning(err_message)
                     raise DatabaseOutOfSyncError(err_message)
         return taxid
