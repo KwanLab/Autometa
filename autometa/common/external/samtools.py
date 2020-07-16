@@ -26,7 +26,6 @@ import shutil
 import subprocess
 import tempfile
 
-import pandas as pd
 import multiprocessing as mp
 
 logger = logging.getLogger(__name__)
@@ -62,8 +61,6 @@ def sort(sam, bam, cpus=mp.cpu_count()):
             f"The specified path: {sam} is either incorrect or the file is empty"
         )
     with tempfile.TemporaryDirectory() as tempdir:  # this will delete the temporary files even if program stops in between
-        view_fname = "view_" + os.path.basename(bam)
-        view_fpath = os.path.join(tempdir, view_fname)
         sort_fpath = os.path.join(tempdir, os.path.basename(bam))
         # See https://stackoverflow.com/questions/13332268/how-to-use-subprocess-command-with-pipes
         cmd_view = [
@@ -73,25 +70,28 @@ def sort(sam, bam, cpus=mp.cpu_count()):
             str(cpus),
             "-bS",
             sam,
-            "-o",
-            view_fpath,
         ]
         cmd_sort = [
             "samtools",
             "sort",
             "-@",
             str(cpus),
-            view_fpath,
             "-o",
             sort_fpath,
         ]
         logger.debug(" ".join(cmd_view))
         logger.debug(" ".join(cmd_sort))
-        subprocess.run(
-            cmd_view, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,
+        view = subprocess.Popen(
+            cmd_view, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        # See https://stackoverflow.com/questions/34147353/python-subprocess-chaining-commands-with-subprocess-run
+        # Popen starts the process and carries on while run starts it and waits for it to finish.
         subprocess.run(
-            cmd_sort, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,
+            cmd_sort,
+            stdin=view.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
         )
         shutil.move(sort_fpath, bam)
     return bam
