@@ -76,42 +76,6 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         os.remove(out)
     return bam
 
-    # See https://stackoverflow.com/a/13332300/12671809
-    #     cmd_view = [
-    #         "samtools",
-    #         "view",
-    #         "-@",
-    #         str(cpus),
-    #         "-bS",
-    #         sam,
-    #     ]
-    #     cmd_sort = [
-    #         "samtools",
-    #         "sort",
-    #         "-@",
-    #         str(cpus),
-    #         "-o",
-    #         sort_fpath,
-    #     ]
-    #     with open(out, "w") as stdout, open(err, "w") as stderr:
-    #         logger.debug(" ".join(cmd_view))
-    #         view = subprocess.Popen(cmd_view, stdout=stdout, stderr=stderr)
-    #         logger.debug(" ".join(cmd_sort))
-    #         # See https://stackoverflow.com/a/34166541/12671809
-    #         # Popen starts the process and carries on while run starts it and waits for it to finish.
-    #         sort = subprocess.run(
-    #             cmd_sort, stdin=view.stdout, stdout=stdout, stderr=stderr
-    #         )
-    #         try:
-    #             sort.check_returncode()
-    #         except subprocess.CalledProcessError as err:
-    #             raise err
-    #         else:
-    #             shutil.move(sort_fpath, bam)
-    #     os.remove(err)
-    #     os.remove(out)
-    # return bam
-
 
 def main():
     import argparse
