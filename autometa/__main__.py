@@ -192,10 +192,9 @@ def entrypoint():
 
         You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
         """
-        # err.issue_request = issue_request
+        err.issue_request = issue_request
         logger.exception(err)
-        logger.info(issue_request)
-        sys.exit(1)
+        logger.info(err.issue_request)
 
 
 if __name__ == "__main__":
