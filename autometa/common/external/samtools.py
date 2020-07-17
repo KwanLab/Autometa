@@ -84,15 +84,17 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         view = subprocess.Popen(
             cmd_view, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        logger.error(view.stderr)
         # See https://stackoverflow.com/questions/34147353/python-subprocess-chaining-commands-with-subprocess-run
         # Popen starts the process and carries on while run starts it and waits for it to finish.
-        subprocess.run(
+        sort = subprocess.run(
             cmd_sort,
             stdin=view.stdout,
-            stdout=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             check=True,
         )
+        logger.error(sort.stderr)
         shutil.move(sort_fpath, bam)
     return bam
 
