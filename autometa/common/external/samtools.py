@@ -60,43 +60,57 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         raise FileNotFoundError(
             f"The specified path: {sam} is either incorrect or the file is empty"
         )
+    samtools_out_dir = os.path.dirname(os.path.abspath(bam))
+    err = os.path.join(samtools_out_dir, "samtools.err")
+    out = os.path.join(samtools_out_dir, "samtools.out")
     with tempfile.TemporaryDirectory() as tempdir:  # this will delete the temporary files even if program stops in between
         sort_fpath = os.path.join(tempdir, os.path.basename(bam))
-        # See https://stackoverflow.com/questions/13332268/how-to-use-subprocess-command-with-pipes
-        cmd_view = [
-            "samtools",
-            "view",
-            "-@",
-            str(cpus),
-            "-bS",
-            sam,
-        ]
-        cmd_sort = [
-            "samtools",
-            "sort",
-            "-@",
-            str(cpus),
-            "-o",
-            sort_fpath,
-        ]
-        logger.debug(" ".join(cmd_view))
-        logger.debug(" ".join(cmd_sort))
-        view = subprocess.Popen(
-            cmd_view, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        cmd = (
+            f"samtools view -@{cpus} -bS {sam} | samtools sort -@{cpus} -o {sort_fpath}"
         )
-        logger.error(view.stderr)
-        # See https://stackoverflow.com/questions/34147353/python-subprocess-chaining-commands-with-subprocess-run
-        # Popen starts the process and carries on while run starts it and waits for it to finish.
-        sort = subprocess.run(
-            cmd_sort,
-            stdin=view.stdout,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            check=True,
-        )
-        logger.error(sort.stderr)
-        shutil.move(sort_fpath, bam)
+        logger.debug(f"cmd: {cmd}")
+        with open(out, "w") as stdout, open(err, "w") as stderr:
+            subprocess.run(cmd, stdout=stdout, stderr=stderr, shell=True, check=True)
+            shutil.move(sort_fpath, bam)
+        os.remove(err)
+        os.remove(out)
     return bam
+
+    # See https://stackoverflow.com/a/13332300/12671809
+    #     cmd_view = [
+    #         "samtools",
+    #         "view",
+    #         "-@",
+    #         str(cpus),
+    #         "-bS",
+    #         sam,
+    #     ]
+    #     cmd_sort = [
+    #         "samtools",
+    #         "sort",
+    #         "-@",
+    #         str(cpus),
+    #         "-o",
+    #         sort_fpath,
+    #     ]
+    #     with open(out, "w") as stdout, open(err, "w") as stderr:
+    #         logger.debug(" ".join(cmd_view))
+    #         view = subprocess.Popen(cmd_view, stdout=stdout, stderr=stderr)
+    #         logger.debug(" ".join(cmd_sort))
+    #         # See https://stackoverflow.com/a/34166541/12671809
+    #         # Popen starts the process and carries on while run starts it and waits for it to finish.
+    #         sort = subprocess.run(
+    #             cmd_sort, stdin=view.stdout, stdout=stdout, stderr=stderr
+    #         )
+    #         try:
+    #             sort.check_returncode()
+    #         except subprocess.CalledProcessError as err:
+    #             raise err
+    #         else:
+    #             shutil.move(sort_fpath, bam)
+    #     os.remove(err)
+    #     os.remove(out)
+    # return bam
 
 
 def main():
