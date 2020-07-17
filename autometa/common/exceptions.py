@@ -122,7 +122,7 @@ class DatabaseOutOfSyncError(AutometaError):
         Required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
 
         """
-        return message
+        return f"{self.value}\n{message}"
 
 
 if __name__ == "__main__":
