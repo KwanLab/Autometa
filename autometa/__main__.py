@@ -194,7 +194,7 @@ def entrypoint():
         """
         err.issue_request = issue_request
         logger.exception(err)
-        logger.info(err.issue_request)
+        logger.info(issue_request)
 
 
 if __name__ == "__main__":
