@@ -115,7 +115,7 @@ class DatabaseOutOfSyncError(AutometaError):
         """
         message = """
 
-        NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other or not updated or both.
+        NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other or with other NCBI dataases (prot.accession2taxid.gz and nr.gz) or both.
 
         Up-to-date databases may be downloaded at: ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
 
