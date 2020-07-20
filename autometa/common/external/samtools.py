@@ -54,7 +54,7 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         Samtools did not run successfully
     """
 
-    if type(cpus) is not int or cpus <= 0:
+    if not isinstance(cpus, int) or cpus <= 0:
         raise TypeError(f"cpus must be an integer greater than zero! Given: {cpus}")
     if not os.path.exists(sam) or not os.path.getsize(sam):
         raise FileNotFoundError(
@@ -64,14 +64,12 @@ def sort(sam, bam, cpus=mp.cpu_count()):
     err = os.path.join(samtools_out_dir, "samtools.err")
     out = os.path.join(samtools_out_dir, "samtools.out")
     with tempfile.TemporaryDirectory() as tempdir:  # this will delete the temporary files even if program stops in between
-        sort_fpath = os.path.join(tempdir, os.path.basename(bam))
-        cmd = (
-            f"samtools view -@{cpus} -bS {sam} | samtools sort -@{cpus} -o {sort_fpath}"
-        )
+        temp_bam = os.path.join(tempdir, os.path.basename(bam))
+        cmd = f"samtools view -@{cpus} -bS {sam} | samtools sort -@{cpus} -o {temp_bam}"
         logger.debug(f"cmd: {cmd}")
         with open(out, "w") as stdout, open(err, "w") as stderr:
             subprocess.run(cmd, stdout=stdout, stderr=stderr, shell=True, check=True)
-            shutil.move(sort_fpath, bam)
+            shutil.move(temp_bam, bam)
         os.remove(err)
         os.remove(out)
     return bam
