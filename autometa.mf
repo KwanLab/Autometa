@@ -19,8 +19,11 @@ bacteria.markers.tsv : autometa-markers orfs.faa bacteria.single_copy.hmm bacter
 archaea.markers.tsv : autometa-markers orfs.faa archaea.single_copy.hmm archaea.single_copy.cutoffs
     autometa-markers orfs.faa archaea.single_copy.hmm archaea.single_copy.cutoffs archaea.hmmscan.tsv archaea.markers.tsv
 
-taxonomy.tsv : autometa-taxonomy metagenome.filtered.fna orfs.faa orfs.blastp.tsv
-    autometa-taxonomy metagenome.filtered.fna orfs.faa taxonomy.tsv --blast orfs.blastp.tsv
+taxonomy.tsv orfs.faa : autometa-taxonomy metagenome.filtered.fna orfs.blastp.tsv
+    autometa-taxonomy metagenome.filtered.fna outdir orfs.fna orfs.faa --taxon-fname taxonomy.tsv --blast orfs.blastp.tsv --taxon-method majority_vote
+
+# taxonomy.tsv : autometa-taxonomy metagenome.filtered.fna orfs.fna orfs.faa orfs.blastp.tsv
+    # autometa-taxonomy metagenome.filtered.fna outdir orfs.fna orfs.faa --taxon-fname taxonomy.tsv --blast orfs.blastp.tsv --taxon-method majority_vote
 
 kmers.tsv kmers.norm.tsv kmers.embedded.tsv : autometa-kmers metagenome.filtered.fna
     autometa-kmers --fasta metagenome.filtered.fna --embedded kmers.embedded.tsv --normalized kmers.norm.tsv --kmers kmers.tsv --do-pca --pca-dimensions 50 --size 50 --method bhsne
@@ -40,5 +43,8 @@ coverages.tsv : autometa-coverage metagenome.filtered.fna
 # coverages.tsv : autometa-coverage metagenome.filtered.fna alignments.bed
     # autometa-coverage --assembly metagenome.filtered.fna --bed alignments.bed --out coverages.tsv
 
-metagenome.filtered.fna orfs.faa : autometa-length-filter metagenome.fna
+metagenome.filtered.fna : autometa-length-filter metagenome.fna
     autometa-length-filter metagenome.fna metagenome.filtered.fna --cutoff 3000
+
+# metagenome.filtered.fna orfs.fna orfs.faa : autometa-length-filter metagenome.fna
+    # autometa-length-filter metagenome.fna metagenome.filtered.fna orfs.fna orfs.faa --cutoff 3000
