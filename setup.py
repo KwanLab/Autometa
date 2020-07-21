@@ -28,6 +28,10 @@ setup(
             "autometa-kmers = autometa.common.kmers:main",
             "autometa-coverage = autometa.common.coverage:main",
             "autometa-markers = autometa.common.markers:main",
+            "autometa-length-filter = autometa.common.metagenome:length_filter_entrypoint",
+            "autometa-taxonomy = autometa.common.metagenome:taxonomy_entrypoint",
+            "autometa-binning = autometa.binning.recursive_dbscan:main",
+            "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
         ]
     },
     author="Jason C. Kwan",

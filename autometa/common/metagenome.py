@@ -379,7 +379,7 @@ class Metagenome:
         )
 
     @timeit
-    def length_filter(self, out, cutoff=3000):
+    def length_filter(self, out, cutoff=3000, force=False):
         """Filters sequences by length with provided cutoff.
 
         Note: A WARNING will be emitted if the length filter is applied *after*
@@ -412,7 +412,7 @@ class Metagenome:
             raise TypeError(f"cutoff: {cutoff} must be a float or int")
         if cutoff <= 0:
             raise ValueError(f"cutoff: {cutoff} must be a positive real number")
-        if os.path.exists(out):
+        if os.path.exists(out) and not force:
             raise FileExistsError(out)
         outdir = os.path.dirname(out)
         gunzipped_fname = os.path.basename(self.assembly.rstrip(".gz"))
@@ -759,7 +759,7 @@ class Metagenome:
         return fpaths
 
 
-def main():
+def taxonomy_entrypoint():
     import argparse
     import logging as logger
 
@@ -771,8 +771,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="""
-    This script handles filtering by length and taxon as well as ORF calling,
-    and various metagenome statistics.
+    This script handles filtering by taxonomy and can calculate various metagenome statistics.
     """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -792,24 +791,7 @@ def main():
         "(Will write to path if ORFs do not exist).",
         type=str,
     )
-    parser.add_argument(
-        "--filter",
-        help="Filter to apply to metagenome. You may supply multiple filters.",
-        choices=["length", "taxon"],
-        nargs="*",
-    )
-    parser.add_argument(
-        "--cutoff",
-        help="Cutoff to apply to length filter",
-        default=3000,
-        type=int,
-        metavar="<int>",
-    )
-    parser.add_argument(
-        "--length-fname",
-        help="Filename to assign fasta after applying length filter.",
-        default="`assembly`.filtered.fna",
-    )
+
     parser.add_argument(
         "--taxon-method", default="majority_vote", choices=["majority_vote"]
     )
@@ -873,7 +855,7 @@ def main():
     args = parser.parse_args()
 
     taxonomy_fpath = os.path.join(args.outdir, args.taxon_fname)
-    raw_mg = Metagenome(
+    mg = Metagenome(
         assembly=args.assembly,
         outdir=args.outdir,
         prot_orfs_fpath=args.prots,
@@ -882,50 +864,109 @@ def main():
         taxon_method=args.taxon_method,
     )
 
-    if args.filter and "length" in args.filter:
-        if args.length_fname != "`assembly`.filtered.fna":
-            length_filtered_fpath = os.path.join(raw_mg.outdir, args.length_fname)
-        else:
-            basename = os.path.basename(raw_mg.assembly)
-            fname = os.path.splitext(basename)[0]
-            length_fname = f"{fname}.filtered.fna"
-            length_filtered_fpath = os.path.join(raw_mg.outdir, length_fname)
-        try:
-            mg = raw_mg.length_filter(out=length_filtered_fpath, cutoff=args.cutoff)
-        except FileExistsError as err:
-            logger.warning(f"FileExistsError: {length_filtered_fpath}. Skipping...")
-            mg = Metagenome(
-                assembly=length_filtered_fpath,
-                outdir=raw_mg.outdir,
-                nucl_orfs_fpath=raw_mg.nucl_orfs_fpath,
-                prot_orfs_fpath=raw_mg.prot_orfs_fpath,
-                taxonomy_fpath=raw_mg.taxonomy_fpath,
-                taxon_method=raw_mg.taxon_method,
-            )
-    else:
-        mg = raw_mg
-
     if args.stats:
-        mg.describe()
+        mg.describe(autometa_details=False)
 
     try:
         mg.call_orfs(
             force=args.force, cpus=args.cpus, parallel=args.parallel,
         )
-    except FileExistsError as err:
-        logger.warning(f"FileExistsError: {mg.prots_out}. Skipping...")
+    except FileExistsError:
+        logger.warning(f"{mg.prots_out} already exists. Skipping...")
 
-    if args.filter and "taxon" in args.filter:
-        logger.info(f"TaxonAssignment - method:{args.taxon_method}")
-        mg.get_kingdoms(
-            cpus=args.cpus,
-            ncbi=args.ncbi,
-            usepickle=args.pickle,
-            verbose=args.verbose,
-            blast=args.blast,
-            hits=args.hits,
-            force=args.force,
-        )
+    logger.info(f"autometa-taxonomy method={args.taxon_method}")
+    mg.get_kingdoms(
+        cpus=args.cpus,
+        ncbi=args.ncbi,
+        usepickle=args.pickle,
+        verbose=args.verbose,
+        blast=args.blast,
+        hits=args.hits,
+        force=args.force,
+    )
+
+
+def length_filter_entrypoint():
+    import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+    parser = argparse.ArgumentParser(
+        description="This script handles filtering by length and can calculate various metagenome statistics.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "assembly", help="Path to metagenome assembly (nucleotide fasta)."
+    )
+    parser.add_argument(
+        "out", help="Path to output length-filtered assembly fasta file.",
+    )
+    parser.add_argument(
+        "--cutoff",
+        help="Cutoff to apply to length filter",
+        default=3000,
+        type=int,
+        metavar="<int>",
+    )
+    parser.add_argument(
+        "--force", help="Overwrite existing files", action="store_true", default=False
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Log more information to terminal.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--stats",
+        help="Print various metagenome assembly statistics.",
+        action="store_true",
+        default=False,
+    )
+
+    args = parser.parse_args()
+    dirpath = os.path.dirname(os.path.realpath(args.assembly))
+    raw_mg = Metagenome(
+        assembly=args.assembly,
+        outdir=dirpath,
+        prot_orfs_fpath="",
+        nucl_orfs_fpath="",
+        taxonomy_fpath="",
+        force=args.force,
+    )
+
+    filtered_mg = raw_mg.length_filter(
+        out=args.out, cutoff=args.cutoff, force=args.force
+    )
+    if args.stats:
+        filtered_mg.describe(autometa_details=False)
+
+
+def main():
+    import sys
+
+    help_info = """
+    autometa-metagenome script to filter assembly by length cutoff or assign taxonomy.
+
+    For taxonomy-based filtering usage information:
+    autometa.common.metagenome taxonomy --help
+
+    For length-cutoff filtering usage information:
+    autometa.common.metagenome length-filter --help
+
+    """
+    # main() is available here if the user wants to run autometa without installing console-scripts.
+    if sys.argv and "taxonomy" in sys.argv:
+        sys.exit(taxonomy_entrypoint())
+
+    if sys.argv and "length-filter" in sys.argv:
+        sys.exit(length_filter_entrypoint())
+    else:
+        print(help_info)
 
 
 if __name__ == "__main__":

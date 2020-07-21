@@ -34,9 +34,13 @@ import tarfile
 import time
 
 import numpy as np
+import pandas as pd
 
+from datetime import datetime
 from functools import wraps
+from functools import namedtuple
 
+from autometa.common.exceptions import TableFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +190,7 @@ def untar(tarchive, outdir, member=None):
         )
     logger.debug(f"decompressing tarchive {tarchive} to {outdir}")
     outfpath = os.path.join(outdir, member) if member else None
-    if member and os.path.exists(outfpath) and os.path.getsize(outfpath) > 0:
+    if member and os.path.exists(outfpath) and os.path.getsize(outfpath):
         raise FileExistsError(outfpath)
     if not tarfile.is_tarfile(tarchive):
         raise ValueError(f"{tarchive} is not a tar archive")
@@ -402,124 +406,139 @@ def write_checksum(infpath, outfpath):
     logger.debug(f"Wrote {infpath} checksum to {outfpath}")
 
 
-def valid_checkpoint(checkpoint_fp, fpath):
-    """Validate `fpath` is the same checksum as in `checkpoint_fp`.
+def get_existing_checkpoints(fpath):
+    """Get checkpoints from `fpath`.
 
     Parameters
     ----------
-    checkpoint_fp : str
-        </path/to/checkpoints.tsv>
     fpath : str
-        </path/to/file>
+        </path/to/checkpoints.tsv>
 
     Returns
     -------
-    bool
-        True if same else False
+    pd.DataFrame
+        index=enumerated cols=[checksum_hash, checksum_name, filename, description, accession_time, modified_time]
 
     Raises
     -------
-    FileNotFoundError
-        Either `fpath` or `checkpoint_fp` does not exist
     TypeError
-        Either `fpath` or `checkpoint_fp` is not a string
-
     """
-    for fp in [checkpoint_fp, fpath]:
-        if not isinstance(fp, str):
-            raise TypeError(f"{fp} is type: {type(fp)}")
-        if not os.path.exists(fp):
-            raise FileNotFoundError(fp)
-    with open(checkpoint_fp) as fh:
-        for line in fh:
-            prev_chksum, fp = line.split("\t")
-            fp = fp.strip()
-            if os.path.basename(fp) == os.path.basename(fpath):
-                # If filepaths never match, prev_chksum and new_chksum will not match.
-                # Giving expected result.
-                break
-    new_chksum = calc_checksum(fpath)
-    return new_chksum == prev_chksum
+
+    if not isinstance(fpath, str):
+        raise TypeError(f"{fpath} is type: {type(fpath)}")
+    if not os.path.exists(fpath):
+        return pd.DataFrame(
+            columns=[
+                "hash",
+                "name",
+                "filepath",
+                "accession_time",
+                "modified_time",
+                "checksum_time",
+            ]
+        )
+    try:
+        return pd.read_csv(fpath, sep="\t")
+    except ValueError:
+        TableFormatError(f"{fpath} must be a tab-delimited file")
 
 
-def get_checkpoints(checkpoint_fp, fpaths=None):
-    """Get checkpoints from `checkpoint_fp`.
-
-    `checkpoint_fp` will be written and populate with `fpaths` if it does not exist.
+def make_inputs_checkpoints(inputs, dtype="frame"):
+    """Make `inputs` into checkpoints dataframe
 
     Parameters
     ----------
-    checkpoint_fp : str
-        </path/to/checkpoints.tsv>
-    fpaths : [str, ...], optional
-        [</path/to/file>, ...]
+    inputs : iterable
+        [filepath, filepath, filepath]
+    dtype : str, optional
+        if list will return list of checkpoints, by default "frame"
+        i.e. [Checkpoint, Checkpoint, ...]
 
     Returns
     -------
-    dict
-        {fpath:checksum, ...}
+    pd.DataFrame
+
 
     Raises
-    -------
-    ValueError
-        When `checkpoint_fp` first being written, will not populate an empty checkpoints file.
-        Raises an error if the `fpaths` list is empty or None
-
+    ------
+    FileNotFoundError
+        One of provided input files in `inputs` does not exist.
     """
-    if not os.path.exists(checkpoint_fp):
-        logger.debug(f"{checkpoint_fp} not found... Writing")
-        if not fpaths:
-            raise ValueError(
-                f"Cannot populate empty {checkpoint_fp}. {fpaths} is empty."
-            )
-        outlines = ""
-        for fpath in fpaths:
-            try:
-                checksum = calc_checksum(fpath)
-            except FileNotFoundError as err:
-                checksum = ""
-            outlines += checksum
-        with open(checkpoint_fp, "w") as fh:
-            fh.write(outlines)
-        logger.debug(f"Written: {checkpoint_fp}")
-    checkpoints = {}
-    with open(checkpoint_fp) as fh:
-        for line in fh:
-            chk, fp = line.split("\t")
-            fp = fp.strip()
-            checkpoints.update({fp: chk})
-    return checkpoints
+    checkpoints = []
+    Checkpoint = namedtuple(
+        "Checkpoint",
+        [
+            "hash",
+            "name",
+            "filepath",
+            "accession_time",
+            "modified_time",
+            "checksum_time",
+        ],
+    )
+    for fpath in inputs:
+        if not os.path.exists(fpath):
+            raise FileNotFoundError(fpath)
+        checksum_hash, checksum_name = calc_checksum(fpath).split()
+        checksum_timestamp = datetime.now().timestamp()
+        checksum_time = datetime.fromtimestamp(checksum_timestamp).strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
+        atimestamp = os.path.getatime(fpath)
+        accession_time = datetime.fromtimestamp(atimestamp).strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
+        mtimestamp = os.path.getmtime(fpath)
+        modified_time = datetime.fromtimestamp(mtimestamp).strftime("%Y-%m-%d_%H-%M-%S")
+        checkpoint = Checkpoint(
+            hash=checksum_hash,
+            name=checksum_name,
+            filepath=os.path.realpath(fpath),
+            accession_time=accession_time,
+            modified_time=modified_time,
+            checksum_time=checksum_time,
+        )
+        checkpoints.append(checkpoint)
+    if dtype == "list":
+        return checkpoints
+    else:
+        return pd.DataFrame(checkpoints)
 
 
-def update_checkpoints(checkpoint_fp, fpath):
-    """Update `checkpoints_fp` with `fpath`. If `fpath` already exists in `checkpoint_fp`
-    and the hash is the same, no update will take place.
+def merge_checkpoints(old_checkpoint_fpath, new_checkpoints, overwrite=False):
+    """Merge existing checkpoints with new checkpoints
 
     Parameters
     ----------
-    checkpoint_fp : str
-        </path/to/checkpoints.tsv>
-    fpath : str
-        </path/to/file>
+    old_checkpoint_fpath : str
+        Path to existing checkpoints file
+    new_checkpoints : iterable
+        list of files to be made into checkpoints
+    overwrite : bool, optional
+        Will overwrite `old_checkpoint_fpath` after `new_checkpoints` have been merged, by default False
 
     Returns
     -------
-    dict
-        {fp:checksum, ...}
-
+    pd.DataFrame
+        Checkpoints dataframe
+        index=enumerated cols=["hash","name","filepath","accession_time","modified_time"]
     """
-    checkpoints = get_checkpoints(checkpoint_fp)
-    if valid_checkpoint(checkpoint_fp, fpath):
-        return checkpoints
-    new_checksum = calc_checksum(fpath)
-    checkpoints.update({fpath: new_checksum})
-    outlines = ""
-    for fp, chk in checkpoints.items():
-        outlines += f"{chk}\t{fp}\n"
-    with open(checkpoint_fp, "w") as fh:
-        fh.write(outlines)
-    logger.debug(f"Checkpoints updated: {new_checksum[:16]} {os.path.basename(fpath)}")
-    return checkpoints
+    old_df = get_existing_checkpoints(fpath=old_checkpoint_fpath)
+    new_df = make_inputs_checkpoints(inputs=new_checkpoints)
+    df = pd.concat([old_df, new_df]).drop_duplicates(["hash", "name", "filepath"])
+    df.reset_index(drop=True)
+    if overwrite:
+        df.to_csv(old_checkpoint_fpath, sep="\t", index=False, header=True)
+    return df
+
+
+def is_checkpoint(output):
+    if not os.path.getsize(output):
+        return False
+    dirpath = os.path.dirname(os.path.realpath(output))
+    checkpoints_fpath = os.path.join(dirpath, "checkpoints.tsv")
+    checkpoints_df = get_existing_checkpoints(checkpoints_fpath)
+    return True
 
 
 def timeit(func):
@@ -565,6 +584,3 @@ if __name__ == "__main__":
     print(
         "This file contains utilities for Autometa pipeline and should not be run directly!"
     )
-    import sys
-
-    sys.exit(0)

@@ -28,6 +28,8 @@ of Autometa Databases.
 import logging
 import os
 import requests
+import socket
+import subprocess
 import tempfile
 
 import multiprocessing as mp
@@ -45,6 +47,7 @@ from autometa.common.utilities import untar
 from autometa.common.utilities import calc_checksum
 from autometa.common.utilities import read_checksum
 from autometa.common.utilities import write_checksum
+from autometa.common.exceptions import ChecksumMismatchError
 from autometa.common.external import diamond
 from autometa.common.external import hmmer
 
@@ -178,6 +181,15 @@ class Databases:
             any_invalid = {}
         return not any_missing and not any_invalid
 
+    def internet_is_connected(self, host="8.8.8.8", port=53, timeout=2):
+        # google.com
+        try:
+            socket.setdefaulttimeout(timeout)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            return True
+        except socket.error:
+            return False
+
     def get_remote_checksum(self, section, option):
         """Get the checksum from provided `section` respective to `option` in
         `self.config`.
@@ -198,14 +210,20 @@ class Databases:
 
         Raises
         -------
+        ValueError
+            'section' must be 'ncbi' or 'markers'
+        ConnectionError
+            No internet connection available.
         ConnectionError
             Failed to connect to host for provided `option`.
 
         """
         if section not in {"ncbi", "markers"}:
             raise ValueError(
-                f'"section" must be "ncbi" or "markers". Provided: {section}'
+                f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
+        if not self.internet_is_connected():
+            raise ConnectionError("No internet is available")
         if section == "ncbi":
             host = self.config.get(section, "host")
             ftp_fullpath = self.config.get("checksums", option)
@@ -394,7 +412,7 @@ class Databases:
             remote_checksum = self.get_remote_checksum("ncbi", option)
             remote_hash, __ = remote_checksum.split()
             if current_checksum != remote_hash:
-                raise ConnectionError(f"{option} download failed")
+                raise ChecksumMismatchError(f"{option} download failed")
         if "taxdump" in options:
             self.extract_taxdump()
         if "nr" in options:
@@ -476,7 +494,7 @@ class Databases:
             remote_checksum = self.get_remote_checksum("markers", option)
             remote_hash, __ = remote_checksum.split()
             if current_checksum != remote_hash:
-                raise ConnectionError(f"{option} download failed")
+                raise ChecksumMismatchError(f"{option} download failed")
         self.press_hmms()
 
     def get_missing(self, section=None):

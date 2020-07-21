@@ -191,7 +191,7 @@ def parse_config(fpath=None):
     return namespace
 
 
-def init_default():
+def set_home_dir():
     """Set the `home_dir` in autometa's default configuration (default.config)
     based on autometa's current location. If the `home_dir` variable is already
     set, then this will be used as the `home_dir` location.

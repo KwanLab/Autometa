@@ -509,7 +509,7 @@ def add_taxids(hits, database, verbose=True):
         logger.debug(
             f"Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while..."
         )
-    n_lines = file_length(database) if verbose else None
+    n_lines = file_length(database, approximate=True) if verbose else None
     desc = f"Parsing {os.path.basename(database)}"
     acc2taxids = {}
     for line in tqdm(fh, disable=disable, desc=desc, total=n_lines, leave=False):

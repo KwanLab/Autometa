@@ -25,66 +25,35 @@ File containing customized AutometaExceptions for more specific exception handli
 """
 
 
-class AutometaException(Exception):
-    """docstring for AutometaException."""
+class AutometaError(Exception):
+    """Base class for Autometa Errors."""
 
-    def __init__(self, value):
-        self.value = value
+    pass
 
-    issue_request = """
-    An error was encountered!
 
-    Please help us fix your problem!
+class TableFormatError(AutometaError):
+    """TableFormatError exception class.
 
-    You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new
+    Exception called when Table format is incorrect.
+
+    This is usually a result of a table missing the 'contig' column as this is
+    often used as the index.
     """
 
-    def __str__(self):
-        return f"{self.value}\n\n{issue_request}"
+    pass
 
 
-class KmerFormatError(AutometaException):
-    """KmerFormatError exception class."""
+class ChecksumMismatchError(AutometaError):
+    """ChecksumMismatchError exception class
 
-    def __init__(self, fpath):
-        super(AutometaException, self).__init__(fpath)
-        self.fpath = fpath
+    Exception called when checksums do not match.
 
-    def __str__(self):
-        return (
-            f'{self.fpath} does not contain a "contig" column. '
-            "Ensure the k-mer matrix was properly generated."
-        )
+    """
 
-
-class KmerEmbeddingError(AutometaException):
-    """KmerEmbeddingError exception class."""
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return self.value
-
-
-class BinningError(AutometaException):
-    """BinningError exception class."""
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return self.value
+    pass
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="file containing utilities functions for Autometa pipeline"
+    print(
+        "This file contains Exceptions for the Autometa pipeline and should not be run directly!"
     )
-    print("file containing utilities functions for Autometa pipeline")
-    args = parser.parse_args()
-    import sys
-
-    sys.exit(1)

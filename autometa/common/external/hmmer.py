@@ -156,7 +156,7 @@ def hmmscan(
     if gnu_parallel and parallel:
         raise ValueError("Both parallel and gnu_parallel were provided as True")
     # OPTIMIZE: we want to extend parallel to grid computing (workqueue?) via --sshlogin?
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
         raise FileExistsError(f"{outfpath}. Use force to overwrite!")
     if gnu_parallel:
         annotate_parallel(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus)
@@ -234,7 +234,7 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     for fp in [infpath, cutoffs]:
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
         raise FileExistsError(f"{outfpath} already exists")
     hmmtab_header = ["sname", "sacc", "orf", "score"]
     col_indices = [0, 1, 2, 5]
@@ -296,7 +296,7 @@ def main():
 
     if (
         os.path.exists(args.hmmscan)
-        and os.path.getsize(args.hmmscan) > 0
+        and os.path.getsize(args.hmmscan)
         and not args.force
     ):
         result = args.hmmscan

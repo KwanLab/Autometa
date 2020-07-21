@@ -63,7 +63,7 @@ class AutometaUser:
     """
 
     def __init__(self, user_config=config.DEFAULT_FPATH, nproc=2):
-        self.home_dir = self.set_home()
+        self.home_dir = config.set_home_dir()
         self.nproc = nproc
         self.user_config = user_config
         self.config = config.get_config(self.user_config)
@@ -74,10 +74,6 @@ class AutometaUser:
 
     def __str__(self):
         return self.user_config
-
-    def set_home(self):
-        """Set `home_dir` in default.config to current Autometa location."""
-        return config.init_default()
 
     def save(self):
         """Saves the current user config to `self.user_config` file path."""
@@ -195,8 +191,8 @@ class AutometaUser:
             project.save()
             return mgargs
         # If resuming existing metagenome run. Check whether config file has changed.
-        old_config_fp = project.metagenomes.get(metagenome)
-        old_chksum = utilities.get_checksum(old_config_fp)
+        old_config_fpath = project.metagenomes.get(metagenome)
+        old_chksum = utilities.get_checksum(old_config_fpath)
         new_chksum = utilities.get_checksum(fpath)
         if old_chksum != new_chksum:
             mgargs = project.update(
@@ -256,7 +252,8 @@ class AutometaUser:
                 se_reads=mgargs.files.se_reads,
                 taxon_method=mgargs.parameters.taxon_method,
             )
-        # I.e. asynchronous execution here (work-queue tasks)
+        # TODO asynchronous execution here (work-queue/Makeflow tasks)
+
         mg.get_kmers(
             kmer_size=mgargs.parameters.kmer_size,
             normalized=mgargs.files.kmer_normalized,
@@ -266,7 +263,6 @@ class AutometaUser:
             force=mgargs.parameters.force,
         )
         # COMBAK: Checkpoint kmers
-
         coverages = mg.get_coverages(
             out=mgargs.files.coverages,
             from_spades=mgargs.parameters.cov_from_spades,

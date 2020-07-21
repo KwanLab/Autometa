@@ -1,0 +1,44 @@
+# Autometa Makeflow DAG
+
+
+archaea.unclustered_recruitment.tsv : autometa-unclustered-recruitment archaea.binning.tsv taxonomy.tsv kmers.normalized.tsv coverages.tsv
+    autometa-unclustered-recruitment --taxonomy taxonomy.tsv kmers.normalized.tsv coverages.tsv archaea.binning.tsv archaea.markers.tsv archaea.unclustered_recruitment.tsv
+
+bacteria.unclustered_recruitment.tsv : autometa-unclustered-recruitment bacteria.binning.tsv taxonomy.tsv kmers.normalized.tsv coverages.tsv
+    autometa-unclustered-recruitment --taxonomy taxonomy.tsv kmers.normalized.tsv coverages.tsv bacteria.binning.tsv bacteria.markers.tsv bacteria.unclustered_recruitment.tsv
+
+archaea.binning.tsv : autometa-binning taxonomy.tsv kmers.tsv kmers.embedded.tsv coverages.tsv archaea.markers.tsv
+    autometa-binning kmers.tsv coverages.tsv archaea.markers.tsv bacteria.binning.tsv --taxonomy taxonomy.tsv --embedded-kmers kmers.embedded.tsv --clustering-method dbscan --domain archaea
+
+bacteria.binning.tsv : autometa-binning taxonomy.tsv kmers.tsv kmers.embedded.tsv coverages.tsv bacteria.markers.tsv
+    autometa-binning kmers.tsv coverages.tsv bacteria.markers.tsv bacteria.binning.tsv --taxonomy taxonomy.tsv --embedded-kmers kmers.embedded.tsv --clustering-method dbscan --domain bacteria
+
+bacteria.markers.tsv : autometa-markers orfs.faa bacteria.single_copy.hmm bacteria.single_copy.cutoffs
+    autometa-markers orfs.faa bacteria.single_copy.hmm bacteria.single_copy.cutoffs bacteria.hmmscan.tsv bacteria.markers.tsv
+
+archaea.markers.tsv : autometa-markers orfs.faa archaea.single_copy.hmm archaea.single_copy.cutoffs
+    autometa-markers orfs.faa archaea.single_copy.hmm archaea.single_copy.cutoffs archaea.hmmscan.tsv archaea.markers.tsv
+
+taxonomy.tsv : autometa-taxonomy metagenome.filtered.fna orfs.faa orfs.blastp.tsv
+    autometa-taxonomy metagenome.filtered.fna orfs.faa taxonomy.tsv --blast orfs.blastp.tsv
+
+kmers.tsv kmers.norm.tsv kmers.embedded.tsv : autometa-kmers metagenome.filtered.fna
+    autometa-kmers --fasta metagenome.filtered.fna --embedded kmers.embedded.tsv --normalized kmers.norm.tsv --kmers kmers.tsv --do-pca --pca-dimensions 50 --size 50 --method bhsne
+
+coverages.tsv : autometa-coverage metagenome.filtered.fna
+    autometa-coverage --from-spades --assembly metagenome.filtered.fna --out coverages.tsv
+
+# coverages.tsv : autometa-coverage metagenome.filtered.fna fwd_reads.fq rev_reads.fq
+#    autometa-coverage --assembly metagenome.filtered.fna --fwd-reads fwd_reads.fq --rev-reads rev_reads.fq --out coverages.tsv
+
+# coverages.tsv : autometa-coverage metagenome.filtered.fna alignments.sam
+    # autometa-coverage --assembly metagenome.filtered.fna --sam alignments.sam --out coverages.tsv
+
+# coverages.tsv : autometa-coverage metagenome.filtered.fna alignments.bam
+    # autometa-coverage --assembly metagenome.filtered.fna --bam alignments.sam --out coverages.tsv
+
+# coverages.tsv : autometa-coverage metagenome.filtered.fna alignments.bed
+    # autometa-coverage --assembly metagenome.filtered.fna --bed alignments.bed --out coverages.tsv
+
+metagenome.filtered.fna orfs.faa : autometa-length-filter metagenome.fna
+    autometa-length-filter metagenome.fna metagenome.filtered.fna --cutoff 3000

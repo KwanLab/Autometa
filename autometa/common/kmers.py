@@ -41,8 +41,7 @@ from tsne import bh_sne
 from umap import UMAP
 
 from autometa.common.utilities import gunzip
-from autometa.common.exceptions import KmerFormatError
-from autometa.common.exceptions import KmerEmbeddingError
+from autometa.common.exceptions import TableFormatError
 
 # Suppress numba logger debug output
 numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
@@ -119,7 +118,7 @@ def load(kmers_fpath):
     -------
     FileNotFoundError
         `kmers_fpath` does not exist or is empty
-    KmerFormatError
+    ValueError
         `kmers_fpath` file format is invalid
 
     """
@@ -128,7 +127,7 @@ def load(kmers_fpath):
     try:
         df = pd.read_csv(kmers_fpath, sep="\t", index_col="contig")
     except ValueError as err:
-        raise KmerFormatError(kmers_fpath) from ValueError
+        raise ValueError(f"contig column not found in {kmers_fpath}!")
     return df
 
 
@@ -408,9 +407,7 @@ def embed(
 
     Raises
     -------
-    KmerEmbeddingError
-        Either `kmers` or `embedded` must be provided.
-    KmerFormatError
+    TableFormatError
         Provided `kmers` or `embedded` are not formatted correctly for use.
     ValueError
         Provided `method` is not an available choice.
@@ -419,7 +416,7 @@ def embed(
     """
     if not kmers and not embedded:
         msg = f"`kmers` (given: {kmers}) or `embedded` (given: {embedded}) is required"
-        raise KmerEmbeddingError(msg)
+        raise ValueError(msg)
     df = None
     if (
         kmers
@@ -429,16 +426,16 @@ def embed(
     ):
         try:
             df = pd.read_csv(kmers, sep="\t", index_col="contig")
-        except ValueError as err:
-            raise KmerFormatError(embedded) from ValueError
+        except ValueError:
+            raise TableFormatError(embedded)
     elif kmers and type(kmers) is pd.DataFrame:
         df = kmers
     if embedded and os.path.exists(embedded) and os.stat(embedded).st_size > 0:
         logger.debug(f"k-mers frequency embedding already exists {embedded}")
         try:
             df = pd.read_csv(embedded, sep="\t", index_col="contig")
-        except ValueError as err:
-            raise KmerFormatError(embedded) from ValueError
+        except ValueError:
+            raise TableFormatError(embedded)
         return df
 
     if df is None or df.empty:

@@ -30,6 +30,9 @@ import subprocess
 
 import pandas as pd
 
+from autometa.common.exceptions import TableFormatError
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -108,8 +111,8 @@ def parse(bed, out=None, force=False):
         try:
             cols = ["contig", "coverage"]
             return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
-        except ValueError as err:
-            raise ValueError(f"InvalidTableFormat: {out}")
+        except ValueError:
+            raise TableFormatError(out)
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
     names = ["contig", "depth", "bases", "length", "depth_fraction"]
