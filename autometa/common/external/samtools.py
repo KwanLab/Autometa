@@ -27,7 +27,7 @@ import subprocess
 import tempfile
 
 import multiprocessing as mp
-from autometa.common.exceptions import SamtoolsSortError
+from autometa.common.exceptions import ExternalToolError
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +74,8 @@ def sort(sam, bam, cpus=mp.cpu_count()):
                     cmd, stdout=stdout, stderr=stderr, shell=True, check=True
                 )
             except subprocess.CalledProcessError as err:
-                err.cmd = cmd
-                logger.error(f"SamtoolsSortError: {cmd}")
-                raise SamtoolsSortError(err)
+                logger.error(f"Error while running samtools \n cmd: {cmd}")
+                raise ExternalToolError(cmd, err)
             shutil.move(temp_bam, bam)
         os.remove(err)
         os.remove(out)

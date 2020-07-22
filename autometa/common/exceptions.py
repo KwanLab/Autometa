@@ -77,7 +77,7 @@ class BinningError(AutometaException):
         return self.value
 
 
-class SamtoolsSortError(AutometaException):
+class ExternalToolError(AutometaException):
     """
     Raised when samtools sort is not executed properly.
 
@@ -87,8 +87,12 @@ class SamtoolsSortError(AutometaException):
         Base class for other exceptions
     """
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, cmd, err):
+        self.cmd = cmd
+        self.err = err
+
+    def __str__(self):
+        return f"Error while running external utility \n cmd: {self.cmd} \n error: {self.err}"
 
 
 if __name__ == "__main__":
