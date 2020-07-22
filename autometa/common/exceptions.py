@@ -87,8 +87,9 @@ class SamtoolsSortError(AutometaException):
         Base class for other exceptions
     """
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, cmd, err):
+        self.cmd = cmd
+        self.err = err
 
 
 if __name__ == "__main__":

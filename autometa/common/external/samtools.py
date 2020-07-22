@@ -73,9 +73,9 @@ def sort(sam, bam, cpus=mp.cpu_count()):
                 subprocess.run(
                     cmd, stdout=stdout, stderr=stderr, shell=True, check=True
                 )
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as err:
                 logger.error(f"SamtoolsSortError: {cmd}")
-                raise SamtoolsSortError
+                raise SamtoolsSortError(cmd, err)
             shutil.move(temp_bam, bam)
         os.remove(err)
         os.remove(out)
