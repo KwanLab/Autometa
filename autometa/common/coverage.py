@@ -37,6 +37,7 @@ from Bio import SeqIO
 from autometa.common.external import bowtie
 from autometa.common.external import samtools
 from autometa.common.external import bedtools
+from autometa.common.exceptions import SamtoolsSortError
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +172,10 @@ def get(
             bedtools.genomecov(bam, lengths, bed)
 
         def sort_samfile(sam=sam, bam=bam, nproc=nproc):
-            samtools.sort(sam, bam, cpus=nproc)
+            try:
+                samtools.sort(sam, bam, cpus=nproc)
+            except SamtoolsSortError:
+                raise SamtoolsSortError
 
         def align_reads(
             fasta=fasta,

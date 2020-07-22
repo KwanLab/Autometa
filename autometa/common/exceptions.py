@@ -77,6 +77,20 @@ class BinningError(AutometaException):
         return self.value
 
 
+class SamtoolsSortError(AutometaException):
+    """
+    Raised when samtools sort is not executed properly.
+
+    Parameters
+    ----------
+    AutometaError : class
+        Base class for other exceptions
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+
 if __name__ == "__main__":
     import argparse
 
