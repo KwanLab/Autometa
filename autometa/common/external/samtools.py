@@ -68,11 +68,10 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         cmd = f"samtools view -@{cpus} -bS {sam} | samtools sort -@{cpus} -o {temp_bam}"
         logger.debug(f"cmd: {cmd}")
         with open(out, "w") as stdout, open(err, "w") as stderr:
-            proc = subprocess.run(cmd, stdout=stdout, stderr=stderr, shell=True)
             try:
-                proc.check_returncode()
+                subprocess.run(cmd, stdout=stdout, stderr=stderr, shell=True, check=True)
             except subprocess.CalledProcessError as err:
-                print(f"Error while running samtools sort \n cmd: {cmd}")
+                logger.error(f"SamtoolsSortError: {cmd}")
                 raise err
             shutil.move(temp_bam, bam)
         os.remove(err)
