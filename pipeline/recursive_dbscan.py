@@ -551,7 +551,7 @@ if has_taxonomy_info and data_size > 50:
 				subset_table = local_current_table.loc[local_current_table[taxonomic_level] == classification] # COPY of local_current_table
 
 				while True:
-					if len(subset_table.index) < 1:
+					if subset_table.empty:
 						break
 					round_counter += 1
 					logger.info('Running DBSCAN round ' + str(round_counter))
@@ -574,7 +574,6 @@ if has_taxonomy_info and data_size > 50:
 						table_indices = local_current_table[local_current_table['contig'] == contig].index.tolist()
 						master_table.at[table_indices[0], 'cluster'] = new_cluster_name
 
-
 				# Add unclustered_table to combined unclustered dataframe
 				unclustered_table = unclustered_table.append(local_unclustered_table)
 
@@ -583,6 +582,8 @@ if has_taxonomy_info and data_size > 50:
 else:
 	for dimensions in [2, 3]:
 		while True:
+			if local_current_table.empty:
+				break
 			round_counter += 1
 			logger.info('Running DBSCAN round ' + str(round_counter))
 
