@@ -85,7 +85,7 @@ class Markers:
             True if `self.hmmscan_fp` exists and is not empty else False.
 
         """
-        if os.path.exists(self.hmmscan_fp) and os.stat(self.hmmscan_fp).st_size > 0:
+        if os.path.exists(self.hmmscan_fp) and os.path.getsize(self.hmmscan_fp):
             return True
         return False
 
@@ -100,7 +100,7 @@ class Markers:
 
 
         """
-        if os.path.exists(self.markers_fp) and os.stat(self.markers_fp).st_size > 0:
+        if os.path.exists(self.markers_fp) and os.path.getsize(self.markers_fp):
             return True
         return False
 

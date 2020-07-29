@@ -389,8 +389,12 @@ class Metagenome:
 
         Parameters
         ----------
-        cutoff : int
+        out : str
+            Path to write length filtered output fasta file.
+        cutoff : int, optional
             Lengths above or equal to `cutoff` that will be retained (the default is 3000).
+        force : bool, optional
+            Overwrite existing `out` file (the default is False).
 
         Returns
         -------

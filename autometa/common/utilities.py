@@ -532,15 +532,6 @@ def merge_checkpoints(old_checkpoint_fpath, new_checkpoints, overwrite=False):
     return df
 
 
-def is_checkpoint(output):
-    if not os.path.getsize(output):
-        return False
-    dirpath = os.path.dirname(os.path.realpath(output))
-    checkpoints_fpath = os.path.join(dirpath, "checkpoints.tsv")
-    checkpoints_df = get_existing_checkpoints(checkpoints_fpath)
-    return True
-
-
 def timeit(func):
     """Time function run time (to be used as a decorator). I.e. when defining a
     function use python's decorator syntax

@@ -223,7 +223,7 @@ class Databases:
                 f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
         if not self.internet_is_connected():
-            raise ConnectionError("No internet is available")
+            raise ConnectionError("Cannot connect to the internet")
         if section == "ncbi":
             host = self.config.get(section, "host")
             ftp_fullpath = self.config.get("checksums", option)

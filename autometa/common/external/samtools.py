@@ -57,7 +57,7 @@ def sort(sam, bam, nproc=mp.cpu_count()):
 
     if type(nproc) is not int or nproc <= 0:
         raise TypeError(f"nproc must be an integer greater than zero! Given: {nproc}")
-    if not os.path.exists(sam) or os.stat(sam).st_size == 0:
+    if not os.path.exists(sam) or not os.path.getsize(sam):
         raise FileNotFoundError(
             f"The specified path: {sam} is either incorrect or the file is empty"
         )

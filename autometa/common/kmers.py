@@ -118,16 +118,16 @@ def load(kmers_fpath):
     -------
     FileNotFoundError
         `kmers_fpath` does not exist or is empty
-    ValueError
+    TableFormatError
         `kmers_fpath` file format is invalid
 
     """
-    if not os.path.exists(kmers_fpath) or os.stat(kmers_fpath).st_size == 0:
+    if not os.path.exists(kmers_fpath) or not os.path.getsize(kmers_fpath):
         raise FileNotFoundError(kmers_fpath)
     try:
         df = pd.read_csv(kmers_fpath, sep="\t", index_col="contig")
-    except ValueError as err:
-        raise ValueError(f"contig column not found in {kmers_fpath}!")
+    except ValueError:
+        raise TableFormatError(f"contig column not found in {kmers_fpath}!")
     return df
 
 
@@ -422,20 +422,20 @@ def embed(
         kmers
         and type(kmers) is str
         and os.path.exists(kmers)
-        and os.stat(kmers).st_size > 0
+        and os.path.getsize(kmers)
     ):
         try:
             df = pd.read_csv(kmers, sep="\t", index_col="contig")
         except ValueError:
-            raise TableFormatError(embedded)
+            raise TableFormatError(f"contig column not found in {kmers}")
     elif kmers and type(kmers) is pd.DataFrame:
         df = kmers
-    if embedded and os.path.exists(embedded) and os.stat(embedded).st_size > 0:
+    if embedded and os.path.exists(embedded) and os.path.getsize(embedded):
         logger.debug(f"k-mers frequency embedding already exists {embedded}")
         try:
             df = pd.read_csv(embedded, sep="\t", index_col="contig")
         except ValueError:
-            raise TableFormatError(embedded)
+            raise TableFormatError(f"contig column not found in {embedded}")
         return df
 
     if df is None or df.empty:
@@ -448,7 +448,7 @@ def embed(
     choices = {"umap", "sksne", "bhsne"}
     if method not in choices:
         raise ValueError(
-            f'{method} not in embedding methods. Choices: {", ".join(choices)}'
+            f"{method} not in embedding methods. Choices: {', '.join(choices)}"
         )
     # PCA
     n_samples, n_dims = df.shape
