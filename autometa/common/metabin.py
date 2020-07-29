@@ -242,15 +242,14 @@ class MetaBin:
         Returns
         -------
         int
-            Minimum contig length to cover `quality_measure` of genome (i.e. length
-            weighted median)
+            Minimum contig length to cover `quality_measure` of genome (i.e. percentile contig length)
 
         """
         target_size = self.size * quality_measure
-        lengths = []
+        lengths = 0
         for length in sorted([len(record) for record in self.seqrecords], reverse=True):
-            lengths.append(length)
-            if sum(lengths) > target_size:
+            lengths += length
+            if lengths > target_size:
                 return length
 
     @property

@@ -98,9 +98,8 @@ def isCommonAncestor(potentialParentTaxid, childTaxid, taxidDictionary):
 
 
 def lowest_majority(contigDictionary, taxidDictionary):
-    taxid_totals = (
-        {}
-    )  # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
+    # Dictionary of dictionary, keyed by rank then by taxid, holds totals accounting for whole taxid paths
+    taxid_totals = {}
 
     for rank in rank_priority:
         if rank in contigDictionary:

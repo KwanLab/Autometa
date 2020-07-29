@@ -144,8 +144,7 @@ def fragmentation_metric(df, quality_measure=0.50):
         Returns
         -------
         int
-            Minimum contig length to cover `quality_measure` of genome (i.e. length
-            weighted median)
+            Minimum contig length to cover `quality_measure` of genome (i.e. percentile contig length)
 
         """
     target_size = df.length.sum() * quality_measure
@@ -171,7 +170,7 @@ def get_metabin_stats(bin_df, markers_fpath, assembly):
     Returns
     -------
     pd.DataFrame
-        dataframe consisting of various metabin statistics indexed by column.
+        dataframe consisting of various metabin statistics indexed by cluster.
     """
     stats = []
     markers_df = Markers.load(markers_fpath)
@@ -211,9 +210,11 @@ def get_metabin_stats(bin_df, markers_fpath, assembly):
                 "length_weighted_gc": length_weighted_gc,
                 "min_GC": dff.GC.min(),
                 "max_GC": dff.GC.max(),
+                "std_GC": dff.GC.std(),
                 "length_weighted_coverage": length_weighted_coverage,
                 "min_coverage": dff.coverage.min(),
                 "max_coverage": dff.coverage.max(),
+                "std_coverage": dff.coverage.max(),
                 "completeness": completeness,
                 "purity": purity,
                 "num_total_markers": total_markers,
