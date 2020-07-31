@@ -175,6 +175,7 @@ def get(
             try:
                 samtools.sort(sam, bam, cpus=nproc)
             except ExternalToolError:
+                logger.error(f"Error while running samtools")
                 raise ExternalToolError
 
         def align_reads(
