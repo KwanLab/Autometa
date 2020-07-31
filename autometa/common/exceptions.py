@@ -35,7 +35,7 @@ class AutometaError(Exception):
 
 class KmerFormatError(AutometaError):
     """
-    KmerFormatError exception class.
+    Raised when either kmer_fpath file format is invalid or provided kmers or embedded are not formatted correctly for use.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ class KmerFormatError(AutometaError):
 
 class KmerEmbeddingError(AutometaError):
     """
-    KmerEmbeddingError exception class.
+    Raisede when either kmers or embedded are not provided.
 
     Parameters
     ----------
@@ -78,7 +78,7 @@ class KmerEmbeddingError(AutometaError):
 
 class BinningError(AutometaError):
     """
-    BinningError exception class.
+    Raised when no marker information is availble for contigs to be binned or when dataframe is missing kmer/coverage annotations
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ class DatabaseOutOfSyncError(AutometaError):
         """
         message = """
 
-        NCBI databases nodes.dmp, names.dmp merged.dmp, prot.accession2taxid.gz and nr.gz are are out of sync with each other
+        NCBI databases nodes.dmp, names.dmp merged.dmp, prot.accession2taxid.gz and nr.gz are out of sync with each other
 
         Up-to-date databases may be downloaded at:
 

@@ -125,7 +125,7 @@ class NCBI:
     def name(self, taxid, rank=None):
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
-        deprecated, suppressed, withdrawn from NCBI (basically old) the updated rank will be retrieved
+        deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
 
         Parameters
         ----------
@@ -143,8 +143,8 @@ class NCBI:
 
         Raises
         ------
-        ValueError
-            Provided `taxid` is not a positive integer
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -161,6 +161,7 @@ class NCBI:
             if ancestor_rank == rank:
                 return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
+        # At this point, taxid must equal 1 (root)
         return self.names.get(ancestor_taxid, "unclassified")
 
     def lineage(self, taxid, canonical=True):
@@ -173,6 +174,7 @@ class NCBI:
             `taxid` in nodes.dmp, whose lineage is being returned
         canonical : bool, optional
             Lineage includes both canonical and non-canonical ranks when False, and only the canonical ranks when True
+            Canonical ranks include : species, genus , family, order, class, phylum, superkingdom, root
 
         Returns
         -------
@@ -257,8 +259,8 @@ class NCBI:
 
         Raises
         ------
-        ValueError
-            Provided `taxid` is not a positive integer
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -269,7 +271,7 @@ class NCBI:
     def parent(self, taxid):
         """
         Retrieve the parent taxid of provided `taxid`.If the `taxid` is deprecated, suppressed,
-        withdrawn from NCBI (basically old) the updated rank will be retrieved
+        withdrawn from NCBI (basically old) the updated parent will be retrieved
 
         Parameters
         ----------
@@ -280,6 +282,11 @@ class NCBI:
         -------
         int
             Parent taxid if found in nodes.dmp otherwise 1
+
+        Raises
+        ------
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -388,11 +395,7 @@ class NCBI:
     def convert_taxid_dtype(self, taxid):
         """
         Converts the given `taxid` to integer. It also checks if the given `taxid` is a positive integer and
-        if is is present in either nodes.dmp or names.dmp.
-
-        NOTE
-        ----
-        Function assumes that if the `taxid` is present in either nodes.dmp or names.dmp, then it is present in both of them.
+        if is is present in either nodes.dmp or names.dmp or merged.dmp.
 
         Parameters
         ----------

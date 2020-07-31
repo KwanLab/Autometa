@@ -408,7 +408,7 @@ def add_taxids(hits, database, verbose=True):
             taxid = acc2taxids.get(sseqid)
             if not taxid:
                 raise DatabaseOutOfSyncError(
-                    f"{sseqid} is either deprecated/suppressed/removed"
+                    f"{sseqid} is either a new taxid not present in prot.accession2taxid or is deprecated/suppressed/removed"
                 )
             hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
