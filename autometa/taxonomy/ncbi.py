@@ -149,6 +149,8 @@ class NCBI:
         try:
             taxid = self.convert_taxid_dtype(taxid)
         except DatabaseOutOfSyncError:
+            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+            logger.error(err_message)
             taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
@@ -265,6 +267,8 @@ class NCBI:
         try:
             taxid = self.convert_taxid_dtype(taxid)
         except DatabaseOutOfSyncError:
+            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+            logger.error(err_message)
             taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
@@ -291,6 +295,8 @@ class NCBI:
         try:
             taxid = self.convert_taxid_dtype(taxid)
         except DatabaseOutOfSyncError:
+            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+            logger.error(err_message)
             taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
@@ -439,13 +445,11 @@ class NCBI:
         if taxid not in self.names and taxid not in self.nodes:
             if taxid not in self.merged:
                 err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp or merged.dmp."
-                logger.warning(err_message)
                 raise DatabaseOutOfSyncError(err_message)
             else:
                 taxid = self.merged[taxid]
                 if taxid not in self.names and taxid not in self.nodes:
                     err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
-                    logger.warning(err_message)
                     raise DatabaseOutOfSyncError(err_message)
         return taxid
 
