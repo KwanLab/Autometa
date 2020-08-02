@@ -148,9 +148,8 @@ class NCBI:
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError:
-            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
-            logger.error(err_message)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
             taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
@@ -266,9 +265,8 @@ class NCBI:
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError:
-            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
-            logger.error(err_message)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
             taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
@@ -294,9 +292,8 @@ class NCBI:
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError:
-            err_message = f"Databases out of sync. Taxid ({taxid}) not found in nodes.dmp or names.dmp!"
-            logger.error(err_message)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
             taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
