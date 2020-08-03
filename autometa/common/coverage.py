@@ -172,11 +172,7 @@ def get(
             bedtools.genomecov(bam, lengths, bed)
 
         def sort_samfile(sam=sam, bam=bam, nproc=nproc):
-            try:
-                samtools.sort(sam, bam, cpus=nproc)
-            except ExternalToolError:
-                logger.error(f"Error while running samtools")
-                raise ExternalToolError
+            samtools.sort(sam, bam, cpus=nproc)
 
         def align_reads(
             fasta=fasta,
