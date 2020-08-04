@@ -180,9 +180,6 @@ def entrypoint():
 
     try:
         main(args)
-    except ExternalToolError:
-        logger.error(f"Error while running an external utility.")
-        raise ExternalToolError
     except KeyboardInterrupt:
         logger.info("User cancelled run. Exiting...")
         sys.exit(1)

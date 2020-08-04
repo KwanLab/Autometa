@@ -92,7 +92,7 @@ class ExternalToolError(AutometaException):
         self.err = err
 
     def __str__(self):
-        return f"Error while running external utility \n cmd: {self.cmd} \n error: {self.err}"
+        return f"{self.err}\ncommand:\n{self.cmd}"
 
 
 if __name__ == "__main__":
