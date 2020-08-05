@@ -103,6 +103,11 @@ def get_usage(argparse_lines):
     -------
     wrapped_lines : string
         indented arparse output after running the `--help` command
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        Error while running --help on these argparse lines
     """
     __, tmp_fpath = tempfile.mkstemp()
     with open(tmp_fpath, "w") as outfh:
