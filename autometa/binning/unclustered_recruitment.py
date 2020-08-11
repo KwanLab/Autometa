@@ -79,6 +79,8 @@ def get_taxa_features(fpath, dimensions=None):
     ----------
     fpath : str
         Path to taxonomy table
+    dimensions : int, optional
+        Number of principal components to reduce the taxa one-hot encoding down to. By default will not reducy by PCA.
 
     Returns
     -------
@@ -90,7 +92,6 @@ def get_taxa_features(fpath, dimensions=None):
     df = pd.read_csv(fpath, sep="\t", index_col="contig")
     cols = ["phylum", "class", "order", "family", "genus", "species"]
     encoded_df = pd.get_dummies(df[cols], columns=cols, prefix=cols)
-    # encoded_df = pd.get_dummies(df)
     if dimensions:
         pca = PCA(dimensions)
         X = encoded_df.to_numpy()
@@ -115,7 +116,6 @@ def get_kmer_features(fpath, dimensions=None):
         shape=(n_contigs, dimensions), index=contig, cols=range([0, dimensions])
     """
     df = pd.read_csv(fpath, sep="\t", index_col="contig")
-    # logger.debug(f"PCA dimension reduction (dimensions={dimensions})")
     if dimensions:
         pca = PCA(n_components=dimensions)
         X = df.to_numpy()
@@ -282,7 +282,7 @@ def split_and_subset_train_data(bin_data, features, labels):
 
 
 def get_decision_tree_predictions(
-    X, y, y_test, bin_data, num_classifications=10, seed=42
+    X, y, X_test, bin_data, num_classifications=10, seed=42
 ):
     """Get predictions using DecisionTreeClassifier.
 
@@ -292,8 +292,8 @@ def get_decision_tree_predictions(
         Clustered contig features to train the classifier.
     y : numpy.ndarray, shape=(n_labels, )
         Clustered contig labels to train the classifier.
-    y_test : numpy.ndarray, shape=(n_contigs, n_features)
-        Unclustered contig features for input to ``classifier.predict(y_test)``
+    X_test : numpy.ndarray, shape=(n_contigs, n_features)
+        Unclustered contig features for input to ``classifier.predict(X_test)``
     bin_data : namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
         Features and bin labels split and subset by clustered/unclustered contigs.
     num_classifications : int, optional
@@ -309,7 +309,7 @@ def get_decision_tree_predictions(
         X_train, _, y_train, _ = train_test_split(X, y, test_size=0.5, random_state=i)
         clf = DecisionTreeClassifier(random_state=np.random.RandomState(seed))
         clf.fit(X_train, y_train)
-        prediction = clf.predict(y_test)
+        prediction = clf.predict(X_test)
         predictions.append(prediction)
 
     summed_predictions = np.sum(predictions, axis=0)
@@ -320,7 +320,7 @@ def get_decision_tree_predictions(
     )
 
 
-def get_random_forest_predictions(X, y, y_test, bin_data, num_estimators=10, seed=42):
+def get_random_forest_predictions(X, y, X_test, bin_data, num_estimators=10, seed=42):
     """Retrieve predictions using RandomForestClassifier.
 
     Note
@@ -335,8 +335,8 @@ def get_random_forest_predictions(X, y, y_test, bin_data, num_estimators=10, see
         Clustered contig features to train the classifier.
     y : numpy.ndarray, shape=(n_labels, )
         Clustered contig labels to train the classifier.
-    y_test : numpy.ndarray, shape=(n_contigs, n_features)
-        Unclustered contig features for input to ``classifier.predict(y_test)``
+    X_test : numpy.ndarray, shape=(n_contigs, n_features)
+        Unclustered contig features for input to ``classifier.predict(X_test)``
     bin_data : namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
         Features and bin labels split and subset by clustered/unclustered contigs.
     num_estimators : int, optional
@@ -354,7 +354,7 @@ def get_random_forest_predictions(X, y, y_test, bin_data, num_estimators=10, see
         random_state=np.random.RandomState(seed),
     )
     clf.fit(X, y)
-    prediction = clf.predict(y_test)
+    prediction = clf.predict(X_test)
     return pd.DataFrame(
         prediction,
         index=bin_data.unclustered.features.index,
@@ -395,19 +395,19 @@ def get_confidence_filtered_predictions(
     """
     X = bin_data.clustered.features.to_numpy()
     y = bin_data.clustered.target.to_numpy()
-    y_test = bin_data.unclustered.features.to_numpy()
+    X_test = bin_data.unclustered.features.to_numpy()
 
     logger.debug(
-        f"getting predictions from {X.shape[0]} contigs with {X.shape[1]} features for {y_test.shape[0]} unclustered contigs"
+        f"getting predictions from {X.shape[0]} contigs with {X.shape[1]} features for {X_test.shape[0]} unclustered contigs"
     )
 
     if classifier == "decision_tree":
         df = get_decision_tree_predictions(
-            X, y, y_test, bin_data, num_classifications=num_classifications, seed=seed
+            X, y, X_test, bin_data, num_classifications=num_classifications, seed=seed
         )
     elif classifier == "random_forest":
         df = get_random_forest_predictions(
-            X, y, y_test, bin_data, num_estimators=num_classifications, seed=seed
+            X, y, X_test, bin_data, num_estimators=num_classifications, seed=seed
         )
     else:
         raise NotImplementedError(classifier)
