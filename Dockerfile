@@ -1,5 +1,5 @@
 FROM continuumio/anaconda
-LABEL Jason C. Kwan "jason.kwan@wisc.edu"
+LABEL maintainer="jason.kwan@wisc.edu"
 
 # Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
 #
