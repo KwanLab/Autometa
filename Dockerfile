@@ -1,5 +1,5 @@
 FROM continuumio/anaconda
-MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
+LABEL Jason C. Kwan "jason.kwan@wisc.edu"
 
 # Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
 #
@@ -28,6 +28,6 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6
 RUN tar -vxjf samtools-1.6.tar.bz2
 RUN cd samtools-1.6 && ./configure --prefix=/samtools && make && make install
 RUN git clone https://github.com/danielfrg/tsne.git && cd tsne && python setup.py install
-RUN git clone https://github.com/KwanLab/Autometa.git && cd autometa/pipeline && python setup_lca_functions.py build_ext --inplace
+RUN git clone https://github.com/KwanLab/Autometa.git && cd Autometa/pipeline && python setup_lca_functions.py build_ext --inplace
 
-ENV PATH="/diamond:/autometa/pipeline:/samtools/bin:${PATH}"
+ENV PATH="/diamond:/Autometa/pipeline:/samtools/bin:${PATH}"
