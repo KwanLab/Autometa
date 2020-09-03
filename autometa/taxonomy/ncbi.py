@@ -20,23 +20,22 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Utilities file containing functions useful for handling NCBI taxonomy databases
+File containing definition of the NCBI class and containing functions useful for handling NCBI taxonomy databases
 """
 
 
 import logging
 import os
-import gzip
+import string
 import subprocess
 import sys
-import pickle
 
-import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle, unpickle, timeit
+from autometa.common.exceptions import DatabaseOutOfSyncError
 
 
 logger = logging.getLogger(__name__)
@@ -60,6 +59,16 @@ class NCBI:
     ]
 
     def __init__(self, dirpath, verbose=False):
+        """
+        Instantiates the NCBI class
+
+        Parameters
+        ----------
+        dirpath : str
+            Path to the database directory
+        verbose : bool, optional
+            log progress to terminal, by default False
+        """
         self.dirpath = dirpath
         self.verbose = verbose
         self.disable = not self.verbose
@@ -88,76 +97,88 @@ class NCBI:
         self.merged = self.parse_merged()
 
     def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        # Perhaps should place summary here of files that do or do not exist?
-        return self.dirpath
-
-    def name(self, taxid, rank=None):
-        """return `taxid` name
-
-        Parameters
-        ----------
-        taxid : int
-            Description of parameter `taxid`.
-        rank : str
-            If  provided, will return `taxid` name at `rank` (the default is None).
-            Must be a canonical rank.
-            Choices: species, genus, family, order, class, phylum, superkingdom
+        """
+        Operator overloading to return the string representation of the class object
 
         Returns
         -------
         str
-            Name of provided `taxid`.
+            String representation of the class object
+        """
+        return str(self)
+
+    def __str__(self):
+        """
+        Operator overloading to return the directory path of the class object
+
+        Returns
+        -------
+        str
+            Directory path of the class object
+        """
+        # Perhaps should place summary here of files that do or do not exist?
+        return self.dirpath
+
+    def name(self, taxid, rank=None):
+        """
+        Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
+        deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
+
+        Parameters
+        ----------
+        taxid : int
+            `taxid` whose name is being returned
+        rank : str, optional
+            If  provided, will return `taxid` name at `rank`, by default None
+            Must be a canonical rank, choices: species, genus, family, order, class, phylum, superkingdom
+            Eg. self.name(562, 'genus') would return 'Escherichia', where 562 is the taxid for Escherichia coli
+
+        Returns
+        -------
+        str
+            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
 
         Raises
-        -------
-        ValueError
-            Provided `taxid` must be an integer
-
+        ------
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
-        # If taxid is not found in names.dmp, will return None
         try:
-            taxid = int(taxid)
-        except ValueError as err:
-            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
-            return None
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
         if rank not in set(NCBI.CANONICAL_RANKS):
             logger.warning(f"{rank} not in canonical ranks!")
-            return None
+            return "unclassified"
         ancestor_taxid = taxid
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
                 return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
+        # At this point, taxid must equal 1 (root)
+        return self.names.get(ancestor_taxid, "unclassified")
 
     def lineage(self, taxid, canonical=True):
-        """Returns the lineage of taxids encountered when traversing to root
+        """
+        Returns the lineage of `taxids` encountered when traversing to root
 
         Parameters
         ----------
         taxid : int
-            `taxid` in nodes.dmp
+            `taxid` in nodes.dmp, whose lineage is being returned
+        canonical : bool, optional
+            Lineage includes both canonical and non-canonical ranks when False, and only the canonical ranks when True
+            Canonical ranks include : species, genus , family, order, class, phylum, superkingdom, root
 
         Returns
         -------
         ordered list of dicts
-            [{'taxid':taxid, rank':rank,'name':'name'}, ...]
-
-        Raises
-        -------
-        ValueError
-            Provided `taxid` is not an integer
+            [{'taxid':taxid, 'rank':rank,'name':name}, ...]
         """
-        try:
-            taxid = int(taxid)
-        except ValueError as err:
-            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
-            return None
         lineage = []
         while taxid != 1:
             if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
@@ -170,8 +191,16 @@ class NCBI:
         return lineage
 
     def get_lineage_dataframe(self, taxids, fillna=True):
-        """Given an iterable of taxids generate a pandas DataFrame of their canonical
-        lineages.
+        """
+        Given an iterable of taxids generate a pandas DataFrame of their canonical
+        lineages
+
+        Parameters
+        ----------
+        taxids : iterable
+            `taxids` whose lineage dataframe is being returned
+        fillna : bool, optional
+            Whether to fill the empty cells  with 'unclassified' or not, default True
 
         Returns
         -------
@@ -179,103 +208,101 @@ class NCBI:
             index = taxid
             columns = [superkingdom,phylum,class,order,family,genus,species]
 
-        NOTE: If you would like to merge the returned DataFrame with another
-        DataFrame... Let's say where you retrieved your taxids...
+        Example
+        -------
 
-        merged_df = pd.merge(
-            your_df,
-            this_df,
-            how='left',
-            left_on=<taxid_column>,
-            right_index=True)
+        If you would like to merge the returned DataFrame ('this_df') with another
+        DataFrame ('your_df'). Let's say where you retrieved your taxids:
 
+        .. code-block:: python
+
+            merged_df = pd.merge(
+                left=your_df,
+                right=this_df,
+                how='left',
+                left_on=<taxid_column>,
+                right_index=True)
         """
         canonical_ranks = [r for r in reversed(NCBI.CANONICAL_RANKS)]
         canonical_ranks.remove("root")
         taxids = list(set(taxids))
-        taxids_ = {}
+        ranked_taxids = {}
         for rank in canonical_ranks:
             for taxid in taxids:
                 name = self.name(taxid, rank=rank)
-                if taxid not in taxids_:
-                    taxids_.update({taxid: {rank: name}})
+                if taxid not in ranked_taxids:
+                    ranked_taxids.update({taxid: {rank: name}})
                 else:
-                    taxids_[taxid].update({rank: name})
-        df = pd.DataFrame(taxids_).transpose()
+                    ranked_taxids[taxid].update({rank: name})
+        df = pd.DataFrame(ranked_taxids).transpose()
         df.index.name = "taxid"
         if fillna:
             df.fillna(value="unclassified", inplace=True)
         return df
 
     def rank(self, taxid):
-        """Short summary.
+        """
+        Return the respective rank of provided `taxid`. If the `taxid` is deprecated, suppressed,
+        withdrawn from NCBI (basically old) the updated rank will be retrieved
 
         Parameters
         ----------
         taxid : int
-            `taxid` to retrieve rank from `nodes`.
+            `taxid` to retrieve rank from nodes.dmp
 
         Returns
         -------
         str
-            rank name
+            rank name if taxid is found in nodes.dmp else "unclassified"
 
         Raises
-        -------
-        ValueError
-            Provided `taxid` is not an integer
-
+        ------
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
-        # If taxid is not found in nodes.dmp, will return 'unclassified'
         try:
-            taxid = int(taxid)
-        except ValueError as err:
-            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
-            return None
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
     def parent(self, taxid):
-        """Retrieve the parent taxid of provided taxid
+        """
+        Retrieve the parent taxid of provided `taxid`. If the `taxid` is deprecated, suppressed,
+        withdrawn from NCBI (basically old) the updated parent will be retrieved
 
         Parameters
         ----------
         taxid : int
-            Description of parameter `taxid`.
+           child taxid to retrieve parent
 
         Returns
         -------
         int
-            parent taxid
+            Parent taxid if found in nodes.dmp otherwise 1
+
+        Raises
+        ------
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
-        # If taxid is not found in nodes.dmp, will return 1
         try:
-            taxid = int(taxid)
-        except ValueError as err:
-            logger.error(f"Taxid must be an integer! {taxid} type --> {type(taxid)}")
-            return None
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
     # @timeit
     def parse_names(self):
-        """Short summary.
-
-        Parameters
-        ----------
-        names_fpath : str
-            </path/to/names.dmp> `names_fpath`.
-        verbose : boolean
-            prints progress to terminal (the default is False).
+        """
+        Parses through names.dmp database and loads taxids with scientific names
 
         Returns
         -------
         dict
             {taxid:name, ...}
-
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
-
         """
         if self.verbose:
             logger.debug(f"Processing names from {self.names_fpath}")
@@ -286,8 +313,7 @@ class NCBI:
             taxid = int(taxid)
             name = name.lower()
             # Only add scientific name entries
-            is_scientific = classification == "scientific name"
-            if is_scientific:
+            if classification == "scientific name":
                 names.update({taxid: name})
         fh.close()
         if self.verbose:
@@ -296,23 +322,14 @@ class NCBI:
 
     # @timeit
     def parse_nodes(self):
-        """Short summary.
-
-        Parameters
-        ----------
-        verbose : boolean
-            prints progress to terminal (the default is False).
+        """
+        Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.NCBI.parent`, :func:`autometa.taxonomy.ncbi.NCBI.rank`
+        Note: This is performed when a new NCBI class instance is constructed
 
         Returns
         -------
         dict
             {child_taxid:{'parent':parent_taxid,'rank':rank}, ...}
-
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
-
         """
         if self.verbose:
             logger.debug(f"Processing nodes from {self.nodes_fpath}")
@@ -330,23 +347,14 @@ class NCBI:
         return nodes
 
     def parse_merged(self):
-        """Short summary.
-
-        Parameters
-        ----------
-        verbose : boolean
-            prints progress to terminal (the default is False).
+        """
+        Parse the merged.dmp database
+        Note: This is performed when a new NCBI class instance is constructed
 
         Returns
         -------
         dict
-            {child_taxid:{'parent':parent_taxid,'rank':rank}, ...}
-
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
-
+            {old_taxid: new_taxid, ...}
         """
         if self.verbose:
             logger.debug(f"Processing nodes from {self.merged_fpath}")
@@ -362,62 +370,86 @@ class NCBI:
             logger.debug("merged loaded")
         return merged
 
-    def is_common_ancestor(self, parent_taxid, child_taxid):
-        """Determines whether the provided taxids have a non-root common ancestor
+    def is_common_ancestor(self, taxid_A, taxid_B):
+        """
+        Determines whether the provided taxids have a non-root common ancestor
 
         Parameters
         ----------
-        parent_taxid : int
-            Description of parameter `parent_taxid`.
-        child_taxid : int
-            Description of parameter `child_taxid`.
+        taxid_A : int
+            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+        taxid_B : int
+            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
         boolean
-            True if taxids share a common ancestor and False otherwise
+            True if taxids share a common ancestor else False
         """
-        ancestor_taxid = child_taxid
-        while ancestor_taxid != 1:
-            if parent_taxid == ancestor_taxid:
-                return True
-            ancestor_taxid = self.parent(ancestor_taxid)
-        return False
+        lineage_a_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_A)}
+        lineage_b_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_B)}
+        common_ancestor = lineage_b_taxids.intersection(lineage_a_taxids)
+        common_ancestor.discard(1)  # This discards root
+        return True if common_ancestor else False
 
+    def convert_taxid_dtype(self, taxid):
+        """
+        1. Converts the given `taxid` to an integer and checks whether it is positive.
+        2. Checks whether `taxid` is present in both nodes.dmp and names.dmp.
+        3a. If (2) is false, will check for corresponding `taxid` in merged.dmp and convert to this then redo (2).
+        3b. If (2) is true, will return converted taxid.
 
-def main():
-    import argparse
-    import logging as logger
+        Parameters
+        ----------
+        taxid : int
+            identifer for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
-    logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG,
-    )
-    parser = argparse.ArgumentParser(description="Autometa NCBI utilities class")
-    parser.add_argument("ncbi", help="</path/to/ncbi/database/directory>")
-    parser.add_argument(
-        "--query-taxid",
-        help="query taxid to test NCBI class functionality",
-        default=1222,
-        type=int,
-    )
-    parser.add_argument(
-        "--verbose", help="add verbosity", action="store_true", default=True
-    )
-    args = parser.parse_args()
-    ncbi = NCBI(args.ncbi, args.verbose)
-    query_taxid_parent = ncbi.parent(taxid=args.query_taxid)
-    logger.info(
-        f"{args.query_taxid} Name: {ncbi.name(taxid=args.query_taxid)}\n"
-        f'{args.query_taxid} Order: {ncbi.name(taxid=args.query_taxid, rank="order")}\n'
-        f'{args.query_taxid} Class: {ncbi.name(taxid=args.query_taxid, rank="class")}\n'
-        f"{args.query_taxid} Rank: {ncbi.rank(taxid=args.query_taxid)}\n"
-        f"{args.query_taxid} Lineage:\n{ncbi.lineage(taxid=args.query_taxid)}\n"
-        f"{args.query_taxid} is_common_ancestor {query_taxid_parent}: "
-        f"{ncbi.is_common_ancestor(parent_taxid=query_taxid_parent, child_taxid=args.query_taxid)}\n"
-    )
+        Returns
+        -------
+        int
+            `taxid` if the `taxid` is a positive integer and present in either nodes.dmp or names.dmp or
+            taxid recovered from merged.dmp
+
+        Raises
+        ------
+        ValueError
+            Provided `taxid` is not a positive integer
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+        """
+        # Checking taxid instance format
+        # This checks if an integer has been added as str, eg. "562"
+        if isinstance(taxid, str):
+            invalid_chars = set(string.punctuation + string.ascii_letters)
+            invalid_chars.discard(".")
+            if set(taxid).intersection(invalid_chars) or taxid.count(".") > 1:
+                raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")
+            taxid = float(taxid)
+        # a boolean check is needed as they will evaluate silently to 0 or 1 when cast as ints. FALSE=0, TRUE=1
+        # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9
+        # is_integer only takes float as input else raises error, thus isinstance( ,float) is used before it to make sure a float is being passed
+        if isinstance(taxid, bool) or (
+            isinstance(taxid, float) and not taxid.is_integer()
+        ):
+            raise ValueError(f"taxid must be an integer! Given: {taxid}")
+        taxid = int(taxid)
+        if taxid <= 0:
+            raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
+        # Checking databases
+        if taxid not in self.names and taxid not in self.nodes:
+            if taxid not in self.merged:
+                err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp or merged.dmp."
+                raise DatabaseOutOfSyncError(err_message)
+            else:
+                taxid = self.merged[taxid]
+                if taxid not in self.names and taxid not in self.nodes:
+                    err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+                    raise DatabaseOutOfSyncError(err_message)
+        return taxid
 
 
 if __name__ == "__main__":
-    main()
+    print("file containing Autometa NCBI utilities class")
+    import sys
+
+    sys.exit(1)
