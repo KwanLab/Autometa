@@ -188,7 +188,7 @@ class NCBI:
                 taxid = self.parent(taxid)
                 continue
             lineage.append(
-                {"taxid": taxid, "name": self.name(taxid), "rank": self.rank(taxid),}
+                {"taxid": taxid, "name": self.name(taxid), "rank": self.rank(taxid)}
             )
             taxid = self.parent(taxid)
         return lineage
