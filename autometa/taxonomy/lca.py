@@ -364,6 +364,7 @@ class LCA(NCBI):
 
         """
         lcas = {}
+        root_taxid = 1
         n_qseqids = len(hits)
         desc = f"Determining {n_qseqids:,} qseqids' lowest common ancestors"
         for qseqid, hit in tqdm(
@@ -377,15 +378,19 @@ class LCA(NCBI):
             num_taxids = len(taxids)
             while not lca:
                 if num_taxids >= 2:
-                    lca = functools.reduce(
-                        lambda taxid1, taxid2: self.lca(node1=taxid1, node2=taxid2),
-                        taxids,
-                    )
-                if num_taxids == 1:
+                    try:
+                        lca = functools.reduce(
+                            lambda taxid1, taxid2: self.lca(node1=taxid1, node2=taxid2),
+                            taxids,
+                        )
+                    except ValueError:
+                        logger.error(f"Missing either {taxid1} or {taxid2} taxid, during LCA retrieval")
+                    lca = root_taxid
+                if num_taxids == root_taxid:
                     lca = taxids.pop()
                 # Exception handling where input for qseqid contains no taxids
                 if num_taxids == 0:
-                    lca = 1
+                    lca = root_taxid
             lcas.update({qseqid: lca})
         return lcas
 

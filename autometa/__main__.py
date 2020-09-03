@@ -118,7 +118,7 @@ def main(args):
     # Configure AutometaUser
     # TODO: master from WorkQueue is AutometaUser
     user = AutometaUser(nproc=args.cpus)
-    user.configure(dryrun=args.check_dependencies)
+    user.configure(dryrun=args.check_dependencies, update=args.update)
 
     for config in args.config:
         # TODO: Add directions to master from WorkQueue
@@ -173,6 +173,11 @@ def entrypoint():
     parser.add_argument(
         "--check-dependencies",
         help="Check user executables and databases accessible to Autometa and exit.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--update",
+        help="Update existing databases to most recent releases",
         action="store_true",
     )
     args = parser.parse_args()

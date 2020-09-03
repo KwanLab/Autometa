@@ -79,7 +79,7 @@ class AutometaUser:
         """Saves the current user config to `self.user_config` file path."""
         config.put_config(self.config, self.user_config)
 
-    def configure(self, dryrun=True):
+    def configure(self, dryrun=True, update=False):
         """Configure user execution environment and databases.
 
         Parameters
@@ -97,13 +97,14 @@ class AutometaUser:
         self.config, exe_satisfied = environ.configure(self.config)
         logger.info(f"Executable dependencies satisfied: {exe_satisfied}")
         # Database env
-        dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc)
-        self.config = dbs.configure()
-        logger.info(f"Database dependencies satisfied: {dbs.satisfied}")
+        dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc, update=update)
+        no_checksum = not update
+        self.config = dbs.configure(no_checksum=no_checksum)
+        logger.info(f"Database dependencies satisfied: {dbs.satisfied()}")
         if dryrun:
             return
 
-        if not dbs.satisfied:
+        if not dbs.satisfied():
             raise LookupError("Database dependencies not satisfied!")
         if not exe_satisfied:
             raise LookupError("Executable dependencies not satisfied!")
@@ -253,7 +254,8 @@ class AutometaUser:
                 taxon_method=mgargs.parameters.taxon_method,
             )
         # TODO asynchronous execution here (work-queue/Makeflow tasks)
-
+        # TODO kmer counting here should just be employed via the kmers.py file as is done later on with kmers.embed(...)
+        # I.e. kmers.count(...)
         mg.get_kmers(
             kmer_size=mgargs.parameters.kmer_size,
             normalized=mgargs.files.kmer_normalized,
@@ -292,12 +294,12 @@ class AutometaUser:
 
             mag = kingdoms.get(mgargs.parameters.kingdom)
         else:
-            mag = MAG(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
+            mag = MetaBin(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
 
         # Perform binning
         bins_df = mag.get_binning(
             method=mgargs.parameters.binning_method,
-            kmers=mgargs.files.kmer_counts,
+            kmers=mgargs.files.kmer_normalized,
             embedded=mgargs.files.kmer_embedded,
             do_pca=mgargs.parameters.do_pca,
             pca_dims=mgargs.parameters.pca_dims,

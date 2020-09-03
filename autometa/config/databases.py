@@ -75,7 +75,7 @@ class Databases:
         Number of processors to use to perform database formatting.
         (the default is mp.cpu_count()).
 
-    upgrade : bool
+    update : bool
         Overwrite existing databases with more up-to-date database
         files. (the default is False).
 
@@ -99,7 +99,7 @@ class Databases:
     }
 
     def __init__(
-        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), upgrade=False,
+        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), update=False,
     ):
         """
 
@@ -119,7 +119,7 @@ class Databases:
         nproc : int
             Number of processors to use to perform database formatting.
             (the default is mp.cpu_count()).
-        upgrade : bool
+        update : bool
             Overwrite existing databases with more up-to-date database files.
             (the default is False).
 
@@ -137,7 +137,7 @@ class Databases:
         self.config = config
         self.dryrun = dryrun
         self.nproc = nproc
-        self.upgrade = upgrade
+        self.update = update
         if self.config.get("common", "home_dir") == "None":
             # neccessary if user not running databases through the user
             # endpoint. where :func:`~autometa.config.init_default` would've
@@ -301,8 +301,8 @@ class Databases:
                 self.config.set("ncbi", "nr", db_outfpath)
                 logger.debug(f"set ncbi nr: {db_outfpath}")
                 return
-            # Only update out-of-date db files if user wants to update via self.upgrade
-            if not self.upgrade and checksum_check == "remote nr.gz.md5":
+            # Only update out-of-date db files if user wants to update via self.update
+            if not self.update and checksum_check == "remote nr.gz.md5":
                 return
 
         diamond.makedatabase(fasta=db_infpath, database=db_outfpath, nproc=self.nproc)
@@ -322,7 +322,7 @@ class Databases:
         paths.
 
         This only extracts nodes.dmp, names.dmp and merged.dmp from
-        taxdump.tar.gz if the files do not already exist. If `upgrade`
+        taxdump.tar.gz if the files do not already exist. If `update`
         was originally supplied as `True` to the Databases instance, then the
         previous files will be replaced by the new taxdump files.
 
@@ -349,7 +349,7 @@ class Databases:
                 self.config.set("ncbi", option, outfpath)
                 continue
             # Only update the taxdump files if the user says to do an update.
-            if self.upgrade and os.path.exists(outfpath):
+            if self.update and os.path.exists(outfpath):
                 os.remove(outfpath)
             # Only extract the taxdump files if this is not a "dryrun"
             if not os.path.exists(outfpath):
@@ -673,7 +673,7 @@ class Databases:
         Download and format databases for all options in each section.
 
         This will only perform the download and formatting if `self.dryrun` is
-        False. This will update out-of-date databases if `self.upgrade` is
+        False. This will update out-of-date databases if `self.update` is
         True.
 
         Parameters
@@ -769,7 +769,7 @@ def main():
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config, dryrun=args.dryrun, nproc=args.nproc, upgrade=args.update,
+        config=config, dryrun=args.dryrun, nproc=args.nproc, update=args.update,
     )
 
     compare_checksums = False
