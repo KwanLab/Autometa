@@ -36,6 +36,7 @@ from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle, file_length
 from autometa.common.external import prodigal
+from autometa.common.exceptions import DatabaseOutOfSyncError
 
 logger = logging.getLogger(__name__)
 
@@ -527,6 +528,10 @@ def add_taxids(hits, database, verbose=True):
     ):
         for sseqid in hit.sseqids:
             taxid = acc2taxids.get(sseqid)
+            if not taxid:
+                raise DatabaseOutOfSyncError(
+                    f"{sseqid} is either a new taxid not present in prot.accession2taxid or is deprecated/suppressed/removed"
+                )
             hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
 

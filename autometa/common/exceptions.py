@@ -21,7 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-File containing customized AutometaExceptions for more specific exception handling
+File containing customized AutometaErrors for more specific exception handling
 """
 
 
