@@ -32,7 +32,6 @@ import sys
 import multiprocessing as mp
 
 from autometa.config.user import AutometaUser
-from autometa.common.exceptions import ExternalToolError
 
 
 logger = logging.getLogger("autometa")

@@ -37,7 +37,6 @@ from Bio import SeqIO
 from autometa.common.external import bowtie
 from autometa.common.external import samtools
 from autometa.common.external import bedtools
-from autometa.common.exceptions import ExternalToolError
 
 logger = logging.getLogger(__name__)
 

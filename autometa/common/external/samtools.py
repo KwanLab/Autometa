@@ -51,8 +51,8 @@ def sort(sam, bam, cpus=mp.cpu_count()):
         cpus must be an integer greater than zero
     FileNotFoundError
         Specified path is incorrect or the file is empty
-    subprocess.CalledProcessError
-        Samtools did not run successfully
+    ExternalToolError
+        Samtools did not run successfully, returns subprocess traceback and command run
     """
 
     if not isinstance(cpus, int) or cpus <= 0:
