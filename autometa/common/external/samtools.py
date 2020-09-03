@@ -22,17 +22,17 @@ Script containing wrapper functions for samtools
 
 import logging
 import os
-import subprocess
 import shutil
+import subprocess
 import tempfile
 
-import pandas as pd
 import multiprocessing as mp
+from autometa.common.exceptions import ExternalToolError
 
 logger = logging.getLogger(__name__)
 
 
-def sort(sam, bam, nproc=mp.cpu_count()):
+def sort(sam, bam, cpus=mp.cpu_count()):
     """
     Views then sorts sam file by leftmost coordinates and outputs to bam.
 
@@ -42,49 +42,46 @@ def sort(sam, bam, nproc=mp.cpu_count()):
         </path/to/alignment.sam>
     bam : str
         </path/to/output/alignment.bam>
-    nproc : int, optional
+    cpus : int, optional
         Number of processors to be used. By default uses all the processors of the system
 
     Raises
     ------
     TypeError
-        nproc must be an integer greater than zero
+        cpus must be an integer greater than zero
     FileNotFoundError
         Specified path is incorrect or the file is empty
-    ChildProcessError
-        Samtools did not run successfully, returns the return code from subprocessing call
+    ExternalToolError
+        Samtools did not run successfully, returns subprocess traceback and command run
     """
 
-    if type(nproc) is not int or nproc <= 0:
-        raise TypeError(f"nproc must be an integer greater than zero! Given: {nproc}")
-    if not os.path.exists(sam) or os.stat(sam).st_size == 0:
+    if not isinstance(cpus, int) or cpus <= 0:
+        raise TypeError(f"cpus must be an integer greater than zero! Given: {cpus}")
+    if not os.path.exists(sam) or not os.path.getsize(sam):
         raise FileNotFoundError(
             f"The specified path: {sam} is either incorrect or the file is empty"
         )
     samtools_out_dir = os.path.dirname(os.path.abspath(bam))
     err = os.path.join(samtools_out_dir, "samtools.err")
     out = os.path.join(samtools_out_dir, "samtools.out")
-    with tempfile.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:  # this will delete the temporary files even if program stops in between
         temp_bam = os.path.join(tempdir, os.path.basename(bam))
-        cmd = (
-            f"samtools view -@{nproc} -bS {sam} | samtools sort -@{nproc} -o {temp_bam}"
-        )
+        cmd = f"samtools view -@{cpus} -bS {sam} | samtools sort -@{cpus} -o {temp_bam}"
         logger.debug(f"cmd: {cmd}")
         with open(out, "w") as stdout, open(err, "w") as stderr:
-            retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-        if retcode != 0:
-            raise ChildProcessError(f"Sort failed, retcode: {retcode}")
-        else:
+            try:
+                subprocess.run(
+                    cmd, stdout=stdout, stderr=stderr, shell=True, check=True
+                )
+            except subprocess.CalledProcessError as err:
+                raise ExternalToolError(cmd, err)
             shutil.move(temp_bam, bam)
         os.remove(err)
         os.remove(out)
+    return bam
 
 
-def main(args):
-    sort(args.sam, args.bam, args.nproc)
-
-
-if __name__ == "__main__":
+def main():
     import argparse
     import logging as logger
 
@@ -95,10 +92,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Takes a sam file, sorts it and returns the output to a bam file"
     )
-    parser.add_argument("--sam", help="</path/to/alignment.sam>", type=str)
-    parser.add_argument("--bam", help="</path/to/output/alignment.bam>", type=str)
+    parser.add_argument("sam", help="</path/to/alignment.sam>", type=str)
+    parser.add_argument("bam", help="</path/to/output/alignment.bam>", type=str)
     parser.add_argument(
-        "--nproc", help="Number of processors to use", default=mp.cpu_count(), type=int
+        "--cpus", help="Number of processors to use", default=mp.cpu_count(), type=int
     )
     args = parser.parse_args()
-    main(args)
+    sort(sam=args.sam, bam=args.bam, cpus=args.cpus)
+
+
+if __name__ == "__main__":
+
+    main()
