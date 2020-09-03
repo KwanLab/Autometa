@@ -24,15 +24,12 @@ File containing definition of the NCBI class and containing functions useful for
 """
 
 
-import gzip
 import logging
 import os
-import pickle
 import string
 import subprocess
 import sys
 
-import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
@@ -68,7 +65,7 @@ class NCBI:
         Parameters
         ----------
         dirpath : str
-            Path to the databse directory
+            Path to the database directory
         verbose : bool, optional
             log progress to terminal, by default False
         """
