@@ -131,8 +131,9 @@ def run_dbscan(df, eps, dropcols=["cluster", "purity", "completeness"]):
 
     Raises
     -------
-    ValueError
-        sets `usecols` and `dropcols` may not share elements
+    BinningError
+    ------------
+    Dataframe is missing kmer/coverage annotations
 
     """
     for col in dropcols:
@@ -288,9 +289,9 @@ def run_hdbscan(
 
     Raises
     -------
-    ValueError
-        sets `usecols` and `dropcols` may not share elements
-
+    BinningError
+    ------------
+    Dataframe is missing kmer/coverage annotations
     """
     for col in dropcols:
         if col in df.columns:
