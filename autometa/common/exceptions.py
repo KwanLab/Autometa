@@ -115,7 +115,7 @@ class DatabaseOutOfSyncError(AutometaError):
         """
         message = """
 
-        NCBI databases nodes.dmp, names.dmp merged.dmp, prot.accession2taxid.gz and nr.gz are out of sync with each other
+        NCBI databases nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz and nr.gz may be out of sync.
 
         Up-to-date databases may be downloaded at:
 
