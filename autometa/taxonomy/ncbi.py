@@ -272,7 +272,7 @@ class NCBI:
 
     def parent(self, taxid):
         """
-        Retrieve the parent taxid of provided `taxid`.If the `taxid` is deprecated, suppressed,
+        Retrieve the parent taxid of provided `taxid`. If the `taxid` is deprecated, suppressed,
         withdrawn from NCBI (basically old) the updated parent will be retrieved
 
         Parameters
@@ -397,8 +397,10 @@ class NCBI:
 
     def convert_taxid_dtype(self, taxid):
         """
-        Converts the given `taxid` to integer. It also checks if the given `taxid` is a positive integer and
-        if is is present in either nodes.dmp or names.dmp or merged.dmp.
+        1. Converts the given `taxid` to an integer and checks whether it is positive.
+        2. Checks whether `taxid` is present in both nodes.dmp and names.dmp.
+        3a. If (2) is false, will check for corresponding `taxid` in merged.dmp and convert to this then redo (2).
+        3b. If (2) is true, will return converted taxid.
 
         Parameters
         ----------
@@ -423,9 +425,7 @@ class NCBI:
         if isinstance(taxid, str):
             invalid_chars = set(string.punctuation + string.ascii_letters)
             invalid_chars.discard(".")
-            if {char for char in taxid if char in invalid_chars} or taxid.count(
-                "."
-            ) > 1:
+            if set(taxid).intersection(invalid_chars) or taxid.count(".") > 1:
                 raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")
             taxid = float(taxid)
         # a boolean check is needed as they will evaluate silently to 0 or 1 when cast as ints. FALSE=0, TRUE=1
