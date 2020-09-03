@@ -98,7 +98,7 @@ def main():
         "--cpus", help="Number of processors to use", default=mp.cpu_count(), type=int
     )
     args = parser.parse_args()
-    sort(args.sam, args.bam, args.cpus)
+    sort(sam=args.sam, bam=args.bam, cpus=args.cpus)
 
 
 if __name__ == "__main__":
