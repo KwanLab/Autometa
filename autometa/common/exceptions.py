@@ -53,6 +53,24 @@ class ChecksumMismatchError(AutometaError):
     pass
 
 
+class ExternalToolError(AutometaException):
+    """
+    Raised when samtools sort is not executed properly.
+
+    Parameters
+    ----------
+    AutometaError : class
+        Base class for other exceptions
+    """
+
+    def __init__(self, cmd, err):
+        self.cmd = cmd
+        self.err = err
+
+    def __str__(self):
+        return f"{self.err}\ncommand:\n{self.cmd}"
+
+
 if __name__ == "__main__":
     print(
         "This file contains Exceptions for the Autometa pipeline and should not be run directly!"

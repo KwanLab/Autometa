@@ -172,7 +172,7 @@ def get(
             bedtools.genomecov(bam, lengths, bed)
 
         def sort_samfile(sam=sam, bam=bam, nproc=nproc):
-            samtools.sort(sam, bam, nproc=nproc)
+            samtools.sort(sam, bam, cpus=nproc)
 
         def align_reads(
             fasta=fasta,
