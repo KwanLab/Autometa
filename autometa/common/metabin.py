@@ -433,9 +433,9 @@ class MetaBin:
                 completeness=kwargs.get("completeness", 20.0),
                 purity=kwargs.get("purity", 90.0),
                 taxonomy=use_taxonomy,
-                method=kwargs.get("method", "dbscan"),
+                clustering_method=kwargs.get("clustering_method", "dbscan"),
                 starting_rank=kwargs.get("starting_rank", "superkingdom"),
-                reverse_ranks=kwargs.get("reverse", True),
+                reverse_ranks=kwargs.get("reverse_ranks", True),
             )
         raise NotImplementedError(f"{method} not yet implemented")
 

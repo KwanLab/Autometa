@@ -309,6 +309,7 @@ class AutometaUser:
             coverage=mgargs.files.coverages,
             domain=mgargs.parameters.kingdom,
             taxonomy=mgargs.files.taxonomy,
+            clustering_method=mgargs.parameters.clustering_method,
             starting_rank=mgargs.parameters.starting_rank,
             reverse_ranks=mgargs.parameters.reverse_ranks,
         )

@@ -153,6 +153,7 @@ def parse_config(fpath=None):
         "taxon_method": str,
         "reverse_ranks": bool,
         "starting_rank": str,
+        "clustering_method": str,
         "completeness": float,
         "purity": float,
         "binning_method": str,
