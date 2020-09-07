@@ -297,6 +297,8 @@ class AutometaUser:
             mag = MetaBin(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
 
         # Perform binning
+        # TODO: replace MetaBin method out with recursive_dbscan method recursive_dbscan.binning()
+        # No reason to have this as a MetaBin method, since almost all parameters are available here.
         bins_df = mag.get_binning(
             method=mgargs.parameters.binning_method,
             kmers=mgargs.files.kmer_normalized,
@@ -307,7 +309,8 @@ class AutometaUser:
             coverage=mgargs.files.coverages,
             domain=mgargs.parameters.kingdom,
             taxonomy=mgargs.files.taxonomy,
-            reverse=mgargs.parameters.reversed,
+            starting_rank=mgargs.parameters.starting_rank,
+            reverse_ranks=mgargs.parameters.reverse_ranks,
         )
         binning_cols = ["cluster", "completeness", "purity"]
         bins_df[binning_cols].to_csv(
