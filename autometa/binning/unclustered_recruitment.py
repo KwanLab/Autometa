@@ -145,8 +145,10 @@ def get_features(
         Paths to additional annotations to add to features, by default []
     taxonomy : str, optional
         Path to taxonomic features, by default None
-    dimensions : int, optional
+    kmer_dimensions : int, optional
         Number of principal components to retrieve from normalized k-mer frequencies, by default 50
+    taxa_dimensions : int, optional
+        Number of principal components to retrieve from one-hot encoded taxa features, by default 10
 
     Returns
     -------
@@ -298,6 +300,8 @@ def get_decision_tree_predictions(
         Features and bin labels split and subset by clustered/unclustered contigs.
     num_classifications : int, optional
         number of classifications to perform, by default 10
+    seed : int, optional
+        Seed to use for `random_state` when initializing classifier.
 
     Returns
     -------
@@ -341,6 +345,8 @@ def get_random_forest_predictions(X, y, X_test, bin_data, num_estimators=10, see
         Features and bin labels split and subset by clustered/unclustered contigs.
     num_estimators : int, optional
         number of estimators to construct for training and predictions, by default 10
+    seed : int, optional
+        Seed to use for `random_state` when initializing classifier.
 
     Returns
     -------
@@ -382,6 +388,8 @@ def get_confidence_filtered_predictions(
     classifier : str, optional
         classifier to use for predictions, by default "decision_tree"
         choices include "decision_tree" and "random_forest".
+    seed : int, optional
+        Seed to use for `random_state` when initializing classifier.
 
     Returns
     -------
