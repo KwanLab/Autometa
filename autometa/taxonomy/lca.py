@@ -35,6 +35,7 @@ import os
 import numpy as np
 
 from tqdm import tqdm
+from pickle import UnpicklingError
 
 from autometa.taxonomy.ncbi import NCBI
 from autometa.common.utilities import make_pickle, unpickle, file_length
@@ -384,7 +385,9 @@ class LCA(NCBI):
                             taxids,
                         )
                     except ValueError:
-                        logger.error(f"Missing either {taxid1} or {taxid2} taxid, during LCA retrieval")
+                        logger.error(
+                            f"Missing either {taxid1} or {taxid2} taxid, during LCA retrieval"
+                        )
                     lca = root_taxid
                 if num_taxids == root_taxid:
                     lca = taxids.pop()

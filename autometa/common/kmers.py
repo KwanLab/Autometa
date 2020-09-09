@@ -40,7 +40,7 @@ from sklearn.manifold import TSNE
 from tsne import bh_sne
 from umap import UMAP
 
-from autometa.common.utilities import gunzip
+from autometa.common import utilities
 from autometa.common.exceptions import TableFormatError
 
 # Suppress numba logger debug output
@@ -157,6 +157,9 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
     results = pool.map(record_counter, args)
     pool.close()
     pool.join()
+    counts = {}
+    for result in results:
+        counts.update(result)
     return results
 
 
@@ -259,13 +262,17 @@ def seq_counter(assembly, ref_kmers, verbose=True):
     return kmer_counts
 
 
+@utilities.timeit
 def count(
     assembly,
-    kmer_size=5,
-    normalized=False,
+    size=5,
+    clr_transform=True,
+    freqs_outfpath=None,
+    norm_freqs_outfpath=None,
+    force=False,
     verbose=True,
     multiprocess=True,
-    nproc=mp.cpu_count(),
+    cpus=mp.cpu_count(),
 ):
     """Counts k-mer frequencies for provided assembly file
 
@@ -277,15 +284,15 @@ def count(
     ----------
     assembly : str
         Description of parameter `assembly`.
-    kmer_size : int, optional
-        length of k-mer to count `kmer_size` (the default is 5).
-    normalized : bool, optional
-        Whether to return the CLR normalized dataframe (the default is True).
+    size : int, optional
+        length of k-mer to count `size` (the default is 5).
+    clr_transform : bool, optional
+        Whether to return the CLR transformed dataframe (the default is True).
     verbose : bool, optional
         Enable progress bar `verbose` (the default is True).
     multiprocess : bool, optional
         Use multiple cores to count k-mer frequencies (the default is True).
-    nproc : int, optional
+    cpus : int, optional
         Number of cpus to use. (the default will use all available).
 
     Returns
@@ -297,27 +304,46 @@ def count(
     Raises
     -------
     TypeError
-        `kmer_size` must be an int
+        `size` must be an int
 
     """
-    if not type(kmer_size) is int:
-        raise TypeError(f"kmer_size must be an int! Given: {type(kmer_size)}")
-    ref_kmers = init_kmers(kmer_size)
-    if assembly.endswith(".gz"):
-        assembly = gunzip(assembly, assembly.rstrip(".gz"))
-    if multiprocess:
-        kmer_counts = {}
-        counts = mp_counter(assembly, ref_kmers, nproc)
-        for result in counts:
-            kmer_counts.update(result)
+    out_specified = freqs_outfpath is not None
+    out_exists = os.path.exists(freqs_outfpath) if freqs_outfpath else False
+    case1 = out_specified and out_exists and not force
+    if case1:
+        logger.warning(
+            f"counts already exist: {freqs_outfpath} force to overwrite. [retrieving]"
+        )
+        df = pd.read_csv(freqs_outfpath, sep="\t", index_col="contig")
     else:
-        kmer_counts = seq_counter(assembly, ref_kmers, verbose=verbose)
-    df = pd.DataFrame(kmer_counts, index=ref_kmers).transpose()
-    df.index.name = "contig"
-    if normalized:
-        return normalize(df)
-    else:
-        return df
+        if not isinstance(size, int):
+            raise TypeError(f"size must be an int! Given: {type(size)}")
+        ref_kmers = init_kmers(size)
+        if assembly.endswith(".gz"):
+            assembly = utilities.gunzip(assembly, assembly.rstrip(".gz"))
+        logger.info(f"Counting {size}-mers.")
+        if multiprocess:
+            kmer_counts = mp_counter(assembly, ref_kmers, cpus)
+        else:
+            kmer_counts = seq_counter(assembly, ref_kmers, verbose=verbose)
+        df = pd.DataFrame(kmer_counts, index=ref_kmers).transpose()
+        df.index.name = "contig"
+    if freqs_outfpath:
+        df.to_csv(freqs_outfpath, sep="\t", index=True, header=True)
+    if clr_transform:
+        out_specified = norm_freqs_outfpath is not None
+        out_exists = (
+            os.path.exists(norm_freqs_outfpath) if norm_freqs_outfpath else False
+        )
+        case1 = out_specified and out_exists and not force
+        case2 = out_specified and out_exists and force
+        case3 = out_specified and not out_exists
+        if case1:
+            df = pd.read_csv(norm_freqs_outfpath, sep="\t", index_col="contig")
+        if case2 or case3:
+            df = normalize(df)
+            df.to_csv(norm_freqs_outfpath, sep="\t", header=True, index=True)
+    return df
 
 
 def normalize(df):

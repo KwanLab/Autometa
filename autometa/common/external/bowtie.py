@@ -83,7 +83,7 @@ def build(assembly, out):
     return out
 
 
-def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwargs):
+def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, cpus=0, **kwargs):
     """Align reads to bowtie2-index `db` (at least one `*_reads` argument is required).
 
     Parameters
@@ -98,7 +98,7 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwa
         [</path/to/reverse_reads.fastq>, ...]
     se_reads : list, optional
         [</path/to/single_end_reads.fastq>, ...]
-    nproc : int, optional
+    cpus : int, optional
         Num. processors to use (the default is 0).
     **kwargs : dict, optional
         Additional optional args to supply to bowtie2. Must be in format:
@@ -119,11 +119,11 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwa
     flags = "-q --phred33 --very-sensitive --no-unal"
     sam_out = f"-S {sam}"
     params = [exe, flags, sam_out]
-    if type(nproc) is not int or nproc < 0:
-        raise ValueError(f"nproc must be an integer greater than 0. given: {nproc}")
-    # nproc==0 will skip adding -p/--threads flag
-    if nproc:
-        params.append(f"-p {nproc}")
+    if type(cpus) is not int or cpus < 0:
+        raise ValueError(f"cpus must be an integer greater than 0. given: {cpus}")
+    # cpus==0 will skip adding -p/--threads flag
+    if cpus:
+        params.append(f"-p {cpus}")
     reads_provided = False
     for flag, reads in zip(["-1", "-2", "-U"], [fwd_reads, rev_reads, se_reads]):
         if reads:
@@ -140,31 +140,19 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, nproc=0, **kwa
     return sam
 
 
-def main(args):
-    db = build(args.assembly, args.database)
-    sam = align(
-        database=args.database,
-        sam=args.sam,
-        fwd_reads=args.fwd_reads,
-        rev_reads=args.rev_reads,
-        se_reads=args.se_reads,
-        nproc=args.nproc,
-        kwargs=args.kwargs,
-    )
-
-
-if __name__ == "__main__":
+def main():
     import argparse
     import logging as logger
 
     logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
     )
-    desc = """
-    Align provided reads to metagenome `assembly` and write alignments to `sam`.
-    NOTE: At least one reads file is required."""
-    parser = argparse.ArgumentParser(description=desc)
+    parser = argparse.ArgumentParser(
+        description="Align provided reads to metagenome `assembly` and write alignments to `sam`."
+        "NOTE: At least one reads file is required."
+    )
     parser.add_argument("assembly", help="</path/to/assembly.fasta>")
     parser.add_argument(
         "database",
@@ -180,6 +168,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "-U", "--se-reads", help="</path/to/single-end-reads.fastq>", nargs="*"
     )
-    parser.add_argument("--nproc", help="Num processors to use.", default=1, type=int)
+    parser.add_argument("--cpus", help="Num processors to use.", default=1, type=int)
     args = parser.parse_args()
-    main(args)
+
+    db = build(args.assembly, args.database)
+    sam = align(
+        database=args.database,
+        sam=args.sam,
+        fwd_reads=args.fwd_reads,
+        rev_reads=args.rev_reads,
+        se_reads=args.se_reads,
+        cpus=args.cpus,
+        kwargs=args.kwargs,
+    )
+
+
+if __name__ == "__main__":
+    main()

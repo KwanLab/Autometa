@@ -30,8 +30,15 @@ import os
 import sys
 
 import multiprocessing as mp
+import pandas as pd
 
+from autometa.common import coverage, kmers, markers, utilities
+from autometa.common.metabin import MetaBin
+from autometa.common.metagenome import Metagenome
 from autometa.config.user import AutometaUser
+from autometa import taxonomy
+from autometa.common.markers import Markers
+from autometa.binning import recursive_dbscan
 
 
 logger = logging.getLogger("autometa")
@@ -97,6 +104,165 @@ def init_logger(fpath=None, verbosity=0):
     return logger
 
 
+@utilities.timeit
+def run_autometa(mgargs):
+    """Run the autometa metagenome binning pipeline using the provided metagenome args.
+
+    Parameters
+    ----------
+    mgargs : argparse.Namespace
+        metagenome args
+
+    Returns
+    -------
+    NoneType
+
+    Raises
+    -------
+    TODO: Need to enumerate all exceptions raised from within binning pipeline.
+    I.e. Demarkate new exception (not yet handled) vs. handled exception.
+    Subclassing an AutometaError class may be most appropriate use case here.
+    """
+    mg = Metagenome(
+        assembly=mgargs.files.metagenome,
+        outdir=mgargs.parameters.outdir,
+        nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
+        prot_orfs_fpath=mgargs.files.amino_acid_orfs,
+        taxonomy_fpath=mgargs.files.taxonomy,
+        fwd_reads=mgargs.files.fwd_reads,
+        rev_reads=mgargs.files.rev_reads,
+        se_reads=mgargs.files.se_reads,
+        taxon_method=mgargs.parameters.taxon_method,
+    )
+
+    try:
+        # Original (raw) file should not be manipulated so return new object
+        mg = mg.length_filter(
+            out=mgargs.files.length_filtered, cutoff=mgargs.parameters.length_cutoff
+        )
+        # COMBAK: Checkpoint length filtered
+    except FileExistsError as err:
+        # COMBAK: Checkpoint length filtered
+        logger.debug(f"{mgargs.files.length_filtered} already exists. Continuing..")
+        mg = Metagenome(
+            assembly=mgargs.files.length_filtered,
+            outdir=mgargs.parameters.outdir,
+            nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
+            prot_orfs_fpath=mgargs.files.amino_acid_orfs,
+            taxonomy_fpath=mgargs.files.taxonomy,
+            fwd_reads=mgargs.files.fwd_reads,
+            rev_reads=mgargs.files.rev_reads,
+            se_reads=mgargs.files.se_reads,
+            taxon_method=mgargs.parameters.taxon_method,
+        )
+    # TODO asynchronous execution here (work-queue/Makeflow tasks)
+    kmers.count(
+        assembly=mg.assembly,
+        size=mgargs.parameters.kmer_size,
+        clr_transform=mgargs.parameters.kmer_clr_transform,
+        freqs_outfpath=mgargs.files.kmer_counts,
+        norm_freqs_outfpath=mgargs.files.kmer_normalized,
+        force=mgargs.parameters.force,
+        verbose=mgargs.parameters.verbose,
+        multiprocess=mgargs.parameters.kmer_multiprocess,
+        cpus=mgargs.parameters.cpus,
+    )
+    # COMBAK: Checkpoint kmers
+    coverage.get(
+        fasta=mg.assembly,
+        out=mgargs.files.coverages,
+        from_spades=mgargs.parameters.cov_from_spades,
+        fwd_reads=mgargs.files.fwd_reads,
+        rev_reads=mgargs.files.rev_reads,
+        se_reads=mgargs.files.se_reads,
+        sam=mgargs.files.sam,
+        bam=mgargs.files.bam,
+        lengths=mgargs.files.lengths,
+        bed=mgargs.files.bed,
+        cpus=mgargs.parameters.cpus,
+    )
+    # COMBAK: Checkpoint coverages
+
+    if mgargs.parameters.do_taxonomy:
+        # First assign taxonomy
+        taxonomy.assign(
+            method=mgargs.parameters.taxon_method,
+            outfpath=mgargs.files.taxonomy,
+            fasta=mg.assembly,
+            prot_orfs=mgargs.files.amino_acid_orfs,
+            nucl_orfs=mgargs.files.nucleotide_orfs,
+            blast=mgargs.files.blastp,
+            hits=mgargs.files.blastp_hits,
+            lca_fpath=mgargs.files.lca,
+            ncbi_dir=mgargs.databases.ncbi,
+            tmpdir=mgargs.parameters.tmpdir,
+            usepickle=mgargs.parameters.usepickle,
+            force=mgargs.parameters.force,
+            verbose=mgargs.parameters.verbose,
+            parallel=mgargs.parameters.parallel,
+            cpus=mgargs.parameters.cpus,
+        )
+        # Now filter by Kingdom
+        metabin = taxonomy.get(
+            fpath=mgargs.files.taxonomy,
+            assembly=mg.assembly,
+            ncbi_dir=mgargs.databases.ncbi,
+            kingdom=mgargs.parameters.kingdom,
+            outdir=mgargs.parameters.outdir,
+        )
+        orfs_fpath = os.path.join(
+            mgargs.parameters.outdir, f"{mgargs.parameters.kingdom}.orfs.faa"
+        )
+        metabin.write_orfs(fpath=orfs_fpath, orf_type="prot")
+        contigs = set(metabin.contigs)
+    else:
+        orfs_fpath = mgargs.parameters.amino_acid_orfs
+        contigs = {record.id for record in mg.seqrecords}
+
+    # markers.get(...)
+    markers = Markers(
+        orfs_fpath=orfs_fpath,
+        kingdom=mgargs.parameters.kingdom,
+        dbdir=mgargs.databases.markers,
+    ).get()
+
+    # At this point, we should have kmer counts, coverages and possibly taxonomy info
+    # Embed the kmer counts to retrieve our initial master dataframe
+    master = kmers.embed(
+        kmers=mgargs.files.kmer_normalized,
+        embedded=mgargs.files.kmer_embedded,
+        do_pca=mgargs.parameters.do_pca,
+        pca_dimensions=mgargs.parameters.pca_dimensions,
+        embedding_method=mgargs.parameters.embedding_method,
+    )
+    # Prepare master dataframe for binning. Add coverage and possibly taxonomy annotations
+    master = master[master.index.isin(contigs)]
+    if mgargs.parameters.do_taxonomy:
+        annotations = [mgargs.files.coverages, mgargs.files.taxonomy]
+    else:
+        annotations = [mgargs.files.coverages]
+    for fpath in annotations:
+        df = pd.read_csv(fpath, sep="\t", index_col="contig")
+        master = pd.merge(master, df, how="left", left_index=True, right_index=True)
+    master = master.convert_dtypes()
+
+    bins_df = recursive_dbscan.binning(
+        master=master,
+        markers=markers,
+        domain=mgargs.parameters.kingdom,
+        completeness=mgargs.parameters.completeness,
+        purity=mgargs.parameters.purity,
+        taxonomy=mgargs.parameters.do_taxonomy,
+        clustering_method=mgargs.parameters.clustering_method,
+        starting_rank=mgargs.parameters.starting_rank,
+        reverse_ranks=mgargs.parameters.reverse_ranks,
+    )
+    binning_cols = ["cluster", "completeness", "purity"]
+    bins_df[binning_cols].to_csv(
+        mgargs.files.binning, sep="\t", index=True, header=True
+    )
+
+
 def main(args):
     """
     Main logic for running autometa pipeline.
@@ -124,7 +290,7 @@ def main(args):
     for config in args.config:
         # TODO: Add directions to master from WorkQueue
         mgargs = user.prepare_binning_args(config)
-        user.run_binning(mgargs)
+        run_autometa(mgargs)
         # user.refine_binning()
         # user.process_binning()
     # user.get_pangenomes()

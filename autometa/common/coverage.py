@@ -37,6 +37,8 @@ from Bio import SeqIO
 from autometa.common.external import bowtie
 from autometa.common.external import samtools
 from autometa.common.external import bedtools
+from autometa.common import utilities
+
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +91,11 @@ def make_length_table(fasta, out):
     return out
 
 
+@utilities.timeit
 def get(
     fasta,
     out,
+    from_spades=False,
     fwd_reads=None,
     rev_reads=None,
     se_reads=None,
@@ -99,10 +103,14 @@ def get(
     bam=None,
     lengths=None,
     bed=None,
-    nproc=1,
+    cpus=1,
 ):
-    """Get coverages for assembly `fasta` file using provided files.
-    Either: `fwd_reads` and `rev_reads` and/or `se_reads` or,`sam`, or `bam`, or `bed`.
+    """Get coverages for assembly `fasta` file using provided files or
+    if the metagenome assembly was generated from SPAdes, use the k-mer coverages
+    provided in each contig's header by specifying `from_spades=True`.
+
+    Either `fwd_reads` and `rev_reads` and/or `se_reads` or,`sam`, or `bam`, or `bed`
+    must be provided if `from_spades=False`.
 
     Notes
     -----
@@ -127,21 +135,26 @@ def get(
     fasta : str
         </path/to/assembly.fasta>
     out : str
-        </path/to/output/coverage.tsv>
+        </path/to/output/coverages.tsv>
+    from_spades : bool, optional
+        If True, will attempt to parse record ids for coverage information.
+        This is only compatible with SPAdes assemblies. (the Default is False).
     fwd_reads : list, optional
         [</path/to/forward_reads.fastq>, ...]
     rev_reads : list, optional
         [</path/to/reverse_reads.fastq>, ...]
     se_reads : list, optional
         [</path/to/single_end_reads.fastq>, ...]
-    sam : str
+    sam : str, optional
         </path/to/alignments.sam>
-    bam : str
+    bam : str, optional
         </path/to/alignments.bam>
-    lengths : str
+    lengths : str, optional
         </path/to/lengths.tsv>
-    bed : str
+    bed : str, optional
         </path/to/alignments.bed>
+    cpus : int, optional
+        Number of cpus to use for coverage calculation.
 
     Returns
     -------
@@ -153,6 +166,9 @@ def get(
         logger.debug(f"coverage ({out}) already exists. skipping...")
         cols = ["contig", "coverage"]
         return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
+
+    if from_spades:
+        return from_spades_names(records=[rec for rec in SeqIO.parse(fasta, "fasta")])
 
     try:
         outdir = os.path.dirname(out)
@@ -171,8 +187,8 @@ def get(
                 lengths = make_length_table(fasta, lengths)
             bedtools.genomecov(bam, lengths, bed)
 
-        def sort_samfile(sam=sam, bam=bam, nproc=nproc):
-            samtools.sort(sam, bam, cpus=nproc)
+        def sort_samfile(sam=sam, bam=bam, cpus=cpus):
+            samtools.sort(sam, bam, cpus=cpus)
 
         def align_reads(
             fasta=fasta,
@@ -181,10 +197,10 @@ def get(
             fwd_reads=fwd_reads,
             rev_reads=rev_reads,
             se_reads=se_reads,
-            nproc=nproc,
+            cpus=cpus,
         ):
             bowtie.build(fasta, db)
-            bowtie.align(db, sam, fwd_reads, rev_reads, se_reads, nproc=nproc)
+            bowtie.align(db, sam, fwd_reads, rev_reads, se_reads, cpus=cpus)
 
         # Setup of coverage calculation sequence depending on file(s) provided
         calculation_sequence = {
@@ -193,7 +209,7 @@ def get(
             "sam_exists": [sort_samfile, make_bed, parse_bed],
             "full": [align_reads, sort_samfile, make_bed, parse_bed],
         }
-        # Now need to determine which point to start calculation...
+        # Now we need to determine which point to start the calculation...
         for fp, argname in zip([bed, bam, sam], ["bed", "bam", "sam"]):
             step = "full"
             if os.path.exists(fp):
@@ -210,10 +226,6 @@ def get(
             if calculation.__name__ == "parse_bed":
                 return calculation()
             calculation()
-
-    except Exception as err:
-        logger.exception(err)
-        raise err
     finally:
         shutil.rmtree(tempdir, ignore_errors=True)
 
@@ -260,7 +272,7 @@ def main():
     )
     parser.add_argument("--bed", help="</path/to/alignments.bed>")
     parser.add_argument(
-        "--nproc",
+        "--cpus",
         help=f"Num processors to use. (default: {mp.cpu_count()})",
         default=mp.cpu_count(),
         type=int,
@@ -286,17 +298,24 @@ def main():
         logger.info(f"written: {args.out}")
         return
 
-    get(
-        fasta=args.assembly,
-        fwd_reads=args.fwd_reads,
-        rev_reads=args.rev_reads,
-        sam=args.sam,
-        bam=args.bam,
-        lengths=args.lengths,
-        bed=args.bed,
-        nproc=args.nproc,
-        out=args.out,
-    )
+    try:
+        get(
+            fasta=args.assembly,
+            fwd_reads=args.fwd_reads,
+            rev_reads=args.rev_reads,
+            sam=args.sam,
+            bam=args.bam,
+            lengths=args.lengths,
+            bed=args.bed,
+            cpus=args.cpus,
+            out=args.out,
+        )
+    except Exception as err:
+        logger.exception(err)
+        import sys
+
+        print("Coverage calculation failed")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
