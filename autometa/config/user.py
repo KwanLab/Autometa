@@ -103,7 +103,7 @@ class AutometaUser:
         # Database env
         dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc)
         self.config = dbs.configure()
-        logger.info(f"Database dependencies satisfied: {dbs.satisfied}")
+        logger.info(f"Database dependencies satisfied: {dbs.satisfied()}")
         if dryrun:
             return
 
@@ -296,7 +296,9 @@ class AutometaUser:
 
             mag = kingdoms.get(mgargs.parameters.kingdom)
         else:
-            mag = MAG(assembly=mg.assembly, contigs=mg.seqrecords, outdir=mg.outdir)
+            mag = MetaBin(
+                assembly=mg.assembly, seqrecords=mg.seqrecords, outdir=mg.outdir
+            )
 
         # Perform binning
         bins_df = mag.get_binning(
@@ -312,9 +314,12 @@ class AutometaUser:
             reverse=mgargs.parameters.reversed,
         )
         binning_cols = ["cluster", "completeness", "purity"]
-        bins_df[binning_cols].to_csv(
-            mgargs.files.binning, sep="\t", index=True, header=True
+        binning_fpath = (
+            mgargs.files.bacteria_binning
+            if mgargs.parameters.kingdom == "bacteria"
+            else mgargs.files.archaea_binning
         )
+        bins_df[binning_cols].to_csv(binning_fpath, sep="\t", index=True, header=True)
 
 
 def main():
