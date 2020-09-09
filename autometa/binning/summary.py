@@ -214,7 +214,7 @@ def get_metabin_stats(bin_df, markers_fpath, assembly):
                 "length_weighted_coverage": length_weighted_coverage,
                 "min_coverage": dff.coverage.min(),
                 "max_coverage": dff.coverage.max(),
-                "std_coverage": dff.coverage.max(),
+                "std_coverage": dff.coverage.std(),
                 "completeness": completeness,
                 "purity": purity,
                 "num_total_markers": total_markers,

@@ -59,7 +59,7 @@ def get_config(fpath):
 
     """
     # COMBAK: Checkpoint config
-    if not os.path.exists(fpath) or os.path.getsize(fpath) == 0:
+    if not os.path.exists(fpath) or not os.path.getsize(fpath):
         raise FileNotFoundError(fpath)
     # https://stackoverflow.com/a/53274707/13118765
     converters = {"list": lambda x: [val.strip() for val in x.split(",")]}
