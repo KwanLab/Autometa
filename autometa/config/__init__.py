@@ -164,6 +164,7 @@ def parse_config(fpath=None):
         "usepickle": bool,
         "parallel": bool,
         "cpus": int,
+        "seed": int,
         "config": str,
         "resume": bool,
         "fwd_reads": list,
