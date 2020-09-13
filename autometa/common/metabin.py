@@ -433,9 +433,9 @@ class MetaBin:
             raise TypeError(
                 f"Unable to subset df. {type(df)} is not Series or DataFrame"
             )
-        if type(df) is pd.DataFrame:
+        if isinstance(df, pd.DataFrame):
             return df[df.index.isin(self.contig_ids)]
-        elif type(df) is str and self.prepared(df):
+        elif isinstance(df, str) and self.prepared(df):
             df = pd.read_csv(df, sep="\t", index_col="contig")
         return df[df.index.isin(self.contig_ids)]
 

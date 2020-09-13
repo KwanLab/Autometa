@@ -119,7 +119,7 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, cpus=0, **kwar
     flags = "-q --phred33 --very-sensitive --no-unal"
     sam_out = f"-S {sam}"
     params = [exe, flags, sam_out]
-    if type(cpus) is not int or cpus < 0:
+    if not isinstance(cpus, int) or cpus < 0:
         raise ValueError(f"cpus must be an integer greater than 0. given: {cpus}")
     # cpus==0 will skip adding -p/--threads flag
     if cpus:
