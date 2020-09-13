@@ -346,7 +346,7 @@ def autometa_clr(df):
     Parameters
     ----------
     df : pd.DataFrame
-        K-mers Dataframe where index_col='genome' and column values are k-mer
+        K-mers Dataframe where index_col='contig' and column values are k-mer
         frequencies.
 
     # TODO: Place these references in readthedocs documentation and remove from def.
@@ -406,20 +406,20 @@ def normalize(df, method="am_clr", out=None, force=False):
     out_exists = os.path.exists(out) if out else False
     case1 = out_specified and out_exists and not force
     if case1:
+        logger.debug(f"{out} already exists. Use force to overwrite. retrieving...")
         return pd.read_csv(out, sep="\t", index_col="contig")
     logger.debug(f"Transforming k-mer counts using {method}")
-    X = df.fillna(0).to_numpy()
-    X = multiplicative_replacement(X)
-    if method == "ilr":
-        X_norm = ilr(X)
-        norm_df = pd.DataFrame(X_norm, index=df.index)
-    elif method == "clr":
-        X_norm = clr(X)
-        norm_df = pd.DataFrame(X_norm, index=df.index)
-    elif method == "am_clr":
+    choices = {"ilr", "clr", "am_clr"}
+    if method == "am_clr":
         norm_df = autometa_clr(df)
+    elif method in choices:
+        transforms = {"ilr": ilr, "clr": clr}
+        X = df.fillna(0).to_numpy()
+        X = multiplicative_replacement(X)
+        X_norm = transforms[method](X)
+        norm_df = pd.DataFrame(X_norm, index=df.index)
     else:
-        choices = ", ".join(["am_clr", "clr", "ilr"])
+        choices = ", ".join(choices)
         raise ValueError(
             f"Normalize Method not available! {method}. choices: {choices}"
         )
@@ -526,14 +526,14 @@ def embed(
     df.dropna(axis="index", how="all", inplace=True)
     df.fillna(0, inplace=True)
     X = df.to_numpy()
-
-    state = np.random.RandomState(seed)
+    # Set random state using provided seed
+    random_state = np.random.RandomState(seed)
 
     if n_dims > pca_dimensions and do_pca:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_dims} to {pca_dimensions} dims"
         )
-        X = PCA(n_components=pca_dimensions, random_state=state).fit_transform(X)
+        X = PCA(n_components=pca_dimensions, random_state=random_state).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
         n_samples, n_dims = X.shape
 
@@ -547,12 +547,14 @@ def embed(
 
     def do_sksne():
         return TSNE(
-            n_components=embed_dimensions, perplexity=perplexity, random_state=state,
+            n_components=embed_dimensions,
+            perplexity=perplexity,
+            random_state=random_state,
         ).fit_transform(X)
 
     def do_bhsne():
         return bh_sne(
-            data=X, d=embed_dimensions, perplexity=perplexity, random_state=state
+            data=X, d=embed_dimensions, perplexity=perplexity, random_state=random_state
         )
 
     def do_UMAP():
@@ -560,7 +562,7 @@ def embed(
             n_neighbors=15,
             n_components=embed_dimensions,
             metric="euclidean",
-            random_state=state,
+            random_state=random_state,
         ).fit_transform(X)
 
     dispatcher = {"sksne": do_sksne, "bhsne": do_bhsne, "umap": do_UMAP}

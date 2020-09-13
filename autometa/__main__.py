@@ -33,7 +33,6 @@ import multiprocessing as mp
 import pandas as pd
 
 from autometa.common import coverage, kmers, markers, utilities
-from autometa.common.metabin import MetaBin
 from autometa.common.metagenome import Metagenome
 from autometa.config.user import AutometaUser
 from autometa.taxonomy import vote

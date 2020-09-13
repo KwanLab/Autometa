@@ -39,8 +39,7 @@ from glob import glob
 from autometa import config
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy.majority_vote import rank_taxids
-from autometa.common.metabin import MetaBin
-from autometa.common.markers import Markers
+from autometa.common import markers
 
 
 logger = logging.getLogger(__name__)
@@ -173,7 +172,7 @@ def get_metabin_stats(bin_df, markers_fpath, assembly):
         dataframe consisting of various metabin statistics indexed by cluster.
     """
     stats = []
-    markers_df = Markers.load(markers_fpath)
+    markers_df = markers.load(markers_fpath)
     for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
         "cluster"
     ):

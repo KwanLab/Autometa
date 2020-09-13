@@ -440,29 +440,6 @@ class MetaBin:
         return df[df.index.isin(self.contig_ids)]
 
 
-def main():
-    # import argparse
-    # import logging as logger
-
-    # logger.basicConfig(
-    #     format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
-    #     datefmt="%m/%d/%Y %I:%M:%S %p",
-    #     level=logger.DEBUG,
-    # )
-    # parser = argparse.ArgumentParser(description="Autometa MetaBin Class")
-    # parser.add_argument("--assembly", help="</path/to/metagenome.fasta>", required=True)
-    # parser.add_argument(
-    #     "--contig-ids", help="list of contig ids in MetaBin", nargs="+", required=True
-    # )
-    # parser.add_argument(
-    #     "--domain", help="kingdom to use for binning", default="bacteria"
-    # )
-    # parser.add_argument("--kmers", help="</path/to/kmers.tsv")
-    # parser.add_argument("--taxonomy", help="</path/to/taxonomy_vote.tsv")
-    # parser.add_argument("--coverage", help="</path/to/coverages.tsv")
-    # args = parser.parse_args()
-    pass
-
-
 if __name__ == "__main__":
-    main()
+    print("MetaBin is part of Autometa and should not be run directly.")
+    pass

@@ -36,7 +36,7 @@ from Bio import SeqIO
 from sklearn.cluster import DBSCAN
 from hdbscan import HDBSCAN
 
-from autometa.common.markers import Markers
+from autometa.common.markers import load as load_markers
 from autometa.common import kmers
 
 # TODO: This should be from autometa.common.kmers import Kmers
@@ -728,7 +728,7 @@ def main():
         kmers_df, cov_df[["coverage"]], how="left", left_index=True, right_index=True,
     )
 
-    markers_df = Markers.load(args.markers)
+    markers_df = load_markers(args.markers)
     markers_df = markers_df.convert_dtypes()
     # Taxonomy.load()
     if args.taxonomy:
