@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    """Autometa Project."""
+    """Autometa Project class to configure project directory given `config_fpath`
+
+    """
 
     def __init__(self, config_fpath):
         self.config_fpath = config_fpath
@@ -52,6 +54,13 @@ class Project:
 
     @property
     def n_metagenomes(self):
+        """Return the number of metagenome directories present in the project
+
+        Returns
+        -------
+        int
+            Number of metagenomes contained in project.
+        """
         return len(self.metagenomes)
 
     @property
@@ -75,17 +84,13 @@ class Project:
         Returns
         -------
         int
-            Description of returned object.
-
-        Raises
-        -------
-        ExceptionName
-            Why the exception is raised.
+            New metagenome number in project.
 
         """
         # I.e. no metagenomes have been added to project yet.
         if not self.metagenomes:
             return 1
+        # max corresponds to highest metagenome number recovered in project directory
         max_num = max(self.metagenomes)
         if max_num == self.n_metagenomes:
             return self.n_metagenomes + 1
@@ -97,6 +102,8 @@ class Project:
             return mg_num
 
     def save(self):
+        """Save project config in project directory
+        """
         put_config(self.config, self.config_fpath)
 
     def add(self, fpath):
@@ -128,7 +135,11 @@ class Project:
         mg_dir_present = os.path.exists(metagenome_dirpath)
         if not mg_config_present and mg_dir_present:
             raise FileNotFoundError(
-                f"{mg_config_fpath} is not present but the directory exists! Either remove the directory or locate the config file before continuing."
+                "It appears there is already a metagenome directory"
+                " without a metagenome config file in the project hierarchy."
+                " Please check the integrity of the project file tree."
+                f"{mg_config_fpath} is not present but the directory exists!"
+                "Either remove the directory or locate the config file before continuing."
             )
         if mg_dir_present:
             raise IsADirectoryError(metagenome_dirpath)
@@ -166,6 +177,7 @@ class Project:
         put_config(mg_config, mg_config_fpath)
         # Only write updated project config after successful metagenome configuration.
         self.config.set("metagenomes", metagenome_name, mg_config_fpath)
+        self.save()
         logger.debug(
             f"updated {self.config_fpath} metagenome: {metagenome_name} : {mg_config_fpath}"
         )
