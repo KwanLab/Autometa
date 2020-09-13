@@ -35,6 +35,7 @@ import multiprocessing as mp
 from tqdm import tqdm
 from Bio import SeqIO
 from scipy.stats import gmean
+from skbio.stats.composition import ilr, clr, multiplicative_replacement
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from tsne import bh_sne
@@ -131,7 +132,7 @@ def load(kmers_fpath):
     return df
 
 
-def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
+def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
     """Multiprocessing k-mer counter used in `count`. (Should not be used directly).
 
     Parameters
@@ -140,7 +141,7 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
         </path/to/assembly.fasta> (nucleotides)
     ref_kmers : dict
         {kmer:index, ...}
-    nproc : int, optional
+    cpus : int, optional
         Number of cpus to use. (the default will use all available).
 
     Returns
@@ -149,10 +150,10 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
         [{record:counts}, {record:counts}, ...]
 
     """
-    pool = mp.Pool(nproc)
+    pool = mp.Pool(cpus)
     args = [(record, ref_kmers) for record in SeqIO.parse(assembly, "fasta")]
     logger.debug(
-        f"Pool counter (nproc={nproc}): counting {len(args):,} records k-mer frequencies"
+        f"Pool counter (cpus={cpus}): counting {len(args):,} records k-mer frequencies"
     )
     results = pool.map(record_counter, args)
     pool.close()
@@ -160,7 +161,7 @@ def mp_counter(assembly, ref_kmers, nproc=mp.cpu_count()):
     counts = {}
     for result in results:
         counts.update(result)
-    return results
+    return counts
 
 
 def record_counter(args):
@@ -266,9 +267,7 @@ def seq_counter(assembly, ref_kmers, verbose=True):
 def count(
     assembly,
     size=5,
-    clr_transform=True,
-    freqs_outfpath=None,
-    norm_freqs_outfpath=None,
+    out=None,
     force=False,
     verbose=True,
     multiprocess=True,
@@ -286,8 +285,10 @@ def count(
         Description of parameter `assembly`.
     size : int, optional
         length of k-mer to count `size` (the default is 5).
-    clr_transform : bool, optional
-        Whether to return the CLR transformed dataframe (the default is True).
+    out: str, optional
+        Path to write k-mer counts table.
+    force: bool, optional
+        Whether to overwrite existing `out` k-mer counts table (the default is False).
     verbose : bool, optional
         Enable progress bar `verbose` (the default is True).
     multiprocess : bool, optional
@@ -307,14 +308,12 @@ def count(
         `size` must be an int
 
     """
-    out_specified = freqs_outfpath is not None
-    out_exists = os.path.exists(freqs_outfpath) if freqs_outfpath else False
+    out_specified = out is not None
+    out_exists = os.path.exists(out) if out else False
     case1 = out_specified and out_exists and not force
     if case1:
-        logger.warning(
-            f"counts already exist: {freqs_outfpath} force to overwrite. [retrieving]"
-        )
-        df = pd.read_csv(freqs_outfpath, sep="\t", index_col="contig")
+        logger.warning(f"counts already exist: {out} force to overwrite. [retrieving]")
+        df = pd.read_csv(out, sep="\t", index_col="contig")
     else:
         if not isinstance(size, int):
             raise TypeError(f"size must be an int! Given: {type(size)}")
@@ -328,25 +327,13 @@ def count(
             kmer_counts = seq_counter(assembly, ref_kmers, verbose=verbose)
         df = pd.DataFrame(kmer_counts, index=ref_kmers).transpose()
         df.index.name = "contig"
-    if freqs_outfpath:
-        df.to_csv(freqs_outfpath, sep="\t", index=True, header=True)
-    if clr_transform:
-        out_specified = norm_freqs_outfpath is not None
-        out_exists = (
-            os.path.exists(norm_freqs_outfpath) if norm_freqs_outfpath else False
-        )
-        case1 = out_specified and out_exists and not force
-        case2 = out_specified and out_exists and force
-        case3 = out_specified and not out_exists
-        if case1:
-            df = pd.read_csv(norm_freqs_outfpath, sep="\t", index_col="contig")
-        if case2 or case3:
-            df = normalize(df)
-            df.to_csv(norm_freqs_outfpath, sep="\t", header=True, index=True)
+    if out:
+        df.to_csv(out, sep="\t", index=True, header=True)
+        logger.debug(f"Wrote {df.shape[0]} contigs {size}-mers frequencies to {out}.")
     return df
 
 
-def normalize(df):
+def autometa_clr(df):
     """Normalize k-mers by Centered Log Ratio transformation
 
     1a. Drop any k-mers not present for all contigs
@@ -359,7 +346,7 @@ def normalize(df):
     Parameters
     ----------
     df : pd.DataFrame
-        K-mers Dataframe where index_col='contig' and column values are k-mer
+        K-mers Dataframe where index_col='genome' and column values are k-mer
         frequencies.
 
     # TODO: Place these references in readthedocs documentation and remove from def.
@@ -386,15 +373,74 @@ def normalize(df):
     return df.transform(step_2a, axis="columns").transform(step_2b, axis="columns")
 
 
+def normalize(df, method="am_clr", out=None, force=False):
+    """Normalize raw k-mer counts by center or isometric log-ratio transform.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        k-mer counts dataframe.
+        i.e. for 3-mers; Index='contig', columns=[AAA, AAT, ...]
+    method : str, optional
+        Normalize k-mer counts using CLR or ILR transformation
+        (the default is Autometa's CLR implementation).
+        choices = ['ilr', 'clr', 'am_clr']
+        Other transformations come from the skbio.stats.composition module
+    out : str, optional
+        Path to write normalized k-mers.
+    force : bool, optional
+        Whether to overwrite existing `out` file path, by default False.
+
+    Returns
+    -------
+    pd.DataFrame
+        Normalized counts using provided `method`.
+
+    Raises
+    ------
+    ValueError
+        Provided `method` is not available.
+    """
+    method = method.lower()
+    out_specified = out is not None
+    out_exists = os.path.exists(out) if out else False
+    case1 = out_specified and out_exists and not force
+    if case1:
+        return pd.read_csv(out, sep="\t", index_col="contig")
+    logger.debug(f"Transforming k-mer counts using {method}")
+    X = df.fillna(0).to_numpy()
+    X = multiplicative_replacement(X)
+    if method == "ilr":
+        X_norm = ilr(X)
+        norm_df = pd.DataFrame(X_norm, index=df.index)
+    elif method == "clr":
+        X_norm = clr(X)
+        norm_df = pd.DataFrame(X_norm, index=df.index)
+    elif method == "am_clr":
+        norm_df = autometa_clr(df)
+    else:
+        choices = ", ".join(["am_clr", "clr", "ilr"])
+        raise ValueError(
+            f"Normalize Method not available! {method}. choices: {choices}"
+        )
+    case2 = out_specified and out_exists and force
+    case3 = out_specified and not out_exists
+    if case2 or case3:
+        norm_df.to_csv(out, sep="\t", index=True, header=True)
+    return norm_df
+
+
 def embed(
-    kmers=None,
-    embedded=None,
-    n_components=2,
+    kmers,
+    out=None,
+    force=False,
+    embed_dimensions=2,
     do_pca=True,
     pca_dimensions=50,
     method="bhsne",
     perplexity=30.0,
-    **kwargs,
+    seed=42,
+    **method_args,
 ):
     """Embed k-mers using provided `method`.
 
@@ -409,10 +455,12 @@ def embed(
     ----------
     kmers : str or pd.DataFrame
         </path/to/input/kmers.normalized.tsv>
-    embedded : str, optional
-        </path/to/output/kmers.embedded.tsv> If provided will write to `embedded`.
-    n_components : int, optional
-        `n_components` to embed k-mer frequencies (the default is 2).
+    out : str, optional
+        </path/to/output/kmers.out.tsv> If provided will write to `out`.
+    force: bool, optional
+        Whether to overwrite existing `out` file.
+    embed_dimensions : int, optional
+        embedn_dimensions` to embed k-mer frequencies (the default is 2).
     do_pca : bool, optional
         Perform PCA decomposition prior to embedding (the default is True).
     pca_dimensions : int, optional
@@ -423,50 +471,46 @@ def embed(
         choices include sksne, bhsne and umap.
     perplexity : float, optional
         hyperparameter used to tune sksne and bhsne (the default is 30.0).
-    **kwargs : dict, optional
-        Other keyword arguments to be supplied to respective `method`.
+    seed: int, optional
+        Seed to use for `method`. Allows for reproducibility from random state.
+    **method_args : dict, optional
+        Other arguments to be supplied to respective `method`.
 
     Returns
     -------
     pd.DataFrame
-        embedded dataframe with index='contig' and cols=['x','y','z']
+        out dataframe with index='contig' and cols=['x','y','z']
 
     Raises
     -------
+    TypeError
+        Provided `kmers` is not a str or pd.DataFrame.
     TableFormatError
-        Provided `kmers` or `embedded` are not formatted correctly for use.
+        Provided `kmers` or `out` are not formatted correctly for use.
     ValueError
         Provided `method` is not an available choice.
     FileNotFoundError
         `kmers` type must be a pd.DataFrame or filepath.
     """
-    if not kmers and not embedded:
-        msg = f"`kmers` (given: {kmers}) or `embedded` (given: {embedded}) is required"
-        raise ValueError(msg)
-    df = None
-    if (
-        kmers
-        and type(kmers) is str
-        and os.path.exists(kmers)
-        and os.path.getsize(kmers)
-    ):
+    if isinstance(kmers, str) and os.path.exists(kmers) and os.path.getsize(kmers):
         try:
             df = pd.read_csv(kmers, sep="\t", index_col="contig")
         except ValueError:
             raise TableFormatError(f"contig column not found in {kmers}")
-    elif kmers and type(kmers) is pd.DataFrame:
+    elif isinstance(kmers, pd.DataFrame):
         df = kmers
-    if embedded and os.path.exists(embedded) and os.path.getsize(embedded):
-        logger.debug(f"k-mers frequency embedding already exists {embedded}")
+    else:
+        TypeError(kmers)
+    if out and os.path.exists(out) and os.path.getsize(out) and not force:
+        logger.debug(f"k-mers frequency embedding already exists {out}")
         try:
-            df = pd.read_csv(embedded, sep="\t", index_col="contig")
+            return pd.read_csv(out, sep="\t", index_col="contig")
         except ValueError:
-            raise TableFormatError(f"contig column not found in {embedded}")
-        return df
+            raise TableFormatError(f"contig column not found in {out}")
 
-    if df is None or df.empty:
+    if df.empty:
         kmers_desc = f"kmers:{kmers} type:{type(kmers)}"
-        embed_desc = f"embedded:{embedded} type:{type(embedded)}"
+        embed_desc = f"out:{out} type:{type(out)}"
         requirements = f"kmers type must be a pd.DataFrame or filepath."
         raise FileNotFoundError(f"{kmers_desc} {embed_desc} {requirements}")
 
@@ -482,54 +526,65 @@ def embed(
     df.dropna(axis="index", how="all", inplace=True)
     df.fillna(0, inplace=True)
     X = df.to_numpy()
+
+    state = np.random.RandomState(seed)
+
     if n_dims > pca_dimensions and do_pca:
         logger.debug(
-            f"Performing decomposition with PCA: {n_dims} to {pca_dimensions} dims"
+            f"Performing decomposition with PCA (seed {seed}): {n_dims} to {pca_dimensions} dims"
         )
-        X = PCA(n_components=pca_dimensions).fit_transform(X)
+        X = PCA(n_components=pca_dimensions, random_state=state).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
         n_samples, n_dims = X.shape
 
     logger.debug(f"{method}: {n_samples} data points and {n_dims} dimensions")
 
+    # Adjust perplexity according to the number of data points
     n_rows = n_samples - 1
     scaler = 3.0
     if n_rows < (scaler * perplexity):
         perplexity = (n_rows / scaler) - 1
 
-    def do_sksne(perplexity=perplexity, n_components=n_components, seed=42):
-        # Adjust perplexity according to the number of data points
+    def do_sksne():
         return TSNE(
-            n_components=n_components,
-            perplexity=perplexity,
-            random_state=np.random.RandomState(seed),
+            n_components=embed_dimensions, perplexity=perplexity, random_state=state,
         ).fit_transform(X)
 
-    def do_bhsne(n_components=n_components, perplexity=perplexity, seed=42):
+    def do_bhsne():
         return bh_sne(
-            data=X,
-            d=n_components,
-            perplexity=perplexity,
-            random_state=np.random.RandomState(seed),
+            data=X, d=embed_dimensions, perplexity=perplexity, random_state=state
         )
 
-    def do_UMAP(n_neighbors=15, n_components=n_components, metric="euclidean"):
+    def do_UMAP():
         return UMAP(
-            n_neighbors=n_neighbors, n_components=n_components, metric=metric
+            n_neighbors=15,
+            n_components=embed_dimensions,
+            metric="euclidean",
+            random_state=state,
         ).fit_transform(X)
 
     dispatcher = {"sksne": do_sksne, "bhsne": do_bhsne, "umap": do_UMAP}
-    logger.debug(f"Performing embedding with {method}")
-    X = dispatcher[method](**kwargs)
-    if n_components == 3:
+    logger.debug(f"Performing embedding with {method} (seed {seed})")
+    try:
+        X = dispatcher[method](**method_args)
+    except ValueError as err:
+        if method == "sksne":
+            logger.warning(
+                f"--embed-dimensions ({embed_dimensions}) is too high for sksne. Reducing to 3."
+            )
+            embed_dimensions = 3
+            X = dispatcher[method](**method_args)
+        else:
+            raise err
+    if embed_dimensions == 3:
         embedded_df = pd.DataFrame(X, columns=["x", "y", "z"], index=df.index)
-    elif n_components == 2:
+    elif embed_dimensions == 2:
         embedded_df = pd.DataFrame(X, columns=["x", "y"], index=df.index)
     else:
         embedded_df = pd.DataFrame(X, index=df.index)
-    if embedded:
-        embedded_df.to_csv(embedded, sep="\t", index=True, header=True)
-        logger.debug(f"embedded.shape {embedded_df.shape} : Written {embedded}")
+    if out:
+        embedded_df.to_csv(out, sep="\t", index=True, header=True)
+        logger.debug(f"embedded.shape {embedded_df.shape} : Written {out}")
     return embedded_df
 
 
@@ -560,19 +615,10 @@ def main():
         "--normalized", help=f"</path/to/output/kmers.normalized.tsv> {skip_desc}"
     )
     parser.add_argument(
-        "--embedded", help=f"</path/to/output/kmers.embedded.tsv> {skip_desc}"
-    )
-    parser.add_argument(
-        "--method",
+        "--norm-method",
         help="embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.",
-        choices=["sksne", "bhsne", "umap"],
-        default="bhsne",
-    )
-    parser.add_argument(
-        "--n-components",
-        help="Number of dimensions to reduce k-mer frequencies to",
-        type=int,
-        default=2,
+        choices=["ilr", "clr", "am_clr"],
+        default="am_clr",
     )
     parser.add_argument(
         "--do-pca",
@@ -587,64 +633,71 @@ def main():
         default=50,
     )
     parser.add_argument(
+        "--embedded", help=f"</path/to/output/kmers.embedded.tsv> {skip_desc}"
+    )
+    parser.add_argument(
+        "--embed-method",
+        help="embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.",
+        choices=["sksne", "bhsne", "umap"],
+        default="bhsne",
+    )
+    parser.add_argument(
+        "--embed-dimensions",
+        help="Number of dimensions to reduce k-mer frequencies to",
+        type=int,
+        default=2,
+    )
+    parser.add_argument(
+        "--force",
+        help="Whether to overwrite existing annotations",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "--multiprocess",
         help="count k-mers using multiprocessing",
         action="store_true",
         default=False,
     )
     parser.add_argument(
-        "--nproc",
+        "--cpus",
         help=f"num. processors to use if multiprocess is selected. (default = {cpus})",
         default=cpus,
         type=int,
     )
-    args = parser.parse_args()
-    try:
-        df = load(args.kmers)
-        logger.debug(f"{args.kmers} exists... loaded: df.shape {df.shape}")
-    except FileNotFoundError as err:
-        df = count(
-            assembly=args.fasta,
-            kmer_size=args.size,
-            normalized=False,
-            multiprocess=args.multiprocess,
-            nproc=args.nproc,
-        )
-        df.to_csv(args.kmers, sep="\t", header=True, index=True)
-        logger.debug(
-            f"Wrote {len(df)} contigs {args.size}-mers frequencies to {args.kmers}."
-        )
-
-    if args.normalized:
-        ndf = None
-        try:
-            ndf = load(args.normalized)
-            logger.debug(f"{args.normalized} exists... loaded: df.shape {ndf.shape}")
-        except FileNotFoundError as err:
-            logger.debug(f"Normalizing {df.shape} k-mers DataFrame.")
-            ndf = normalize(df)
-            ndf.to_csv(args.normalized, sep="\t", header=True, index=True)
-            logger.debug(
-                f"Wrote {len(df)} normalized k-mer freqs. to {args.normalized}."
-            )
-
-    if not args.embedded:
-        return
-
-    if args.normalized:
-        logger.debug(f"Embedding {args.normalized}")
-    else:
-        logger.debug(f"Embedding {args.kmers}")
-
-    kmers_fp = args.normalized if args.normalized else args.kmers
-    embedded_df = embed(
-        kmers=kmers_fp,
-        embedded=args.embedded,
-        method=args.method,
-        n_components=args.n_components,
-        do_pca=args.do_pca,
-        pca_dimensions=args.pca_dimensions,
+    parser.add_argument(
+        "--seed",
+        help=f"Seed to set random state for dimension reduction determinism.",
+        default=42,
+        type=int,
     )
+    args = parser.parse_args()
+
+    df = count(
+        assembly=args.fasta,
+        size=args.size,
+        out=args.kmers,
+        force=args.force,
+        multiprocess=args.multiprocess,
+        cpus=args.cpus,
+    )
+
+    if args.normalized:
+        df = normalize(
+            df=df, method=args.norm_method, out=args.normalized, force=args.force
+        )
+
+    if args.embedded:
+        embedded_df = embed(
+            kmers=df,
+            out=args.embedded,
+            force=args.force,
+            method=args.embed_method,
+            embed_dimensions=args.embed_dimensions,
+            do_pca=args.do_pca,
+            pca_dimensions=args.pca_dimensions,
+            seed=args.seed,
+        )
 
 
 if __name__ == "__main__":

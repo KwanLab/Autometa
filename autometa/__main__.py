@@ -36,9 +36,9 @@ from autometa.common import coverage, kmers, markers, utilities
 from autometa.common.metabin import MetaBin
 from autometa.common.metagenome import Metagenome
 from autometa.config.user import AutometaUser
-from autometa import taxonomy
-from autometa.common.markers import Markers
+from autometa.taxonomy import vote
 from autometa.binning import recursive_dbscan
+from autometa.common.exceptions import AutometaError
 
 
 logger = logging.getLogger("autometa")
@@ -108,6 +108,18 @@ def init_logger(fpath=None, verbosity=0):
 def run_autometa(mgargs):
     """Run the autometa metagenome binning pipeline using the provided metagenome args.
 
+    Pipeline
+    --------
+
+        #. Filter contigs in metagenome by length
+        #. Determine metagenome coverages
+        #. Count metagenome k-mers
+        #. Call metagenome ORFs
+        #. Assign contig taxonomy and filter by kingdom of interest
+        #. Annotate gene markers
+        #. Prepare primary table from annotations
+        #. Bin contigs using primary table
+
     Parameters
     ----------
     mgargs : argparse.Namespace
@@ -123,51 +135,57 @@ def run_autometa(mgargs):
     I.e. Demarkate new exception (not yet handled) vs. handled exception.
     Subclassing an AutometaError class may be most appropriate use case here.
     """
+
+    # 1. Apply length filter (if desired).
     mg = Metagenome(
         assembly=mgargs.files.metagenome,
         outdir=mgargs.parameters.outdir,
         nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
         prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-        taxonomy_fpath=mgargs.files.taxonomy,
         fwd_reads=mgargs.files.fwd_reads,
         rev_reads=mgargs.files.rev_reads,
         se_reads=mgargs.files.se_reads,
-        taxon_method=mgargs.parameters.taxon_method,
     )
-
+    # TODO asynchronous execution here (work-queue/Makeflow tasks) 1a.
+    # Describe metagenome prior to length filter
+    # COMBAK: Checkpoint length filtered
     try:
-        # Original (raw) file should not be manipulated so return new object
+        # Original (raw) file should not be manipulated so we return a new object
         mg = mg.length_filter(
             out=mgargs.files.length_filtered, cutoff=mgargs.parameters.length_cutoff
         )
-        # COMBAK: Checkpoint length filtered
     except FileExistsError as err:
-        # COMBAK: Checkpoint length filtered
         logger.debug(f"{mgargs.files.length_filtered} already exists. Continuing..")
         mg = Metagenome(
             assembly=mgargs.files.length_filtered,
             outdir=mgargs.parameters.outdir,
             nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
             prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-            taxonomy_fpath=mgargs.files.taxonomy,
             fwd_reads=mgargs.files.fwd_reads,
             rev_reads=mgargs.files.rev_reads,
             se_reads=mgargs.files.se_reads,
-            taxon_method=mgargs.parameters.taxon_method,
         )
-    # TODO asynchronous execution here (work-queue/Makeflow tasks)
-    kmers.count(
+    # TODO asynchronous execution here (work-queue/Makeflow tasks) 1b.
+    # Describe metagenome after length filter
+
+    # TODO asynchronous execution here (work-queue/Makeflow tasks) 2a.
+    counts = kmers.count(
         assembly=mg.assembly,
         size=mgargs.parameters.kmer_size,
-        clr_transform=mgargs.parameters.kmer_clr_transform,
-        freqs_outfpath=mgargs.files.kmer_counts,
-        norm_freqs_outfpath=mgargs.files.kmer_normalized,
+        out=mgargs.files.kmer_counts,
         force=mgargs.parameters.force,
         verbose=mgargs.parameters.verbose,
         multiprocess=mgargs.parameters.kmer_multiprocess,
         cpus=mgargs.parameters.cpus,
     )
+    kmers.normalize(
+        df=counts,
+        method=mgargs.parameters.kmer_transform,
+        out=mgargs.files.kmer_normalized,
+        force=mgargs.parameters.force,
+    )
     # COMBAK: Checkpoint kmers
+    # TODO asynchronous execution here (work-queue/Makeflow tasks) 2b.
     coverage.get(
         fasta=mg.assembly,
         out=mgargs.files.coverages,
@@ -181,11 +199,18 @@ def run_autometa(mgargs):
         bed=mgargs.files.bed,
         cpus=mgargs.parameters.cpus,
     )
-    # COMBAK: Checkpoint coverages
+    # TODO asynchronous execution here (work-queue/Makeflow tasks) 2c.
+    mg.call_orfs(
+        force=mgargs.parameters.force,
+        cpus=mgargs.parameters.cpus,
+        parallel=mgargs.parameters.parallel,
+    )
 
+    # 3. Assign taxonomy (if desired).
+    # COMBAK: Checkpoint coverages
     if mgargs.parameters.do_taxonomy:
         # First assign taxonomy
-        taxonomy.assign(
+        vote.assign(
             method=mgargs.parameters.taxon_method,
             outfpath=mgargs.files.taxonomy,
             fasta=mg.assembly,
@@ -203,7 +228,7 @@ def run_autometa(mgargs):
             cpus=mgargs.parameters.cpus,
         )
         # Now filter by Kingdom
-        metabin = taxonomy.get(
+        metabin = vote.get(
             fpath=mgargs.files.taxonomy,
             assembly=mg.assembly,
             ncbi_dir=mgargs.databases.ncbi,
@@ -214,28 +239,46 @@ def run_autometa(mgargs):
             mgargs.parameters.outdir, f"{mgargs.parameters.kingdom}.orfs.faa"
         )
         metabin.write_orfs(fpath=orfs_fpath, orf_type="prot")
-        contigs = set(metabin.contigs)
+        contigs = set(metabin.contig_ids)
     else:
-        orfs_fpath = mgargs.parameters.amino_acid_orfs
+        orfs_fpath = mgargs.files.amino_acid_orfs
         contigs = {record.id for record in mg.seqrecords}
 
+    # 4. Annotate marker genes for retained ORFs.
     # markers.get(...)
-    markers = Markers(
-        orfs_fpath=orfs_fpath,
-        kingdom=mgargs.parameters.kingdom,
-        dbdir=mgargs.databases.markers,
-    ).get()
+    # We use orfs_fpath here instead of our config filepath
+    # because we may have filtered out ORFs by taxonomy.
+    if mgargs.parameters.kingdom == "bacteria":
+        scans = mgargs.files.bacteria_hmmscan
+        markers_outfpath = mgargs.files.bacteria_markers
+    else:
+        scans = mgargs.files.archaea_hmmscan
+        markers_outfpath = mgargs.files.archaea_markers
 
+    markers_df = markers.get(
+        kingdom=mgargs.parameters.kingdom,
+        orfs=orfs_fpath,
+        dbdir=mgargs.databases.markers,
+        scans=scans,
+        out=markers_outfpath,
+        force=mgargs.parameters.force,
+        seed=mgargs.parameters.seed,
+    )
+
+    # 5. Prepare contigs' annotations for binning
     # At this point, we should have kmer counts, coverages and possibly taxonomy info
     # Embed the kmer counts to retrieve our initial master dataframe
     master = kmers.embed(
         kmers=mgargs.files.kmer_normalized,
-        embedded=mgargs.files.kmer_embedded,
+        out=mgargs.files.kmer_embedded,
+        force=mgargs.parameters.force,
+        embed_dimensions=mgargs.parameters.embed_dimensions,
         do_pca=mgargs.parameters.do_pca,
         pca_dimensions=mgargs.parameters.pca_dimensions,
-        embedding_method=mgargs.parameters.embedding_method,
+        method=mgargs.parameters.embed_method,
+        seed=mgargs.parameters.seed,
     )
-    # Prepare master dataframe for binning. Add coverage and possibly taxonomy annotations
+    # Add coverage and possibly taxonomy annotations
     master = master[master.index.isin(contigs)]
     if mgargs.parameters.do_taxonomy:
         annotations = [mgargs.files.coverages, mgargs.files.taxonomy]
@@ -246,21 +289,27 @@ def run_autometa(mgargs):
         master = pd.merge(master, df, how="left", left_index=True, right_index=True)
     master = master.convert_dtypes()
 
+    # 6. Bin contigs
     bins_df = recursive_dbscan.binning(
         master=master,
-        markers=markers,
+        markers=markers_df,
         domain=mgargs.parameters.kingdom,
         completeness=mgargs.parameters.completeness,
         purity=mgargs.parameters.purity,
         taxonomy=mgargs.parameters.do_taxonomy,
-        clustering_method=mgargs.parameters.clustering_method,
         starting_rank=mgargs.parameters.starting_rank,
+        method=mgargs.parameters.clustering_method,
         reverse_ranks=mgargs.parameters.reverse_ranks,
+        verbose=mgargs.parameters.verbose,
+    )
+    binning_fpath = (
+        mgargs.files.bacteria_binning
+        if mgargs.parameters.kingdom == "bacteria"
+        else mgargs.files.archaea_binning
     )
     binning_cols = ["cluster", "completeness", "purity"]
-    bins_df[binning_cols].to_csv(
-        mgargs.files.binning, sep="\t", index=True, header=True
-    )
+    bins_df[binning_cols].to_csv(binning_fpath, sep="\t", index=True, header=True)
+    return bins_df
 
 
 def main(args):
@@ -287,13 +336,18 @@ def main(args):
     user = AutometaUser(nproc=args.cpus)
     user.configure(dryrun=args.check_dependencies, update=args.update)
 
+    # all_bins = {}
     for config in args.config:
         # TODO: Add directions to master from WorkQueue
         mgargs = user.prepare_binning_args(config)
-        run_autometa(mgargs)
-        # user.refine_binning()
-        # user.process_binning()
-    # user.get_pangenomes()
+        bins = run_autometa(mgargs)
+
+        # TODO: refinement/processing/prep for pangenome algos
+        # refined_bins = refine_binning(bins)
+        # processed_bins = process_binning(refined_bins)
+        # sample = mgargs.parameters.metagenome_num
+        # all_bins.update({sample: processed_bins})
+    # pangenomes = get_pangenomes(all_bins)
 
 
 def entrypoint():
@@ -356,16 +410,16 @@ def entrypoint():
         logger.info("User cancelled run. Exiting...")
         sys.exit(1)
     except Exception as err:
-        issue_request = """
-        An error was encountered!
-
-        Please help us fix your problem!
-
-        You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
-        """
-        err.issue_request = issue_request
         logger.exception(err)
-        logger.info(issue_request)
+        if not issubclass(err.__class__, AutometaError):
+            issue_request = """
+            An error was encountered!
+
+            Please help us fix your problem!
+
+            You may file an issue with us at https://github.com/KwanLab/Autometa/issues/new/choose
+            """
+            logger.info(issue_request)
         sys.exit(1)
 
 

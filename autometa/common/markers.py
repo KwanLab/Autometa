@@ -39,212 +39,129 @@ MARKERS_DIR = os.path.join(BASE_DIR, "databases", "markers")
 logger = logging.getLogger(__name__)
 
 
-class Markers:
-    """Autometa Markers class containing methods to search, annotate and retrieve marker genes.
+def load(fpath, format="wide"):
+    """Read markers table into specified `format`.
 
     Parameters
     ----------
-    orfs_fpath : str
-        </path/to/orfs.faa>
-    kingdom : str, optional
-        kingdom to search for marker genes (the default is 'bacteria').
-    dbdir : str, optional
-        <path/to/database/directory> (the default is {MARKERS_DIR}).
-        Directory should contain hmmpressed marker genes database files.
-
-    Attributes
-    ----------
-    hmmdb : str
-        </path/to/hmmpressed/`dbdir`/`kingdom`.single_copy.hmm
-    cutoffs : str
-        </path/to/`dbdir`/`kingdom`.single_copy.cutoffs
-    hmmscan_fp : str
-        </path/to/`kingdom`.hmmscan.tsv>
-    markers_fp : str
+    fpath : str
         </path/to/`kingdom`.markers.tsv>
+    format : str, optional
+        * wide - index=contig, cols=[domain sacc,..] (default)
+        * long - index=contig, cols=['sacc','count']
+        * list - {contig:[sacc,...],...}
+        * counts - {contig:len([sacc,...]), ...}
+
+    Returns
+    -------
+    pd.DataFrame or dict
+        * wide - index=contig, cols=[domain sacc,..] (default)
+        * long - index=contig, cols=['sacc','count']
+        * list - {contig:[sacc,...],...}
+        * counts - {contig:len([sacc,...]), ...}
+
+    Raises
+    -------
+    FileNotFoundError
+        Provided `fpath` does not exist
+    ValueError
+        Provided `format` is not in choices:
+        choices = wide, long, list or counts
+
     """
-
-    def __init__(self, orfs_fpath, kingdom="bacteria", dbdir=MARKERS_DIR):
-        self.orfs_fpath = os.path.realpath(orfs_fpath)
-        self.kingdom = kingdom.lower()
-        self.dbdir = dbdir
-        self.hmmdb = os.path.join(self.dbdir, f"{self.kingdom}.single_copy.hmm")
-        self.cutoffs = os.path.join(self.dbdir, f"{self.kingdom}.single_copy.cutoffs")
-        hmmscan_fname = ".".join([self.kingdom, "hmmscan.tsv"])
-        self.hmmscan_fp = os.path.join(os.path.dirname(self.orfs_fpath), hmmscan_fname)
-        markers_fname = ".".join([self.kingdom, "markers.tsv"])
-        self.markers_fp = os.path.join(os.path.dirname(self.orfs_fpath), markers_fname)
-
-    @property
-    def searched(self):
-        """Determine whether hmmscan results (`self.hmmscan_fp`) exist.
-
-        Returns
-        -------
-        bool
-            True if `self.hmmscan_fp` exists and is not empty else False.
-
-        """
-        if os.path.exists(self.hmmscan_fp) and os.path.getsize(self.hmmscan_fp):
-            return True
-        return False
-
-    @property
-    def found(self):
-        """Determine whether marker results (`self.markers_fp`) exist.
-
-        Returns
-        -------
-        bool
-            True if `self.markers_fp` exists and is not empty else False.
+    if not os.path.exists(fpath):
+        raise FileNotFoundError(fpath)
+    df = pd.read_csv(fpath, sep="\t", index_col="contig")
+    grouped_df = df.groupby("contig")["sacc"]
+    if format == "wide":
+        return grouped_df.value_counts().unstack()
+    elif format == "long":
+        return grouped_df.value_counts().reset_index(level=1, name="count")
+    elif format == "list":
+        return {k: v.tolist() for k, v in list(grouped_df)}
+    elif format == "counts":
+        return grouped_df.count().to_dict()
+    else:
+        params = ["wide", "long", "list", "counts"]
+        err_msg = f"{format} is not a supported format.\n\tSupported formats: {params}"
+        # TODO: Write Marker specific AutometaException
+        raise ValueError(err_msg)
 
 
-        """
-        if os.path.exists(self.markers_fp) and os.path.getsize(self.markers_fp):
-            return True
-        return False
+def get(
+    kingdom,
+    orfs,
+    dbdir,
+    scans=None,
+    out=None,
+    force=False,
+    seed=42,
+    format="wide",
+    **hmmer_args,
+) -> pd.DataFrame:
+    """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
-    @property
-    def n_ucgs(self):
-        """Get the number of universally conserved marker genes.
+    Parameters
+    ----------
+    kingdom: str
+        kingdom to annotate markers
+        choices = ['bacteria', 'archaea']
+    orfs: str
+        Path to amino-acid ORFs file
+    dbdir:
+        Directory should contain hmmpressed marker genes database files.
+    scans: str, optional
+        Path to existing hmmscan table to filter by cutoffs
+    out: str, optional
+        Path to write annotated markers table.
+    force : bool, optional
+        Whether to overwrite existing `out` file path, by default False.
+    format : str, optional
+        * wide - returns wide dataframe of contig PFAM counts (default)
+        * long - returns long dataframe of contig PFAM counts
+        * list - returns list of pfams for each contig
+        * counts - returns count of pfams for each contig
+    hmmer_args: dict, optional
+        additional keyword arguments to pass to `hmmer.hmmscan`
 
-        Returns
-        -------
-        int
-            Get the number of universally conserved marker genes from `self.ucgs`.
+    Returns
+    -------
+    pd.Dataframe or dict
+        * wide - pd.DataFrame(index_col=contig, columns=[PFAM,...])
+        * long - pd.DataFrame(index_col=contig, columns=['sacc','count'])
+        * list - {contig:[pfam,pfam,...],contig:[...],...}
+        * counts - {contig:count, contig:count,...}
 
-        """
-        return len(self.ucgs)
+    Raises
+    -------
+    ValueError
+        Why the exception is raised.
+    """
+    orfs = os.path.realpath(orfs)
+    kingdom = kingdom.lower()
+    hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
+    cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
+    hmmscan_fname = ".".join([kingdom, "hmmscan.tsv"])
+    scans = os.path.join(os.path.dirname(orfs), hmmscan_fname) if not scans else scans
+    markers_fname = ".".join([kingdom, "markers.tsv"])
+    out = os.path.join(os.path.dirname(orfs), markers_fname) if not out else out
+    kingdom = kingdom.lower()
 
-    def get_ucgs(self):
-        """Retrieve Universally Conserved Markers Genes for sequences
+    def do_scan():
+        hmmer.hmmscan(
+            orfs=orfs, hmmdb=hmmdb, outfpath=scans, seed=seed, **hmmer_args,
+        )
 
-        Returns
-        -------
-        list
-            Annotated universally conserved marker genes from `self.orfs_fpath`.
+    def do_filter():
+        hmmer.filter_markers(
+            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs,
+        )
 
-        Raises
-        -------
-        NotImplementedError
-            method not yet implemented
-
-        """
-        raise NotImplementedError
-
-    def get_marker_set(self, taxon):
-        """Retrieve the marker set corresponding to the provided `taxon`.
-
-        Parameters
-        ----------
-        taxon : str
-            taxon-specific markers
-
-        Returns
-        -------
-        str
-            </path/to/hmmpressed/taxon-specific-markers.hmm>
-
-        Raises
-        -------
-        NotImplementedError
-            Functionality has not yet been implemented.
-
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def load(fpath, format="wide"):
-        """Read markers table into specified `format`.
-
-        Parameters
-        ----------
-        fpath : str
-            </path/to/`kingdom`.markers.tsv>
-        format : str, optional
-            * wide - index=contig, cols=[domain sacc,..] (default)
-            * long - index=contig, cols=['sacc','count']
-            * list - {contig:[sacc,...],...}
-            * counts - {contig:len([sacc,...]), ...}
-
-        Returns
-        -------
-        pd.DataFrame or dict
-            * wide - index=contig, cols=[domain sacc,..] (default)
-            * long - index=contig, cols=['sacc','count']
-            * list - {contig:[sacc,...],...}
-            * counts - {contig:len([sacc,...]), ...}
-
-        Raises
-        -------
-        FileNotFoundError
-            Provided `fpath` does not exist
-        ValueError
-            Provided `format` is not in choices:
-            choices = wide, long, list or counts
-
-        """
-        if not os.path.exists(fpath):
-            raise FileNotFoundError(fpath)
-        df = pd.read_csv(fpath, sep="\t", index_col="contig")
-        grouped_df = df.groupby("contig")["sacc"]
-        if format == "wide":
-            return grouped_df.value_counts().unstack()
-        elif format == "long":
-            return grouped_df.value_counts().reset_index(level=1, name="count")
-        elif format == "list":
-            return {k: v.tolist() for k, v in list(grouped_df)}
-        elif format == "counts":
-            return grouped_df.count().to_dict()
-        else:
-            params = ["wide", "long", "list", "counts"]
-            err_msg = (
-                f"{format} is not a supported format.\n\tSupported formats: {params}"
-            )
-            # TODO: Write Marker specific AutometaException
-            raise ValueError(err_msg)
-
-    def get(self, format="wide", **kwargs):
-        """Retrieve contigs' markers from markers database that pass cutoffs filter.
-
-        Parameters
-        ----------
-        format : str, optional
-            * wide - returns wide dataframe of contig PFAM counts (default)
-            * long - returns long dataframe of contig PFAM counts
-            * list - returns list of pfams for each contig
-            * counts - returns count of pfams for each contig
-        kwargs: dict
-            additional keyword arguments to pass to `hmmer.hmmscan`
-
-        Returns
-        -------
-        pd.Dataframe or dict
-            * wide - pd.DataFrame(index_col=contig, columns=[PFAM,...])
-            * long - pd.DataFrame(index_col=contig, columns=['sacc','count'])
-            * list - {contig:[pfam,pfam,...],contig:[...],...}
-            * counts - {contig:count, contig:count,...}
-
-        Raises
-        -------
-        ValueError
-            Why the exception is raised.
-        """
-        if not self.searched:
-            hmmer.hmmscan(
-                orfs=self.orfs_fpath,
-                hmmdb=self.hmmdb,
-                outfpath=self.hmmscan_fp,
-                **kwargs,
-            )
-        if not self.found:
-            hmmer.filter_markers(
-                infpath=self.hmmscan_fp,
-                outfpath=self.markers_fp,
-                cutoffs=self.cutoffs,
-                orfs=self.orfs_fpath,
-            )
-        return Markers.load(fpath=self.markers_fp, format=format)
+    for fp, func in zip([scans, out], [do_scan, do_filter]):
+        if os.path.exists(fp) and os.path.getsize(fp):
+            continue
+        func()
+    return load(fpath=out, format=format)
 
 
 def main():
@@ -257,11 +174,11 @@ def main():
         level=logger.DEBUG,
     )
     parser = argparse.ArgumentParser(
-        description="Annotate ORFs with kingdom-marker information",
+        description="Annotate ORFs with kingdom-specific marker information",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "orfs",
+        "--orfs",
         help="Path to a fasta file containing amino acid sequences of open reading frames",
     )
     parser.add_argument(
@@ -271,15 +188,38 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
+        "--hmmscan",
+        help="Path to hmmscan output table containing the respective `kingdom` single-copy marker annotations.",
+    )
+    parser.add_argument(
+        "--out",
+        help="Path to write filtered annotated markers corresponding to `kingdom`.",
+    )
+    parser.add_argument(
         "--dbdir",
         help="Path to directory containing the single-copy marker HMM databases.",
         default=MARKERS_DIR,
     )
+    parser.add_argument(
+        "--force",
+        help="Whether to overwrite existing provided annotations.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--seed", help=f"Seed to set random state for hmmscan.", default=42, type=int,
+    )
     args = parser.parse_args()
 
-    markers = Markers(orfs_fpath=args.orfs, kingdom=args.kingdom, dbdir=args.dbdir)
-
-    markers.get()
+    get(
+        kingdom=args.kingdom,
+        orfs=args.orfs,
+        dbdir=args.dbdir,
+        scans=args.hmmscan,
+        out=args.out,
+        force=args.force,
+        seed=args.seed,
+    )
 
 
 if __name__ == "__main__":

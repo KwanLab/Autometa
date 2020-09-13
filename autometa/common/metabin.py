@@ -36,11 +36,9 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio import SeqUtils
 from functools import lru_cache
 
-from autometa.common.markers import Markers, MARKERS_DIR
 from autometa.common import kmers
 from autometa.common.utilities import timeit
 from autometa.common.external import prodigal
-from autometa.binning import recursive_dbscan
 
 
 logger = logging.getLogger(__name__)
@@ -416,124 +414,6 @@ class MetaBin:
             f"Prot. ORFs called: {self.prot_orfs_exist}\n"
         )
 
-    @timeit
-    def get_binning(self, method="recursive_dbscan", **kwargs):
-        """Retrieve binning results from provided `method`.
-
-        Note: Most required arguments should be provided in `kwargs`, this is
-        currently done to allow easy addition of other binning methods via `method` arg.
-
-        Parameters
-        ----------
-        method : str
-            Description of parameter `method` (the default is 'recursive_dbscan').
-        **kwargs : dict
-            Additional keyword arguments to be passed in respective to the provided
-            `method`
-
-            * kmers : str, </path/to/kmers.tsv>
-            * embedded : str, </path/to/kmers.embedded.tsv>
-            * do_pca : bool, Perform PCA prior to embedding
-            * embedding_method : str, Embedding method to use choices=['sksne','bhsne','umap']
-            * perplexity : float, perplexity setting for embedding method sksne/bhsne
-            * coverage : str, </path/to/coverages.tsv>
-            * taxonomy : str, </path/to/taxonomy.tsv>
-            * domain : str, kindom to bin choices=['bacteria','archaea']
-            * purity : float, purity cutoff to apply to bins
-            * completeness : float, completeness cutoff to apply to bins
-            * reverse : bool, If true will bin taxa from least to most specific rank
-
-        Returns
-        -------
-        pd.DataFrame
-            index=contig cols=['cluster','completeness','purity',...]
-
-        Raises
-        -------
-        NotImplementedError
-            Provided `method` is not yet implemented.
-
-        """
-        if method == "recursive_dbscan":
-            try:
-                embedded_df = kmers.embed(
-                    kmers=kwargs.get("kmers"),
-                    embedded=kwargs.get("embedded"),
-                    do_pca=kwargs.get("do_pca", True),
-                    pca_dimensions=kwargs.get("pca_dims", 50),
-                    method=kwargs.get("embedding_method", "bhsne"),
-                    perplexity=kwargs.get("perplexity", 30),
-                )
-            except ValueError as error:
-                logger.exception(error)
-            master_df = embedded_df
-            coverage_fp = kwargs.get("coverage")
-            if coverage_fp:
-                coverage_df = pd.read_csv(coverage_fp, sep="\t", index_col="contig")
-                master_df = pd.merge(
-                    master_df,
-                    coverage_df,
-                    how="left",
-                    left_index=True,
-                    right_index=True,
-                )
-            taxonomy_fp = kwargs.get("taxonomy")
-            if taxonomy_fp:
-                taxa_df = pd.read_csv(taxonomy_fp, sep="\t", index_col="contig")
-                master_df = pd.merge(
-                    left=master_df,
-                    right=taxa_df,
-                    how="left",
-                    left_index=True,
-                    right_index=True,
-                )
-            master_df = self.subset_df(master_df)
-            master_df = master_df.convert_dtypes()
-            use_taxonomy = True if "taxid" in master_df else False
-            markers = self.markers(kwargs.get("domain", "bacteria"))
-            logger.info(f'Binning {kwargs.get("domain")} with {method}')
-            return recursive_dbscan.binning(
-                master=master_df,
-                markers=markers,
-                domain=kwargs.get("domain", "bacteria"),
-                completeness=kwargs.get("completeness", 20.0),
-                purity=kwargs.get("purity", 90.0),
-                taxonomy=use_taxonomy,
-                clustering_method=kwargs.get("clustering_method", "dbscan"),
-                starting_rank=kwargs.get("starting_rank", "superkingdom"),
-                reverse_ranks=kwargs.get("reverse_ranks", True),
-            )
-        raise NotImplementedError(f"{method} not yet implemented")
-
-    @timeit
-    def markers(self, kingdom="bacteria", dbdir=MARKERS_DIR, force=False):
-        f"""Retrieve Markers dataframe using orfs called from `orf_caller` and
-        annotated belonging to provided `kingdom`.
-
-        Parameters
-        ----------
-        kingdom : str, optional
-            Domain specific markers to retrieve (the default is 'bacteria').
-        dbdir : str, optional
-            </path/to/markers/database/directory> (the default is {MARKERS_DIR}).
-            Should contain pressed hmms and cutoffs table.
-        force : bool, optional
-            Will overwrite existing marker annotations (the default is {force}).
-
-        Returns
-        -------
-        pd.DataFrame
-            wide format - index_col='contig', columns=[PFAM,...]
-
-        """
-
-        logger.debug(f"Retrieving markers for {kingdom} kingdom")
-        orfs_fp = os.path.join(self.outdir, f"{kingdom.lower()}.orfs.faa")
-        if (not os.path.exists(orfs_fp)) or (os.path.exists(orfs_fp) and force):
-            self.write_orfs(orfs_fp)
-        markers = Markers(orfs_fp, kingdom=kingdom, dbdir=dbdir)
-        return markers.get()
-
     def subset_df(self, df):
         """Retrieve subset of provided `df` containing only `contig_ids`.
 
@@ -561,35 +441,27 @@ class MetaBin:
 
 
 def main():
-    import argparse
-    import logging as logger
+    # import argparse
+    # import logging as logger
 
-    logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG,
-    )
-    parser = argparse.ArgumentParser(description="Autometa MetaBin Class")
-    parser.add_argument("--assembly", help="</path/to/metagenome.fasta>", required=True)
-    parser.add_argument(
-        "--contig-ids", help="list of contig ids in MetaBin", nargs="+", required=True
-    )
-    parser.add_argument(
-        "--domain", help="kingdom to use for binning", default="bacteria"
-    )
-    parser.add_argument("--kmers", help="</path/to/kmers.tsv")
-    parser.add_argument("--taxonomy", help="</path/to/taxonomy_vote.tsv")
-    parser.add_argument("--coverage", help="</path/to/coverages.tsv")
-    args = parser.parse_args()
-    mag = MetaBin(args.assembly, args.contig_ids)
-
-    mag.get_binning(
-        method="recursive_dbscan",
-        kmers=args.kmers,
-        domain=args.domain,
-        taxonomy=args.taxonomy,
-        coverage=args.coverage,
-    )
+    # logger.basicConfig(
+    #     format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+    #     datefmt="%m/%d/%Y %I:%M:%S %p",
+    #     level=logger.DEBUG,
+    # )
+    # parser = argparse.ArgumentParser(description="Autometa MetaBin Class")
+    # parser.add_argument("--assembly", help="</path/to/metagenome.fasta>", required=True)
+    # parser.add_argument(
+    #     "--contig-ids", help="list of contig ids in MetaBin", nargs="+", required=True
+    # )
+    # parser.add_argument(
+    #     "--domain", help="kingdom to use for binning", default="bacteria"
+    # )
+    # parser.add_argument("--kmers", help="</path/to/kmers.tsv")
+    # parser.add_argument("--taxonomy", help="</path/to/taxonomy_vote.tsv")
+    # parser.add_argument("--coverage", help="</path/to/coverages.tsv")
+    # args = parser.parse_args()
+    pass
 
 
 if __name__ == "__main__":
