@@ -58,7 +58,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
-from autometa.common.markers import Markers
+from autometa.common.markers import load as load_markers
 
 
 logger = logging.getLogger(__name__)
@@ -227,7 +227,7 @@ def get_clustered_markers(bin_data, markers_df):
     bin_data : namedtuple("BinData", ['clustered':pd.DataFrame,'unclustered':pd.DataFrame])
         binning data split between clustered/unclustered contigs
     markers_df : pd.DataFrame
-        Dataframe retrieved from :func: Markers.load(fpath, format='wide')
+        Dataframe retrieved from :func:autometa.common.markers.load(fpath, format='wide')
 
     Returns
     -------
@@ -435,7 +435,7 @@ def filter_contaminating_predictions(predictions_df, markers_df, bin_df):
     predictions_df : pd.DataFrame
         classifier predictions, index=contig, col='cluster'
     markers_df : pd.DataFrame
-        markers retrieved from Markers.load(fpath, format='wide')
+        markers retrieved from autometa.common.markers.load(fpath, format='wide')
     bin_df : pd.DataFrame
         Binning dataframe with which to compare classifications.
 
@@ -579,7 +579,7 @@ def main():
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     labels = get_labels(bin_df)
-    markers_df = Markers.load(fpath=args.markers, format="wide")
+    markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(
         f"classifier={args.classifier}, seed={args.seed}, n.estimators={args.num_classifications}, confidence={args.confidence*100}%"

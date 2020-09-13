@@ -36,12 +36,12 @@ from Bio import SeqIO
 from sklearn.cluster import DBSCAN
 from hdbscan import HDBSCAN
 
-from autometa.common.markers import Markers
+from autometa.common.markers import load as load_markers
 from autometa.common import kmers
 
 # TODO: This should be from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
-from autometa.common.exceptions import BinningError
+from autometa.common.exceptions import TableFormatError
 from autometa.taxonomy.ncbi import NCBI
 
 pd.set_option("mode.chained_assignment", None)
@@ -147,7 +147,7 @@ def run_dbscan(df, eps, dropcols=["cluster", "purity", "completeness"]):
     if "coverage" in df.columns:
         cols.append("coverage")
     if np.any(df.isnull()):
-        raise BinningError(
+        raise TableFormatError(
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
     X = df.loc[:, cols].to_numpy()
@@ -289,9 +289,11 @@ def run_hdbscan(
 
     Raises
     -------
-    BinningError
-    ------------
-    Dataframe is missing kmer/coverage annotations
+    ValueError
+        sets `usecols` and `dropcols` may not share elements
+    TableFormatError
+        `df` is missing k-mer or coverage annotations.
+
     """
     for col in dropcols:
         if col in df.columns:
@@ -304,7 +306,7 @@ def run_hdbscan(
     if "coverage" in df.columns:
         cols.append("coverage")
     if np.any(df.isnull()):
-        raise BinningError(
+        raise TableFormatError(
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
     X = df.loc[:, cols].to_numpy()
@@ -552,12 +554,12 @@ def binning(
 
     Raises
     -------
-    BinningError
+    TableFormatError
         No marker information is availble for contigs to be binned.
     """
     # First check needs to ensure we have markers available to check binning quality...
     if master.loc[master.index.isin(markers.index)].empty:
-        raise BinningError(
+        raise TableFormatError(
             "No markers for contigs in table. Unable to assess binning quality"
         )
 
@@ -653,7 +655,7 @@ def main():
     import logging as logger
 
     logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
@@ -726,7 +728,7 @@ def main():
         kmers_df, cov_df[["coverage"]], how="left", left_index=True, right_index=True,
     )
 
-    markers_df = Markers.load(args.markers)
+    markers_df = load_markers(args.markers)
     markers_df = markers_df.convert_dtypes()
     # Taxonomy.load()
     if args.taxonomy:

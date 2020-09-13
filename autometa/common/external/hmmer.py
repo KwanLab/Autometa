@@ -43,7 +43,7 @@ from autometa.common.external import prodigal
 logger = logging.getLogger(__name__)
 
 
-def annotate_parallel(orfs, hmmdb, outfpath, cpus):
+def annotate_parallel(orfs, hmmdb, outfpath, cpus, seed=42):
     outdir = os.path.dirname(os.path.realpath(outfpath))
     outprefix = os.path.splitext(os.path.basename(outfpath))[0]
     tmp_dirpath = tempfile.mkdtemp(dir=outdir)
@@ -64,6 +64,8 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
         "--recstart",
         "'>'",
         "hmmscan",
+        "--seed",
+        str(seed),
         "--cpu",
         "0",
         "-o",
@@ -100,8 +102,18 @@ def annotate_parallel(orfs, hmmdb, outfpath, cpus):
     shutil.rmtree(tmp_dirpath)
 
 
-def annotate_sequential(orfs, hmmdb, outfpath, cpus):
-    cmd = ["hmmscan", "--cpu", str(cpus), "--tblout", outfpath, hmmdb, orfs]
+def annotate_sequential(orfs, hmmdb, outfpath, cpus, seed=42):
+    cmd = [
+        "hmmscan",
+        "--seed",
+        str(seed),
+        "--cpu",
+        str(cpus),
+        "--tblout",
+        outfpath,
+        hmmdb,
+        orfs,
+    ]
     logger.debug(" ".join(cmd))
     try:
         subprocess.run(
@@ -113,7 +125,14 @@ def annotate_sequential(orfs, hmmdb, outfpath, cpus):
 
 
 def hmmscan(
-    orfs, hmmdb, outfpath, cpus=0, force=False, parallel=True, gnu_parallel=False
+    orfs,
+    hmmdb,
+    outfpath,
+    cpus=0,
+    force=False,
+    parallel=True,
+    gnu_parallel=False,
+    seed=42,
 ):
     """Runs hmmscan on dataset ORFs and provided hmm database.
 
@@ -137,6 +156,8 @@ def hmmscan(
         Will use multithreaded parallelization offered by hmmscan (the default is True).
     gnu_parallel : bool, optional
         Will parallelize hmmscan using GNU parallel (the default is False).
+    seed : int, optional
+        set RNG seed to <n> (if 0: one-time arbitrary seed) (the default is 42).
 
     Returns
     -------
@@ -156,15 +177,21 @@ def hmmscan(
     if gnu_parallel and parallel:
         raise ValueError("Both parallel and gnu_parallel were provided as True")
     # OPTIMIZE: we want to extend parallel to grid computing (workqueue?) via --sshlogin?
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
         raise FileExistsError(f"{outfpath}. Use force to overwrite!")
     if gnu_parallel:
-        annotate_parallel(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus)
+        annotate_parallel(
+            orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus, seed=seed
+        )
     elif parallel:
         cpus = mp.cpu_count() if not cpus else cpus
-        annotate_sequential(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus)
+        annotate_sequential(
+            orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=cpus, seed=seed
+        )
     else:
-        annotate_sequential(orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=0)
+        annotate_sequential(
+            orfs=orfs, hmmdb=hmmdb, outfpath=outfpath, cpus=0, seed=seed
+        )
     if not os.path.exists(outfpath):
         raise FileNotFoundError(f"{outfpath} not written.")
     return outfpath
@@ -234,7 +261,7 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     for fp in [infpath, cutoffs]:
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) > 0 and not force:
+    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
         raise FileExistsError(f"{outfpath} already exists")
     hmmtab_header = ["sname", "sacc", "orf", "score"]
     col_indices = [0, 1, 2, 5]
@@ -296,7 +323,7 @@ def main():
 
     if (
         os.path.exists(args.hmmscan)
-        and os.path.getsize(args.hmmscan) > 0
+        and os.path.getsize(args.hmmscan)
         and not args.force
     ):
         result = args.hmmscan

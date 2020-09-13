@@ -178,7 +178,7 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     else:
         annotate_sequential(assembly=assembly, prots_out=prots_out, nucls_out=nucls_out)
     for fp in [nucls_out, prots_out]:
-        if not os.path.exists(fp) or os.path.getsize(fp) == 0:
+        if not os.path.exists(fp) or not os.path.getsize(fp):
             raise ChildProcessError(f"{fp} not written")
         try:
             # Fasta file format check by simply reading orf annotations

@@ -229,12 +229,16 @@ def get_versions(program=None):
         `program` is not an executable dependency.
     """
     if program:
-        if type(program) is not str:
+        if not isinstance(program, str):
             raise TypeError(f"program is not string. given:{type(program)}")
         exe_name = os.path.basename(program)
         if exe_name not in globals():
             raise KeyError(f"{exe_name} not in executables")
-        return globals()[exe_name]()
+        try:
+            return globals()[exe_name]()
+        except TypeError:
+            logger.warning(f"{exe_name} not found. This may impact a stage of the Autometa pipeline.")
+            return "Not found"
     versions = {}
     executables = find_executables()
     for exe, found in executables.items():

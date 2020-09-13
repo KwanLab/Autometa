@@ -145,13 +145,17 @@ def parse_config(fpath=None):
         "cov_from_spades": bool,
         "kmer_size": int,
         "kmer_multiprocess": bool,
-        "kmer_normalize": bool,
+        "kmer_transform": str,
         "do_pca": bool,
         "pca_dims": int,
-        "embedding_method": str,
+        "embed_dimensions": int,
+        "embed_method": str,
         "do_taxonomy": bool,
+        "tmpdir": str,
         "taxon_method": str,
-        "reversed": bool,
+        "reverse_ranks": bool,
+        "starting_rank": str,
+        "clustering_method": str,
         "completeness": float,
         "purity": float,
         "binning_method": str,
@@ -160,13 +164,14 @@ def parse_config(fpath=None):
         "usepickle": bool,
         "parallel": bool,
         "cpus": int,
+        "seed": int,
         "config": str,
         "resume": bool,
         "fwd_reads": list,
         "rev_reads": list,
         "se_reads": list,
     }
-    if fpath and (not os.path.exists(fpath) or os.path.getsize(fpath) == 0):
+    if fpath and (not os.path.exists(fpath) or not os.path.getsize(fpath)):
         raise FileNotFoundError(fpath)
     config = get_config(fpath) if fpath else DEFAULT_CONFIG
     namespace = Namespace()
@@ -191,7 +196,7 @@ def parse_config(fpath=None):
     return namespace
 
 
-def init_default():
+def set_home_dir():
     """Set the `home_dir` in autometa's default configuration (default.config)
     based on autometa's current location. If the `home_dir` variable is already
     set, then this will be used as the `home_dir` location.

@@ -26,112 +26,34 @@ File containing customized AutometaErrors for more specific exception handling
 
 
 class AutometaError(Exception):
-    """
-    Base class for other exceptions
+    """Base class for Autometa Errors."""
+
+    pass
+
+
+class TableFormatError(AutometaError):
+    """TableFormatError exception class.
+
+    Exception called when Table format is incorrect.
+
+    This is usually a result of a table missing the 'contig' column as this is
+    often used as the index.
     """
 
     pass
 
 
-class KmerFormatError(AutometaError):
-    """
-    Raised when either kmer_fpath file format is invalid or provided kmers or embedded are not formatted correctly for use.
+class ChecksumMismatchError(AutometaError):
+    """ChecksumMismatchError exception class
 
-    Parameters
-    ----------
-    AutometaError : class
-        Base class for other exceptions
+    Exception called when checksums do not match.
+
     """
 
-    def __init__(self, fpath):
-        self.fpath = fpath
-
-    def __str__(self):
-        """
-        Operator overloading to return the path to k-mers frequency tab-delimited table or
-        k-mers normalized tab-delimited table
-
-        Returns
-        -------
-        str
-            Path to k-mers frequency tab-delimited table or k-mers normalized tab-delimited table
-        """
-        return (
-            f'{self.fpath} does not contain a "contig" column. '
-            "Ensure the k-mer matrix was properly generated."
-        )
+    pass
 
 
-class KmerEmbeddingError(AutometaError):
-    """
-    Raisede when either kmers or embedded are not provided.
-
-    Parameters
-    ----------
-    AutometaError : class
-        Base class for other exceptions
-    """
-
-    def __init__(self, value):
-        self.value = value
-
-
-class BinningError(AutometaError):
-    """
-    Raised when no marker information is availble for contigs to be binned or when dataframe is missing kmer/coverage annotations
-
-    Parameters
-    ----------
-    AutometaError : class
-        Base class for other exceptions
-    """
-
-    def __init__(self, value):
-        self.value = value
-
-
-class DatabaseOutOfSyncError(AutometaError):
-    """
-    Raised when NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
-
-    Parameters
-    ----------
-    AutometaError : class
-        Base class for other exceptions
-    """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        """
-        Operator overloading to return the text message written while raising the error,
-        rather than the message of __str__ by base exception
-
-        Returns
-        -------
-        str
-            Message written alongside raising the exception
-        """
-        message = """
-
-        NCBI databases nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz and nr.gz may be out of sync.
-
-        Up-to-date databases may be downloaded at:
-
-        non-redundant protein database (nr) - ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
-
-        prot.accession2taxid.gz - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz
-
-        taxdump.tar.gz - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
-
-        Required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
-
-        """
-        return f"{self.value}\n{message}"
-
-
-class ExternalToolError(AutometaException):
+class ExternalToolError(AutometaError):
     """
     Raised when samtools sort is not executed properly.
 
@@ -149,14 +71,38 @@ class ExternalToolError(AutometaException):
         return f"{self.err}\ncommand:\n{self.cmd}"
 
 
+class DatabaseOutOfSyncError(AutometaError):
+    """
+    Raised when NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+    Parameters
+    ----------
+    AutometaError : class
+        Base class for other exceptions
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        """
+        Operator overloading to return the text message written while raising the error,
+        rather than the message of __str__ by base exception
+        Returns
+        -------
+        str
+            Message written alongside raising the exception
+        """
+        message = """
+        NCBI databases nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz and nr.gz may be out of sync.
+        Up-to-date databases may be downloaded at:
+        non-redundant protein database (nr) - ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
+        prot.accession2taxid.gz - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz
+        taxdump.tar.gz - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+        Required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
+        """
+        return f"{self.value}\n{message}"
+
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="file containing utilities functions for Autometa pipeline"
+    print(
+        "This file contains Exceptions for the Autometa pipeline and should not be run directly!"
     )
-    print("file containing utilities functions for Autometa pipeline")
-    args = parser.parse_args()
-    import sys
-
-    sys.exit(1)

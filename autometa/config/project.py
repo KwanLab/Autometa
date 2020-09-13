@@ -25,7 +25,6 @@ Configuration handling for Autometa User Project.
 """
 
 
-import copy
 import logging
 import os
 
@@ -33,6 +32,9 @@ from autometa.config import DEFAULT_CONFIG
 from autometa.config import get_config
 from autometa.config import parse_config
 from autometa.config import put_config
+from autometa.common.utilities import make_inputs_checkpoints
+from autometa.common.utilities import get_existing_checkpoints
+from autometa.common.utilities import merge_checkpoints
 
 
 logger = logging.getLogger(__name__)
@@ -140,6 +142,7 @@ class Project:
             for option, value in self.config.items(section):
                 mg_config.set(section, option, value)
         # symlink any files that already exist and were specified
+        checkpoint_inputs = []
         for option in mg_config.options("files"):
             default_fname = os.path.basename(DEFAULT_CONFIG.get("files", option))
             option_fpath = os.path.realpath(mg_config.get("files", option))
@@ -148,9 +151,13 @@ class Project:
                     default_fname += ".gz"
                 full_fpath = os.path.join(metagenome_dirpath, default_fname)
                 os.symlink(option_fpath, full_fpath)
+                checkpoint_inputs.append(full_fpath)
             else:
                 full_fpath = os.path.join(metagenome_dirpath, default_fname)
             mg_config.set("files", option, full_fpath)
+        checkpoints = make_inputs_checkpoints(checkpoint_inputs)
+        checkpoints_fpath = mg_config.get("files", "checkpoints")
+        checkpoints.to_csv(checkpoints_fpath, sep="\t", index=False, header=True)
         mg_config.set("parameters", "outdir", metagenome_dirpath)
         mg_config_fpath = os.path.join(metagenome_dirpath, f"{metagenome_name}.config")
         mg_config.add_section("config")
@@ -192,16 +199,23 @@ class Project:
         old_config_fp = self.config.get("metagenomes", metagenome)
         old_config = get_config(old_config_fp)
         new_config = get_config(fpath)
+        new_checkpoints = []
         for section in new_config.sections():
             if not old_config.has_section(section):
                 old_config.add_section(section)
             for option in new_config.options(section):
                 new_value = new_config.get(section, option)
-                # TODO: Update file checksums (checkpoint update)
-                # TODO: Check if new value exists... Otherwise keep old option
-                if section == "files" and not os.path.exists(new_value):
-                    continue
+                if section == "files":
+                    if not os.path.exists(new_value):
+                        continue
+                    new_checkpoints.append(new_value)
                 old_config.set(section, option, new_value)
+        checkpoints_fpath = old_config.get("files", "checkpoints")
+        checkpoints = merge_checkpoints(
+            old_checkpoint_fpath=checkpoints_fpath,
+            new_checkpoints=new_checkpoints,
+            overwrite=True,
+        )
         put_config(old_config, old_config_fp)
         logger.debug(f"Updated {metagenome}.config with {fpath}")
         return parse_config(old_config_fp)

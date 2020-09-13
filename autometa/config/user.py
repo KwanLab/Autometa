@@ -34,10 +34,8 @@ from autometa.config import environ
 from autometa.common import utilities
 
 from autometa.common.metagenome import Metagenome
-from autometa.common.metabin import MetaBin
 from autometa.config.databases import Databases
 from autometa.config.project import Project
-from autometa.common.utilities import timeit
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +61,7 @@ class AutometaUser:
     """
 
     def __init__(self, user_config=config.DEFAULT_FPATH, nproc=2):
-        self.home_dir = self.set_home()
+        self.home_dir = config.set_home_dir()
         self.nproc = nproc
         self.user_config = user_config
         self.config = config.get_config(self.user_config)
@@ -75,15 +73,11 @@ class AutometaUser:
     def __str__(self):
         return self.user_config
 
-    def set_home(self):
-        """Set `home_dir` in default.config to current Autometa location."""
-        return config.init_default()
-
     def save(self):
         """Saves the current user config to `self.user_config` file path."""
         config.put_config(self.config, self.user_config)
 
-    def configure(self, dryrun=True):
+    def configure(self, dryrun=True, update=False):
         """Configure user execution environment and databases.
 
         Parameters
@@ -101,13 +95,14 @@ class AutometaUser:
         self.config, exe_satisfied = environ.configure(self.config)
         logger.info(f"Executable dependencies satisfied: {exe_satisfied}")
         # Database env
-        dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc)
-        self.config = dbs.configure()
+        dbs = Databases(self.config, dryrun=dryrun, nproc=self.nproc, update=update)
+        no_checksum = not update
+        self.config = dbs.configure(no_checksum=no_checksum)
         logger.info(f"Database dependencies satisfied: {dbs.satisfied()}")
         if dryrun:
             return
 
-        if not dbs.satisfied:
+        if not dbs.satisfied():
             raise LookupError("Database dependencies not satisfied!")
         if not exe_satisfied:
             raise LookupError("Executable dependencies not satisfied!")
@@ -195,8 +190,8 @@ class AutometaUser:
             project.save()
             return mgargs
         # If resuming existing metagenome run. Check whether config file has changed.
-        old_config_fp = project.metagenomes.get(metagenome)
-        old_chksum = utilities.get_checksum(old_config_fp)
+        old_config_fpath = project.metagenomes.get(metagenome)
+        old_chksum = utilities.get_checksum(old_config_fpath)
         new_chksum = utilities.get_checksum(fpath)
         if old_chksum != new_chksum:
             mgargs = project.update(
@@ -204,122 +199,6 @@ class AutometaUser:
             )
         project.save()
         return mgargs
-
-    @utilities.timeit
-    def run_binning(self, mgargs):
-        """Run the autometa metagenome binning pipeline using the provided metagenome args.
-
-        Parameters
-        ----------
-        mgargs : argparse.Namespace
-            metagenome args
-
-        Returns
-        -------
-        NoneType
-
-        Raises
-        -------
-        TODO: Need to enumerate all exceptions raised from within binning pipeline.
-        I.e. Demarkate new exception (not yet handled) vs. handled exception.
-        Subclassing an AutometaException class may be most appropriate use case here.
-        """
-        mg = Metagenome(
-            assembly=mgargs.files.metagenome,
-            outdir=mgargs.parameters.outdir,
-            nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
-            prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-            taxonomy_fpath=mgargs.files.taxonomy,
-            fwd_reads=mgargs.files.fwd_reads,
-            rev_reads=mgargs.files.rev_reads,
-            se_reads=mgargs.files.se_reads,
-            taxon_method=mgargs.parameters.taxon_method,
-        )
-
-        try:
-            # Original (raw) file should not be manipulated so return new object
-            mg = mg.length_filter(
-                out=mgargs.files.length_filtered, cutoff=mgargs.parameters.length_cutoff
-            )
-            # COMBAK: Checkpoint length filtered
-        except FileExistsError as err:
-            # COMBAK: Checkpoint length filtered
-            logger.debug(f"{mgargs.files.length_filtered} already exists. Continuing..")
-            mg = Metagenome(
-                assembly=mgargs.files.length_filtered,
-                outdir=mgargs.parameters.outdir,
-                nucl_orfs_fpath=mgargs.files.nucleotide_orfs,
-                prot_orfs_fpath=mgargs.files.amino_acid_orfs,
-                taxonomy_fpath=mgargs.files.taxonomy,
-                fwd_reads=mgargs.files.fwd_reads,
-                rev_reads=mgargs.files.rev_reads,
-                se_reads=mgargs.files.se_reads,
-                taxon_method=mgargs.parameters.taxon_method,
-            )
-        # I.e. asynchronous execution here (work-queue tasks)
-        mg.get_kmers(
-            kmer_size=mgargs.parameters.kmer_size,
-            normalized=mgargs.files.kmer_normalized,
-            out=mgargs.files.kmer_counts,
-            multiprocess=mgargs.parameters.kmer_multiprocess,
-            nproc=mgargs.parameters.cpus,
-            force=mgargs.parameters.force,
-        )
-        # COMBAK: Checkpoint kmers
-
-        coverages = mg.get_coverages(
-            out=mgargs.files.coverages,
-            from_spades=mgargs.parameters.cov_from_spades,
-            sam=mgargs.files.sam,
-            bam=mgargs.files.bam,
-            lengths=mgargs.files.lengths,
-            bed=mgargs.files.bed,
-        )
-        # COMBAK: Checkpoint coverages
-
-        if mgargs.parameters.do_taxonomy:
-            # Filter by Kingdom
-            kingdoms = mg.get_kingdoms(
-                ncbi=mgargs.databases.ncbi,
-                usepickle=mgargs.parameters.usepickle,
-                blast=mgargs.files.blastp,
-                hits=mgargs.files.blastp_hits,
-                force=mgargs.parameters.force,
-                cpus=mgargs.parameters.cpus,
-            )
-
-            if not mgargs.parameters.kingdom in kingdoms:
-                recovered_kingdoms = ", ".join(kingdoms.keys())
-                raise KeyError(
-                    f"{mgargs.parameters.kingdom} not recovered in dataset. Recovered: {recovered_kingdoms}"
-                )
-
-            mag = kingdoms.get(mgargs.parameters.kingdom)
-        else:
-            mag = MetaBin(
-                assembly=mg.assembly, seqrecords=mg.seqrecords, outdir=mg.outdir
-            )
-
-        # Perform binning
-        bins_df = mag.get_binning(
-            method=mgargs.parameters.binning_method,
-            kmers=mgargs.files.kmer_counts,
-            embedded=mgargs.files.kmer_embedded,
-            do_pca=mgargs.parameters.do_pca,
-            pca_dims=mgargs.parameters.pca_dims,
-            embedding_method=mgargs.parameters.embedding_method,
-            coverage=mgargs.files.coverages,
-            domain=mgargs.parameters.kingdom,
-            taxonomy=mgargs.files.taxonomy,
-            reverse=mgargs.parameters.reversed,
-        )
-        binning_cols = ["cluster", "completeness", "purity"]
-        binning_fpath = (
-            mgargs.files.bacteria_binning
-            if mgargs.parameters.kingdom == "bacteria"
-            else mgargs.files.archaea_binning
-        )
-        bins_df[binning_cols].to_csv(binning_fpath, sep="\t", index=True, header=True)
 
 
 def main():

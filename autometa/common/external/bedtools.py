@@ -30,6 +30,9 @@ import subprocess
 
 import pandas as pd
 
+from autometa.common.exceptions import TableFormatError
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -74,7 +77,7 @@ def genomecov(ibam, lengths, out, force=False):
         return out
     with open(os.devnull, "w") as stderr, open(out, "w") as stdout:
         retcode = subprocess.call(cmd, stdout=stdout, stderr=stderr, shell=True)
-    if retcode or not os.path.exists(out) or os.stat(out).st_size == 0:
+    if retcode or not os.path.exists(out) or not os.path.getsize(out):
         raise ChildProcessError(f"bedtools failed: {cmd}")
     return out
 
@@ -104,12 +107,12 @@ def parse(bed, out=None, force=False):
         `bed` does not exist
 
     """
-    if out and os.path.exists(out) and not os.stat(out).st_size == 0:
+    if out and os.path.exists(out) and os.path.getsize(out):
         try:
             cols = ["contig", "coverage"]
             return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
-        except ValueError as err:
-            raise ValueError(f"InvalidTableFormat: {out}")
+        except ValueError:
+            raise TableFormatError(out)
     if not os.path.exists(bed):
         raise FileNotFoundError(bed)
     names = ["contig", "depth", "bases", "length", "depth_fraction"]
