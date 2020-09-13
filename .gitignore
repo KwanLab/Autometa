@@ -151,3 +151,6 @@ tests/data/*
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+
+# Mac
+.DS_Store
