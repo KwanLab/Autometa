@@ -53,8 +53,10 @@ class MetaBin:
     ----------
     assembly : str
         </path/to/metagenome.fasta>
-    contigs : list
-        List of contigs to manipulate/annotate (must be contained in metagenome).
+    contig_ids : list
+        List of contig ids to manipulate/annotate (must be contained in metagenome).
+    seqrecords : list
+        List of seqrecords to manipulate/annotate (must be contained in metagenome).
     outdir : str, optional
         </path/to/output/directory> (Default is the directory storing the `assembly`).
 
@@ -65,9 +67,9 @@ class MetaBin:
     root : str
         root name of `assembly` (Will remove common extension like '.fasta')
     nucls_fname : str
-        File name of `contigs` nucleotide ORFs
+        File name of contigs nucleotide ORFs
     prots_fname : str
-        File name of `contigs` amino-acid ORFs
+        File name of contigs amino-acid ORFs
     nucl_orfs_fpath : str
         </path/to/nucleotide/`outdir`/`nucls_fname`>
     prot_orfs_fpath : str
@@ -75,9 +77,28 @@ class MetaBin:
     nseqs : int
         Number of contigs in MetaBin
 
+    Raises
+    ------
+    ValueError
+        One of `contig_ids` or `seqrecords` must be provided
+    ValueError
+        `contig_ids` do not match `seqrecords`
     """
 
-    def __init__(self, assembly, contigs, outdir=None):
+    def __init__(self, assembly, contig_ids=[], seqrecords=[], outdir=None):
+        if not contig_ids and not seqrecords:
+            raise ValueError("One of `contig_ids` or `seqrecords` must be provided!")
+        if contig_ids and seqrecords:
+            contig_id_diff = set(contig_ids).difference({rec.id for rec in seqrecords})
+            if contig_id_diff:
+                raise ValueError(
+                    f"`contig_ids` do not match `seqrecords`. Extra `contig_ids`: {contig_id_diff}"
+                )
+            seqrecord_diff = {rec.id for rec in seqrecords}.difference(contig_ids)
+            if seqrecord_diff:
+                raise ValueError(
+                    f"`seqrecords` do not match `contig_ids`. Extra `seqrecords`: {seqrecord_diff}"
+                )
         self.assembly = os.path.realpath(assembly)
         self.basename = os.path.basename(self.assembly)
         self.root = os.path.splitext(self.basename)[0]
@@ -90,8 +111,16 @@ class MetaBin:
         self.prots_fname = ".".join([self.root, prots_ext])
         self.nucl_orfs_fpath = os.path.join(self.outdir, self.nucls_fname)
         self.prot_orfs_fpath = os.path.join(self.outdir, self.prots_fname)
-        self.contigs = contigs
-        self.nseqs = len(self.contigs)
+        if contig_ids and not seqrecords:
+            self.contig_ids = contig_ids
+            self.seqrecords = self.get_seqrecords()
+        elif seqrecords and not contig_ids:
+            self.seqrecords = seqrecords
+            self.contig_ids = self.get_contig_ids()
+        else:
+            self.seqrecords = seqrecords
+            self.contig_ids = contig_ids
+        self.nseqs = len(self.contig_ids)
 
     @property
     @lru_cache(maxsize=None)
@@ -107,10 +136,19 @@ class MetaBin:
         with open(self.assembly) as fh:
             return [seq for title, seq in SimpleFastaParser(fh)]
 
-    @property
-    @lru_cache(maxsize=None)
-    def seqrecords(self):
-        """Retrieve seqrecords from assembly contained in `self.contigs`.
+    def get_contig_ids(self):
+        """Retrieve contig_ids from `self.seqrecords`.
+
+            Returns
+            -------
+            set
+                {contig_id, contig_id, ...}
+
+            """
+        return {seqrecord.id for seqrecord in self.seqrecords}
+
+    def get_seqrecords(self):
+        """Retrieve seqrecords from assembly contained in `self.contig_ids`.
 
         Returns
         -------
@@ -119,7 +157,9 @@ class MetaBin:
 
         """
         return [
-            seq for seq in SeqIO.parse(self.assembly, "fasta") if seq.id in self.contigs
+            seqrecord
+            for seqrecord in SeqIO.parse(self.assembly, "fasta")
+            if seqrecord.id in self.contig_ids
         ]
 
     @property
@@ -186,10 +226,36 @@ class MetaBin:
         """
         return sum(len(seq) for seq in self.seqrecords)
 
+    def fragmentation_metric(self, quality_measure=0.50):
+        """Describes the quality of assembled genomes that are fragmented in
+        contigs of different length.
+
+        For more information see:
+            http://www.metagenomics.wiki/pdf/definition/assembly/n50
+
+        Parameters
+        ----------
+        quality_measure : 0 < float < 1
+            Description of parameter `quality_measure` (the default is .50).
+            I.e. default measure is N50, but could use .1 for N10 or .9 for N90
+
+        Returns
+        -------
+        int
+            Minimum contig length to cover `quality_measure` of genome (i.e. percentile contig length)
+
+        """
+        target_size = self.size * quality_measure
+        lengths = 0
+        for length in sorted([len(record) for record in self.seqrecords], reverse=True):
+            lengths += length
+            if lengths > target_size:
+                return length
+
     @property
     @lru_cache(maxsize=None)
     def length_weighted_gc(self):
-        """Get the length weighted GC content of `contigs`.
+        """Get the length weighted GC content of `seqrecords`.
 
         Returns
         -------
@@ -302,11 +368,11 @@ class MetaBin:
         if not self.prepared(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
         return prodigal.orf_records_from_contigs(
-            contigs=self.contigs, fpath=self.prot_orfs_fpath
+            contigs=self.contig_ids, fpath=self.prot_orfs_fpath
         )
 
     def write_orfs(self, fpath, orf_type="prot"):
-        """Write `orf_type` ORFs from `contigs` to `fpath`.
+        """Write `orf_type` ORFs from `contigs_ids` to `fpath`.
 
         Parameters
         ----------
@@ -468,7 +534,7 @@ class MetaBin:
         return markers.get()
 
     def subset_df(self, df):
-        """Retrieve subset of provided `df` containing only `contigs`.
+        """Retrieve subset of provided `df` containing only `contig_ids`.
 
         Parameters
         ----------
@@ -479,7 +545,7 @@ class MetaBin:
         Returns
         -------
         pd.DataFrame
-            index='contig', cols=cols in provided `df`, subset by `contigs`.
+            index='contig', cols=cols in provided `df`, subset by `contig_ids`.
 
         """
         if type(df) not in [pd.DataFrame, pd.Series]:
@@ -487,10 +553,10 @@ class MetaBin:
                 f"Unable to subset df. {type(df)} is not Series or DataFrame"
             )
         if type(df) is pd.DataFrame:
-            return df[df.index.isin(self.contigs)]
+            return df[df.index.isin(self.contig_ids)]
         elif type(df) is str and self.prepared(df):
             df = pd.read_csv(df, sep="\t", index_col="contig")
-        return df[df.index.isin(self.contigs)]
+        return df[df.index.isin(self.contig_ids)]
 
 
 def main():
@@ -505,7 +571,7 @@ def main():
     parser = argparse.ArgumentParser(description="Autometa MetaBin Class")
     parser.add_argument("--assembly", help="</path/to/metagenome.fasta>", required=True)
     parser.add_argument(
-        "--contigs", help="list of contigs in MetaBin", nargs="+", required=True
+        "--contig-ids", help="list of contig ids in MetaBin", nargs="+", required=True
     )
     parser.add_argument(
         "--domain", help="kingdom to use for binning", default="bacteria"
@@ -514,7 +580,7 @@ def main():
     parser.add_argument("--taxonomy", help="</path/to/taxonomy_vote.tsv")
     parser.add_argument("--coverage", help="</path/to/coverages.tsv")
     args = parser.parse_args()
-    mag = MetaBin(args.assembly, args.contigs)
+    mag = MetaBin(args.assembly, args.contig_ids)
 
     mag.get_binning(
         method="recursive_dbscan",

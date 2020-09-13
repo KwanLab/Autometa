@@ -224,7 +224,8 @@ class NCBI:
                 right_index=True)
         """
         canonical_ranks = [r for r in reversed(NCBI.CANONICAL_RANKS)]
-        canonical_ranks.remove("root")
+        if "root" in canonical_ranks:
+            canonical_ranks.remove("root")
         taxids = list(set(taxids))
         ranked_taxids = {}
         for rank in canonical_ranks:
