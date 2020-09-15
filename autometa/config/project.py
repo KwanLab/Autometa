@@ -28,9 +28,11 @@ Configuration handling for Autometa User Project.
 import logging
 import os
 
+from configparser import NoOptionError
+
 from autometa.config import DEFAULT_CONFIG
 from autometa.config import get_config
-from autometa.config import parse_config
+from autometa.config import parse_args
 from autometa.config import put_config
 from autometa.common.utilities import make_inputs_checkpoints
 from autometa.common.utilities import get_existing_checkpoints
@@ -43,6 +45,31 @@ logger = logging.getLogger(__name__)
 class Project:
     """Autometa Project class to configure project directory given `config_fpath`
 
+    Parameters
+    ----------
+    config_fpath : str
+        </path/to/project.config>
+
+    Attributes
+    ----------
+    dirpath : str
+        Path to directory containing `config_fpath`
+    config : config.ConfigParser
+        interpolated config object parsed from `config_fpath`.
+    n_metagenomes : int
+        Number of metagenomes contained in project directory
+    metagenomes : dict
+        metagenomes pertaining to project keyed by number and values of metagenome.config file path.
+    new_metagenome_num : int
+        Retrieve new minimum metagenome num from metagenomes in project.
+
+    Methods
+    ----------
+    * self.save()
+    * self.new_metagenome_directory()
+    * self.setup_checkpoints_and_files()
+    * self.add()
+    * self.update()
     """
 
     def __init__(self, config_fpath):
@@ -78,6 +105,7 @@ class Project:
             if os.path.exists(v)
         }
 
+    @property
     def new_metagenome_num(self):
         """Retrieve new minimum metagenome num from metagenomes in project.
 
@@ -106,6 +134,75 @@ class Project:
         """
         put_config(self.config, self.config_fpath)
 
+    def new_metagenome_directory(self):
+        """Create a new metagenome directory in project
+
+        Returns
+        -------
+        str
+            Path to newly created metagenome directory contained in project
+
+        Raises
+        ------
+        IsADirectoryError
+            Directory that is trying to be created already exists
+        """
+        metagenome_name = f"metagenome_{self.new_metagenome_num:03d}"
+        metagenome_dirpath = os.path.join(self.dirpath, metagenome_name)
+        # Check presence of metagenome directory
+        if os.path.exists(metagenome_dirpath):
+            raise IsADirectoryError(metagenome_dirpath)
+        os.makedirs(metagenome_dirpath)
+        return metagenome_dirpath
+
+    def setup_checkpoints_and_files(self, config, dirpath):
+        """Update config files section with symlinks of existing files to metagenome output directory.
+        Also get checkpoints from each existing file and write these to a checkpoints file.
+
+        Note
+        ----
+        Will write checkpoints to `config.get("files", "checkpoints")` file path. Will skip writing checkpoints
+        if "checkpoints" is not available in "files".
+
+        Parameters
+        ----------
+        config : config.ConfigParser
+            metagenome config to be updated
+        dirpath : str
+            Path to output metagenome directory
+
+        Returns
+        -------
+        config.ConfigParser
+            Updated metagenome config
+        """
+        # symlink any files that already exist and were specified
+        checkpoint_inputs = []
+        try:
+            checkpoints_fpath = config.get("files", "checkpoints")
+        except NoOptionError:
+            logger.debug("checkpoints option unavailable, skipping.")
+            checkpoints_fpath = None
+        for option in config.options("files"):
+            default_fname = os.path.basename(DEFAULT_CONFIG.get("files", option))
+            option_fpath = os.path.realpath(config.get("files", option))
+            if os.path.exists(option_fpath):
+                if option_fpath.endswith(".gz") and not default_fname.endswith(".gz"):
+                    default_fname += ".gz"
+                full_fpath = os.path.join(dirpath, default_fname)
+                os.symlink(option_fpath, full_fpath)
+                checkpoint_inputs.append(full_fpath)
+            else:
+                full_fpath = os.path.join(dirpath, default_fname)
+            config.set("files", option, full_fpath)
+        if checkpoints_fpath:
+            logger.debug(
+                f"Making {len(checkpoint_inputs)} checkpoints and writing to {checkpoints_fpath}"
+            )
+            checkpoints = make_inputs_checkpoints(checkpoint_inputs)
+            checkpoints.to_csv(checkpoints_fpath, sep="\t", index=False, header=True)
+        return config
+
     def add(self, fpath):
         """Setup Autometa metagenome directory given a metagenome.config file.
 
@@ -120,68 +217,36 @@ class Project:
 
         Raises
         -------
-        FileNotFoundError
-            Directory found but metagenome.config not present
         IsADirectoryError
             Metagenome output directory already exists
         """
-        # metagenome_num = 1 + self.n_metagenomes
-        metagenome_num = self.new_metagenome_num()
-        metagenome_name = f"metagenome_{metagenome_num:03d}"
-        metagenome_dirpath = os.path.join(self.dirpath, metagenome_name)
-        mg_config_fpath = os.path.join(metagenome_dirpath, f"{metagenome_name}.config")
-        # Check presence of metagenome directory and config
-        mg_config_present = os.path.exists(mg_config_fpath)
-        mg_dir_present = os.path.exists(metagenome_dirpath)
-        if not mg_config_present and mg_dir_present:
-            raise FileNotFoundError(
-                "It appears there is already a metagenome directory"
-                " without a metagenome config file in the project hierarchy."
-                " Please check the integrity of the project file tree."
-                f"{mg_config_fpath} is not present but the directory exists!"
-                "Either remove the directory or locate the config file before continuing."
-            )
-        if mg_dir_present:
-            raise IsADirectoryError(metagenome_dirpath)
-
-        os.makedirs(metagenome_dirpath)
+        metagenome_dirpath = self.new_metagenome_directory()
+        metagenome_name = os.path.basename(metagenome_dirpath)
         mg_config = get_config(fpath)
-        # Add database and env for debugging individual metagenome binning runs.
+        # Add/Update database and env sections for debugging individual metagenome binning runs.
         for section in ["databases", "environ", "versions"]:
             if not mg_config.has_section(section):
                 mg_config.add_section(section)
             for option, value in self.config.items(section):
-                mg_config.set(section, option, value)
-        # symlink any files that already exist and were specified
-        checkpoint_inputs = []
-        for option in mg_config.options("files"):
-            default_fname = os.path.basename(DEFAULT_CONFIG.get("files", option))
-            option_fpath = os.path.realpath(mg_config.get("files", option))
-            if os.path.exists(option_fpath):
-                if option_fpath.endswith(".gz") and not default_fname.endswith(".gz"):
-                    default_fname += ".gz"
-                full_fpath = os.path.join(metagenome_dirpath, default_fname)
-                os.symlink(option_fpath, full_fpath)
-                checkpoint_inputs.append(full_fpath)
-            else:
-                full_fpath = os.path.join(metagenome_dirpath, default_fname)
-            mg_config.set("files", option, full_fpath)
-        checkpoints = make_inputs_checkpoints(checkpoint_inputs)
-        checkpoints_fpath = mg_config.get("files", "checkpoints")
-        checkpoints.to_csv(checkpoints_fpath, sep="\t", index=False, header=True)
+                if not mg_config.has_option(section, option):
+                    mg_config.set(section, option, value)
+        # symlink any files that already exist and were specified and checkpoint existing files
+        self.setup_checkpoints_and_files(config=mg_config, dirpath=metagenome_dirpath)
+        # Set outdir parameter and add config section linking metagenome config to project config
         mg_config.set("parameters", "outdir", metagenome_dirpath)
         mg_config_fpath = os.path.join(metagenome_dirpath, f"{metagenome_name}.config")
         mg_config.add_section("config")
         mg_config.set("config", "project", self.config_fpath)
         mg_config.set("config", "metagenome", mg_config_fpath)
+        # Save metagenome config to metagenome directory metagenome_00d.config
         put_config(mg_config, mg_config_fpath)
-        # Only write updated project config after successful metagenome configuration.
         self.config.set("metagenomes", metagenome_name, mg_config_fpath)
+        # Only write updated project config after successful metagenome configuration.
         self.save()
         logger.debug(
             f"updated {self.config_fpath} metagenome: {metagenome_name} : {mg_config_fpath}"
         )
-        return parse_config(mg_config_fpath)
+        return parse_args(mg_config_fpath)
 
     def update(self, metagenome_num, fpath):
         """Update project config metagenomes section with input metagenome.config file.
@@ -230,7 +295,7 @@ class Project:
         )
         put_config(old_config, old_config_fp)
         logger.debug(f"Updated {metagenome}.config with {fpath}")
-        return parse_config(old_config_fp)
+        return parse_args(old_config_fp)
 
 
 def main():
