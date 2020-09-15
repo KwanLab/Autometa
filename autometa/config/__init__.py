@@ -117,7 +117,7 @@ def update_config(fpath, section, option, value):
     logger.debug(f"updated {fpath} [{section}] option: {option} : {value}")
 
 
-def parse_config(fpath=None):
+def parse_args(fpath=None):
     """Generate argparse namespace (args) from config file.
 
     Parameters
