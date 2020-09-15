@@ -171,7 +171,7 @@ class AutometaUser:
         # 1. configure user environment
         self.configure()
         # 2. check workspace exists
-        mgargs = config.parse_config(fpath)
+        mgargs = config.parse_args(fpath)
         workspace = os.path.realpath(mgargs.parameters.workspace)
         if not os.path.exists(workspace):
             os.makedirs(workspace)

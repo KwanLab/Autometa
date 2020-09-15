@@ -60,7 +60,7 @@ def merge_annotations(mgargs):
     Parameters
     ----------
     mgargs : argparse.Namespace
-        metagenome args parsed from config using `config.parse_config`.
+        metagenome args parsed from config using `config.parse_args`.
 
     Returns
     -------
@@ -308,7 +308,7 @@ def main():
     configs_search_str = os.path.join(args.workspace, "**", "metagenome_*.config")
     config_fpaths = glob(configs_search_str, recursive=True)
     for config_fpath in config_fpaths:
-        mgargs = config.parse_config(config_fpath)
+        mgargs = config.parse_args(config_fpath)
         ncbi = NCBI(dirpath=mgargs.databases.ncbi)
         annotations = merge_annotations(mgargs)
         for domain, bin_df in annotations.items():
