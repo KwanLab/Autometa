@@ -66,7 +66,7 @@ def from_spades_names(records):
         dtype=float,
     )
     coverages.index.name = "contig"
-    return coverages
+    return coverages.to_frame()
 
 
 def make_length_table(fasta, out):
@@ -89,6 +89,10 @@ def make_length_table(fasta, out):
     lengths.index.name = "contig"
     lengths.to_csv(out, sep="\t", index=True, header=True)
     return out
+
+
+def normalize(df):
+    return df
 
 
 @utilities.timeit
@@ -168,7 +172,9 @@ def get(
         return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
 
     if from_spades:
-        return from_spades_names(records=[rec for rec in SeqIO.parse(fasta, "fasta")])
+        df = from_spades_names(records=[rec for rec in SeqIO.parse(fasta, "fasta")])
+        df.to_csv(out, sep="\t", index=True, header=True)
+        return df
 
     try:
         outdir = os.path.dirname(out)
