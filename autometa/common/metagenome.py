@@ -230,37 +230,9 @@ class Metagenome:
         """
         # COMBAK: Add checkpointing checksum check here
         for fp in [self.prot_orfs_fpath, self.nucl_orfs_fpath]:
-            if not os.path.exists(fp):
-                return False
-            elif not os.path.getsize(fp) > 0:
+            if not os.path.exists(fp) or not os.path.getsize(fp):
                 return False
         return True
-
-    @property
-    @lru_cache(maxsize=None)
-    def nucls(self):
-        """Retrieve `assembly` nucleotide ORFs.
-
-        Returns
-        -------
-        list
-            [SeqRecord, SeqRecord, ...]
-
-        """
-        return self.orfs(orf_type="nucl")
-
-    @property
-    @lru_cache(maxsize=None)
-    def prots(self):
-        """Retrieve `assembly` amino-acid ORFs.
-
-        Returns
-        -------
-        list
-            [SeqRecord, SeqRecord, ...]
-
-        """
-        return self.orfs(orf_type="prot")
 
     def fragmentation_metric(self, quality_measure=0.50):
         """Describes the quality of assembled genomes that are fragmented in
@@ -282,6 +254,10 @@ class Metagenome:
             weighted median)
 
         """
+        if not 0 < quality_measure < 1:
+            raise ValueError(
+                f"quality measure must be b/w 0 and 1! given: {quality_measure}"
+            )
         target_size = self.size * quality_measure
         lengths = []
         for length in sorted([len(seq) for seq in self.sequences], reverse=True):
@@ -437,35 +413,6 @@ class Metagenome:
         except ChildProcessError as err:
             raise err
         return nucls_fp, prots_fp
-
-    def orfs(self, orf_type="prot", cpus=0):
-        """Retrieves ORFs after being called from self.call_orfs.
-
-        Parameters
-        ----------
-        orf_type : str
-            format of ORFs to retrieve choices=['nucl','prot'] either nucleotide
-            or amino acids (the default is 'prot').
-
-        Returns
-        -------
-        list
-            [SeqRecord, ...]
-
-        Raises
-        -------
-        ValueError
-            Invalid `orf_type`. Choices=['prot','nucl']
-
-        """
-        if not self.orfs_called:
-            self.call_orfs(cpus=cpus)
-        if orf_type not in {"prot", "nucl"}:
-            raise ValueError('orf_type must be "prot" or "nucl"!')
-        orfs_fpath = (
-            self.prot_orfs_fpath if orf_type == "prot" else self.nucl_orfs_fpath
-        )
-        return [orf for orf in SeqIO.parse(orfs_fpath, "fasta")]
 
 
 def main():

@@ -212,7 +212,7 @@ def run_autometa(mgargs):
         vote.assign(
             method=mgargs.parameters.taxon_method,
             outfpath=mgargs.files.taxonomy,
-            fasta=mg.assembly,
+            assembly=mg.assembly,
             prot_orfs=mgargs.files.amino_acid_orfs,
             nucl_orfs=mgargs.files.nucleotide_orfs,
             blast=mgargs.files.blastp,
@@ -230,8 +230,8 @@ def run_autometa(mgargs):
         metabin = vote.get(
             fpath=mgargs.files.taxonomy,
             assembly=mg.assembly,
-            ncbi_dir=mgargs.databases.ncbi,
             kingdom=mgargs.parameters.kingdom,
+            ncbi_dir=mgargs.databases.ncbi,
             outdir=mgargs.parameters.outdir,
         )
         orfs_fpath = os.path.join(

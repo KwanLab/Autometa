@@ -7,11 +7,6 @@ from autometa.common import coverage
 # e.g. coverage_test_data = variables["coverage"]
 
 
-# coverage.get()
-# coverage.normalize()
-# coverage
-
-
 @pytest.fixture(name="small_metagenome")
 def fixture_metagenome(variables, tmp_path):
     kmer_test_data = variables["kmers"]
@@ -31,7 +26,6 @@ def fixture_metagenome(variables, tmp_path):
 # The external tools could be run or we could monkeypatch these.
 
 
-@pytest.mark.wip
 def test_coverage_get_from_spades(small_metagenome, tmp_path):
     out = tmp_path / "covs_from_spades.tsv"
     df = coverage.get(fasta=small_metagenome, from_spades=True, out=out)

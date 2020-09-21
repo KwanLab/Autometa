@@ -58,6 +58,7 @@ def fixture_dbdir():
 # TODO: Monkeypatch calls to hmmer?
 # Dependency on hmmpressed dbs seems like we need to try something different here now.
 @pytest.mark.wip
+@pytest.mark.skip
 @pytest.mark.parametrize("kingdom", ["bacteria", "archaea"])
 def test_marker_get(kingdom, orfs, dbdir):
     df = markers.get(kingdom, orfs, dbdir)

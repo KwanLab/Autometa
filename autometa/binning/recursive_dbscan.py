@@ -720,7 +720,7 @@ def main():
     args = parser.parse_args()
     # Kmers.load().embed(method=args.embedded_kmers)
     kmers_df = kmers.embed(
-        kmers=args.kmers, embedded=args.embedded_kmers, method=args.embedding_method
+        kmers=args.kmers, out=args.embedded_kmers, method=args.embedding_method
     )
 
     cov_df = pd.read_csv(args.coverage, sep="\t", index_col="contig")
