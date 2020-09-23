@@ -33,6 +33,8 @@ import shutil
 import pandas as pd
 
 from Bio import SeqIO
+from typing import Union, List
+
 
 from autometa.common.external import prodigal
 from autometa.common.metabin import MetaBin
@@ -46,22 +48,22 @@ logger = logging.getLogger(__name__)
 
 
 def assign(
-    outfpath,
-    method="majority_vote",
-    assembly=None,
-    prot_orfs=None,
-    nucl_orfs=None,
-    blast=None,
-    hits=None,
-    lca_fpath=None,
-    ncbi_dir=NCBI_DIR,
-    tmpdir=None,
-    usepickle=True,
-    force=False,
-    verbose=False,
-    parallel=True,
-    cpus=0,
-):
+    outfpath: str,
+    method: str = "majority_vote",
+    assembly: str = None,
+    prot_orfs: str = None,
+    nucl_orfs: str = None,
+    blast: str = None,
+    hits: str = None,
+    lca_fpath: str = None,
+    ncbi_dir: str = NCBI_DIR,
+    tmpdir: str = None,
+    usepickle: bool = True,
+    force: bool = False,
+    verbose: bool = False,
+    parallel: bool = True,
+    cpus: int = 0,
+) -> pd.DataFrame:
     """Assign taxonomy using `method` and write to `outfpath`.
 
     Parameters
@@ -118,88 +120,89 @@ def assign(
     method = method.lower()
     if method != "majority_vote":
         raise NotImplementedError(method)
-    try:
-        outdir = os.path.dirname(os.path.realpath(outfpath))
-        tmpdir = (
-            tmpdir
-            if tmpdir
-            else tempfile.mkdtemp(suffix=None, prefix="taxon-assignment", dir=outdir)
+    outdir = os.path.dirname(os.path.realpath(outfpath))
+    tmpdir = (
+        tmpdir
+        if tmpdir
+        else tempfile.mkdtemp(suffix=None, prefix="taxon-assignment", dir=outdir)
+    )
+    lca_fpath = lca_fpath if lca_fpath else os.path.join(tmpdir, "lca.tsv")
+    hits = hits if hits else os.path.join(tmpdir, "hits.pkl.gz")
+    blast = blast if blast else os.path.join(tmpdir, "blastp.tsv")
+
+    def call_orfs():
+        prodigal.run(
+            assembly=assembly,
+            nucls_out=nucl_orfs,
+            prots_out=prot_orfs,
+            force=force,
+            cpus=cpus,
+            parallel=parallel,
         )
-        lca_fpath = lca_fpath if lca_fpath else os.path.join(tmpdir, "lca.tsv")
-        hits = hits if hits else os.path.join(tmpdir, "hits.pkl.gz")
-        blast = blast if blast else os.path.join(tmpdir, "blastp.tsv")
 
-        def call_orfs():
-            prodigal.run(
-                assembly=assembly,
-                nucls_out=nucl_orfs,
-                prots_out=prot_orfs,
-                force=force,
+    def blast2lca():
+        if "lca" not in locals():
+            lca = LCA(
+                dbdir=ncbi_dir,
+                outdir=outdir,
+                usepickle=usepickle,
+                verbose=verbose,
                 cpus=cpus,
-                parallel=parallel,
             )
+        lca.blast2lca(
+            fasta=prot_orfs,
+            outfpath=lca_fpath,
+            blast=blast,
+            hits_fpath=hits,
+            force=force,
+        )
 
-        def retrieve_lcas():
-            if "lca" not in locals():
-                lca = LCA(
-                    dbdir=ncbi_dir,
-                    outdir=outdir,
-                    usepickle=usepickle,
-                    verbose=verbose,
-                    cpus=cpus,
-                )
-            lca.blast2lca(
-                fasta=prot_orfs,
-                outfpath=lca_fpath,
-                blast=blast,
-                hits_fpath=hits,
-                force=force,
+    def majority_vote_lca():
+        if "lca" not in locals():
+            lca = LCA(
+                dbdir=ncbi_dir,
+                outdir=outdir,
+                usepickle=usepickle,
+                verbose=verbose,
+                cpus=cpus,
             )
+        ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
+        votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca)
+        outfpath = majority_vote.write_votes(results=votes, outfpath=outfpath)
+        return pd.read_csv(outfpath, sep="\t", index_col="contig")
 
-        def vote_taxon():
-            if "lca" not in locals():
-                lca = LCA(
-                    dbdir=ncbi_dir,
-                    outdir=outdir,
-                    usepickle=usepickle,
-                    verbose=verbose,
-                    cpus=cpus,
-                )
-            ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
-            votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca)
-            return majority_vote.write_votes(results=votes, outfpath=outfpath)
+    logger.info(f"Assigning taxonomy via {method}. This may take a while...")
 
-        logger.info(f"Assigning taxonomy via {method}. This may take a while...")
+    # Setup of taxonomy assignment sequence depending on file(s) provided
+    calculation_sequence = {
+        "lca_exists": [majority_vote_lca],
+        "orfs_exists": [blast2lca, majority_vote_lca],
+        "full": [call_orfs, blast2lca, majority_vote_lca],
+    }
+    # Now we need to determine which point to start the calculation...
+    step = "full"
+    for fp, argname in zip(
+        [lca_fpath, hits, blast, prot_orfs], ["lca", "lca", "lca", "orfs"],
+    ):
+        if os.path.exists(fp):
+            step = f"{argname}_exists"
+            break
 
-        # Setup of taxonomy assignment sequence depending on file(s) provided
-        calculation_sequence = {
-            "lca_exists": [vote_taxon],
-            "orfs_exists": [retrieve_lcas, vote_taxon],
-            "full": [call_orfs, retrieve_lcas, vote_taxon],
-        }
-        # Now we need to determine which point to start the calculation...
-        for fp, argname in zip(
-            [lca_fpath, hits, blast, prot_orfs], ["lca", "lca", "lca", "orfs"],
-        ):
-            step = "full"
-            if os.path.exists(fp):
-                step = f"{argname}_exists"
-                break
+    if assembly and step == "full":
+        raise ValueError(f"assembly is required if no other files are specified!")
 
-        if assembly and step == "full":
-            raise ValueError(f"assembly is required if no other files are specified!")
-
-        logger.debug(f"starting taxonomy assignment sequence from {step}")
+    logger.debug(f"starting taxonomy assignment sequence from {step}")
+    try:
         for calculation in calculation_sequence[step]:
             logger.debug(f"running {calculation.__name__}")
-            if calculation.__name__ == "parse_bed":
+            if calculation.__name__ == "majority_vote_lca":
                 return calculation()
             calculation()
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def add_ranks(df, outfpath, ncbi_dir=NCBI_DIR):
+def add_ranks(df: pd.DataFrame, outfpath: str, ncbi: Union[NCBI, str]) -> pd.DataFrame:
     """Add canonical ranks to `df` and write to `outfpath`
 
     Parameters
@@ -208,15 +211,15 @@ def add_ranks(df, outfpath, ncbi_dir=NCBI_DIR):
         index="contig", column="taxid"
     outfpath : str
         Path to write taxonomy table with canonical ranks added.
-    ncbi_dir : str, optional
-        Path to NCBI databases directory, by default NCBI_DIR
+    ncbi : str, NCBI
+        Path to NCBI databases directory, or autometa NCBI instance.
 
     Returns
     -------
     pd.DataFrame
         index="contig", columns=["taxid", *canonical_ranks]
     """
-    ncbi = NCBI(ncbi_dir)
+    ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
     df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
     # This overwrites the existing table with the canonical ranks added.
@@ -226,7 +229,13 @@ def add_ranks(df, outfpath, ncbi_dir=NCBI_DIR):
     return df
 
 
-def get(fpath, assembly, kingdom, ncbi_dir=NCBI_DIR, outdir=None):
+def get(
+    fpath: str,
+    assembly: str,
+    kingdom: str,
+    ncbi_dir: str = NCBI_DIR,
+    outdir: str = None,
+) -> MetaBin:
     """Retrieve specific `kingdom` voted taxa for `assembly` from `fpath`
 
     Parameters
@@ -274,7 +283,9 @@ def get(fpath, assembly, kingdom, ncbi_dir=NCBI_DIR, outdir=None):
     return MetaBin(assembly=assembly, contig_ids=df.index.tolist(), outdir=outdir)
 
 
-def write_ranks(taxonomy, assembly, outdir, rank="superkingdom"):
+def write_ranks(
+    taxonomy: pd.DataFrame, assembly: str, outdir: str, rank: str = "superkingdom"
+) -> List[str]:
     """Write fastas split by `rank`
 
     Parameters

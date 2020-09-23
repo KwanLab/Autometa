@@ -235,7 +235,7 @@ class DiamondResult:
         return top_hit
 
 
-def makedatabase(fasta, database, cpus=mp.cpu_count()):
+def makedatabase(fasta: str, database: str, cpus: int = mp.cpu_count()) -> str:
     """
     Creates a database against which the query sequence would be blasted
 
@@ -269,17 +269,17 @@ def makedatabase(fasta, database, cpus=mp.cpu_count()):
 
 
 def blast(
-    fasta,
-    database,
-    outfpath,
-    blast_type="blastp",
-    evalue=float("1e-5"),
-    maxtargetseqs=200,
-    cpus=mp.cpu_count(),
-    tmpdir=None,
-    force=False,
-    verbose=False,
-):
+    fasta: str,
+    database: str,
+    outfpath: str,
+    blast_type: str = "blastp",
+    evalue: float = float("1e-5"),
+    maxtargetseqs: int = 200,
+    cpus: int = mp.cpu_count(),
+    tmpdir: str = None,
+    force: bool = False,
+    verbose: bool = False,
+) -> str:
     """
     Performs diamond blastp search using query sequence against diamond formatted database
 
@@ -364,7 +364,7 @@ def blast(
     return outfpath
 
 
-def parse(results, bitscore_filter=0.9, verbose=False):
+def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> dict:
     """
     Retrieve diamond results from output table
 
@@ -451,7 +451,7 @@ def parse(results, bitscore_filter=0.9, verbose=False):
     return hits
 
 
-def add_taxids(hits, database, verbose=True):
+def add_taxids(hits: dict, database: str, verbose: bool = True) -> dict:
     """
     Translates accessions to taxids from prot.accession2taxid.gz. If an accession number is no
     longer available in prot.accesssion2taxid.gz (either due to being suppressed, deprecated or
@@ -490,11 +490,6 @@ def add_taxids(hits, database, verbose=True):
     FileNotFoundError
         prot.accession2taxid.gz database is required for translation taxid
 
-    # TODO: Replace file_length func for database file.
-    (in this case 808,717,857 lines takes ~15 minutes simply to read each line...)
-    This causes unnecessary slowdown. On download of the respective database. Line
-    counts can be saved in config and replaced here for the file_length func. This
-    will allow for only one read-through of the file, instead of two.
     """
     disable = not verbose
     if not os.path.exists(database):
