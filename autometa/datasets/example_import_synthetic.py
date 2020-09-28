@@ -1,5 +1,5 @@
 # import load function
-# from autometa.datasets import load_synthetic
+# from autometa.datasets import synthetic
 
 # load in to data object
-# data = load_synthetic("MIX51")
+# data = synthetic.load("MIX51")
