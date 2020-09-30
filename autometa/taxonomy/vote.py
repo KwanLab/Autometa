@@ -129,6 +129,8 @@ def assign(
     lca_fpath = lca_fpath if lca_fpath else os.path.join(tmpdir, "lca.tsv")
     hits = hits if hits else os.path.join(tmpdir, "hits.pkl.gz")
     blast = blast if blast else os.path.join(tmpdir, "blastp.tsv")
+    prot_orfs = prot_orfs if prot_orfs else os.path.join(tmpdir, "orfs.faa")
+    nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(tmpdir, "orfs.fna")
 
     def call_orfs():
         prodigal.run(
@@ -157,7 +159,7 @@ def assign(
             force=force,
         )
 
-    def majority_vote_lca():
+    def majority_vote_lca(outfpath=outfpath):
         if "lca" not in locals():
             lca = LCA(
                 dbdir=ncbi_dir,
@@ -182,7 +184,7 @@ def assign(
     # Now we need to determine which point to start the calculation...
     step = "full"
     for fp, argname in zip(
-        [lca_fpath, hits, blast, prot_orfs], ["lca", "lca", "lca", "orfs"],
+        [lca_fpath, hits, blast, prot_orfs], ["lca", "orfs", "orfs", "orfs"],
     ):
         if os.path.exists(fp):
             step = f"{argname}_exists"

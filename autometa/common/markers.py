@@ -78,7 +78,7 @@ def load(fpath, format="wide"):
     elif format == "long":
         return grouped_df.value_counts().reset_index(level=1, name="count")
     elif format == "list":
-        return {k: v.tolist() for k, v in list(grouped_df)}
+        return {contig: markers.tolist() for contig, markers in list(grouped_df)}
     elif format == "counts":
         return grouped_df.count().to_dict()
     else:
@@ -89,15 +89,15 @@ def load(fpath, format="wide"):
 
 
 def get(
-    kingdom,
-    orfs,
-    dbdir,
-    scans=None,
-    out=None,
-    force=False,
-    seed=42,
-    format="wide",
-    **hmmer_args,
+    kingdom: str,
+    orfs: str,
+    dbdir: str,
+    scans: str = None,
+    out: str = None,
+    force: bool = False,
+    seed: int = 42,
+    format: str = "wide",
+    **hmmer_args: dict,
 ) -> pd.DataFrame:
     """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
@@ -147,20 +147,15 @@ def get(
     out = os.path.join(os.path.dirname(orfs), markers_fname) if not out else out
     kingdom = kingdom.lower()
 
-    def do_scan():
-        hmmer.hmmscan(
+    if not os.path.exists(scans) or not os.path.getsize(scans):
+        scans = hmmer.hmmscan(
             orfs=orfs, hmmdb=hmmdb, outfpath=scans, seed=seed, **hmmer_args,
         )
 
-    def do_filter():
-        hmmer.filter_markers(
+    if not os.path.exists(out) or not os.path.getsize(out):
+        out = hmmer.filter_markers(
             infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs,
         )
-
-    for fp, func in zip([scans, out], [do_scan, do_filter]):
-        if os.path.exists(fp) and os.path.getsize(fp):
-            continue
-        func()
     return load(fpath=out, format=format)
 
 

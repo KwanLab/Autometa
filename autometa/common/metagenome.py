@@ -350,22 +350,28 @@ class Metagenome:
                 gunzip(self.assembly, gunzipped_fpath)
             self.assembly = gunzipped_fpath
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
-        records = [seq for seq in self.seqrecords if len(seq) >= cutoff]
+        records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
         if self.orfs_called:
             msg = (
                 f"{self.nucl_orfs_fpath} and {self.prot_orfs_fpath} have already been called!"
                 "Call orfs again to retrieve only ORFs corresponding to filtered assembly"
             )
             logger.warning(msg)
-        SeqIO.write(records, out, "fasta")
-        return Metagenome(
-            assembly=out,
-            outdir=self.outdir,
-            nucl_orfs_fpath=self.nucl_orfs_fpath,
-            prot_orfs_fpath=self.prot_orfs_fpath,
-            fwd_reads=self.fwd_reads,
-            rev_reads=self.rev_reads,
-        )
+        n_written = SeqIO.write(records, out, "fasta")
+        if not n_written:
+            logger.warning(
+                f"No contigs pass {cutoff:,}. Returning original Metagenome."
+            )
+            return self
+        else:
+            return Metagenome(
+                assembly=out,
+                outdir=self.outdir,
+                nucl_orfs_fpath=self.nucl_orfs_fpath,
+                prot_orfs_fpath=self.prot_orfs_fpath,
+                fwd_reads=self.fwd_reads,
+                rev_reads=self.rev_reads,
+            )
 
     def call_orfs(self, force=False, cpus=0, parallel=True):
         """Calls ORFs on Metagenome assembly.

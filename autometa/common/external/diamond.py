@@ -489,7 +489,8 @@ def add_taxids(hits: dict, database: str, verbose: bool = True) -> dict:
     -------
     FileNotFoundError
         prot.accession2taxid.gz database is required for translation taxid
-
+    DatabaseOutOfSyncError
+        An accession is either not present in prot.accession2taxid or is deprecated/suppressed/removed
     """
     disable = not verbose
     if not os.path.exists(database):

@@ -385,9 +385,7 @@ class LCA(NCBI):
                             taxids,
                         )
                     except ValueError:
-                        logger.error(
-                            f"Missing either {taxid1} or {taxid2} taxid, during LCA retrieval"
-                        )
+                        logger.error(f"Missing either taxid(s), during LCA retrieval")
                     lca = root_taxid
                 if num_taxids == root_taxid:
                     lca = taxids.pop()
