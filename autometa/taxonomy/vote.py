@@ -190,7 +190,7 @@ def assign(
             step = f"{argname}_exists"
             break
 
-    if assembly and step == "full":
+    if not assembly and step == "full":
         raise ValueError(f"assembly is required if no other files are specified!")
 
     logger.debug(f"starting taxonomy assignment sequence from {step}")
