@@ -497,7 +497,13 @@ def get_clusters(
         clusters.append(clustered_df)
         # continue with unclustered contigs
         master_df = unclustered_df
-    return pd.concat(clusters, sort=True)
+    df = pd.concat(clusters, sort=True)
+    for metric in ["purity", "completeness"]:
+        # Special case where no clusters are found in first round.
+        # i.e. cluster = pd.NA for all contigs
+        if metric not in df.columns:
+            df[metric] = pd.NA
+    return df
 
 
 def binning(
@@ -646,7 +652,7 @@ def binning(
             clusters.append(clustered)
     clustered_df = pd.concat(clusters, sort=True)
     unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
-    unclustered_df.loc[:, "cluster"] = pd.NA
+    unclustered_df["cluster"] = pd.NA
     return pd.concat([clustered_df, unclustered_df], sort=True)
 
 

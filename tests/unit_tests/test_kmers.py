@@ -108,7 +108,6 @@ def test_normalize_wrong_method(counts, tmp_path):
         df = kmers.normalize(df=counts, method="am_ilr", out=out, force=False)
 
 
-@pytest.mark.wip
 @pytest.mark.parametrize("method", ["bhsne", "sksne", "umap"])
 def test_embed(norm_df, method, tmp_path):
     seed = 42
