@@ -146,6 +146,7 @@ def fixture_mock_parser(monkeypatch):
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
 
 
+@pytest.mark.entrypoint
 def test_markers_main(monkeypatch, mock_parser):
     with monkeypatch.context() as m:
 

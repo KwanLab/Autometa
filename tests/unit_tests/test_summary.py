@@ -267,6 +267,7 @@ def fixture_mock_parser(monkeypatch, tmp_path):
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
 
 
+@pytest.mark.entrypoint
 def test_main(monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids):
     mgargs.files.lengths = lengths_fpath
     with monkeypatch.context() as m:
