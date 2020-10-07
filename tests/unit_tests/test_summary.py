@@ -104,7 +104,6 @@ def mock_mgargs(
     return Namespace(files=files, databases=databases, parameters=parameters)
 
 
-@pytest.mark.wip
 @pytest.mark.skip
 def test_merge_annotations(mgargs):
     annotations = summary.merge_annotations(mgargs)
@@ -119,7 +118,6 @@ def test_merge_annotations(mgargs):
                 assert annotation in df.columns
 
 
-@pytest.mark.wip
 def test_merge_annotations_lengths_file_not_found(mgargs):
     mgargs.files.lengths = "empty_length_file"
     with pytest.raises(FileNotFoundError):
@@ -204,7 +202,6 @@ def fixture_mock_rank_taxids(monkeypatch):
     )
 
 
-@pytest.mark.wip
 @pytest.mark.skip
 def test_get_metabin_taxonomies(
     mock_rank_taxids, bin_df,
@@ -226,7 +223,6 @@ def test_get_metabin_taxonomies(
         assert rank in df.columns
 
 
-@pytest.mark.wip
 @pytest.mark.skip
 def test_get_metabin_stats(bin_df, markers_fpath, assembly):
     df = summary.get_metabin_stats(
@@ -236,7 +232,6 @@ def test_get_metabin_stats(bin_df, markers_fpath, assembly):
     assert df.shape == (5, 20)
 
 
-@pytest.mark.wip
 def test_get_metabin_stats_disjoint_markers(disjoint_markers_fpath, bin_df, assembly):
     df = summary.get_metabin_stats(
         bin_df=bin_df, markers_fpath=disjoint_markers_fpath, assembly=assembly
@@ -245,7 +240,6 @@ def test_get_metabin_stats_disjoint_markers(disjoint_markers_fpath, bin_df, asse
     assert df.shape == (5, 20)
 
 
-@pytest.mark.wip
 @pytest.mark.skip
 def test_write_cluster_records(bin_df, assembly, tmp_path):
     dirpath = tmp_path / "summary"
@@ -273,7 +267,6 @@ def fixture_mock_parser(monkeypatch, tmp_path):
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
 
 
-@pytest.mark.wip
 def test_main(monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids):
     mgargs.files.lengths = lengths_fpath
     with monkeypatch.context() as m:
