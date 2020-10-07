@@ -21,38 +21,45 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-1. Generate all files and intermediates for corresponding to *one* metagenome
-    2. Retrieve intermediate files related to each stage:
-        2.1 metagenome
-            2.1.1 length filtered
-            2.1.2 called orfs
-        2.2 kmers
-            2.2.1 counts
-            2.2.2 normalized counts
-        2.3 coverage
-            2.3.1 from spades names
-            2.3.2 from reads
-            2.3.3 from sam
-            2.3.4 from bam
-            2.3.5 from bed
-        2.4 markers
-            2.4.1 orfs to scan
-            2.4.2 hmmscan output
-            2.4.3 filtered hmmscan output
-        2.5 taxonomy
-            2.5.1 orfs
-            2.5.2 blastp
-            2.5.3 prot.accession2taxid
-            2.5.4 nodes
-            2.5.5 names
-            2.5.6 merged
-        2.6 binning
-            2.6.1 kmers
-            2.6.2 coverage
-            2.6.3 markers
-            2.6.4 taxonomy
+Generate all required intermediate objects and files for Autometa unit testing.
+Once generated, each is placed in the `self.data` dict with its respective stage.
+After all required objects are within `self.data`, the dictionary is written as
+a json file to `test_data.json` to be read by pytest-variables during testing.
 
-Make test_data.json to be used to ensure autometa was properly installed.
+`self.data` keys and subkeys for accession with `variables` in test_*.py scripts.
+
+1 metagenome
+    1.1 assembly
+    1.2 orfs
+2 kmers
+    2.1 counts
+    2.2 am_clr_normalized_counts
+3 coverage
+    3.1 spades_records
+    3.2 sam
+    3.3 bam
+    3.4 bed
+    3.5 fwd_reads
+    3.6 rev_reads
+4 markers
+    4.1 scans
+    4.2 filtered_markers
+    4.3 orfs
+5 taxonomy
+    5.1 prot_orfs
+    5.2 blastp
+    5.3 acc2taxid
+    5.4 merged
+    5.5 nodes
+    5.6 names
+6 binning
+    6.1 kmers_normalized
+    6.2 kmers_embedded
+    6.3 taxonomy
+    6.4 coverage
+    6.3 markers
+7 summary
+    7.1 bin_df
 """
 
 
@@ -68,6 +75,7 @@ from autometa.common.external import hmmer, prodigal
 from autometa.taxonomy.ncbi import NCBI
 import logging
 import os
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +119,33 @@ class TestData:
     binning_coverage = attr.ib(validator=attr.validators.instance_of(str))
     binning_markers = attr.ib(validator=attr.validators.instance_of(str))
     binning_taxonomy = attr.ib(validator=attr.validators.instance_of(str))
+    summary_bin_df = attr.ib(validator=attr.validators.instance_of(str))
     data = attr.ib(factory=dict)
     seed = attr.ib(default=42)
+
+    def prepare_metagenome(self, num_records: int = 4):
+        logger.info("Preparing metagenome records test data...")
+        records = {}
+        for record in SeqIO.parse(self.metagenome, "fasta"):
+            records.update({f">{record.id}": str(record.seq)})
+            if len(records) >= num_records:
+                break
+
+        try:
+            prodigal.run(
+                assembly=self.metagenome,
+                nucls_out=self.metagenome_nucl_orfs,
+                prots_out=self.metagenome_prot_orfs,
+                force=False,
+            )
+        except FileExistsError:
+            logger.debug("metagenome orfs already exist")
+        amino_acid_orfs = {
+            f">{orf.id}": str(orf.seq)
+            for orf in SeqIO.parse(self.metagenome_prot_orfs, "fasta")
+            if f">{orf.id.rsplit('_', 1)[0]}" in records
+        }
+        self.data["metagenome"] = {"assembly": records, "orfs": amino_acid_orfs}
 
     def get_kmers(self, num_records: int = 4):
         if num_records < 4:
@@ -126,12 +159,6 @@ class TestData:
         counts = counts.iloc[:num_records]
         # method is am_clr (b/c this is the default).
         am_clr_normalized_counts = kmers.normalize(df=counts, method="am_clr")
-        logger.info("Preparing metagenome records test data...")
-        records = {}
-        for record in SeqIO.parse(self.metagenome, "fasta"):
-            records.update({f">{record.id}": str(record.seq)})
-            if len(records) >= num_records:
-                break
 
         for df in [counts, am_clr_normalized_counts]:
             df.reset_index(inplace=True)
@@ -139,7 +166,6 @@ class TestData:
             "counts": counts.to_json(),
             "am_clr_normalized_counts": am_clr_normalized_counts.to_json(),
         }
-        self.data["metagenome"] = {"assembly": records}
 
     def get_markers(self):
         logger.info("Preparing orfs for markers annotation")
@@ -276,6 +302,18 @@ class TestData:
         markers_df.reset_index(inplace=True)
         self.data["binning"].update({"markers": markers_df.to_json()})
 
+    def get_summary(self):
+        bin_df = pd.read_csv(self.summary_bin_df, sep="\t")
+        if "coverage" not in bin_df.columns:
+            bin_df["coverage"] = bin_df.contig.map(lambda x: x.split("_cov_")[-1])
+        if "GC" not in bin_df.columns:
+            bin_df["GC"] = np.random.random_sample(bin_df.contig.nunique())
+        if "length" not in bin_df.columns:
+            bin_df["length"] = bin_df.contig.map(
+                lambda x: x.split("_length_")[-1].split("_cov_")[0]
+            )
+        self.data["summary"] = {"bin_df": bin_df.to_json()}
+
     def to_json(self, out: str):
         logger.info(f"Serializing data to {out}")
         with open(out, "w") as fh:
@@ -304,6 +342,7 @@ def main():
     binning_coverage = os.path.join(outdir, "binning_coverage.tsv.gz")
     binning_markers = os.path.join(outdir, "binning_markers.tsv.gz")
     binning_taxonomy = os.path.join(outdir, "binning_taxonomy.tsv.gz")
+    summary_bin_df = os.path.join(outdir, "summary_bin_df.tsv.gz")
 
     test_data = TestData(
         metagenome=metagenome,
@@ -320,9 +359,11 @@ def main():
         binning_coverage=binning_coverage,
         binning_markers=binning_markers,
         binning_taxonomy=binning_taxonomy,
+        summary_bin_df=summary_bin_df,
     )
 
     # TODO: Decrease the size of the test_data.json file...
+    test_data.prepare_metagenome()
     test_data.get_kmers()
     # COMBAK: Minimize data structures for coverage test data
     test_data.get_coverage()
@@ -330,6 +371,7 @@ def main():
     test_data.get_taxonomy()
     test_data.get_markers()
     test_data.get_binning()
+    test_data.get_summary()
 
     out = os.path.join(outdir, "test_data.json")
     test_data.to_json(out=out)

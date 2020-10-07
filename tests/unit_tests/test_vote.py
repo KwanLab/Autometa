@@ -1,9 +1,10 @@
 import pytest
 
 from autometa.taxonomy import vote
-from autometa.taxonomy.ncbi import NCBI
 
 import pandas as pd
+from autometa.common.exceptions import TableFormatError
+from Bio import SeqIO
 
 
 @pytest.fixture(name="blastp")
@@ -59,108 +60,7 @@ def fixture_prot_orfs(variables, tmp_path):
     return fpath.as_posix()
 
 
-@pytest.fixture(name="dbdir")
-def fixture_dbdir(tmpdir):
-    """temporary NCBI database directory
-
-    Parameters
-    ----------
-    tmpdir : Pathlib.LocalPath
-        pytest generated temporary directory
-
-    Returns
-    -------
-    Pathlib.LocalPath
-        Path to temporary NCBI database directory
-    """
-    tmpdir.mkdir("ncbi")
-    return tmpdir / "ncbi"
-
-
-@pytest.fixture(name="nodes")
-def fixture_nodes(variables, dbdir):
-    """Lines corresponding to nodes.dmp
-
-    Parameters
-    ----------
-    variables : [type]
-        [description]
-    dbdir : pytest fixture
-        [description]
-
-    Returns
-    -------
-    [type]
-        [description]
-    """
-    vote_test_data = variables["taxonomy"]
-    lines = ""
-    for child, info in vote_test_data["nodes"].items():
-        # Parsing in ncbi.parse_nodes() follows NCBI nodes.dmp file format.
-        # child, parent, rank = line.split("\t|\t")[:3]
-        parent = info.get("parent")
-        rank = info.get("rank")
-        child, parent, rank = [str(i) for i in [child, parent, rank]]
-        lines += "\t|\t".join([child, parent, rank, "null"]) + "\n"
-    return lines
-
-
-@pytest.fixture(name="names")
-def fixture_names(variables, dbdir):
-    vote_test_data = variables["taxonomy"]
-    lines = ""
-    for taxid, name in vote_test_data["names"].items():
-        # Parsing in ncbi.parse_names() follows NCBI names.dmp file format.
-        # taxid, name, __, classification = line.strip("\t|\n").split("\t|\t")[:4]
-        # scientific name is checked with classification variable.
-        lines += (
-            "\t|\t".join([taxid, name, "null", "scientific name", "null"]) + "\t|\n"
-        )
-        # lines follows structure of names.dmp database.
-    return lines
-
-
-@pytest.fixture(name="merged")
-def fixture_merged(variables, dbdir):
-    vote_test_data = variables["taxonomy"]
-    # Parsing in ncbi.parse_merged() follows NCBI merged.dmp file format.
-    lines = ""
-    for old_taxid, new_taxid in vote_test_data["merged"].items():
-        # old_taxid, new_taxid = line.strip("\t|\n").split("\t|\t")
-        lines += f"{old_taxid}\t|\t{new_taxid}\t|\n"
-    return lines
-
-
-@pytest.fixture(name="acc2taxid")
-def fixture_acc2taxid(variables, dbdir):
-    vote_test_data = variables["taxonomy"]
-    # Parsing in diamond.add_taxids(...) follows NCBI prot.accession2taxid file format.
-    lines = "accession\taccession.version\ttaxid\tnull\n"
-    for acc_num, taxid in vote_test_data["acc2taxid"].items():
-        # acc_num, acc_ver, taxid, _ = line.split("\t")
-        lines += f"{acc_num}\tnull\t{taxid}\tnull\n"
-    return lines
-
-
-@pytest.fixture(name="ncbi_dir")
-def fixture_ncbi(dbdir, merged, nodes, names, acc2taxid):
-    # NOTE: NCBI instance expects file name prot.accession2taxid
-    acc2taxid_fpath = dbdir / "prot.accession2taxid"
-    # NOTE: NCBI instance expects file name merged.dmp
-    merged_fpath = dbdir / "merged.dmp"
-    # NOTE: NCBI instance expects file name names.dmp
-    names_fpath = dbdir / "names.dmp"
-    # NOTE: NCBI instance expects file name nodes.dmp
-    nodes_fpath = dbdir / "nodes.dmp"
-    for fpath, data in zip(
-        [merged_fpath, nodes_fpath, names_fpath, acc2taxid_fpath],
-        [merged, nodes, names, acc2taxid],
-    ):
-        fpath.write(data)
-    return dbdir
-
-
-@pytest.fixture(name="votes")
+@pytest.fixture(name="votes", scope="module")
 def fixture_votes():
     votes = [
         {"contig": "NODE_1_length_1389215_cov_225.275", "taxid": 373},
@@ -169,10 +69,16 @@ def fixture_votes():
     return pd.DataFrame(votes).set_index("contig")
 
 
-def test_add_ranks(ncbi_dir, votes, tmp_path):
-    ncbi = NCBI(dirpath=ncbi_dir, verbose=False)
+@pytest.fixture(name="votes_fpath", scope="module")
+def fixture_votes_fpath(votes, tmp_path_factory):
+    fpath = tmp_path_factory.mktemp("vote") / "votes.tsv"
+    votes.to_csv(fpath, sep="\t", index=True, header=True)
+    return fpath
+
+
+def test_add_ranks(ncbi, votes, tmp_path):
     out = tmp_path / "taxonomy.ranks_added.tsv"
-    df = vote.add_ranks(df=votes, outfpath=out, ncbi=ncbi)
+    df = vote.add_ranks(df=votes, out=out, ncbi=ncbi)
     assert df.shape == (2, 8)
     assert df.index.name == "contig"
     canonical_ranks = {rank for rank in ncbi.CANONICAL_RANKS if rank != "root"}
@@ -188,20 +94,105 @@ def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
     )
     assert isinstance(votes, pd.DataFrame)
     assert votes.index.name == "contig"
-    # assert votes.shape == (..., 2)
+    assert "taxid" in votes.columns
 
 
-@pytest.mark.skip
-@pytest.mark.wip
-def test_vote_get(ncbi_dir):
-    fpath = ""
-    assembly = ""
-    kingdom = ""
-    outdir = ""
+def test_get(ncbi, votes_fpath):
     vote.get(
-        fpath=fpath,
-        assembly=assembly,
-        kingdom=kingdom,
-        ncbi_dir=ncbi_dir,
-        outdir=outdir,
+        fpath=votes_fpath, kingdom="bacteria", ncbi=ncbi,
     )
+    df = pd.read_csv(votes_fpath, sep="\t", index_col="contig")
+    # canonical ranks should have been added to table if they were not already in place.
+    assert df.shape == (2, 8)
+
+
+def test_get_none_recovered(ncbi, votes_fpath):
+    with pytest.raises(KeyError):
+        vote.get(
+            fpath=votes_fpath, kingdom="archaea", ncbi=ncbi,
+        )
+
+
+def test_get_empty_votes(ncbi_dir, tmp_path):
+    fpath = tmp_path / "votes.tsv"
+    with pytest.raises(FileNotFoundError):
+        vote.get(
+            fpath=fpath, kingdom="archaea", ncbi=ncbi_dir,
+        )
+
+
+def test_get_superkingdom_not_in_columns(monkeypatch, ncbi, votes, tmp_path):
+    def return_df(*args, **kwargs):
+        return votes
+
+    fpath = tmp_path / "votes.tsv"
+    votes.to_csv(fpath, sep="\t", index=True, header=True)
+    monkeypatch.setattr(vote, "add_ranks", return_df, raising=True)
+    with pytest.raises(TableFormatError):
+        vote.get(
+            fpath=fpath, kingdom="archaea", ncbi=ncbi,
+        )
+
+
+@pytest.fixture(name="ranks_added_votes", scope="module")
+def fixture_ranks_added_votes(votes_fpath, ncbi):
+    return vote.get(fpath=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
+
+
+@pytest.mark.parametrize(
+    "rank,num_expected", [("superkingdom", 1), ("noncanonical_rank", 0), ("order", 2)]
+)
+def test_write_ranks(monkeypatch, tmp_path, ranks_added_votes, rank, num_expected):
+    dirpath = tmp_path / "metabins"
+    dirpath.mkdir()
+    assembly = dirpath / "assembly.fna"
+    assembly.write_text("records")
+    if rank == "noncanonical_rank":
+        with pytest.raises(ValueError):
+            vote.write_ranks(
+                taxonomy=ranks_added_votes, assembly=assembly, outdir=dirpath, rank=rank
+            )
+        return
+
+    class MockedRecord:
+        def __init__(self, id):
+            self.id = id
+
+    def return_mock_assembly_records(*args, **kwargs):
+        return [
+            MockedRecord(id="NODE_1_length_1389215_cov_225.275"),
+            MockedRecord(id="NODE_2_length_1166739_cov_224.155"),
+        ]
+
+    def return_mock_write(*args, **kwargs):
+        return 2
+
+    monkeypatch.setattr(SeqIO, "parse", return_mock_assembly_records, raising=True)
+    monkeypatch.setattr(SeqIO, "write", return_mock_write)
+    fpaths = vote.write_ranks(
+        taxonomy=ranks_added_votes, assembly=assembly, outdir=dirpath, rank=rank
+    )
+    assert len(fpaths) == num_expected
+
+
+def test_write_ranks_no_assembly(tmp_path, ranks_added_votes):
+    dirpath = tmp_path / "metabins"
+    dirpath.mkdir()
+    assembly = dirpath / "assembly.fna"
+    with pytest.raises(FileNotFoundError):
+        vote.write_ranks(
+            taxonomy=ranks_added_votes,
+            assembly=assembly,
+            outdir=dirpath,
+            rank="superkingdom",
+        )
+
+
+def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
+    dirpath = tmp_path / "metabins"
+    dirpath.mkdir()
+    assembly = dirpath / "assembly.fna"
+    with pytest.raises(KeyError):
+        vote.write_ranks(
+            taxonomy=votes, assembly=assembly, outdir=dirpath, rank="superkingdom",
+        )

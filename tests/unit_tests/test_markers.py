@@ -41,8 +41,8 @@ def fixture_filtered_markers_fpath(variables, tmp_path):
     return out
 
 
-@pytest.fixture(name="dbdir")
-def fixture_dbdir():
+@pytest.fixture(name="markers_dbdir")
+def fixture_markers_dbdir():
     return MARKERS_DIR
 
 
@@ -63,14 +63,14 @@ def mock_hmmer_filter_markers(monkeypatch, filtered_markers_fpath):
 
 
 def test_marker_get(
-    dbdir, orfs, mock_hmmer_hmmscan, mock_hmmer_filter_markers, tmp_path
+    markers_dbdir, orfs, mock_hmmer_hmmscan, mock_hmmer_filter_markers, tmp_path
 ):
     kingdom = "archaea"
     markers_fpath = tmp_path / f"{kingdom}.markers.tsv"
     df = markers.get(
         kingdom=kingdom,
         orfs=orfs,
-        dbdir=dbdir,
+        dbdir=markers_dbdir,
         out=markers_fpath,
         force=False,
         seed=42,

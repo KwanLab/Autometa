@@ -38,21 +38,23 @@ from autometa.config.user import AutometaUser
 from autometa.taxonomy import vote
 from autometa.binning import recursive_dbscan
 from autometa.common.exceptions import AutometaError
+from autometa.common.external import prodigal
+from Bio import SeqIO
 
 
 logger = logging.getLogger("autometa")
 
 
-def init_logger(fpath=None, verbosity=0):
+def init_logger(out: str = None, verbosity: int = 0):
     """Initialize logger.
 
     By default will initialize streaming logger with INFO level messages.
-    If `fpath` is provided, will write DEBUG level messages to `fpath` and
+    If `out` is provided, will write DEBUG level messages to `out` and
     set streaming messages to INFO.
 
     Parameters
     ----------
-    fpath : str, optional
+    out : str, optional
         </path/to/file.log>
     verbosity : int, optional
         Overwrite default logging level behavior with provided `verbosity`.
@@ -92,8 +94,8 @@ def init_logger(fpath=None, verbosity=0):
     # Construct file/stream logging handlers
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
-    if fpath:
-        filehandler = logging.FileHandler(fpath)
+    if out:
+        filehandler = logging.FileHandler(out)
         filehandler.setFormatter(formatter)
         logger.addHandler(filehandler)
 
@@ -227,18 +229,19 @@ def run_autometa(mgargs):
             cpus=mgargs.parameters.cpus,
         )
         # Now filter by Kingdom
-        metabin = vote.get(
+        kingdom_df = vote.get(
             fpath=mgargs.files.taxonomy,
-            assembly=mg.assembly,
             kingdom=mgargs.parameters.kingdom,
-            ncbi_dir=mgargs.databases.ncbi,
-            outdir=mgargs.parameters.outdir,
+            ncbi=mgargs.databases.ncbi,
         )
         orfs_fpath = os.path.join(
             mgargs.parameters.outdir, f"{mgargs.parameters.kingdom}.orfs.faa"
         )
-        metabin.write_orfs(fpath=orfs_fpath, orf_type="prot")
-        contigs = set(metabin.contig_ids)
+        contigs = set(kingdom_df.index.tolist())
+        amino_acid_orfs = prodigal.orf_records_from_contigs(
+            contigs=contigs, fpath=mgargs.files.amino_acid_orfs
+        )
+        SeqIO.write(amino_acid_orfs, orfs_fpath, "fasta")
     else:
         orfs_fpath = mgargs.files.amino_acid_orfs
         contigs = {record.id for record in mg.seqrecords}
@@ -329,7 +332,7 @@ def main(args):
 
     """
 
-    logger = init_logger(fpath=args.log, verbosity=args.verbosity)
+    logger = init_logger(out=args.log, verbosity=args.verbosity)
     # Configure AutometaUser
     # TODO: master from WorkQueue is AutometaUser
     user = AutometaUser(nproc=args.cpus)

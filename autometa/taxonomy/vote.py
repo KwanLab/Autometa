@@ -37,7 +37,6 @@ from typing import Union, List
 
 
 from autometa.common.external import prodigal
-from autometa.common.metabin import MetaBin
 from autometa.taxonomy import majority_vote
 from autometa.taxonomy.lca import LCA
 from autometa.taxonomy.ncbi import NCBI_DIR
@@ -204,16 +203,16 @@ def assign(
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def add_ranks(df: pd.DataFrame, outfpath: str, ncbi: Union[NCBI, str]) -> pd.DataFrame:
-    """Add canonical ranks to `df` and write to `outfpath`
+def add_ranks(df: pd.DataFrame, out: str, ncbi: Union[NCBI, str]) -> pd.DataFrame:
+    """Add canonical ranks to `df` and write to `out`
 
     Parameters
     ----------
     df : pd.DataFrame
         index="contig", column="taxid"
-    outfpath : str
+    out : str
         Path to write taxonomy table with canonical ranks added.
-    ncbi : str, NCBI
+    ncbi : str or NCBI
         Path to NCBI databases directory, or autometa NCBI instance.
 
     Returns
@@ -225,39 +224,29 @@ def add_ranks(df: pd.DataFrame, outfpath: str, ncbi: Union[NCBI, str]) -> pd.Dat
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
     df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
     # This overwrites the existing table with the canonical ranks added.
-    df.to_csv(outfpath, sep="\t", index=True, header=True)
+    df.to_csv(out, sep="\t", index=True, header=True)
     # COMBAK: Add checkpointing checksum check here
-    logger.debug(f"Added canonical rank names to {outfpath}")
+    logger.debug(f"Added canonical rank names to {out}")
     return df
 
 
-def get(
-    fpath: str,
-    assembly: str,
-    kingdom: str,
-    ncbi_dir: str = NCBI_DIR,
-    outdir: str = None,
-) -> MetaBin:
+def get(fpath: str, kingdom: str, ncbi: Union[NCBI, str] = NCBI_DIR,) -> pd.DataFrame:
     """Retrieve specific `kingdom` voted taxa for `assembly` from `fpath`
 
     Parameters
     ----------
     fpath : str
         Path to tab-delimited taxonomy table. cols=['contig','taxid', *canonical_ranks]
-    assembly : str
-        Path to assembly fasta file
     kingdom : str
         rank to retrieve from superkingdom column in taxonomy table.
-    ncbi_dir : str, optional
-        Path to NCBI database directory, by default NCBI_DIR.
+    ncbi : str or autometa.taxonomy.NCBI instance, optional
+        Path to NCBI database directory or NCBI instance, by default NCBI_DIR.
         This is necessary only if `fpath` does not already contain columns of canonical ranks.
-    outdir : str, optional
-        Path to output directory, by default None
 
     Returns
     -------
-    autometa.common.MetaBin
-        MetaBin of contigs pertaining to retrieved `kingdom`.
+    pd.DataFrame
+        DataFrame of contigs pertaining to retrieved `kingdom`.
 
     Raises
     ------
@@ -271,10 +260,10 @@ def get(
     if not os.path.exists(fpath) or not os.path.getsize(fpath):
         raise FileNotFoundError(fpath)
     df = pd.read_csv(fpath, sep="\t", index_col="contig")
-    if df[1] <= 2:
+    if df.shape[1] <= 2:
         # Voting method will write out contig and its voted taxid (2 cols).
         # So here we add the canonical ranks using voted taxids.
-        df = add_ranks(df=df, outfpath=fpath, ncbi_dir=ncbi_dir)
+        df = add_ranks(df=df, out=fpath, ncbi=ncbi)
 
     if "superkingdom" not in df.columns:
         raise TableFormatError(f"superkingdom is not in taxonomy columns {df.columns}")
@@ -282,7 +271,7 @@ def get(
     df = df[df.superkingdom == kingdom]
     if df.empty:
         raise KeyError(f"{kingdom} not recovered in dataset.")
-    return MetaBin(assembly=assembly, contig_ids=df.index.tolist(), outdir=outdir)
+    return df
 
 
 def write_ranks(
@@ -313,7 +302,10 @@ def write_ranks(
     """
     if rank not in NCBI.CANONICAL_RANKS:
         raise ValueError(f"rank: {rank} not in {NCBI.CANONICAL_RANKS}")
-
+    if rank not in taxonomy.columns:
+        raise KeyError(f"{rank} not in taxonomy columns: {taxonomy.columns}")
+    if not os.path.exists(assembly) or not os.path.getsize(assembly):
+        raise FileNotFoundError(assembly)
     assembly_records = [r for r in SeqIO.parse(assembly, "fasta")]
     fpaths = []
     for rank_name, dff in taxonomy.groupby(rank):
@@ -454,11 +446,7 @@ def main():
         cpus=args.cpus,
     )
     get(
-        fpath=args.taxonomy,
-        assembly=args.assembly,
-        kingdom=args.kingdom,
-        ncbi_dir=args.ncbi,
-        outdir=args.outdir,
+        fpath=args.taxonomy, kingdom=args.kingdom, ncbi=args.ncbi,
     )
     written_ranks = write_ranks(
         taxonomy=args.taxonomy,

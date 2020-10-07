@@ -34,6 +34,7 @@ import tempfile
 from glob import glob
 from Bio import SeqIO
 from Bio.SeqIO.FastaIO import SimpleFastaParser
+from typing import List, Set, Union, Mapping
 
 from autometa.config.environ import get_versions
 
@@ -190,7 +191,7 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     return nucls_out, prots_out
 
 
-def contigs_from_headers(fpath):
+def contigs_from_headers(fpath: str) -> Mapping[str, str]:
     """Get ORF id to contig id translations using prodigal assigned ID from
     description.
 
@@ -255,7 +256,9 @@ def contigs_from_headers(fpath):
     return translations
 
 
-def orf_records_from_contigs(contigs, fpath):
+def orf_records_from_contigs(
+    contigs: Union[List, Set], fpath: str
+) -> List[SeqIO.SeqRecord]:
     """Retrieve list of *ORFs headers* from `contigs`. Prodigal annotated ORFs
     are required as the input `fpath`.
 
