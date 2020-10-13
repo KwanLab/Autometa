@@ -6,57 +6,78 @@ from autometa.common.markers import load as load_markers
 import argparse
 
 
-@pytest.fixture(name="kmers")
-def fixture_kmers(variables, tmp_path):
+@pytest.fixture(name="binning_testdir", scope="module")
+def fixture_binning_testdir(tmp_path_factory):
+    return tmp_path_factory.mktemp("binning")
+
+
+@pytest.fixture(name="test_contigs", scope="module")
+def fixture_test_contigs(variables, markers, n=5, seed=42):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["kmers_normalized"])
-    fpath = tmp_path / "kmers.norm.tsv"
-    df.to_csv(fpath, sep="\t", index=False, header=True)
-    return fpath
+    df.set_index("contig", inplace=True)
+    markers_index = (
+        df[df.index.isin(markers.index)].sample(n=n, random_state=seed).index
+    )
+    kmers_index = df.sample(n=n, random_state=seed).index
+    return markers_index.union(kmers_index)
 
 
-@pytest.fixture(name="embedded_kmers")
-def fixture_embedded_kmers(variables, tmp_path):
+@pytest.fixture(name="kmers", scope="module")
+def fixture_kmers(variables, test_contigs, binning_testdir):
+    binning_test_data = variables["binning"]
+    df = pd.read_json(binning_test_data["kmers_normalized"])
+    fpath = binning_testdir / "kmers.norm.tsv"
+    df.set_index("contig", inplace=True)
+    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
+    return str(fpath)
+
+
+@pytest.fixture(name="embedded_kmers", scope="module")
+def fixture_embedded_kmers(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["kmers_embedded"])
-    fpath = tmp_path / "kmers.embed.tsv"
-    df.to_csv(fpath, sep="\t", index=False, header=True)
+    fpath = binning_testdir / "kmers.embed.tsv"
+    df.set_index("contig", inplace=True)
+    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
     return fpath
 
 
-@pytest.fixture(name="coverage")
-def fixture_coverage(variables, tmp_path):
+@pytest.fixture(name="coverage", scope="module")
+def fixture_coverage(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["coverage"])
-    fpath = tmp_path / "coverage.tsv"
-    df.to_csv(fpath, sep="\t", index=False, header=True)
+    df.set_index("contig", inplace=True)
+    fpath = binning_testdir / "coverage.tsv"
+    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
     return fpath
 
 
-@pytest.fixture(name="taxonomy")
-def fixture_taxonomy(variables, tmp_path):
+@pytest.fixture(name="taxonomy", scope="module")
+def fixture_taxonomy(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["taxonomy"])
-    fpath = tmp_path / "taxonomy.tsv"
-    df.to_csv(fpath, sep="\t", index=False, header=True)
+    fpath = binning_testdir / "taxonomy.tsv"
+    df.set_index("contig", inplace=True)
+    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
     return fpath
 
 
-@pytest.fixture(name="markers_fpath")
-def fixture_markers_fpath(variables, tmp_path):
+@pytest.fixture(name="markers_fpath", scope="module")
+def fixture_markers_fpath(variables, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["markers"])
-    fpath = tmp_path / "markers.tsv"
+    fpath = binning_testdir / "markers.tsv"
     df.to_csv(fpath, sep="\t", index=False, header=True)
     return fpath
 
 
-@pytest.fixture(name="markers")
-def fixture_markers(markers_fpath, tmp_path):
+@pytest.fixture(name="markers", scope="module")
+def fixture_markers(markers_fpath):
     return load_markers(markers_fpath)
 
 
-@pytest.fixture(name="master")
+@pytest.fixture(name="master", scope="module")
 def fixture_master(embedded_kmers, coverage, taxonomy):
     master = pd.read_csv(embedded_kmers, sep="\t", index_col="contig")
     for fpath in [coverage, taxonomy]:
@@ -82,6 +103,7 @@ def test_binning(master, markers, usetaxonomy, method):
         method=method,
         verbose=True,
     )
+    assert isinstance(df, pd.DataFrame)
     assert "cluster" in df.columns
     assert "purity" in df.columns
     assert "completeness" in df.columns
@@ -104,15 +126,15 @@ def test_binning_invalid_clustering_method(master, markers):
         )
 
 
-@pytest.fixture(name="mock_parser")
-def fixture_mock_parser(
+@pytest.mark.wip
+@pytest.mark.entrypoint
+def test_recursive_dbscan_main(
     monkeypatch, kmers, coverage, markers_fpath, embedded_kmers, taxonomy, tmp_path
 ):
-    def return_mock_parser(*args, **kwargs):
-        return MockParser()
+    out = tmp_path / "binning.tsv"
 
-    class MockParseArgs:
-        def __init__(self, kmers, coverage, markers, embedded, taxonomy, out):
+    class MockArgs:
+        def __init__(self):
             self.domain = "bacteria"
             self.kmers = kmers
             self.coverage = coverage
@@ -133,40 +155,14 @@ def fixture_mock_parser(
             pass
 
         def parse_args(self):
-            out = tmp_path / "binning.tsv"
-            return MockParseArgs(
-                kmers, coverage, markers_fpath, embedded_kmers, taxonomy, out
-            )
+            return MockArgs()
 
-    # Defining the MockParser class to represent parser
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
-
-
-@pytest.mark.entrypoint
-def test_recursive_dbscan_main(monkeypatch, mock_parser):
-    with monkeypatch.context() as m:
-
-        def return_args(*args, **kwargs):
-            assert not args
-            assert isinstance(kwargs["master"], pd.DataFrame)
-            assert isinstance(kwargs["markers"], pd.DataFrame)
-            assert isinstance(kwargs["taxonomy"], bool)
-            assert kwargs["taxonomy"] == True
-            assert isinstance(kwargs["starting_rank"], str)
-            assert kwargs["starting_rank"] == "superkingdom"
-            assert isinstance(kwargs["reverse_ranks"], bool)
-            assert kwargs["reverse_ranks"] == False
-            assert isinstance(kwargs["domain"], str)
-            assert kwargs["domain"] == "bacteria"
-            assert isinstance(kwargs["completeness"], float)
-            assert kwargs["completeness"] == 20.0
-            assert isinstance(kwargs["purity"], float)
-            assert kwargs["purity"] == 90.0
-            assert isinstance(kwargs["method"], str)
-            assert kwargs["method"] == "dbscan"
-            assert isinstance(kwargs["verbose"], bool)
-            assert kwargs["verbose"] == True
-            return pd.DataFrame(columns=["cluster", "completeness", "purity"])
-
-        m.setattr(recursive_dbscan, "binning", return_args, raising=True)
-        recursive_dbscan.main()
+    recursive_dbscan.main()
+    assert out.exists()
+    df = pd.read_csv(out, sep="\t")
+    assert "contig" in df.columns
+    assert "cluster" in df.columns

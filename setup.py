@@ -23,7 +23,7 @@ setup(
     package_data={"": ["*.config"]},
     entry_points={
         "console_scripts": [
-            "autometa = autometa.__main__:entrypoint",
+            "autometa = autometa.__main__:main",
             "autometa-configure = autometa.config.user:main",
             "autometa-kmers = autometa.common.kmers:main",
             "autometa-coverage = autometa.common.coverage:main",

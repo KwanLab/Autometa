@@ -1,6 +1,10 @@
-import pytest
+import argparse
+
 import pandas as pd
+import pytest
+
 from Bio import SeqIO
+
 from autometa.common import kmers
 
 
@@ -110,7 +114,7 @@ def test_normalize_wrong_method(counts, tmp_path):
 
 
 @pytest.mark.parametrize("method", ["bhsne", "sksne", "umap"])
-def test_embed(norm_df, method, tmp_path):
+def test_embed_methods(norm_df, method, tmp_path):
     seed = 42
     out = tmp_path / "kmers.embed.tsv"
     force = False
@@ -130,10 +134,26 @@ def test_embed(norm_df, method, tmp_path):
     assert df.shape[1] == embed_dimensions
 
 
-def test_embed_out_exists(norm_df, tmp_path):
+@pytest.mark.parametrize("embed_dimensions", [2, 3, 4])
+def test_embed_dimensions(norm_df, embed_dimensions, tmp_path):
+    out = tmp_path / "kmers.embed.tsv"
+    df = kmers.embed(
+        kmers=norm_df,
+        out=out,
+        force=False,
+        embed_dimensions=embed_dimensions,
+        do_pca=True,
+        pca_dimensions=5,
+        method="bhsne",
+        seed=42,
+    )
+    assert df.shape[1] == embed_dimensions
+
+
+@pytest.mark.parametrize("force", [False, True])
+def test_embed_out_exists(norm_df, force, tmp_path):
     seed = 42
     out = tmp_path / "kmers.embed.tsv"
-    force = False
     method = "bhsne"
     embed_dimensions = 2
     do_pca = True
@@ -148,14 +168,43 @@ def test_embed_out_exists(norm_df, tmp_path):
         method=method,
         seed=seed,
     )
-    assert df.shape[1] == embed_dimensions
-    df = kmers.embed(
-        kmers=norm_df,
-        out=out,
-        force=force,
-        embed_dimensions=embed_dimensions,
-        do_pca=do_pca,
-        pca_dimensions=pca_dimensions,
-        method=method,
-        seed=seed,
-    )
+
+
+@pytest.mark.wip
+@pytest.mark.entrypoint
+def test_kmers_main(monkeypatch, tmp_path, assembly):
+    norm_method = "am_clr"
+    embed_method = "bhsne"
+    counts_out = tmp_path / "kmers.tsv"
+    normalized = tmp_path / f"kmers.{norm_method}.tsv"
+    embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
+
+    class MockArgs:
+        def __init__(self):
+            self.fasta = assembly
+            self.size = 4
+            self.kmers = counts_out
+            self.force = True
+            self.norm_method = norm_method
+            self.normalized = normalized
+            self.embed_method = embed_method
+            self.embed_dimensions = 2
+            self.do_pca = True
+            self.pca_dimensions = 3
+            self.embedded = embedded
+            self.multiprocess = False
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    kmers.main()

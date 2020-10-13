@@ -1,3 +1,4 @@
+import argparse
 import pytest
 
 from autometa.taxonomy import vote
@@ -28,7 +29,7 @@ def fixture_blastp(variables, tmp_path):
     blastp_fpath = tmp_path / "blastp.tsv"
     df = pd.read_json(vote_test_data["blastp"])
     df.to_csv(blastp_fpath, sep="\t", index=False, header=False)
-    return blastp_fpath.as_posix()
+    return str(blastp_fpath)
 
 
 @pytest.fixture(name="prot_orfs")
@@ -57,7 +58,7 @@ def fixture_prot_orfs(variables, tmp_path):
     fpath = tmp_path / "orfs.faa"
     with open(fpath, "w") as fh:
         fh.write(lines)
-    return fpath.as_posix()
+    return str(fpath)
 
 
 @pytest.fixture(name="votes", scope="module")
@@ -89,19 +90,14 @@ def test_add_ranks(ncbi, votes, tmp_path):
 @pytest.mark.slow
 def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
     out = tmp_path / "votes.tsv"
-    votes = vote.assign(
-        outfpath=out, prot_orfs=prot_orfs, blast=blastp, ncbi_dir=ncbi_dir,
-    )
+    votes = vote.assign(out=out, prot_orfs=prot_orfs, blast=blastp, ncbi_dir=ncbi_dir,)
     assert isinstance(votes, pd.DataFrame)
     assert votes.index.name == "contig"
     assert "taxid" in votes.columns
 
 
 def test_get(ncbi, votes_fpath):
-    vote.get(
-        fpath=votes_fpath, kingdom="bacteria", ncbi=ncbi,
-    )
-    df = pd.read_csv(votes_fpath, sep="\t", index_col="contig")
+    df = vote.get(filepath_or_dataframe=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
     # canonical ranks should have been added to table if they were not already in place.
     assert df.shape == (2, 8)
 
@@ -109,7 +105,7 @@ def test_get(ncbi, votes_fpath):
 def test_get_none_recovered(ncbi, votes_fpath):
     with pytest.raises(KeyError):
         vote.get(
-            fpath=votes_fpath, kingdom="archaea", ncbi=ncbi,
+            filepath_or_dataframe=votes_fpath, kingdom="archaea", ncbi=ncbi,
         )
 
 
@@ -117,7 +113,7 @@ def test_get_empty_votes(ncbi_dir, tmp_path):
     fpath = tmp_path / "votes.tsv"
     with pytest.raises(FileNotFoundError):
         vote.get(
-            fpath=fpath, kingdom="archaea", ncbi=ncbi_dir,
+            filepath_or_dataframe=fpath, kingdom="archaea", ncbi=ncbi_dir,
         )
 
 
@@ -130,13 +126,13 @@ def test_get_superkingdom_not_in_columns(monkeypatch, ncbi, votes, tmp_path):
     monkeypatch.setattr(vote, "add_ranks", return_df, raising=True)
     with pytest.raises(TableFormatError):
         vote.get(
-            fpath=fpath, kingdom="archaea", ncbi=ncbi,
+            filepath_or_dataframe=fpath, kingdom="archaea", ncbi=ncbi,
         )
 
 
 @pytest.fixture(name="ranks_added_votes", scope="module")
 def fixture_ranks_added_votes(votes_fpath, ncbi):
-    return vote.get(fpath=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
+    return vote.get(filepath_or_dataframe=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
 
 
 @pytest.mark.parametrize(
@@ -196,3 +192,50 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
         vote.write_ranks(
             taxonomy=votes, assembly=assembly, outdir=dirpath, rank="superkingdom",
         )
+
+
+@pytest.mark.wip
+@pytest.mark.entrypoint
+def test_vote_main(monkeypatch, prot_orfs, blastp, ncbi_dir, tmp_path):
+    outdir = tmp_path / "outdir"
+    outdir.mkdir()
+    taxonomy = outdir / "taxonomy.tsv"
+    nucls = outdir / "orfs.fna"
+    assembly = outdir / "assembly.fna"
+    assembly.write_text("records")
+    lca_fpath = outdir / "lca.tsv"
+    lca_fpath = str(lca_fpath)
+
+    class MockArgs:
+        def __init__(self):
+            self.taxonomy = taxonomy
+            self.outdir = outdir
+            self.assembly = assembly
+            self.nucl_orfs = nucls
+            self.prot_orfs = prot_orfs
+            self.split_rank_and_write = "superkingdom"
+            self.method = "majority_vote"
+            self.kingdom = "bacteria"
+            self.ncbi = ncbi_dir
+            self.usepickle = True
+            self.blast = blastp
+            self.hits = None
+            self.lca = lca_fpath
+            self.cpus = 0
+            self.parallel = False
+            self.force = False
+            self.verbose = True
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    vote.main()
+    assert taxonomy.exists()

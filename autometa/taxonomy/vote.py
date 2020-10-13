@@ -27,6 +27,7 @@ taxonomy voting script
 
 import os
 import logging
+from pathlib import PurePath
 import tempfile
 import shutil
 
@@ -47,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 def assign(
-    outfpath: str,
+    out: str,
     method: str = "majority_vote",
     assembly: str = None,
     prot_orfs: str = None,
@@ -56,18 +57,17 @@ def assign(
     hits: str = None,
     lca_fpath: str = None,
     ncbi_dir: str = NCBI_DIR,
-    tmpdir: str = None,
     usepickle: bool = True,
     force: bool = False,
     verbose: bool = False,
     parallel: bool = True,
     cpus: int = 0,
 ) -> pd.DataFrame:
-    """Assign taxonomy using `method` and write to `outfpath`.
+    """Assign taxonomy using `method` and write to `out`.
 
     Parameters
     ----------
-    outfpath : str
+    out : str
         Path to write taxonomy table of votes
     method : str, optional
         Method to assign contig taxonomy, by default "majority_vote".
@@ -86,8 +86,6 @@ def assign(
         Path to output of LCA analysis, by default None
     ncbi_dir : str, optional
         Path to NCBI databases directory, by default NCBI_DIR
-    tmpdir : str, optional
-        Path to use as temporary directory, by default None
     usepickle : bool, optional
         Pickle LCA analysis data structures for later LCA queries, by default True
     force : bool, optional
@@ -111,25 +109,18 @@ def assign(
     ValueError
         Assembly file is required if no other annotations are provided.
     """
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
-        logger.debug(
-            f"FileExistsError: {outfpath}. Use force to overwrite. skipping..."
-        )
-        return pd.read_csv(outfpath, sep="\t", index_col="contig")
+    if os.path.exists(out) and os.path.getsize(out) and not force:
+        logger.debug(f"FileExistsError: {out}. Use force to overwrite. skipping...")
+        return pd.read_csv(out, sep="\t", index_col="contig")
     method = method.lower()
     if method != "majority_vote":
         raise NotImplementedError(method)
-    outdir = os.path.dirname(os.path.realpath(outfpath))
-    tmpdir = (
-        tmpdir
-        if tmpdir
-        else tempfile.mkdtemp(suffix=None, prefix="taxon-assignment", dir=outdir)
-    )
-    lca_fpath = lca_fpath if lca_fpath else os.path.join(tmpdir, "lca.tsv")
-    hits = hits if hits else os.path.join(tmpdir, "hits.pkl.gz")
-    blast = blast if blast else os.path.join(tmpdir, "blastp.tsv")
-    prot_orfs = prot_orfs if prot_orfs else os.path.join(tmpdir, "orfs.faa")
-    nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(tmpdir, "orfs.fna")
+    outdir = os.path.dirname(os.path.realpath(out))
+    lca_fpath = lca_fpath if lca_fpath else os.path.join(outdir, "lca.tsv")
+    hits = hits if hits else os.path.join(outdir, "hits.pkl.gz")
+    blast = blast if blast else os.path.join(outdir, "blastp.tsv")
+    prot_orfs = prot_orfs if prot_orfs else os.path.join(outdir, "orfs.faa")
+    nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(outdir, "orfs.fna")
 
     def call_orfs():
         prodigal.run(
@@ -158,7 +149,7 @@ def assign(
             force=force,
         )
 
-    def majority_vote_lca(outfpath=outfpath):
+    def majority_vote_lca(out=out):
         if "lca" not in locals():
             lca = LCA(
                 dbdir=ncbi_dir,
@@ -169,8 +160,8 @@ def assign(
             )
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
         votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca)
-        outfpath = majority_vote.write_votes(results=votes, outfpath=outfpath)
-        return pd.read_csv(outfpath, sep="\t", index_col="contig")
+        out = majority_vote.write_votes(results=votes, outfpath=out)
+        return pd.read_csv(out, sep="\t", index_col="contig")
 
     logger.info(f"Assigning taxonomy via {method}. This may take a while...")
 
@@ -185,7 +176,7 @@ def assign(
     for fp, argname in zip(
         [lca_fpath, hits, blast, prot_orfs], ["lca", "orfs", "orfs", "orfs"],
     ):
-        if os.path.exists(fp):
+        if os.path.exists(fp) and os.path.getsize(fp):
             step = f"{argname}_exists"
             break
 
@@ -193,17 +184,16 @@ def assign(
         raise ValueError(f"assembly is required if no other files are specified!")
 
     logger.debug(f"starting taxonomy assignment sequence from {step}")
-    try:
-        for calculation in calculation_sequence[step]:
-            logger.debug(f"running {calculation.__name__}")
-            if calculation.__name__ == "majority_vote_lca":
-                return calculation()
-            calculation()
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
+    for calculation in calculation_sequence[step]:
+        logger.debug(f"running {calculation.__name__}")
+        if calculation.__name__ == "majority_vote_lca":
+            return calculation()
+        calculation()
 
 
-def add_ranks(df: pd.DataFrame, out: str, ncbi: Union[NCBI, str]) -> pd.DataFrame:
+def add_ranks(
+    df: pd.DataFrame, ncbi: Union[NCBI, str], out: str = None
+) -> pd.DataFrame:
     """Add canonical ranks to `df` and write to `out`
 
     Parameters
@@ -223,25 +213,29 @@ def add_ranks(df: pd.DataFrame, out: str, ncbi: Union[NCBI, str]) -> pd.DataFram
     ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
     df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
-    # This overwrites the existing table with the canonical ranks added.
-    df.to_csv(out, sep="\t", index=True, header=True)
-    # COMBAK: Add checkpointing checksum check here
+    if out:
+        # This allows overwriting the existing table with the canonical ranks added.
+        df.to_csv(out, sep="\t", index=True, header=True)
     logger.debug(f"Added canonical rank names to {out}")
     return df
 
 
-def get(fpath: str, kingdom: str, ncbi: Union[NCBI, str] = NCBI_DIR,) -> pd.DataFrame:
-    """Retrieve specific `kingdom` voted taxa for `assembly` from `fpath`
+def get(
+    filepath_or_dataframe: Union[str, pd.DataFrame],
+    kingdom: str,
+    ncbi: Union[NCBI, str] = NCBI_DIR,
+) -> pd.DataFrame:
+    """Retrieve specific `kingdom` voted taxa for `assembly` from `filepath`
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Path to tab-delimited taxonomy table. cols=['contig','taxid', *canonical_ranks]
     kingdom : str
         rank to retrieve from superkingdom column in taxonomy table.
     ncbi : str or autometa.taxonomy.NCBI instance, optional
         Path to NCBI database directory or NCBI instance, by default NCBI_DIR.
-        This is necessary only if `fpath` does not already contain columns of canonical ranks.
+        This is necessary only if `filepath` does not already contain columns of canonical ranks.
 
     Returns
     -------
@@ -251,19 +245,28 @@ def get(fpath: str, kingdom: str, ncbi: Union[NCBI, str] = NCBI_DIR,) -> pd.Data
     Raises
     ------
     FileNotFoundError
-        Provided `fpath` does not exists or is empty.
+        Provided `filepath` does not exists or is empty.
     TableFormatError
-        Provided `fpath` does not contain the 'superkingdom' column.
+        Provided `filepath` does not contain the 'superkingdom' column.
     KeyError
         `kingdom` is absent in provided taxonomy table.
     """
-    if not os.path.exists(fpath) or not os.path.getsize(fpath):
-        raise FileNotFoundError(fpath)
-    df = pd.read_csv(fpath, sep="\t", index_col="contig")
+    if isinstance(filepath_or_dataframe, pd.DataFrame):
+        df = filepath_or_dataframe
+    elif isinstance(filepath_or_dataframe, str):
+        if not os.path.exists(filepath_or_dataframe) or not os.path.getsize(
+            filepath_or_dataframe
+        ):
+            raise FileNotFoundError(filepath_or_dataframe)
+        df = pd.read_csv(filepath_or_dataframe, sep="\t", index_col="contig")
+    elif isinstance(filepath_or_dataframe, PurePath):
+        df = pd.read_csv(filepath_or_dataframe, sep="\t", index_col="contig")
+    else:
+        raise TypeError(f"{type(filepath_or_dataframe)}")
     if df.shape[1] <= 2:
         # Voting method will write out contig and its voted taxid (2 cols).
         # So here we add the canonical ranks using voted taxids.
-        df = add_ranks(df=df, out=fpath, ncbi=ncbi)
+        df = add_ranks(df=df, ncbi=ncbi)
 
     if "superkingdom" not in df.columns:
         raise TableFormatError(f"superkingdom is not in taxonomy columns {df.columns}")
@@ -334,13 +337,8 @@ def main():
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
-    # Note: If you do not have any defaults corresponding to your parameters,
-    # you may remove the formatter class: ArgumentDefaultsHelpFormatter
-    # to reduce help text verbosity.
     parser = argparse.ArgumentParser(
-        description="""
-    This script handles filtering by taxonomy and can calculate various metagenome statistics.
-    """,
+        description="Filter metagenome by taxonomy.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -353,13 +351,13 @@ def main():
         "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str,
     )
     parser.add_argument(
-        "--nucls",
+        "--nucl_orfs",
         help="Path to nucleotide ORFs corresponding to `assembly.` "
         "(Will write to path if ORFs do not exist).",
         type=str,
     )
     parser.add_argument(
-        "--prots",
+        "--prot_orfs",
         help="Path to amino acid ORFs corresponding to `assembly.` "
         "(Will write to path if ORFs do not exist).",
         type=str,
@@ -378,13 +376,17 @@ def main():
         ],
     )
     parser.add_argument(
-        "--taxon-method", default="majority_vote", choices=["majority_vote"]
+        "--kingdom",
+        help="Kingdom to retrieve",
+        default="bacteria",
+        choices=["bacteria", "archaea"],
     )
+    parser.add_argument("--method", default="majority_vote", choices=["majority_vote"])
     parser.add_argument(
         "--ncbi", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
     parser.add_argument(
-        "--pickle",
+        "--usepickle",
         help="Whether to serialize taxonomy-specific files",
         action="store_true",
         default=False,
@@ -401,8 +403,12 @@ def main():
         "(Will write to path if it does not exist and `--pickle` is specified).",
         default=None,
     )
-    # Eventually will need to create a subparser for the taxon assignment methods
-    # to include help information and required parameters according to method.
+    parser.add_argument(
+        "--lca",
+        help="Path to LCA results from autometa.taxonomy.lca"
+        "(Will write to path if it does not exist).",
+        default=None,
+    )
     parser.add_argument(
         "--cpus",
         help="Number of cpus to use when performing "
@@ -428,28 +434,25 @@ def main():
 
     args = parser.parse_args()
 
-    assign(
+    taxa_df = assign(
         method=args.method,
-        outfpath=args.taxonomy,
-        fasta=args.assembly,
+        out=args.taxonomy,
+        assembly=args.assembly,
         prot_orfs=args.prot_orfs,
         nucl_orfs=args.nucl_orfs,
         blast=args.blast,
         hits=args.hits,
-        lca_fpath=args.lca_fpath,
+        lca_fpath=args.lca,
         ncbi_dir=args.ncbi,
-        tmpdir=args.tmpdir,
         usepickle=args.usepickle,
         force=args.force,
         verbose=args.verbose,
         parallel=args.parallel,
         cpus=args.cpus,
     )
-    get(
-        fpath=args.taxonomy, kingdom=args.kingdom, ncbi=args.ncbi,
-    )
+    taxa_df = get(filepath_or_dataframe=taxa_df, kingdom=args.kingdom, ncbi=args.ncbi,)
     written_ranks = write_ranks(
-        taxonomy=args.taxonomy,
+        taxonomy=taxa_df,
         assembly=args.assembly,
         outdir=args.outdir,
         rank=args.split_rank_and_write,

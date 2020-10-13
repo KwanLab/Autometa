@@ -52,3 +52,10 @@ def test_coverage_get_from_bam(metagenome, tmp_path):
     assert df.index.name == "contig"
     assert "coverage" in df.columns
     assert out.exists()
+
+
+@pytest.mark.skip
+@pytest.mark.wip
+@pytest.mark.entrypoint
+def test_coverage_main(monkeypatch):
+    coverage.main()

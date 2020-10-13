@@ -2,12 +2,10 @@ import pytest
 import pandas as pd
 from autometa.binning import summary
 from autometa.taxonomy import majority_vote
-from autometa.taxonomy import ncbi
-from autometa.common import markers
 from argparse import Namespace
 from Bio import SeqIO
 import argparse
-from autometa import config, taxonomy
+from autometa import config
 import glob
 
 
@@ -247,21 +245,21 @@ def test_write_cluster_records(bin_df, assembly, tmp_path):
 
 
 @pytest.fixture(name="mock_parser")
-def fixture_mock_parser(monkeypatch, tmp_path):
+def fixture_mock_parser(monkeypatch):
     def return_mock_parser(*args, **kwargs):
         return MockParser()
 
-    class MockParseArgs:
-        def __init__(self, workspace, write):
-            self.workspace = workspace
-            self.write = write
+    class MockArgs:
+        def __init__(self):
+            self.workspace = "workspace"
+            self.write = True
 
     class MockParser:
         def add_argument(self, *args, **kwargs):
             pass
 
         def parse_args(self):
-            return MockParseArgs(workspace="workspace", write=True)
+            return MockArgs()
 
     # Defining the MockParser class to represent parser
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)

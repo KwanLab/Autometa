@@ -724,7 +724,7 @@ def main():
         "--verbose", action="store_true", default=False, help="log debug information"
     )
     args = parser.parse_args()
-    # Kmers.load().embed(method=args.embedded_kmers)
+
     kmers_df = kmers.embed(
         kmers=args.kmers, out=args.embedded_kmers, method=args.embedding_method
     )
@@ -736,7 +736,7 @@ def main():
 
     markers_df = load_markers(args.markers)
     markers_df = markers_df.convert_dtypes()
-    # Taxonomy.load()
+
     if args.taxonomy:
         taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
         taxa_df = taxa_df[taxa_df.superkingdom == args.domain]

@@ -65,6 +65,7 @@ a json file to `test_data.json` to be read by pytest-variables during testing.
 
 import gzip
 import json
+import typing
 
 import attr
 import pandas as pd
@@ -103,25 +104,26 @@ def subset_acc2taxids(blastp_accessions: set, ncbi: NCBI) -> dict:
     return acc2taxids
 
 
-@attr.s(kw_only=True)
+@attr.s(auto_attribs=True)
 class TestData:
-    metagenome = attr.ib(validator=attr.validators.instance_of(str))
-    metagenome_nucl_orfs = attr.ib(validator=attr.validators.instance_of(str))
-    metagenome_prot_orfs = attr.ib(validator=attr.validators.instance_of(str))
-    markers_orfs = attr.ib(validator=attr.validators.instance_of(str))
-    markers_scans = attr.ib(validator=attr.validators.instance_of(str))
-    markers_filtered = attr.ib(validator=attr.validators.instance_of(str))
-    taxonomy_ncbi = attr.ib(validator=attr.validators.instance_of(str))
-    taxonmy_blastp = attr.ib(validator=attr.validators.instance_of(str))
-    taxonomy_orfs = attr.ib(validator=attr.validators.instance_of(str))
-    binning_norm_kmers = attr.ib(validator=attr.validators.instance_of(str))
-    binning_embedded_kmers = attr.ib(validator=attr.validators.instance_of(str))
-    binning_coverage = attr.ib(validator=attr.validators.instance_of(str))
-    binning_markers = attr.ib(validator=attr.validators.instance_of(str))
-    binning_taxonomy = attr.ib(validator=attr.validators.instance_of(str))
-    summary_bin_df = attr.ib(validator=attr.validators.instance_of(str))
-    data = attr.ib(factory=dict)
-    seed = attr.ib(default=42)
+    metagenome: str
+    metagenome_nucl_orfs: str
+    metagenome_prot_orfs: str
+    markers_orfs: str
+    markers_scans: str
+    markers_filtered: str
+    taxonomy_ncbi: str
+    taxonmy_blastp: str
+    taxonomy_orfs: str
+    binning_norm_kmers: str
+    binning_embedded_kmers: str
+    binning_coverage: str
+    binning_markers: str
+    binning_taxonomy: str
+    summary_bin_df: str
+    recruitment_binning: str
+    data: typing.Dict = attr.ib(default={})
+    seed: int = 42
 
     def prepare_metagenome(self, num_records: int = 4):
         logger.info("Preparing metagenome records test data...")
@@ -147,16 +149,16 @@ class TestData:
         }
         self.data["metagenome"] = {"assembly": records, "orfs": amino_acid_orfs}
 
-    def get_kmers(self, num_records: int = 4):
-        if num_records < 4:
+    def get_kmers(self, num_records: int = 5):
+        if num_records < 5:
             raise ValueError(
-                f"At least 4 records are required for embedding tests! provided: {num_records}"
+                f"At least 5 records are required for embedding tests! provided: {num_records}"
             )
         logger.info("Preparing kmer counts test data...")
         # kmer size is 5 (b/c this is the default).
         counts = kmers.count(assembly=self.metagenome, size=5)
-        # subset counts to first rows via `num_records`
-        counts = counts.iloc[:num_records]
+        # subset counts to `num_records`
+        counts = counts.sample(n=num_records, random_state=42)
         # method is am_clr (b/c this is the default).
         am_clr_normalized_counts = kmers.normalize(df=counts, method="am_clr")
 
@@ -274,7 +276,7 @@ class TestData:
             }
         return self.data["coverage"]
 
-    def get_binning(self, num_contigs: int = 10):
+    def get_binning(self, num_contigs: int = None):
         # Need kmers, coverage, markers, taxonomy
         logger.info("Preparing binning test data")
         annotations = {
@@ -288,7 +290,7 @@ class TestData:
         for annotation, fpath in annotations.items():
             df = pd.read_csv(fpath, sep="\t", index_col="contig")
             # We'll grab the first `num_contigs` from the first dataframe (kmers)
-            if not contigs:
+            if not contigs and num_contigs:
                 # We need to ensure the contigs we pull contain markers...
                 contigs = set(
                     df[df.index.isin(markers_df.index)].index.tolist()[:num_contigs]
@@ -313,6 +315,11 @@ class TestData:
                 lambda x: x.split("_length_")[-1].split("_cov_")[0]
             )
         self.data["summary"] = {"bin_df": bin_df.to_json()}
+
+    def get_recruitment(self, num_contigs: int = 10):
+        logger.info("Preparing recruitment binning test data")
+        df = pd.read_csv(self.recruitment_binning, sep="\t")
+        self.data["recruitment"] = {"binning": df.to_json()}
 
     def to_json(self, out: str):
         logger.info(f"Serializing data to {out}")
@@ -343,6 +350,7 @@ def main():
     binning_markers = os.path.join(outdir, "binning_markers.tsv.gz")
     binning_taxonomy = os.path.join(outdir, "binning_taxonomy.tsv.gz")
     summary_bin_df = os.path.join(outdir, "summary_bin_df.tsv.gz")
+    recruitment_binning = os.path.join(outdir, "recruitment_binning.tsv")
 
     test_data = TestData(
         metagenome=metagenome,
@@ -360,6 +368,7 @@ def main():
         binning_markers=binning_markers,
         binning_taxonomy=binning_taxonomy,
         summary_bin_df=summary_bin_df,
+        recruitment_binning=recruitment_binning,
     )
 
     # TODO: Decrease the size of the test_data.json file...
@@ -370,7 +379,7 @@ def main():
     # # COMBAK: Minimize data structures for taxonomy test data
     test_data.get_taxonomy()
     test_data.get_markers()
-    test_data.get_binning()
+    test_data.get_binning(num_contigs=0)  # all contigs
     test_data.get_summary()
 
     out = os.path.join(outdir, "test_data.json")

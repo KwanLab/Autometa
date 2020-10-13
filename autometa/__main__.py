@@ -230,7 +230,7 @@ def run_autometa(mgargs):
         )
         # Now filter by Kingdom
         kingdom_df = vote.get(
-            fpath=mgargs.files.taxonomy,
+            filepath_or_dataframe=mgargs.files.taxonomy,
             kingdom=mgargs.parameters.kingdom,
             ncbi=mgargs.databases.ncbi,
         )
@@ -314,56 +314,9 @@ def run_autometa(mgargs):
     return bins_df
 
 
-def main(args):
+def main():
     """
     Main logic for running autometa pipeline.
-
-    Warning: This should be called by `entrypoint` and not directly.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        namespace containing config information for AutometaUser
-
-    Returns
-    -------
-    NoneType
-        Nothing if no errors are encountered.
-
-    """
-
-    logger = init_logger(out=args.log, verbosity=args.verbosity)
-    # Configure AutometaUser
-    # TODO: master from WorkQueue is AutometaUser
-    user = AutometaUser(nproc=args.cpus)
-    user.configure(dryrun=args.check_dependencies, update=args.update)
-
-    # all_bins = {}
-    for config in args.config:
-        # TODO: Add directions to master from WorkQueue
-        mgargs = user.prepare_binning_args(config)
-        bins = run_autometa(mgargs)
-
-        # TODO: refinement/processing/prep for pangenome algos
-        # refined_bins = refine_binning(bins)
-        # processed_bins = process_binning(refined_bins)
-        # sample = mgargs.parameters.metagenome_num
-        # all_bins.update({sample: processed_bins})
-    # pangenomes = get_pangenomes(all_bins)
-
-
-def entrypoint():
-    """
-    Main entrypoint for autometa pipeline.
-
-    Note, a requirement of packaging and distribution is for entrypoints to not
-    require any arguments. This is a wrapper to the main functionality of running
-    autometa via the `main` function.
-
-    Returns
-    -------
-    NoneType
-
     """
     import argparse
 
@@ -405,9 +358,29 @@ def entrypoint():
         action="store_true",
     )
     args = parser.parse_args()
+    logger = init_logger(out=args.log, verbosity=args.verbosity)
+    # Configure AutometaUser
+    # TODO: master from WorkQueue is AutometaUser
+    user = AutometaUser(nproc=args.cpus)
+    user.configure(dryrun=args.check_dependencies, update=args.update)
 
+    # all_bins = {}
+    for config in args.config:
+        # TODO: Add directions to master from WorkQueue
+        mgargs = user.prepare_binning_args(config)
+        bins = run_autometa(mgargs)
+
+        # TODO: refinement/processing/prep for pangenome algos
+        # refined_bins = refine_binning(bins)
+        # processed_bins = process_binning(refined_bins)
+        # sample = mgargs.parameters.metagenome_num
+        # all_bins.update({sample: processed_bins})
+    # pangenomes = get_pangenomes(all_bins)
+
+
+if __name__ == "__main__":
     try:
-        main(args)
+        main()
     except KeyboardInterrupt:
         logger.info("User cancelled run. Exiting...")
         sys.exit(1)
@@ -423,7 +396,3 @@ def entrypoint():
             """
             logger.info(issue_request)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    entrypoint()

@@ -22,26 +22,13 @@ def fixture_dbdir(tmp_path_factory):
     Pathlib.LocalPath
         Path to temporary NCBI database directory
     """
-    tmpdir = tmp_path_factory.mktemp("ncbi")
+    tmpdir = tmp_path_factory.mktemp("databases")
     return tmpdir
 
 
 @pytest.fixture(name="nodes", scope="session", autouse=True)
-def fixture_nodes(variables, dbdir):
-    """Lines corresponding to nodes.dmp
-
-    Parameters
-    ----------
-    variables : [type]
-        [description]
-    dbdir : pytest fixture
-        [description]
-
-    Returns
-    -------
-    [type]
-        [description]
-    """
+def fixture_nodes(variables):
+    """Lines corresponding to nodes.dmp"""
     vote_test_data = variables["taxonomy"]
     lines = ""
     for child, info in vote_test_data["nodes"].items():
@@ -55,7 +42,7 @@ def fixture_nodes(variables, dbdir):
 
 
 @pytest.fixture(name="names", scope="session", autouse=True)
-def fixture_names(variables, dbdir):
+def fixture_names(variables):
     vote_test_data = variables["taxonomy"]
     lines = ""
     for taxid, name in vote_test_data["names"].items():
@@ -70,7 +57,7 @@ def fixture_names(variables, dbdir):
 
 
 @pytest.fixture(name="merged", scope="session", autouse=True)
-def fixture_merged(variables, dbdir):
+def fixture_merged(variables):
     vote_test_data = variables["taxonomy"]
     # Parsing in ncbi.parse_merged() follows NCBI merged.dmp file format.
     lines = ""
@@ -81,7 +68,7 @@ def fixture_merged(variables, dbdir):
 
 
 @pytest.fixture(name="acc2taxid", scope="session", autouse=True)
-def fixture_acc2taxid(variables, dbdir):
+def fixture_acc2taxid(variables):
     vote_test_data = variables["taxonomy"]
     # Parsing in diamond.add_taxids(...) follows NCBI prot.accession2taxid file format.
     lines = "accession\taccession.version\ttaxid\tnull\n"
@@ -93,18 +80,20 @@ def fixture_acc2taxid(variables, dbdir):
 
 @pytest.fixture(name="ncbi_dir", scope="session", autouse=True)
 def fixture_ncbi_dir(dbdir, merged, nodes, names, acc2taxid):
+    ncbi_dir = dbdir.joinpath("ncbi")
+    ncbi_dir.mkdir()
     # NOTE: NCBI instance expects file name prot.accession2taxid
-    acc2taxid_fpath = dbdir / "prot.accession2taxid"
+    acc2taxid_fpath = ncbi_dir / "prot.accession2taxid"
     # NOTE: NCBI instance expects file name merged.dmp
-    merged_fpath = dbdir / "merged.dmp"
+    merged_fpath = ncbi_dir / "merged.dmp"
     # NOTE: NCBI instance expects file name names.dmp
-    names_fpath = dbdir / "names.dmp"
+    names_fpath = ncbi_dir / "names.dmp"
     # NOTE: NCBI instance expects file name nodes.dmp
-    nodes_fpath = dbdir / "nodes.dmp"
+    nodes_fpath = ncbi_dir / "nodes.dmp"
     for fpath, data in zip(
         [merged_fpath, nodes_fpath, names_fpath, acc2taxid_fpath],
         [merged, nodes, names, acc2taxid],
     ):
         with open(fpath, "w") as fh:
             fh.write(data)
-    return dbdir
+    return ncbi_dir

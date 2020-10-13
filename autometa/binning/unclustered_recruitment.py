@@ -44,15 +44,15 @@ Recruit unclustered contigs using metagenome annotations and binning results.
 
 """
 
-
+import typing
+from typing import List, Tuple
+import attr
 import logging
 import random
 import warnings
-
 import numpy as np
 import pandas as pd
 
-from collections import namedtuple
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -68,16 +68,31 @@ pd.options.mode.chained_assignment = None
 # https://stackoverflow.com/a/46721064/13118765
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-BinData = namedtuple("BinData", ["clustered", "unclustered"])
-TrainingData = namedtuple("TrainingData", ["features", "target", "target_names"])
+
+def validate_training_data(instance, attribute, value):
+    if value.empty:
+        raise ValueError(f"Training data must not be empty.")
 
 
-def get_taxa_features(fpath, dimensions=None):
-    """Get a one-hot encoding of taxonomic information from `fpath`.
+@attr.s(auto_attribs=True)
+class TrainingData:
+    features: pd.DataFrame = attr.ib(validator=validate_training_data)
+    target: pd.DataFrame = attr.ib(validator=validate_training_data)
+    target_names: List[str]
+
+
+@attr.s(auto_attribs=True)
+class Labels:
+    target: pd.DataFrame
+    target_names: List[str]
+
+
+def get_taxa_features(filepath: str, dimensions: int = None) -> pd.DataFrame:
+    """Get a one-hot encoding of taxonomic information from `filepath`.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Path to taxonomy table
     dimensions : int, optional
         Number of principal components to reduce the taxa one-hot encoding down to. By default will not reducy by PCA.
@@ -89,10 +104,14 @@ def get_taxa_features(fpath, dimensions=None):
         index=contig, prefixes=['phylum','class','order','family','genus','species']
         columns will be prefixed with one of above and contain unique names for prefix-specific taxa.
     """
-    df = pd.read_csv(fpath, sep="\t", index_col="contig")
+    df = pd.read_csv(filepath, sep="\t", index_col="contig")
     cols = ["phylum", "class", "order", "family", "genus", "species"]
     encoded_df = pd.get_dummies(df[cols], columns=cols, prefix=cols)
     if dimensions:
+        if dimensions > encoded_df.shape[1]:
+            raise ValueError(
+                f"dimensions must be less than dataframe columns. dimensions: {dimensions}, num. columns: {encoded_df.shape[1]}"
+            )
         pca = PCA(dimensions)
         X = encoded_df.to_numpy()
         X_fit = pca.fit_transform(X)
@@ -100,12 +119,12 @@ def get_taxa_features(fpath, dimensions=None):
     return encoded_df
 
 
-def get_kmer_features(fpath, dimensions=None):
+def get_kmer_features(filepath: str, dimensions: int = None) -> pd.DataFrame:
     """Get k-mer features from normalized k-mer frequencies reduced by PCA to `dimensions`
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Path to normalized k-mer frequencies table
     dimensions : int, optional
         number of principal components to reduce k-mer frequencies down to, by default will not reduce by PCA
@@ -115,8 +134,12 @@ def get_kmer_features(fpath, dimensions=None):
     pd.DataFrame
         shape=(n_contigs, dimensions), index=contig, cols=range([0, dimensions])
     """
-    df = pd.read_csv(fpath, sep="\t", index_col="contig")
+    df = pd.read_csv(filepath, sep="\t", index_col="contig")
     if dimensions:
+        if dimensions > df.shape[1]:
+            raise ValueError(
+                f"dimensions must be less than dataframe columns. dimensions: {dimensions}, num. columns: {df.shape[1]}"
+            )
         pca = PCA(n_components=dimensions)
         X = df.to_numpy()
         X_fit = pca.fit_transform(X)
@@ -125,13 +148,13 @@ def get_kmer_features(fpath, dimensions=None):
 
 
 def get_features(
-    kmers,
-    coverage,
-    annotations=[],
-    taxonomy=None,
-    kmer_dimensions=50,
-    taxa_dimensions=10,
-):
+    kmers: str,
+    coverage: str,
+    annotations: List[str] = [],
+    taxonomy: str = None,
+    kmer_dimensions: int = 50,
+    taxa_dimensions: int = None,
+) -> pd.DataFrame:
     """Retrieve `dimensions` principal components from `kmers` then merge additional annotations to
     create a master dataframe of contig features.
 
@@ -156,14 +179,14 @@ def get_features(
         index=contig, cols=[0-dimension, coverage, ...]
         additional columns would correspond to any features provided by `taxonomy` or `annotations`
     """
-    df = get_kmer_features(fpath=kmers, dimensions=kmer_dimensions)
+    df = get_kmer_features(filepath=kmers, dimensions=kmer_dimensions)
     # annotations is here in case you would like to add additional annotations as features
     annotations.append(coverage)
     for fpath in annotations:
         dff = pd.read_csv(fpath, sep="\t", index_col="contig")
         df = pd.merge(df, dff, how="inner", left_index=True, right_index=True)
     if taxonomy:
-        taxa_df = get_taxa_features(taxonomy, taxa_dimensions)
+        taxa_df = get_taxa_features(filepath=taxonomy, dimensions=taxa_dimensions)
         df = pd.merge(df, taxa_df, how="inner", left_index=True, right_index=True)
 
     omit_cols = {"cluster", "reference_genome", "completeness", "purity"}
@@ -171,7 +194,7 @@ def get_features(
     return df[feature_cols]
 
 
-def get_labels(df):
+def get_labels(df: pd.DataFrame) -> Labels:
     """Retrieve clustering labels from `df`.
 
     Parameters
@@ -197,95 +220,58 @@ def get_labels(df):
     else:
         bin_cols = ["reference_genome", "cluster"]
         raise ValueError(f"{df.columns} does not contain one of bin_cols: {bin_cols}")
-    Labels = namedtuple("labels", ["target", "target_names"])
     return Labels(target=target, target_names=target.columns.tolist())
 
 
-def split_clustered_unclustered(bin_df):
-    """Split `bin_df` into clustered and unclustered contigs
-
-    Parameters
-    ----------
-    bin_df : pd.DataFrame
-        dataframe containing 'cluster' col to split null and not null
-
-    Returns
-    -------
-    namedtuple("BinData", ['clustered':pd.DataFrame, 'unclustered':pd.DataFrame])
-        split dataframes of clustered and unclustered contigs
-    """
-    unclustered_df = bin_df.loc[bin_df.cluster.isnull()]
-    clustered_df = bin_df.loc[bin_df.cluster.notnull()]
-    return BinData(clustered=clustered_df, unclustered=unclustered_df)
-
-
-def get_clustered_markers(bin_data, markers_df):
-    """Retrieve clustered marker-containing contigs`
-
-    Parameters
-    ----------
-    bin_data : namedtuple("BinData", ['clustered':pd.DataFrame,'unclustered':pd.DataFrame])
-        binning data split between clustered/unclustered contigs
-    markers_df : pd.DataFrame
-        Dataframe retrieved from :func:autometa.common.markers.load(fpath, format='wide')
-
-    Returns
-    -------
-    namedtuple("BinData", ['clustered':pd.DataFrame,'unclustered':pd.DataFrame])
-        binning data split between clustered/unclustered contigs where clustered is subset to
-        only marker-containing contigs.
-    """
-    clustered_markers_index = bin_data.clustered.index.isin(markers_df.index)
-    clustered_markers_df = bin_data.clustered.loc[clustered_markers_index]
-    return BinData(clustered=clustered_markers_df, unclustered=bin_data.unclustered)
-
-
-def split_and_subset_train_data(bin_data, features, labels):
+def train_test_split_and_subset(
+    binning: pd.DataFrame, features: pd.DataFrame, markers: pd.DataFrame
+) -> Tuple[TrainingData, pd.DataFrame]:
     """Subset features and labels using split between clustered/unclustered contigs.
 
-    Note
-    ----
-    namedtuple("TrainingData", ["features":pd.DataFrame, "target":pd.DataFrame, "target_names":list])
-
     Parameters
     ----------
-    bin_data : namedtuple("BinData", ['clustered':pd.DataFrame,'unclustered':pd.DataFrame])
-        Bin data split by clustered/unclustered contigs
+    binning : pd.DataFrame
+        Dataframe containing either "cluster" or "reference_genome" in columns.
     features : pd.DataFrame
         Contig features to be used for training a classifier and predicting classifications
-    labels : pd.DataFrame
-        Labels corresponding to classifier predictions
+    markers : pd.DataFrame
+        Dataframe indexed by contigs with marker annotations as columns
 
     Returns
     -------
-    namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
-        Features and bin labels split and subset by clustered/unclustered contigs
+    (TrainingData, pd.DataFrame)
+        0th: Features and bin labels split and subset by clustered/unclustered contigs
+        1st: Unclustered contigs features
     """
-    clustered_features_index = features.index.isin(bin_data.clustered.index)
-    clustered_features = features.loc[clustered_features_index]
-    clustered_labels_index = labels.target.index.isin(bin_data.clustered.index)
-    clustered_labels = labels.target.loc[clustered_labels_index]
-    clustered_data = TrainingData(
+    # Retrieve features for clustered contigs as well as target clusters and cluster names
+    clustered = binning[binning.cluster.notnull()]
+    # Subset by contigs that contain markers
+    clustered = clustered[clustered.index.isin(markers.index)]
+    # Create one-hot encoding of clusters to be used for target and target_names
+    labels = get_labels(clustered)
+    # Finally retrieve features for the subset of clustered contigs
+    clustered_features_index = features.index.isin(clustered.index)
+    clustered_features = features[clustered_features_index]
+    # Store features, targets and target_names in TrainingData for namespace lookup later.
+    train_data = TrainingData(
         features=clustered_features,
-        target=clustered_labels,
-        target_names=clustered_labels.columns.tolist(),
+        target=labels.target,
+        target_names=labels.target_names,
     )
-
-    unclustered_features_index = features.index.isin(bin_data.unclustered.index)
-    unclustered_features = features.loc[unclustered_features_index]
-    unclustered_labels_index = labels.target.index.isin(bin_data.unclustered.index)
-    unclustered_labels = labels.target.loc[unclustered_labels_index]
-    unclustered_data = TrainingData(
-        features=unclustered_features,
-        target=unclustered_labels,
-        target_names=unclustered_labels.columns.tolist(),
-    )
-    return BinData(clustered=clustered_data, unclustered=unclustered_data)
+    # Now retrieve features for unclustered contigs
+    unclustered = binning[binning.cluster.isnull()]
+    unclustered_features_index = features.index.isin(unclustered.index)
+    unclustered_features = features[unclustered_features_index]
+    return train_data, unclustered_features
 
 
 def get_decision_tree_predictions(
-    X, y, X_test, bin_data, num_classifications=10, seed=42
-):
+    X: np.ndarray,
+    y: np.ndarray,
+    X_test: np.ndarray,
+    num_classifications: int = 10,
+    seed: int = 42,
+) -> pd.DataFrame:
     """Get predictions using DecisionTreeClassifier.
 
     Parameters
@@ -296,8 +282,6 @@ def get_decision_tree_predictions(
         Clustered contig labels to train the classifier.
     X_test : numpy.ndarray, shape=(n_contigs, n_features)
         Unclustered contig features for input to ``classifier.predict(X_test)``
-    bin_data : namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
-        Features and bin labels split and subset by clustered/unclustered contigs.
     num_classifications : int, optional
         number of classifications to perform, by default 10
     seed : int, optional
@@ -315,16 +299,16 @@ def get_decision_tree_predictions(
         clf.fit(X_train, y_train)
         prediction = clf.predict(X_test)
         predictions.append(prediction)
-
-    summed_predictions = np.sum(predictions, axis=0)
-    return pd.DataFrame(
-        summed_predictions,
-        index=bin_data.unclustered.features.index,
-        columns=bin_data.clustered.target_names,
-    )
+    return np.sum(predictions, axis=0)
 
 
-def get_random_forest_predictions(X, y, X_test, bin_data, num_estimators=10, seed=42):
+def get_random_forest_predictions(
+    X: np.ndarray,
+    y: np.ndarray,
+    X_test: np.ndarray,
+    num_estimators: int = 10,
+    seed: int = 42,
+) -> pd.DataFrame:
     """Retrieve predictions using RandomForestClassifier.
 
     Note
@@ -341,8 +325,6 @@ def get_random_forest_predictions(X, y, X_test, bin_data, num_estimators=10, see
         Clustered contig labels to train the classifier.
     X_test : numpy.ndarray, shape=(n_contigs, n_features)
         Unclustered contig features for input to ``classifier.predict(X_test)``
-    bin_data : namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
-        Features and bin labels split and subset by clustered/unclustered contigs.
     num_estimators : int, optional
         number of estimators to construct for training and predictions, by default 10
     seed : int, optional
@@ -360,27 +342,25 @@ def get_random_forest_predictions(X, y, X_test, bin_data, num_estimators=10, see
         random_state=np.random.RandomState(seed),
     )
     clf.fit(X, y)
-    prediction = clf.predict(X_test)
-    return pd.DataFrame(
-        prediction,
-        index=bin_data.unclustered.features.index,
-        columns=bin_data.clustered.target_names,
-    )
+    return clf.predict(X_test)
 
 
 def get_confidence_filtered_predictions(
-    bin_data,
-    num_classifications=10,
-    confidence=1.0,
-    classifier="decision_tree",
-    seed=42,
-):
+    train_data: TrainingData,
+    test_data: pd.DataFrame,
+    num_classifications: int = 10,
+    confidence: float = 1.0,
+    classifier: str = "decision_tree",
+    seed: int = 42,
+) -> pd.DataFrame:
     """Filter classifier predictions by confidence threshold.
 
     Parameters
     ----------
-    bin_data : namedtuple("BinData", ['clustered':namedtuple("TrainingData"),'unclustered':namedtuple("TrainingData")]
-        Features and bin labels split and subset by clustered/unclustered contigs.
+    train_data : TrainingData
+        Features and bin labels split by clustered/unclustered contigs and subset by clustered markers.
+    test_data : pd.DataFrame
+        Features corresponding to unclustered contigs
     num_classifications : num, optional
         Number of classifications to perform on each round of predictions to determine classifier confidence, by default 10
     confidence : float, optional
@@ -401,42 +381,50 @@ def get_confidence_filtered_predictions(
     NotImplementedError
         Provided `classifier` is not implemented.
     """
-    X = bin_data.clustered.features.to_numpy()
-    y = bin_data.clustered.target.to_numpy()
-    X_test = bin_data.unclustered.features.to_numpy()
+    X = train_data.features.to_numpy()
+    y = train_data.target.to_numpy()
+    X_test = test_data.to_numpy()
 
     logger.debug(
         f"getting predictions from {X.shape[0]} contigs with {X.shape[1]} features for {X_test.shape[0]} unclustered contigs"
     )
 
     if classifier == "decision_tree":
-        df = get_decision_tree_predictions(
-            X, y, X_test, bin_data, num_classifications=num_classifications, seed=seed
+        predictions = get_decision_tree_predictions(
+            X, y, X_test, num_classifications=num_classifications, seed=seed
         )
     elif classifier == "random_forest":
-        df = get_random_forest_predictions(
-            X, y, X_test, bin_data, num_estimators=num_classifications, seed=seed
+        predictions = get_random_forest_predictions(
+            X, y, X_test, num_estimators=num_classifications, seed=seed
         )
     else:
         raise NotImplementedError(classifier)
 
+    df = pd.DataFrame(
+        predictions, index=test_data.index, columns=train_data.target_names,
+    )
+    # Filter predictions by confidence threshold
     confidence_threshold = num_classifications * confidence
-    df = df.loc[df.max(axis=1) >= confidence_threshold]
-    filtered_predictions = df.idxmax(axis=1)
+    df = df[df.max(axis="columns") >= confidence_threshold]
+    filtered_predictions = df.idxmax(axis="columns")
     filtered_predictions.name = "cluster"
     return filtered_predictions.to_frame()
 
 
-def filter_contaminating_predictions(predictions_df, markers_df, bin_df):
+def filter_contaminating_predictions(
+    predictions: pd.DataFrame, markers: pd.DataFrame, binning: pd.DataFrame
+) -> pd.DataFrame:
     """Filter contigs that would cause contamination in predicted bin.
 
     Parameters
     ----------
-    predictions_df : pd.DataFrame
+    predictions : pd.DataFrame
         classifier predictions, index=contig, col='cluster'
-    markers_df : pd.DataFrame
+
+    markers : pd.DataFrame
         markers retrieved from autometa.common.markers.load(fpath, format='wide')
-    bin_df : pd.DataFrame
+
+    binning : pd.DataFrame
         Binning dataframe with which to compare classifications.
 
     Returns
@@ -444,57 +432,51 @@ def filter_contaminating_predictions(predictions_df, markers_df, bin_df):
     pd.DataFrame
         contamination filtered predictions, index=contig, col='cluster'
     """
-    for cluster, dff in bin_df.groupby("cluster"):
-        prediction_index = predictions_df[predictions_df.cluster == cluster].index
+    for cluster, dff in binning.groupby("cluster"):
+        prediction_index = predictions[predictions.cluster == cluster].index
         if prediction_index.empty:
             # No reason to perform calculations if no predictions exist for current cluster
             continue
 
-        old_markers = markers_df.loc[markers_df.index.isin(dff.index)]
+        old_markers = markers[markers.index.isin(dff.index)]
         old_marker_counts = old_markers.sum()
-
-        prediction_markers_index = markers_df.loc[
-            markers_df.index.isin(prediction_index)
-        ].index
-        new_markers_index = prediction_markers_index.join(
-            old_markers.index, how="outer"
-        )
-        new_marker_counts = markers_df.loc[new_markers_index].sum()
-
+        prediction_markers_index = markers[markers.index.isin(prediction_index)].index
+        new_markers_index = prediction_markers_index.union(old_markers.index)
+        new_marker_counts = markers.loc[new_markers_index].sum()
         old_num_single_copy_markers = old_marker_counts[old_marker_counts == 1].count()
         new_num_single_copy_markers = new_marker_counts[new_marker_counts == 1].count()
         if new_num_single_copy_markers >= old_num_single_copy_markers:
             # We are not adding contamination, so keep the contig predictions
             continue
 
-        # This means we would be introducing contamination so we drop the contigs from the predictions
-        predictions_df.drop(index=prediction_index, inplace=True)
+        # We would be introducing contamination here so we drop the contigs from the predictions.
+        predictions.drop(index=prediction_index, inplace=True)
 
-    return predictions_df
+    return predictions
 
 
-def add_predictions(bin_df, predictions_df):
+def add_predictions(binning: pd.DataFrame, predictions: pd.DataFrame) -> pd.DataFrame:
     """Add classifier predictions to existing binning annotations.
 
     Parameters
     ----------
-    bin_df : pd.DataFrame
+    binning : pd.DataFrame
         Existing binning dataframe to be updated
-    predictions_df : pd.DataFrame
-        classifier predictions to add into `bin_df`
+    predictions : pd.DataFrame
+        classifier predictions to add into `binning`
 
     Returns
     -------
     pd.DataFrame
-        Updated `bin_df`
+        Updated `binning`
     """
-    for cluster, dff in bin_df.groupby("cluster"):
-        prediction_index = predictions_df[predictions_df.cluster == cluster].index
+    for cluster in binning.cluster.unique():
+        prediction_index = predictions[predictions.cluster == cluster].index
         if prediction_index.empty:
             # No reason to perform calculations if no predictions exist for current cluster
             continue
-        bin_df.loc[prediction_index, "cluster"] = cluster
-    return bin_df
+        binning.loc[prediction_index, "cluster"] = cluster
+    return binning
 
 
 def main():
@@ -578,7 +560,6 @@ def main():
         args.assignments, sep="\t", index_col="contig", usecols=["contig", "cluster"]
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
-    labels = get_labels(bin_df)
     markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(
@@ -589,33 +570,27 @@ def main():
     while True:
         n_runs += 1
 
-        bin_data = split_clustered_unclustered(bin_df=bin_df)
-
-        bin_data = get_clustered_markers(bin_data=bin_data, markers_df=markers_df)
-
-        labels = get_labels(bin_df)
-        bin_data = split_and_subset_train_data(bin_data, features, labels)
+        train_data, test_data = train_test_split_and_subset(
+            binning=bin_df, features=features, markers=markers_df
+        )
 
         # Perform cross-validation with n. iterations (num. estimators)
         predictions_df = get_confidence_filtered_predictions(
-            bin_data=bin_data,
+            train_data=train_data,
+            test_data=test_data,
             num_classifications=args.num_classifications,
             confidence=args.confidence,
             classifier=args.classifier,
             seed=args.seed,
         )
         predictions_df = filter_contaminating_predictions(
-            predictions_df=predictions_df, markers_df=markers_df, bin_df=bin_df
+            predictions=predictions_df, markers=markers_df, binning=bin_df
         )
-
-        # n_clustered = predictions_df.shape[0]
-        # recruited_to_bins = ",".join(predictions_df.cluster.unique())
-        # logger.debug(f"{n_clustered} contigs clustered to {recruited_to_bins}")
 
         if predictions_df.empty:
             break
 
-        bin_df = add_predictions(bin_df=bin_df, predictions_df=predictions_df)
+        bin_df = add_predictions(binning=bin_df, predictions=predictions_df)
 
     now_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
 

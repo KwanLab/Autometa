@@ -27,6 +27,7 @@ Count, normalize and embed k-mers given nucleotide sequences
 
 import logging
 import os
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -49,7 +50,7 @@ numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-def _revcomp(string):
+def _revcomp(string: str) -> str:
     """Reverse complement the provided `string`.
 
     Parameters
@@ -67,7 +68,7 @@ def _revcomp(string):
     return "".join(complement.get(char) for char in reversed(string))
 
 
-def init_kmers(kmer_size=5):
+def init_kmers(kmer_size: int = 5) -> Dict[str, int]:
     """Initialize k-mers from `kmer_size`. Respective reverse complements will
     be removed.
 
@@ -102,7 +103,7 @@ def init_kmers(kmer_size=5):
     return uniq_kmers
 
 
-def load(kmers_fpath):
+def load(kmers_fpath: str) -> pd.DataFrame:
     """Load in a previously counted k-mer frequencies table.
 
     Parameters
@@ -132,7 +133,9 @@ def load(kmers_fpath):
     return df
 
 
-def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
+def mp_counter(
+    assembly: str, ref_kmers: Dict[str, int], cpus: int = mp.cpu_count()
+) -> List:
     """Multiprocessing k-mer counter used in `count`. (Should not be used directly).
 
     Parameters
@@ -164,7 +167,9 @@ def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
     return counts
 
 
-def record_counter(args):
+def record_counter(
+    args: Tuple[SeqIO.SeqRecord, Dict[str, int]]
+) -> Dict[str, List[int]]:
     """single record counter used when multiprocessing.
 
     Parameters
@@ -210,7 +215,9 @@ def record_counter(args):
     return {record.id: contig_kmer_counts}
 
 
-def seq_counter(assembly, ref_kmers, verbose=True):
+def seq_counter(
+    assembly: str, ref_kmers: Dict[str, int], verbose: bool = True
+) -> Dict[str, List[int]]:
     """Sequentially count k-mer frequencies.
 
     Parameters
@@ -265,14 +272,14 @@ def seq_counter(assembly, ref_kmers, verbose=True):
 
 @utilities.timeit
 def count(
-    assembly,
-    size=5,
-    out=None,
-    force=False,
-    verbose=True,
-    multiprocess=True,
-    cpus=mp.cpu_count(),
-):
+    assembly: str,
+    size: int = 5,
+    out: str = None,
+    force: bool = False,
+    verbose: bool = True,
+    multiprocess: bool = True,
+    cpus: int = mp.cpu_count(),
+) -> pd.DataFrame:
     """Counts k-mer frequencies for provided assembly file
 
     First we make a dictionary of all the possible k-mers (discounting reverse
@@ -333,7 +340,7 @@ def count(
     return df
 
 
-def autometa_clr(df):
+def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize k-mers by Centered Log Ratio transformation
 
     1a. Drop any k-mers not present for all contigs
@@ -373,7 +380,9 @@ def autometa_clr(df):
     return df.transform(step_2a, axis="columns").transform(step_2b, axis="columns")
 
 
-def normalize(df, method="am_clr", out=None, force=False):
+def normalize(
+    df: pd.DataFrame, method: str = "am_clr", out: str = None, force: bool = False
+) -> pd.DataFrame:
     """Normalize raw k-mer counts by center or isometric log-ratio transform.
 
     Parameters
@@ -431,17 +440,17 @@ def normalize(df, method="am_clr", out=None, force=False):
 
 
 def embed(
-    kmers,
-    out=None,
-    force=False,
-    embed_dimensions=2,
-    do_pca=True,
-    pca_dimensions=50,
-    method="bhsne",
-    perplexity=30.0,
-    seed=42,
-    **method_args,
-):
+    kmers: Union[str, pd.DataFrame],
+    out: str = None,
+    force: bool = False,
+    embed_dimensions: int = 2,
+    do_pca: bool = True,
+    pca_dimensions: int = 50,
+    method: str = "bhsne",
+    perplexity: float = 30.0,
+    seed: int = 42,
+    **method_args: Dict,
+) -> pd.DataFrame:
     """Embed k-mers using provided `method`.
 
     Notes
@@ -500,7 +509,7 @@ def embed(
     elif isinstance(kmers, pd.DataFrame):
         df = kmers
     else:
-        TypeError(kmers)
+        raise TypeError(kmers)
     if out and os.path.exists(out) and os.path.getsize(out) and not force:
         logger.debug(f"k-mers frequency embedding already exists {out}")
         try:
@@ -521,7 +530,7 @@ def embed(
             f"{method} not in embedding methods. Choices: {', '.join(choices)}"
         )
     # PCA
-    n_samples, n_dims = df.shape
+    n_samples, n_components = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
     df.dropna(axis="index", how="all", inplace=True)
     df.fillna(0, inplace=True)
@@ -529,15 +538,15 @@ def embed(
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
 
-    if n_dims > pca_dimensions and do_pca:
+    if n_components > pca_dimensions and do_pca:
         logger.debug(
-            f"Performing decomposition with PCA (seed {seed}): {n_dims} to {pca_dimensions} dims"
+            f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
         )
         X = PCA(n_components=pca_dimensions, random_state=random_state).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
-        n_samples, n_dims = X.shape
+        n_samples, n_components = X.shape
 
-    logger.debug(f"{method}: {n_samples} data points and {n_dims} dimensions")
+    logger.debug(f"{method}: {n_samples} data points and {n_components} dimensions")
 
     # Adjust perplexity according to the number of data points
     n_rows = n_samples - 1

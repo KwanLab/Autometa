@@ -1,6 +1,7 @@
 import pytest
 
 from autometa.common.metagenome import Metagenome
+from autometa.common import metagenome
 from autometa.common.external import prodigal
 
 
@@ -166,3 +167,10 @@ def test_orfs_called(metagenome, monkeypatch):
         monkeypatch.setattr(metagenome, "nucl_orfs_fpath", str(metagenome))
         called = metagenome.orfs_called
         assert called
+
+
+@pytest.mark.skip
+@pytest.mark.wip
+@pytest.mark.entrypoint
+def test_metagenome_main(monkeypatch):
+    metagenome.main()
