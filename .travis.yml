@@ -22,9 +22,8 @@ before_install:
   - conda info -a
 
 install:
-  - conda create -n autometa -c bioconda -c conda-forge python=$TRAVIS_PYTHON_VERSION --file=requirements.txt
-  - conda install codecov -n autometa
-  - conda activate autometa
+  - conda install -c bioconda -c conda-forge --file=requirements.txt
+  - conda install -c conda-forge codecov
 
 # With pytest codecov requires xml report format
 script:
