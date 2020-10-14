@@ -1,43 +1,43 @@
 import pytest
+import argparse
+import os
 
+from Bio import SeqIO
+
+from autometa.common import metagenome as am_metagenome
 from autometa.common.metagenome import Metagenome
 from autometa.common import metagenome
 from autometa.common.external import prodigal
 
 
-@pytest.fixture(name="assembly")
-def fixture_assembly(variables, tmp_path):
+@pytest.fixture(name="metagenome_testdir", scope="module")
+def fixture_metagenome_testdir(tmp_path_factory):
+    return tmp_path_factory.mktemp("metagenome")
+
+
+@pytest.fixture(name="assembly", scope="module")
+def fixture_assembly(variables, metagenome_testdir):
     metagenome_test_data = variables["metagenome"]
     records = metagenome_test_data["assembly"]
     lines = ""
     for record, seq in records.items():
         lines += f"{record}\n{seq}\n"
-    fpath = tmp_path / "assembly.fna"
+    fpath = metagenome_testdir / "assembly.fna"
     with open(fpath, "w") as fh:
         fh.write(lines)
-    return fpath.as_posix()
+    return str(fpath)
 
 
-@pytest.fixture(name="metagenome")
-def fixture_metagenome(assembly, tmpdir):
-    nucl_orfs = tmpdir.join("orfs.fna")
-    prot_orfs = tmpdir.join("orfs.faa")
+@pytest.fixture(name="metagenome", scope="module")
+def fixture_metagenome(assembly, metagenome_testdir):
+    nucl_orfs = metagenome_testdir.join("orfs.fna")
+    prot_orfs = metagenome_testdir.join("orfs.faa")
     return Metagenome(
         assembly=assembly,
-        outdir=tmpdir,
+        outdir=metagenome_testdir,
         nucl_orfs_fpath=nucl_orfs,
         prot_orfs_fpath=prot_orfs,
     )
-
-
-@pytest.fixture(name="mock_prodigal_run")
-def mock_prodigal_run(monkeypatch):
-    """Set the prodigal.run method to return filepaths."""
-
-    def return_args(*args, **kwargs):
-        return args, kwargs
-
-    monkeypatch.setattr(prodigal, "run", return_args)
 
 
 @pytest.mark.parametrize("quality_measure", [0.1, 0.9])
@@ -132,7 +132,12 @@ def test_length_filter_invalid_cutoff(metagenome, cutoff, tmp_path):
         assert filtered_metagenome.nseqs == metagenome.nseqs
 
 
-def test_call_orfs(metagenome, mock_prodigal_run):
+def test_call_orfs(monkeypatch, metagenome):
+    def return_args(*args, **kwargs):
+        return args, kwargs
+
+    monkeypatch.setattr(prodigal, "run", return_args)
+
     force = False
     cpus = 1
     parallel = False
@@ -150,7 +155,7 @@ def test_call_orfs(metagenome, mock_prodigal_run):
 
 
 @pytest.mark.parametrize(
-    "force,parallel,cpus", [(1, False, 1), (False, 1, 1), (False, False, False)],
+    "force,parallel,cpus", [(1, False, 1), (False, 1, 1), (False, False, False)]
 )
 def test_call_orfs_invalid_params(metagenome, force, parallel, cpus):
     with pytest.raises(TypeError):
@@ -160,17 +165,42 @@ def test_call_orfs_invalid_params(metagenome, force, parallel, cpus):
 def test_orfs_called(metagenome, monkeypatch):
     called = metagenome.orfs_called
     assert not called
-    with monkeypatch.context():
+    with monkeypatch.context() as m:
         # Here we set the filepaths to the metagenome fixture assembly path
         # (since we know this exists and is non-empty)
-        monkeypatch.setattr(metagenome, "prot_orfs_fpath", str(metagenome))
-        monkeypatch.setattr(metagenome, "nucl_orfs_fpath", str(metagenome))
-        called = metagenome.orfs_called
-        assert called
+        # metagenome.__str__ == metagenome.assembly
+        m.setattr(metagenome, "prot_orfs_fpath", str(metagenome))
+        m.setattr(metagenome, "nucl_orfs_fpath", str(metagenome))
 
 
-@pytest.mark.skip
-@pytest.mark.wip
+
+
 @pytest.mark.entrypoint
-def test_metagenome_main(monkeypatch):
-    metagenome.main()
+def test_metagenome_main(monkeypatch, assembly, tmp_path):
+    out = tmp_path / "metagenome.filtered.fna"
+
+    class MockArgs:
+        def __init__(self):
+            self.assembly = assembly
+            self.force = True
+            self.cutoff = 7232
+            self.out = out
+            self.stats = True
+
+    # Defining the MockParser class to represent parser
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+
+    am_metagenome.main()
+    assert out.exists()
+    num_expected_seqs = 2
+    assert len([record for record in SeqIO.parse(out, "fasta")]) == num_expected_seqs

@@ -102,6 +102,7 @@ class DatabaseOutOfSyncError(AutometaError):
         """
         return f"{self.value}\n{message}"
 
+
 if __name__ == "__main__":
     print(
         "This file contains Exceptions for the Autometa pipeline and should not be run directly!"

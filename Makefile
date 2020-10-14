@@ -1,4 +1,3 @@
-
 hello:
 	@echo "Please inspect Makefile for list of commands"
 

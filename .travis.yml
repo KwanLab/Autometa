@@ -1,0 +1,59 @@
+language: python
+python:
+  - "3.7"
+  - "3.8"
+
+before_install:
+  # Install the latest version of Miniconda
+  # -O writes the file to minoconda.sh
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  # - bash miniconda.sh -b -p $HOME/miniconda
+  # -b—Batch mode with no PATH modifications to ~/.bashrc. Assumes that you agree to the license agreement. Does not edit the .bashrc or .bash_profile files.
+  # -p—Installation prefix/path.
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda3/bin:$PATH
+  # - source "$HOME/miniconda/etc/profile.d/conda.sh"
+  # Purpose of hash. See https://www.javatpoint.com/bash-hash-command
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda  # Update CONDA without command line prompt
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+install:
+  - conda create -n autometa python=$TRAVIS_PYTHON_VERSION
+  - conda install -n autometa -c bioconda -c conda-forge \
+      biopython \
+      pandas \
+      tqdm \
+      tsne \
+      numpy \
+      scikit-learn \
+      scikit-bio \
+      samtools \
+      bedtools \
+      bowtie2 \
+      hmmer \
+      prodigal \
+      ndcctools \
+      parallel \
+      requests \
+      umap-learn \
+      hdbscan \
+      pytest \
+      pytest-cov \
+      pytest-html \
+      pytest-repeat \
+      pytest-variables \
+      codecov \
+      pip \
+      && conda clean --all --yes
+  - pip install pytest-md pytest-emoji
+  - conda activate autometa
+
+# command to run tests
+script:
+  - python -m pytest
+after_success:
+    - codecov # submit coverage report to codecov.io

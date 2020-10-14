@@ -65,17 +65,19 @@ a json file to `test_data.json` to be read by pytest-variables during testing.
 
 import gzip
 import json
+import os
 import typing
 
 import attr
+import logging
+
 import pandas as pd
 from Bio import SeqIO
 
 from autometa.common import kmers, markers
 from autometa.common.external import hmmer, prodigal
 from autometa.taxonomy.ncbi import NCBI
-import logging
-import os
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -124,6 +126,10 @@ class TestData:
     recruitment_binning: str
     data: typing.Dict = attr.ib(default={})
     seed: int = 42
+    sam_fpath: str
+    bed_fpath: str
+    fwd_reads: str
+    rev_read: str
 
     def prepare_metagenome(self, num_records: int = 4):
         logger.info("Preparing metagenome records test data...")
@@ -267,14 +273,59 @@ class TestData:
             "names": names,
         }
 
+    def get_bed_alignments(self, num_contigs=1):
+        contig_col = 0
+        coverages = pd.read_csv(
+            self.bed_fpath, sep="\t", index_col=contig_col, header=None
+        )
+        # Get number of unique contigs set by `num_contigs`, default is 1.
+        coverages = coverages.sample(n=num_contigs, random_state=self.seed)
+        coverages.reset_index(inplace=True)
+        # Here we are ready to send to json object self.data
+        return coverages
+
+    def get_sam_alignments(self, num_contigs=1):
+        with open(self.sam_fpath) as fh:
+            lines = ""
+            contig = None
+            for line in fh:
+                if line.startswith("@SQ"):
+                    # example line
+                    # @SQ	SN:NODE_1503_length_7231_cov_222.076	LN:7231
+                    contig = line.split("\t")[1]
+                    contig = contig.replace("SN:", "")
+                if line.startswith("@HD") or line.startswith("@PG") or contig in line:
+                    # @HD and @PG are required for bam construction
+                    lines += line
+        return lines
+
+    def get_reads(self, read_count=5):
+        reads = []
+        for file in [self.fwd_reads, self.rev_read]:
+            outlines = ""
+            count = 0
+            with open(file) as fh:
+                for line in fh:
+                    if "+" in line:
+                        count += 1
+                    if count >= read_count:
+                        break
+                    outlines += line
+            reads.append(outlines)
+        return reads
+
     def get_coverage(self):
-        if "coverage" not in self.data:
-            self.data["coverage"] = {
-                "spades_records": self.metagenome,
-                "bam": "alignments.bam",
-                "sam": "alignments.sam",
-            }
-        return self.data["coverage"]
+        logging.info("Making alignment records (sam, and bed files) ...")
+        bed = self.get_bed_alignments()
+        sam = self.get_sam_alignments()
+        logging.info("Getting fwd and rev reads ...")
+        fwd_reads, rev_reads = self.get_reads()
+        self.data["coverage"] = {
+            "bed": bed.to_json(),
+            "sam": sam,
+            "fwd_reads": fwd_reads,
+            "rev_reads": rev_reads,
+        }
 
     def get_binning(self, num_contigs: int = None):
         # Need kmers, coverage, markers, taxonomy
@@ -285,6 +336,7 @@ class TestData:
             "taxonomy": self.binning_taxonomy,
             "coverage": self.binning_coverage,
         }
+
         markers_df = pd.read_csv(self.binning_markers, sep="\t", index_col="contig")
         contigs = None
         for annotation, fpath in annotations.items():
@@ -334,10 +386,6 @@ def main():
     metagenome = os.path.join(outdir, "records.fna")
     metagenome_nucl_orfs = os.path.join(outdir, "metagenome_nucl_orfs.fasta")
     metagenome_prot_orfs = os.path.join(outdir, "metagenome_prot_orfs.fasta")
-    # coverage_reads = os.path.join(outdir, "coverage_reads.fastq")
-    # coverage_sam = os.path.join(outdir, "coverage.sam")
-    # coverage_bam = os.path.join(outdir, "coverage.bam")
-    # coverage_bed = os.path.join(outdir, "coverage.bed")
     markers_orfs = os.path.join(outdir, "markers_orfs.faa")
     markers_scans = os.path.join(outdir, "markers_scans.tsv.gz")
     markers_filtered = os.path.join(outdir, "markers_filtered.tsv.gz")
@@ -349,6 +397,10 @@ def main():
     binning_coverage = os.path.join(outdir, "binning_coverage.tsv.gz")
     binning_markers = os.path.join(outdir, "binning_markers.tsv.gz")
     binning_taxonomy = os.path.join(outdir, "binning_taxonomy.tsv.gz")
+    sam_fpath = os.path.join(outdir, "records.sam")
+    bed_fpath = os.path.join(outdir, "records.bed")
+    fwd_reads = os.path.join(outdir, "records_1.fastq")
+    rev_read = os.path.join(outdir, "records_2.fastq")
     summary_bin_df = os.path.join(outdir, "summary_bin_df.tsv.gz")
     recruitment_binning = os.path.join(outdir, "recruitment_binning.tsv")
 
@@ -367,6 +419,10 @@ def main():
         binning_coverage=binning_coverage,
         binning_markers=binning_markers,
         binning_taxonomy=binning_taxonomy,
+        sam_fpath=sam_fpath,
+        bed_fpath=bed_fpath,
+        fwd_reads=fwd_reads,
+        rev_read=rev_read,
         summary_bin_df=summary_bin_df,
         recruitment_binning=recruitment_binning,
     )

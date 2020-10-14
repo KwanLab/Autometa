@@ -1,9 +1,11 @@
 import pytest
+import argparse
+
 import pandas as pd
 
 from autometa.binning import recursive_dbscan
+from autometa.common.exceptions import TableFormatError
 from autometa.common.markers import load as load_markers
-import argparse
 
 
 @pytest.fixture(name="binning_testdir", scope="module")
@@ -69,7 +71,7 @@ def fixture_markers_fpath(variables, binning_testdir):
     df = pd.read_json(binning_test_data["markers"])
     fpath = binning_testdir / "markers.tsv"
     df.to_csv(fpath, sep="\t", index=False, header=True)
-    return fpath
+    return str(fpath)
 
 
 @pytest.fixture(name="markers", scope="module")
@@ -112,7 +114,7 @@ def test_binning(master, markers, usetaxonomy, method):
 
 def test_binning_invalid_clustering_method(master, markers):
     with pytest.raises(ValueError):
-        df = recursive_dbscan.binning(
+        recursive_dbscan.binning(
             master=master,
             markers=markers,
             taxonomy=False,
@@ -126,7 +128,22 @@ def test_binning_invalid_clustering_method(master, markers):
         )
 
 
-@pytest.mark.wip
+def test_binning_empty_markers_table(master):
+    invalid_dict = {
+        "contig": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
+        "markers": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
+    }
+    df = pd.DataFrame(invalid_dict)
+    with pytest.raises(TableFormatError):
+        recursive_dbscan.binning(
+            master=master,
+            markers=df,
+            domain="bacteria",
+            method="hdbscan",
+            taxonomy=False,
+        )
+
+
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
     monkeypatch, kmers, coverage, markers_fpath, embedded_kmers, taxonomy, tmp_path

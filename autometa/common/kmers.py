@@ -83,11 +83,12 @@ def init_kmers(kmer_size: int = 5) -> Dict[str, int]:
         {kmer:index, ...}
 
     """
-    kmers = {}
+    if not isinstance(kmer_size, int):
+        raise TypeError(f"kmer_size must be an int! Given: {type(kmer_size)}")
     index = 0
     uniq_kmers = dict()
     dna_letters = ["A", "T", "C", "G"]
-    all_kmers = list(dna_letters)
+    all_kmers = dna_letters
     for i in range(1, kmer_size):
         new_list = []
         for current_seq in all_kmers:
@@ -109,7 +110,7 @@ def load(kmers_fpath: str) -> pd.DataFrame:
     Parameters
     ----------
     kmers_fpath : str
-        Description of parameter `kmers_fpath`.
+        Path to kmer frequency table
 
     Returns
     -------
@@ -128,7 +129,7 @@ def load(kmers_fpath: str) -> pd.DataFrame:
         raise FileNotFoundError(kmers_fpath)
     try:
         df = pd.read_csv(kmers_fpath, sep="\t", index_col="contig")
-    except ValueError:
+    except (ValueError, TypeError):
         raise TableFormatError(f"contig column not found in {kmers_fpath}!")
     return df
 
@@ -322,6 +323,7 @@ def count(
         logger.warning(f"counts already exist: {out} force to overwrite. [retrieving]")
         df = pd.read_csv(out, sep="\t", index_col="contig")
     else:
+        # checks if it is something like 12.0 vs. 12.9. Also check is an int
         if not isinstance(size, int):
             raise TypeError(f"size must be an int! Given: {type(size)}")
         ref_kmers = init_kmers(size)
@@ -520,7 +522,7 @@ def embed(
     if df.empty:
         kmers_desc = f"kmers:{kmers} type:{type(kmers)}"
         embed_desc = f"out:{out} type:{type(out)}"
-        requirements = f"kmers type must be a pd.DataFrame or filepath."
+        requirements = f"Given pd.DataFrame is empty!"
         raise FileNotFoundError(f"{kmers_desc} {embed_desc} {requirements}")
 
     method = method.lower()

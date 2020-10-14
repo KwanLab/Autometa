@@ -1,3 +1,4 @@
+import pytest
 import argparse
 
 import pandas as pd
@@ -6,6 +7,7 @@ import pytest
 from Bio import SeqIO
 
 from autometa.common import kmers
+from autometa.common.exceptions import TableFormatError
 
 
 @pytest.fixture(name="assembly", scope="module")
@@ -19,7 +21,7 @@ def fixture_assembly(variables, tmp_path_factory):
     fpath = outdir / "metagenome.fna"
     with open(fpath, "w") as fh:
         fh.write(outlines)
-    return fpath.as_posix()
+    return str(fpath)
 
 
 @pytest.fixture(name="counts", scope="module")
@@ -35,7 +37,7 @@ def fixture_counts(variables):
 def fixture_counts_fpath(counts, tmp_path_factory):
     fpath = tmp_path_factory.mktemp("kmers") / "counts.tsv"
     counts.to_csv(fpath, sep="\t", index=True, header=True)
-    return fpath.as_posix()
+    return str(fpath)
 
 
 @pytest.fixture(name="norm_df", scope="module")
@@ -46,10 +48,32 @@ def fixture_norm_df(variables):
     return df
 
 
+@pytest.fixture(name="invalid_df_fpath")
+def fixture_df_without_contig_index_(tmp_path):
+    invalid_dict = {
+        "column1": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
+        "column2": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
+    }
+    df = pd.DataFrame(invalid_dict)
+    df_fpath = tmp_path / "invalid_df.tsv"
+    df.to_csv(df_fpath)
+    return str(df_fpath)
+
+
 def test_kmer_load(counts_fpath):
     df = kmers.load(kmers_fpath=counts_fpath)
     assert not df.empty
     assert df.index.name == "contig"
+
+
+def test_kmer_load_missing_file():
+    with pytest.raises(FileNotFoundError):
+        kmers.load(kmers_fpath="Invalid_fpath")
+
+
+def test_kmer_load_table_missing_contig_column(invalid_df_fpath):
+    with pytest.raises(TableFormatError):
+        kmers.load(invalid_df_fpath)
 
 
 @pytest.mark.parametrize("multiprocess", [True, False])
@@ -79,10 +103,9 @@ def test_count_out_exists(assembly, counts, force, tmp_path):
 
 
 def test_count_wrong_size(assembly, tmp_path):
-    out = tmp_path / "kmers.tsv"
     size = 5.5
     with pytest.raises(TypeError):
-        df = kmers.count(assembly=assembly, size=size)
+        kmers.count(assembly=assembly, size=size)
 
 
 @pytest.mark.parametrize("method", ["am_clr", "clr", "ilr"])
@@ -110,7 +133,7 @@ def test_normalize_out_exists(counts, norm_df, force, tmp_path):
 def test_normalize_wrong_method(counts, tmp_path):
     out = tmp_path / "kmers.norm.tsv"
     with pytest.raises(ValueError):
-        df = kmers.normalize(df=counts, method="am_ilr", out=out, force=False)
+        kmers.normalize(df=counts, method="am_ilr", out=out, force=False)
 
 
 @pytest.mark.parametrize("method", ["bhsne", "sksne", "umap"])
@@ -168,6 +191,24 @@ def test_embed_out_exists(norm_df, force, tmp_path):
         method=method,
         seed=seed,
     )
+
+
+def test_embed_TableFormatError(invalid_df_fpath):
+    with pytest.raises(TableFormatError):
+        kmers.embed(kmers=invalid_df_fpath)
+
+
+def test_embed_input_not_string_or_dataframe(tmp_path):
+    kmer_fpath = tmp_path / "kmers.embed.tsv"
+    with pytest.raises(TypeError):
+        kmers.embed(kmers=kmer_fpath)
+
+
+def test_embed_empty_dataframe(tmp_path):
+    empty_df = pd.DataFrame({})
+    out = tmp_path / "kmers.embed.tsv"
+    with pytest.raises(FileNotFoundError):
+        kmers.embed(kmers=empty_df, out=out, force=True)
 
 
 @pytest.mark.wip

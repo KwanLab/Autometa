@@ -165,6 +165,7 @@ def get(
     pd.DataFrame
         index=contig cols=['coverage']
     """
+
     if os.path.exists(out) and os.path.getsize(out):
         # COMBAK: checksum comparison [checkpoint]
         logger.debug(f"coverage ({out}) already exists. skipping...")
@@ -176,7 +177,7 @@ def get(
         df.to_csv(out, sep="\t", index=True, header=True)
         return df
 
-    try:
+    with tempfile.TemporaryDirectory() as tempdir:
         outdir = os.path.dirname(out)
         tempdir = tempfile.mkdtemp(suffix=None, prefix="cov-alignments", dir=outdir)
         bed = bed if bed else os.path.join(tempdir, "alignment.bed")
@@ -232,8 +233,6 @@ def get(
             if calculation.__name__ == "parse_bed":
                 return calculation()
             calculation()
-    finally:
-        shutil.rmtree(tempdir, ignore_errors=True)
 
 
 def main():
@@ -304,25 +303,25 @@ def main():
         logger.info(f"written: {args.out}")
         return
 
+    get(
+        fasta=args.assembly,
+        fwd_reads=args.fwd_reads,
+        rev_reads=args.rev_reads,
+        sam=args.sam,
+        bam=args.bam,
+        lengths=args.lengths,
+        bed=args.bed,
+        cpus=args.cpus,
+        out=args.out,
+    )
+
+
+if __name__ == "__main__":
     try:
-        get(
-            fasta=args.assembly,
-            fwd_reads=args.fwd_reads,
-            rev_reads=args.rev_reads,
-            sam=args.sam,
-            bam=args.bam,
-            lengths=args.lengths,
-            bed=args.bed,
-            cpus=args.cpus,
-            out=args.out,
-        )
+        main()
     except Exception as err:
         logger.exception(err)
         import sys
 
-        print("Coverage calculation failed")
+        print("Coverage calculation failed. check the logs for details")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
