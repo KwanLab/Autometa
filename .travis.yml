@@ -23,7 +23,8 @@ before_install:
 
 install:
   - conda install -c bioconda -c conda-forge --file=requirements.txt
-  - conda install -c conda-forge codecov pytest-cov pytest-variables
+  - conda install -c conda-forge codecov pytest-cov pytest-variables gdown
+  - gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
 
 # With pytest codecov requires xml report format
 script:
