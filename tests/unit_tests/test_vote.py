@@ -88,6 +88,7 @@ def test_add_ranks(ncbi, votes, tmp_path):
 
 
 @pytest.mark.slow
+@pytest.mark.skip
 def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
     out = tmp_path / "votes.tsv"
     votes = vote.assign(out=out, prot_orfs=prot_orfs, blast=blastp, ncbi_dir=ncbi_dir,)
@@ -194,7 +195,8 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
         )
 
 
-@pytest.mark.wip
+@pytest.mark.slow
+@pytest.mark.skip
 @pytest.mark.entrypoint
 def test_vote_main(monkeypatch, prot_orfs, blastp, ncbi_dir, tmp_path):
     outdir = tmp_path / "outdir"

@@ -22,38 +22,12 @@ before_install:
   - conda info -a
 
 install:
-  - conda create -n autometa python=$TRAVIS_PYTHON_VERSION
-  - conda install -n autometa -c bioconda -c conda-forge \
-      biopython \
-      pandas \
-      tqdm \
-      tsne \
-      numpy \
-      scikit-learn \
-      scikit-bio \
-      samtools \
-      bedtools \
-      bowtie2 \
-      hmmer \
-      prodigal \
-      ndcctools \
-      parallel \
-      requests \
-      umap-learn \
-      hdbscan \
-      pytest \
-      pytest-cov \
-      pytest-html \
-      pytest-repeat \
-      pytest-variables \
-      codecov \
-      pip \
-      && conda clean --all --yes
-  - pip install pytest-md pytest-emoji
+  - conda create -n autometa -c bioconda -c conda-forge python=$TRAVIS_PYTHON_VERSION --file=requirements.txt
+  - conda install codecov -n autometa
   - conda activate autometa
 
-# command to run tests
+# With pytest codecov requires xml report format
 script:
-  - python -m pytest
+  - python -m pytest --cov-report=xml --cov autometa tests/
 after_success:
     - codecov # submit coverage report to codecov.io

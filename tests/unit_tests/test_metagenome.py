@@ -30,8 +30,8 @@ def fixture_assembly(variables, metagenome_testdir):
 
 @pytest.fixture(name="metagenome", scope="module")
 def fixture_metagenome(assembly, metagenome_testdir):
-    nucl_orfs = metagenome_testdir.join("orfs.fna")
-    prot_orfs = metagenome_testdir.join("orfs.faa")
+    nucl_orfs = metagenome_testdir.joinpath("orfs.fna")
+    prot_orfs = metagenome_testdir.joinpath("orfs.faa")
     return Metagenome(
         assembly=assembly,
         outdir=metagenome_testdir,
@@ -171,8 +171,6 @@ def test_orfs_called(metagenome, monkeypatch):
         # metagenome.__str__ == metagenome.assembly
         m.setattr(metagenome, "prot_orfs_fpath", str(metagenome))
         m.setattr(metagenome, "nucl_orfs_fpath", str(metagenome))
-
-
 
 
 @pytest.mark.entrypoint

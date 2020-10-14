@@ -89,20 +89,26 @@ logging.basicConfig(
 )
 
 
+def opener(fpath, mode="r"):
+    if fpath.endswith(".gz"):
+        if "r" in mode:
+            mode += "t"
+        fh = gzip.open(fpath, mode)
+    else:
+        fh = open(fpath, mode)
+    return fh
+
+
 def subset_acc2taxids(blastp_accessions: set, ncbi: NCBI) -> dict:
     acc2taxids = {}
-    fh = (
-        gzip.open(ncbi.accession2taxid_fpath, "rt")
-        if ncbi.accession2taxid_fpath.endswith(".gz")
-        else open(ncbi.accession2taxid_fpath)
-    )
-    fh.readline()  # skip reading header line
-    for line in fh:
-        acc_num, acc_ver, taxid, _ = line.split("\t")
-        if acc_num in blastp_accessions:
-            acc2taxids[acc_num] = taxid
-        if acc_ver in blastp_accessions:
-            acc2taxids[acc_ver] = taxid
+    with opener(ncbi.accession2taxid_fpath) as fh:
+        fh.readline()  # skip reading header line
+        for line in fh:
+            acc_num, acc_ver, taxid, _ = line.split("\t")
+            if acc_num in blastp_accessions:
+                acc2taxids[acc_num] = taxid
+            if acc_ver in blastp_accessions:
+                acc2taxids[acc_ver] = taxid
     return acc2taxids
 
 
@@ -111,6 +117,10 @@ class TestData:
     metagenome: str
     metagenome_nucl_orfs: str
     metagenome_prot_orfs: str
+    coverage_sam: str
+    coverage_bed: str
+    fwd_reads: str
+    rev_read: str
     markers_orfs: str
     markers_scans: str
     markers_filtered: str
@@ -126,10 +136,6 @@ class TestData:
     recruitment_binning: str
     data: typing.Dict = attr.ib(default={})
     seed: int = 42
-    sam_fpath: str
-    bed_fpath: str
-    fwd_reads: str
-    rev_read: str
 
     def prepare_metagenome(self, num_records: int = 4):
         logger.info("Preparing metagenome records test data...")
@@ -276,7 +282,7 @@ class TestData:
     def get_bed_alignments(self, num_contigs=1):
         contig_col = 0
         coverages = pd.read_csv(
-            self.bed_fpath, sep="\t", index_col=contig_col, header=None
+            self.coverage_bed, sep="\t", index_col=contig_col, header=None
         )
         # Get number of unique contigs set by `num_contigs`, default is 1.
         coverages = coverages.sample(n=num_contigs, random_state=self.seed)
@@ -285,7 +291,7 @@ class TestData:
         return coverages
 
     def get_sam_alignments(self, num_contigs=1):
-        with open(self.sam_fpath) as fh:
+        with opener(self.coverage_sam) as fh:
             lines = ""
             contig = None
             for line in fh:
@@ -304,7 +310,7 @@ class TestData:
         for file in [self.fwd_reads, self.rev_read]:
             outlines = ""
             count = 0
-            with open(file) as fh:
+            with opener(file) as fh:
                 for line in fh:
                     if "+" in line:
                         count += 1
@@ -347,8 +353,14 @@ class TestData:
                 contigs = set(
                     df[df.index.isin(markers_df.index)].index.tolist()[:num_contigs]
                 )
+            if annotation == "taxonomy":
+                for column in df.set_index("contig").select_dtypes(object).columns:
+                    df[column] = df[column].map(lambda taxon: taxon.lower())
             # We need to reset the index from contig to None before json export.
-            jsonified = df.loc[contigs].reset_index().to_json()
+            if contigs:
+                jsonified = df.loc[contigs].reset_index().to_json()
+            else:
+                jsonified = df.reset_index().to_json()
             if "binning" not in self.data:
                 self.data["binning"] = {annotation: jsonified}
             else:
@@ -368,14 +380,16 @@ class TestData:
             )
         self.data["summary"] = {"bin_df": bin_df.to_json()}
 
-    def get_recruitment(self, num_contigs: int = 10):
+    def get_recruitment(self, num_contigs: int = None):
         logger.info("Preparing recruitment binning test data")
         df = pd.read_csv(self.recruitment_binning, sep="\t")
+        if num_contigs:
+            df = df.sample(n=num_contigs, random_state=self.seed)
         self.data["recruitment"] = {"binning": df.to_json()}
 
     def to_json(self, out: str):
         logger.info(f"Serializing data to {out}")
-        with open(out, "w") as fh:
+        with opener(out, "w") as fh:
             json.dump(obj=self.data, fp=fh)
         logger.info(f"Wrote test data to {out}")
 
@@ -397,12 +411,12 @@ def main():
     binning_coverage = os.path.join(outdir, "binning_coverage.tsv.gz")
     binning_markers = os.path.join(outdir, "binning_markers.tsv.gz")
     binning_taxonomy = os.path.join(outdir, "binning_taxonomy.tsv.gz")
-    sam_fpath = os.path.join(outdir, "records.sam")
-    bed_fpath = os.path.join(outdir, "records.bed")
-    fwd_reads = os.path.join(outdir, "records_1.fastq")
-    rev_read = os.path.join(outdir, "records_2.fastq")
+    coverage_sam = os.path.join(outdir, "records.sam.gz")
+    coverage_bed = os.path.join(outdir, "records.bed.gz")
+    fwd_reads = os.path.join(outdir, "records_1.fastq.gz")
+    rev_read = os.path.join(outdir, "records_2.fastq.gz")
     summary_bin_df = os.path.join(outdir, "summary_bin_df.tsv.gz")
-    recruitment_binning = os.path.join(outdir, "recruitment_binning.tsv")
+    recruitment_binning = os.path.join(outdir, "recruitment_binning.tsv.gz")
 
     test_data = TestData(
         metagenome=metagenome,
@@ -419,8 +433,8 @@ def main():
         binning_coverage=binning_coverage,
         binning_markers=binning_markers,
         binning_taxonomy=binning_taxonomy,
-        sam_fpath=sam_fpath,
-        bed_fpath=bed_fpath,
+        coverage_sam=coverage_sam,
+        coverage_bed=coverage_bed,
         fwd_reads=fwd_reads,
         rev_read=rev_read,
         summary_bin_df=summary_bin_df,
@@ -436,6 +450,7 @@ def main():
     test_data.get_taxonomy()
     test_data.get_markers()
     test_data.get_binning(num_contigs=0)  # all contigs
+    test_data.get_recruitment()
     test_data.get_summary()
 
     out = os.path.join(outdir, "test_data.json")
