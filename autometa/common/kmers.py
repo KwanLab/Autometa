@@ -686,14 +686,17 @@ def main():
     )
     args = parser.parse_args()
 
-    df = count(
-        assembly=args.fasta,
-        size=args.size,
-        out=args.kmers,
-        force=args.force,
-        multiprocess=args.multiprocess,
-        cpus=args.cpus,
-    )
+    if os.path.exists(args.kmers) and not args.force:
+        df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+    else:
+        df = count(
+            assembly=args.fasta,
+            size=args.size,
+            out=args.kmers,
+            force=args.force,
+            multiprocess=args.multiprocess,
+            cpus=args.cpus,
+        )
 
     if args.normalized:
         df = normalize(

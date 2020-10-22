@@ -1,6 +1,9 @@
 hello:
 	@echo "Please inspect Makefile for list of commands"
 
+install:
+	python setup.py install
+
 docs:
 	make clean html -C docs && open docs/build/html/index.html
 

@@ -174,7 +174,8 @@ def assign(
     # Now we need to determine which point to start the calculation...
     step = "full"
     for fp, argname in zip(
-        [lca_fpath, hits, blast, prot_orfs], ["lca", "orfs", "orfs", "orfs"],
+        [lca_fpath, hits, blast, prot_orfs],
+        ["lca", "orfs", "orfs", "orfs"],
     ):
         if os.path.exists(fp) and os.path.getsize(fp):
             step = f"{argname}_exists"
@@ -212,7 +213,13 @@ def add_ranks(
     """
     ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
-    df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
+    df = pd.merge(
+        left=df,
+        right=dff,
+        how="left",
+        left_on="taxid",
+        right_index=True,
+    )
     if out:
         # This allows overwriting the existing table with the canonical ranks added.
         df.to_csv(out, sep="\t", index=True, header=True)
@@ -345,19 +352,21 @@ def main():
         "taxonomy", help="Output path to write taxonomy table", type=str
     )
     parser.add_argument(
-        "outdir", help="Output directory to store annotations.", type=str
+        "--cache", help="Output directory to store annotations.", type=str
     )
     parser.add_argument(
-        "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str,
+        "--assembly",
+        help="Path to metagenome assembly (nucleotide fasta).",
+        type=str,
     )
     parser.add_argument(
-        "--nucl_orfs",
+        "--nucl-orfs",
         help="Path to nucleotide ORFs corresponding to `assembly.` "
         "(Will write to path if ORFs do not exist).",
         type=str,
     )
     parser.add_argument(
-        "--prot_orfs",
+        "--prot-orfs",
         help="Path to amino acid ORFs corresponding to `assembly.` "
         "(Will write to path if ORFs do not exist).",
         type=str,
@@ -450,15 +459,20 @@ def main():
         parallel=args.parallel,
         cpus=args.cpus,
     )
-    taxa_df = get(filepath_or_dataframe=taxa_df, kingdom=args.kingdom, ncbi=args.ncbi,)
-    written_ranks = write_ranks(
-        taxonomy=taxa_df,
-        assembly=args.assembly,
-        outdir=args.outdir,
-        rank=args.split_rank_and_write,
+    taxa_df = get(
+        filepath_or_dataframe=taxa_df,
+        kingdom=args.kingdom,
+        ncbi=args.ncbi,
     )
-    num_written_ranks = len(written_ranks)
-    logger.info(f"Wrote {num_written_ranks} ranks to files.")
+    if args.split_rank_and_write:
+        written_ranks = write_ranks(
+            taxonomy=taxa_df,
+            assembly=args.assembly,
+            outdir=args.cache,
+            rank=args.split_rank_and_write,
+        )
+        num_written_ranks = len(written_ranks)
+        logger.info(f"Wrote {num_written_ranks} ranks to files.")
 
 
 if __name__ == "__main__":

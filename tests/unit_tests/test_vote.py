@@ -211,7 +211,7 @@ def test_vote_main(monkeypatch, prot_orfs, blastp, ncbi_dir, tmp_path):
     class MockArgs:
         def __init__(self):
             self.taxonomy = taxonomy
-            self.outdir = outdir
+            self.cache = outdir
             self.assembly = assembly
             self.nucl_orfs = nucls
             self.prot_orfs = prot_orfs
