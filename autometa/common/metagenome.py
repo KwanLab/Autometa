@@ -26,6 +26,7 @@ Script containing Metagenome class for general handling of metagenome assembly
 
 
 import decimal
+import gzip
 import logging
 import numbers
 import os
@@ -40,7 +41,6 @@ from functools import lru_cache
 
 from autometa.common.external import prodigal
 from autometa.common.utilities import timeit
-from autometa.common.utilities import gunzip
 from autometa.common.exceptions import ExternalToolError
 
 # TODO: Should place all imports of Database paths to a config module so they
@@ -135,8 +135,14 @@ class Metagenome:
             [seq, seq, ...]
 
         """
-        with open(self.assembly) as fh:
-            return [seq for title, seq in SimpleFastaParser(fh)]
+        fh = (
+            gzip.open(self.assembly, "rt")
+            if self.assembly.endswith(".gz")
+            else open(self.assembly)
+        )
+        sequences = [seq for __, seq in SimpleFastaParser(fh)]
+        fh.close()
+        return sequences
 
     @property
     @lru_cache(maxsize=None)
@@ -149,7 +155,13 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        return [seq for seq in SeqIO.parse(self.assembly, "fasta")]
+        if self.assembly.endswith(".gz"):
+            fh = gzip.open(self.assembly, "rt")
+            records = [seq for seq in SeqIO.parse(fh, "fasta")]
+            fh.close()
+        else:
+            records = [seq for seq in SeqIO.parse(self.assembly, "fasta")]
+        return records
 
     @property
     def nseqs(self):
@@ -342,13 +354,6 @@ class Metagenome:
             raise ValueError(f"cutoff: {cutoff} must be a positive real number")
         if os.path.exists(out) and not force:
             raise FileExistsError(out)
-        outdir = os.path.dirname(out)
-        gunzipped_fname = os.path.basename(self.assembly.rstrip(".gz"))
-        gunzipped_fpath = os.path.join(outdir, gunzipped_fname)
-        if self.assembly.endswith(".gz"):
-            if not os.path.exists(gunzipped_fpath):
-                gunzip(self.assembly, gunzipped_fpath)
-            self.assembly = gunzipped_fpath
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
         records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
         if self.orfs_called:

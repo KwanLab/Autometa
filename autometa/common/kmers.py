@@ -25,6 +25,7 @@ Count, normalize and embed k-mers given nucleotide sequences
 """
 
 
+import gzip
 import logging
 import os
 from typing import Dict, List, Tuple, Union
@@ -155,7 +156,12 @@ def mp_counter(
 
     """
     pool = mp.Pool(cpus)
-    args = [(record, ref_kmers) for record in SeqIO.parse(assembly, "fasta")]
+    if assembly.endswith(".gz"):
+        fh = gzip.open(assembly, "rt")
+        args = [(record, ref_kmers) for record in SeqIO.parse(fh, "fasta")]
+        fh.close()
+    else:
+        args = [(record, ref_kmers) for record in SeqIO.parse(assembly, "fasta")]
     logger.debug(
         f"Pool counter (cpus={cpus}): counting {len(args):,} records k-mer frequencies"
     )
@@ -241,10 +247,11 @@ def seq_counter(
         kmer_size = len(ref_kmer)
         break
     kmer_counts = {}
-    seqs = SeqIO.parse(assembly, "fasta")
+    fh = gzip.open(assembly, "rt") if assembly.endswith(".gz") else assembly
+    records = SeqIO.parse(fh, "fasta")
     desc = f"Counting {n_uniq_kmers} unique {kmer_size}-mers"
     disable = not verbose
-    for record in tqdm(seqs, desc=desc, disable=disable, leave=False):
+    for record in tqdm(records, desc=desc, disable=disable, leave=False):
         contig_kmer_counts = [0] * n_uniq_kmers
         max_length = len(record.seq) - kmer_size
         if max_length <= 0:
@@ -268,6 +275,9 @@ def seq_counter(
             contig_kmer_counts[index] += 1
         contig_kmer_counts = [c if c != 0 else pd.NA for c in contig_kmer_counts]
         kmer_counts.update({record.id: contig_kmer_counts})
+    if hasattr(fh, "close"):
+        # Ensure we close the open gzipped file
+        fh.close()
     return kmer_counts
 
 
@@ -327,8 +337,6 @@ def count(
         if not isinstance(size, int):
             raise TypeError(f"size must be an int! Given: {type(size)}")
         ref_kmers = init_kmers(size)
-        if assembly.endswith(".gz"):
-            assembly = utilities.gunzip(assembly, assembly.rstrip(".gz"))
         logger.info(f"Counting {size}-mers.")
         if multiprocess:
             kmer_counts = mp_counter(assembly, ref_kmers, cpus)

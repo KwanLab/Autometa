@@ -27,6 +27,7 @@ setup(
             "autometa-configure = autometa.config.user:main",
             "autometa-kmers = autometa.common.kmers:main",
             "autometa-coverage = autometa.common.coverage:main",
+            "autometa-orfs = autometa.common.external.prodigal:main",
             "autometa-markers = autometa.common.markers:main",
             "autometa-length-filter = autometa.common.metagenome:main",
             "autometa-taxonomy = autometa.taxonomy.vote:main",
