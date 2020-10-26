@@ -28,6 +28,7 @@ marker sets depending on sequence set taxonomy
 import logging
 import os
 
+import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
@@ -95,9 +96,11 @@ def get(
     scans: str = None,
     out: str = None,
     force: bool = False,
-    seed: int = 42,
     format: str = "wide",
-    **hmmer_args: dict,
+    cpus: int = mp.cpu_count(),
+    parallel: bool = True,
+    gnu_parallel: bool = False,
+    seed: int = 42,
 ) -> pd.DataFrame:
     """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
@@ -121,8 +124,14 @@ def get(
         * long - returns long dataframe of contig PFAM counts
         * list - returns list of pfams for each contig
         * counts - returns count of pfams for each contig
-    hmmer_args: dict, optional
-        additional keyword arguments to pass to `hmmer.hmmscan`
+    cpus: int, optional
+        Number of cores to use if running in parallel, by default all available.
+    parallel : bool, optional
+        Whether to run hmmscan using its parallel option, by default True.
+    gnu_parallel : bool, optional
+        Whether to run hmmscan using gnu parallel, by default False.
+    seed: int, optional
+        Seed to pass into hmmscan for determinism, by default 42.
 
     Returns
     -------
@@ -149,12 +158,19 @@ def get(
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
         scans = hmmer.hmmscan(
-            orfs=orfs, hmmdb=hmmdb, outfpath=scans, seed=seed, **hmmer_args,
+            orfs=orfs,
+            hmmdb=hmmdb,
+            outfpath=scans,
+            cpus=cpus,
+            force=force,
+            parallel=parallel,
+            gnu_parallel=gnu_parallel,
+            seed=seed,
         )
 
     if not os.path.exists(out) or not os.path.getsize(out):
         out = hmmer.filter_markers(
-            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs,
+            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs, force=force,
         )
     return load(fpath=out, format=format)
 
@@ -202,7 +218,25 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--seed", help=f"Seed to set random state for hmmscan.", default=42, type=int,
+        "--parallel",
+        help="Whether to use hmmscan parallel option.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--gnu-parallel",
+        help="Whether to run hmmscan using GNU parallel.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--cpus",
+        help=f"Number of cores to use for parallel execution.",
+        default=mp.cpu_count(),
+        type=int,
+    )
+    parser.add_argument(
+        "--seed", help="Seed to set random state for hmmscan.", default=42, type=int,
     )
     args = parser.parse_args()
 
@@ -213,6 +247,9 @@ def main():
         scans=args.hmmscan,
         out=args.out,
         force=args.force,
+        cpus=args.cpus,
+        parallel=args.parallel,
+        gnu_parallel=args.gnu_parallel,
         seed=args.seed,
     )
 

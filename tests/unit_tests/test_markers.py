@@ -133,6 +133,9 @@ def fixture_mock_parser(monkeypatch):
         hmmscan = "bacteria.hmmscan.tsv"
         out = "bacteria.markers.tsv"
         force = True
+        cpus = 1
+        parallel = False
+        gnu_parallel = False
         seed = 42
 
     class MockParser:
