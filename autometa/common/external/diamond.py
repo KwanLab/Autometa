@@ -35,7 +35,6 @@ from itertools import chain
 from tqdm import tqdm
 
 from autometa.common.utilities import make_pickle, file_length
-from autometa.common.external import prodigal
 from autometa.common.exceptions import DatabaseOutOfSyncError
 
 logger = logging.getLogger(__name__)
@@ -427,6 +426,7 @@ def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> 
             send = llist[9]
             evalue = float(llist[10])
             bitscore = float(llist[11])
+            # Place results in DiamondResult object for lookup later
             hit = DiamondResult(
                 qseqid=qseqid,
                 sseqid=sseqid,
@@ -441,6 +441,7 @@ def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> 
                 evalue=evalue,
                 bitscore=bitscore,
             )
+            # If this is a new qseqid from the BLAST table, reassign the topbitscore
             if hit.qseqid not in temp:
                 hits.update({hit.qseqid: hit})
                 topbitscore = bitscore
@@ -525,9 +526,11 @@ def add_taxids(hits: dict, database: str, verbose: bool = True) -> dict:
         for sseqid in hit.sseqids:
             taxid = acc2taxids.get(sseqid)
             if not taxid:
-                raise DatabaseOutOfSyncError(
-                    f"{sseqid} is either a new taxid not present in prot.accession2taxid or is deprecated/suppressed/removed"
+                logger.warn(
+                    f"sseqid: {sseqid} (aligned to {qseqid}) not present in prot.accession2taxid."
                 )
+                # assign taxid to root
+                taxid = 1
             hit.sseqids[sseqid].update({"taxid": taxid})
     return hits
 
