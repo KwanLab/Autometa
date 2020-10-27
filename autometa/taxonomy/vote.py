@@ -174,8 +174,7 @@ def assign(
     # Now we need to determine which point to start the calculation...
     step = "full"
     for fp, argname in zip(
-        [lca_fpath, hits, blast, prot_orfs],
-        ["lca", "orfs", "orfs", "orfs"],
+        [lca_fpath, hits, blast, prot_orfs], ["lca", "orfs", "orfs", "orfs"],
     ):
         if os.path.exists(fp) and os.path.getsize(fp):
             step = f"{argname}_exists"
@@ -213,17 +212,11 @@ def add_ranks(
     """
     ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
-    df = pd.merge(
-        left=df,
-        right=dff,
-        how="left",
-        left_on="taxid",
-        right_index=True,
-    )
+    df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
     if out:
         # This allows overwriting the existing table with the canonical ranks added.
         df.to_csv(out, sep="\t", index=True, header=True)
-    logger.debug(f"Added canonical rank names to {out}")
+        logger.debug(f"Added canonical rank names to {out}")
     return df
 
 
@@ -355,9 +348,7 @@ def main():
         "--cache", help="Output directory to store annotations.", type=str
     )
     parser.add_argument(
-        "--assembly",
-        help="Path to metagenome assembly (nucleotide fasta).",
-        type=str,
+        "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str,
     )
     parser.add_argument(
         "--nucl-orfs",
@@ -459,12 +450,12 @@ def main():
         parallel=args.parallel,
         cpus=args.cpus,
     )
-    taxa_df = get(
-        filepath_or_dataframe=taxa_df,
-        kingdom=args.kingdom,
-        ncbi=args.ncbi,
-    )
+    if taxa_df.shape[1] <= 2:
+        taxa_df = add_ranks(taxa_df, ncbi=args.ncbi, out=args.taxonomy)
     if args.split_rank_and_write:
+        taxa_df = get(
+            filepath_or_dataframe=taxa_df, kingdom=args.kingdom, ncbi=args.ncbi,
+        )
         written_ranks = write_ranks(
             taxonomy=taxa_df,
             assembly=args.assembly,
