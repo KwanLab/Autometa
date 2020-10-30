@@ -28,8 +28,6 @@ taxonomy voting script
 import os
 import logging
 from pathlib import PurePath
-import tempfile
-import shutil
 
 import pandas as pd
 

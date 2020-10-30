@@ -24,214 +24,17 @@ Class and functions related to running diamond on metagenome sequences
 """
 
 
-import gzip
 import logging
 import os
 import subprocess
 
 import multiprocessing as mp
 
-from itertools import chain
 from tqdm import tqdm
 
-from autometa.common.utilities import make_pickle, file_length
-from autometa.common.exceptions import DatabaseOutOfSyncError
+from autometa.common.utilities import file_length
 
 logger = logging.getLogger(__name__)
-
-
-class DiamondResult:
-    """
-    DiamondResult class to instantiate a DiamondResult object for each qseqid.
-    Allows for better handling of subject sequence IDs that hit to a qseqid.
-
-    Includes methods used to modify the DiamondResult object (add or remove sseqid from sseqids dictionary),
-    check if two DiamondResult objects have the same qseqid and return a user friendly and unambiguous output
-    from str() and repr() respectively. Also used to return the sseqid with the highest bitscore amongst all
-    the subject sequences that hit a query. These methods come in handy when retrieving diamond results from output table.
-
-    Attributes
-    ----------
-    sseqids : dict
-        All the subject sequences that hit to the query sequence
-        {sseqid:parameters, sseqid:parameters, ...}
-    qseqid: str
-        result query sequence ID
-
-    """
-
-    def __init__(
-        self,
-        qseqid,
-        sseqid,
-        pident,
-        length,
-        mismatch,
-        gapopen,
-        qstart,
-        qend,
-        sstart,
-        send,
-        evalue,
-        bitscore,
-    ):
-        """
-        Instantiates the DiamondResult class
-
-        Parameters
-        ----------
-        qseqid : str
-            query sequence ID
-        sseqid : str
-            subject sequence ID
-        pident : float
-            Percentage of identical matches.
-        length : int
-            Alignment length.
-        mismatch : int
-            Number of mismatches.
-        gapopen : int
-            Number of gap openings.
-        qstart : int
-            Start of alignment in query.
-        qend : int
-            End of alignment in query.
-        sstart : int
-            Start of alignment in subject.
-        send : int
-            End of alignment in subject sequence.
-        evalue : float
-            Expect value.
-        bitscore : float
-            Bitscore.
-        """
-        self.qseqid = qseqid
-        self.sseqids = {
-            sseqid: {
-                "pident": float(pident),
-                "length": int(length),
-                "mismatch": int(mismatch),
-                "gapopen": int(gapopen),
-                "qstart": int(qstart),
-                "qend": int(qend),
-                "sstart": int(sstart),
-                "send": int(send),
-                "evalue": float(evalue),
-                "bitscore": float(bitscore),
-            }
-        }
-
-    def __repr__(self):
-        """
-        Operator overloading to return the representation of the class object
-
-        Returns
-        -------
-        str
-            Class name followed by query sequence ID
-        """
-        return f"Class: {self.__class__.__name__}, Query seqID: {self.qseqid}"
-
-    def __str__(self):
-        """
-        Operator overloading to return the string representation of the class objects
-
-        Returns
-        -------
-        str
-            String representation of query sequence ID, followed by total number of hits and finally the highest
-            bit score of all the hits
-        """
-        return f"{self.qseqid}; {len(self.sseqids)} sseqids; top hit by bitscore: {self.get_top_hit()}"
-
-    def __eq__(self, other_hit):
-        """
-        Operator overloading to compare two objects of the DiamondResult class
-
-        Parameters
-        ----------
-        other_hit : DiamondResult object
-            Other DiamondResult object to compare with
-
-        Returns
-        -------
-        Boolean
-            True if qseqid corresponding to both DiamondResult objects are equal, else False
-        """
-        if self.qseqid == other_hit.qseqid:
-            return True
-        else:
-            return False
-
-    def __add__(self, other_hit):
-        """
-        Operator overloading to update (add) the sseqids dictionary with the other sseqid hit dictionary.
-        The addition will only be successful if both the DiamondResult objects have the same qseqid
-
-        Parameters
-        ----------
-        other_hit : DiamondResult object
-            Other DiamondResult object to add
-
-        Returns
-        -------
-        DiamondResult object
-            DiamondResult object whose sseqids dict has been updated (added) with another sseqid
-
-        Raises
-        ------
-        AssertionError
-            Query sequences are not equal
-        """
-        assert (
-            self == other_hit
-        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
-        self.sseqids.update(other_hit.sseqids)
-        return self
-
-    def __sub__(self, other_hit):
-        """
-        Operator overloading to remove (subtract) the other sseqid hits dictionary from the sseqids dictionary.
-        The subtraction will only be successful if both the DiamondResult objects have the same qseqid
-
-        Parameters
-        ----------
-        other_hit : Dict
-            Other DiamondResult object to subtract
-
-        Returns
-        -------
-        DiamondResult object
-            DiamondResult object where a sseqid has been removed (subtracted) from the sseqids dict
-
-        Raises
-        ------
-        AssertionError
-            Query sequences are not equal
-        """
-        assert (
-            self == other_hit
-        ), f"qseqids do not match! {self.qseqid} & {other_hit.qseqid}"
-        for sseqid in other_hit.sseqids:
-            try:
-                self.sseqids.pop(sseqid)
-            except KeyError:
-                raise KeyError(
-                    f"Given sseqid: {sseqid} is absent from the corresponding DiamondResult"
-                )
-        return self
-
-    def get_top_hit(self):
-        """
-        Returns the subject sequence ID with the highest bitscore amongst all the subject sequences that hit a query
-        """
-        top_bitscore = float("-Inf")
-        top_hit = None
-        for sseqid, attrs in self.sseqids.items():
-            if attrs.get("bitscore", float("-Inf")) >= top_bitscore:
-                top_bitscore = attrs.get("bitscore")
-                top_hit = sseqid
-        return top_hit
 
 
 def makedatabase(fasta: str, database: str, cpus: int = mp.cpu_count()) -> str:
@@ -381,7 +184,7 @@ def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> 
     Returns
     -------
     dict
-        {qseqid: DiamondResult, ...}
+        {qseqid: {sseqid, sseqid, ...}, ...}
 
     Raises
     -------
@@ -407,8 +210,8 @@ def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> 
     if not in_range:
         raise ValueError(f"bitscore_filter not in range(0,1)! Input: {bitscore_filter}")
     hits = {}
-    temp = set()
     n_lines = file_length(results) if verbose else None
+    topbitscore = float("-inf")
     with open(results) as fh:
         for line in tqdm(
             fh, disable=disable, total=n_lines, desc="Parsing Accessions", leave=False
@@ -416,193 +219,19 @@ def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> 
             llist = line.rstrip().split("\t")
             qseqid = llist[0]
             sseqid = llist[1]
-            pident = llist[2]
-            length = llist[3]
-            mismatch = llist[4]
-            gapopen = llist[5]
-            qstart = llist[6]
-            qend = llist[7]
-            sstart = llist[8]
-            send = llist[9]
-            evalue = float(llist[10])
             bitscore = float(llist[11])
-            # Place results in DiamondResult object for lookup later
-            hit = DiamondResult(
-                qseqid=qseqid,
-                sseqid=sseqid,
-                pident=pident,
-                length=length,
-                mismatch=mismatch,
-                gapopen=gapopen,
-                qstart=qstart,
-                qend=qend,
-                sstart=sstart,
-                send=send,
-                evalue=evalue,
-                bitscore=bitscore,
-            )
-            # If this is a new qseqid from the BLAST table, reassign the topbitscore
-            if hit.qseqid not in temp:
-                hits.update({hit.qseqid: hit})
+            # Reassign the topbitscore if this is a new qseqid from the BLAST table.
+            if qseqid not in hits:
+                hits.update({qseqid: set([sseqid])})
                 topbitscore = bitscore
-                temp = set([hit.qseqid])
                 continue
             if bitscore >= bitscore_filter * topbitscore:
-                hits[hit.qseqid] += hit
+                hits[qseqid].add(sseqid)
     return hits
-
-
-def add_taxids(hits: dict, database: str, verbose: bool = True) -> dict:
-    """
-    Translates accessions to taxids from prot.accession2taxid.gz. If an accession number is no
-    longer available in prot.accesssion2taxid.gz (either due to being suppressed, deprecated or
-    removed by NCBI), then None is returned as the taxid for the corresponsing sseqid.
-
-
-    # TODO: Should maybe write a wrapper for this to run on all of the NCBI
-    databases listed below... Maybe this will help account for instances where the
-    accession is not found due to suppression,deprecation,removal,etc...
-
-    DiamondResults contain sseqids with non-redundant protein sequence database
-    entries from:
-    - GenPept
-    - Swissprot
-    - PIR
-    - PDF
-    - PDB
-    - RefSeq
-
-    Parameters
-    ----------
-    hits : dict
-        {qseqid: DiamondResult, ...}
-    database : str
-        Path to prot.accession2taxid.gz database
-    verbose : bool, optional
-        log progress to terminal, by default False
-
-    Returns
-    -------
-    dict
-        hits - {qseqid: DiamondResult, ...} sseqids dicts updated with 'taxid' key
-
-    Raises
-    -------
-    FileNotFoundError
-        prot.accession2taxid.gz database is required for translation taxid
-    DatabaseOutOfSyncError
-        An accession is either not present in prot.accession2taxid or is deprecated/suppressed/removed
-    """
-    disable = not verbose
-    if not os.path.exists(database):
-        raise FileNotFoundError(database)
-    # OPTIMIZE: prot.accession2taxid.gz database is almost 1 billion lines...
-    accessions = set(
-        chain.from_iterable([hit.sseqids.keys() for qseqid, hit in hits.items()])
-    )
-    # "rt" open the database in text mode instead of binary. Now it can be handled like a text file
-    fh = gzip.open(database, "rt") if database.endswith(".gz") else open(database)
-    __ = fh.readline()  # remove the first line as it just gives the description
-    if verbose:
-        logger.debug(
-            f"Searching for {len(accessions):,} accessions in {os.path.basename(database)}. This may take a while..."
-        )
-    n_lines = file_length(database, approximate=True) if verbose else None
-    desc = f"Parsing {os.path.basename(database)}"
-    acc2taxids = {}
-    for line in tqdm(fh, disable=disable, desc=desc, total=n_lines, leave=False):
-        acc_num, acc_ver, taxid, _ = line.split("\t")
-        taxid = int(taxid)
-        if acc_num in accessions:
-            acc2taxids.update({acc_num: taxid})
-        if acc_ver in accessions:
-            acc2taxids.update({acc_ver: taxid})
-    fh.close()
-    n_qseqids = len(hits)
-    desc = f"Translating {n_qseqids} qseqids' accessions to taxids"
-    for qseqid, hit in tqdm(
-        hits.items(), disable=disable, total=n_qseqids, desc=desc, leave=False
-    ):
-        for sseqid in hit.sseqids:
-            taxid = acc2taxids.get(sseqid)
-            if not taxid:
-                logger.warn(
-                    f"sseqid: {sseqid} (aligned to {qseqid}) not present in prot.accession2taxid."
-                )
-                # assign taxid to root
-                taxid = 1
-            hit.sseqids[sseqid].update({"taxid": taxid})
-    return hits
-
-
-def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="""
-    Retrieves blastp hits with provided input assembly
-    """,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument("fasta", help="Path to fasta file having the query sequences")
-    parser.add_argument("database", help="Path to diamond formatted database")
-    parser.add_argument("acc2taxids", help="Path to prot.accession2taxid.gz database")
-    parser.add_argument("outfile", help="Path to output file")
-    parser.add_argument(
-        "blast_type",
-        help="[blastp]: A.A -> A.A. [blastx]: Nucl. -> A.A.",
-        default="blastp",
-        choices=["blastp", "blastx"],
-    )
-    parser.add_argument(
-        "--evalue", help="diamond evalue threshold", default=float("1e-5")
-    )
-    parser.add_argument(
-        "--maxtargetseqs",
-        help="max target sequences to retrieve per query",
-        default=200,
-        type=int,
-    )
-    parser.add_argument(
-        "--cpus", help="number of processors to use", default=mp.cpu_count(), type=int
-    )
-    parser.add_argument(
-        "--tmpdir",
-        help="Path to directory which will be used for temporary storage by diamond",
-    )
-    parser.add_argument(
-        "--bitscore-filter",
-        help="hits with bitscore greater than bitscr-filter*top bitscore will be kept",
-        default=0.9,
-    )
-    parser.add_argument(
-        "--force", help="force overwrite of diamond output table", action="store_true"
-    )
-    parser.add_argument("--verbose", help="add verbosity", action="store_true")
-    args = parser.parse_args()
-    result = blast(
-        fasta=args.fasta,
-        database=args.database,
-        outfpath=args.outfile,
-        blast_type=args.blast_type,
-        evalue=args.evalue,
-        maxtargetseqs=args.maxtargetseqs,
-        cpus=args.cpus,
-        tmpdir=args.tmpdir,
-        force=args.force,
-        verbose=args.verbose,
-    )
-    hits = parse(
-        results=result, bitscore_filter=args.bitscore_filter, verbose=args.verbose
-    )
-    hits = add_taxids(hits=hits, database=args.acc2taxids, verbose=args.verbose)
-    fname, __ = os.path.splitext(os.path.basename(args.outfile))
-    dirpath = os.path.dirname(os.path.realpath(args.outfile))
-    hits_fname = ".".join([fname, "pkl.gz"])
-    hits_fpath = os.path.join(dirpath, hits_fname)
-    pickled_fpath = make_pickle(obj=hits, outfpath=hits_fpath)
-    logger.debug(f"{len(hits):,} diamond hits serialized to {pickled_fpath}")
 
 
 if __name__ == "__main__":
-    main()
+    # fmt: off
+    import sys
+    print("Diamond contains utility functions and should not be run directly!")
+    sys.exit(0)

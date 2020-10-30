@@ -27,16 +27,12 @@ This script contains the modified majority vote algorithm used in Autometa versi
 import logging
 import os
 import sys
-import subprocess
-import time
-
-import pandas as pd
+from typing import Dict, Union
 
 from tqdm import tqdm
 
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy.lca import LCA
-from autometa.common.utilities import file_length
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +169,9 @@ def lowest_majority(rank_counts, ncbi):
     return 1
 
 
-def rank_taxids(ctg_lcas, ncbi, verbose=False):
+def rank_taxids(
+    ctg_lcas: dict, ncbi: Union[NCBI, LCA], verbose: bool = False
+) -> Dict[str, int]:
     """Votes for taxids based on modified majority vote system where if a
     majority does not exist, the lowest majority is voted.
 
@@ -226,74 +224,14 @@ def rank_taxids(ctg_lcas, ncbi, verbose=False):
     return top_taxids
 
 
-def majority_vote(fasta, ncbi_dir, outdir, votes_fname, lca_fname=None, **kwargs):
-    """Wrapper for modified majority voting algorithm from Autometa 1.0
-
-    Parameters
-    ----------
-    fasta : str
-        Path to ORFs fasta containing amino-acid sequences to be annotated.
-    ncbi_dir : str
-        Path to NCBI databases directory.
-    outdir : str
-        Path to output directory to store intermediate results.
-    votes_fname : str
-        Output filename of assigned taxids. Note: Will be written to `outdir`.
-    lca_fname : str, optional
-        Filename to assign LCA results. Note: Will be written to `outdir`.
-    **kwargs : dict
-        Further parameters that may be passed along to LCA, LCA.blast2lca and
-        rank_taxids as dicts of key-value pairs.
-        Note: Types must match.
-        Defaults are listed below:
-
-        * LCA:  usepickle=True (bool), verbose=True (bool)
-        * LCA.blast2lca: blast=None (str), hits_fpath=None (str), force=False (bool)
-        * rank_taxids: verbose=False (bool)
-
-    Returns
-    -------
-    str
-        Path to assigned taxids table. e.g. </path/to/`outdir`/`votes_fname`>.
-
-    """
-    lca = LCA(
-        dbdir=ncbi_dir,
-        outdir=outdir,
-        usepickle=kwargs.get("usepickle", True),
-        verbose=kwargs.get("verbose", False),
-        cpus=kwargs.get("cpus", 0),
-    )
-    if not lca_fname:
-        fname, ext = os.path.splitext(os.path.basename(fasta))
-        lca_fname = ".".join([fname, "lca.tsv"])
-    lca_fpath = os.path.join(outdir, lca_fname)
-    lca_fpath = lca.blast2lca(
-        fasta=fasta,
-        outfpath=lca_fpath,
-        blast=kwargs.get("blast"),
-        hits_fpath=kwargs.get("hits"),
-        force=kwargs.get("force", False),
-    )
-    # retrieve lca taxids for each contig
-    classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=fasta)
-    # Vote for majority lca taxid from contig lca taxids
-    # We can pass in lca as the ncbi object here, because it is a subclass of NCBI.
-    voted_taxids = rank_taxids(
-        ctg_lcas=classifications, ncbi=lca, verbose=kwargs.get("verbose", False)
-    )
-    votes_fpath = os.path.join(outdir, votes_fname)
-    return write_votes(voted_taxids, votes_fpath)
-
-
-def write_votes(results, outfpath):
+def write_votes(results: Dict[str, int], out: str) -> str:
     """Writes voting `results` to provided `outfpath`.
 
     Parameters
     ----------
     results : dict
         {contig:voted_taxid, contig:voted_taxid, ...}
-    outfpath : str
+    out : str
         </path/to/results.tsv>.
 
     Returns
@@ -307,10 +245,10 @@ def write_votes(results, outfpath):
         Voting results file already exists
 
     """
-    if os.path.exists(outfpath):
-        raise FileExistsError(outfpath)
+    if os.path.exists(out) and os.path.getsize(out):
+        raise FileExistsError(out)
     lines = "contig\ttaxid\n"
-    fh = open(outfpath, "w")
+    fh = open(out, "w")
     for contig, taxid in results.items():
         if sys.getsizeof(lines) >= 60000:
             fh.write(lines)
@@ -318,7 +256,55 @@ def write_votes(results, outfpath):
         lines += f"{contig}\t{taxid}\n"
     fh.write(lines)
     fh.close()
-    return outfpath
+    return out
+
+
+def majority_vote(
+    orfs: str,
+    out: str,
+    ncbi_dir: str,
+    lca_out: str = None,
+    verbose: bool = False,
+    blast: str = None,
+    force: bool = False,
+):
+    """Wrapper for modified majority voting algorithm from Autometa 1.0
+
+    Parameters
+    ----------
+    orfs : str
+        Path to ORFs fasta containing amino-acid sequences to be annotated.
+    out : str
+        Path to write assigned taxids.
+    ncbi_dir : str
+        Path to NCBI databases directory.
+    lca_out : str, optional
+        Path to write lowest common ancestor assignments table.
+    verbose : bool, optional
+        Increase verbosity of logging stream
+    blast : str, optional
+        Path to blast table (Note: Must be outfmt 6).
+    force : bool, optional
+        Whether to overwrite existing LCA results.
+
+    Returns
+    -------
+    str
+        Path to assigned taxids table.
+
+    """
+    lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+    if not lca_out:
+        filename, __ = os.path.splitext(os.path.basename(orfs))
+        outdir = os.path.dirname(os.path.realpath(out))
+        lca_out = os.path.join(outdir, ".".join([filename, "lca.tsv"]))
+    lca_fpath = lca.blast2lca(orfs=orfs, out=lca_out, blast=blast, force=force,)
+    # retrieve lca taxids for each contig
+    classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
+    # Vote for majority lca taxid from contig lca taxids
+    # We can pass in lca as the ncbi object here, because it is a subclass of NCBI.
+    voted_taxids = rank_taxids(ctg_lcas=classifications, ncbi=lca, verbose=verbose)
+    return write_votes(results=voted_taxids, out=out)
 
 
 def main():
@@ -332,26 +318,18 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "fasta",
+        "orfs",
         help="Path to ORFs fasta containing amino-acid sequences to be annotated.",
     )
-    parser.add_argument(
-        "outdir", help="Path to output directory to store intermediate results."
-    )
-    parser.add_argument("outfname", help="Output filename of assigned taxids.")
+    parser.add_argument("out", help="Path to write voted taxid results table.")
     parser.add_argument(
         "--dbdir", help="Path to NCBI databases directory.", default=dbdir
     )
-    parser.add_argument("--lca-fname", help="Filename to assign LCA results.")
+    parser.add_argument("--lca", help="Path to LCA results table.")
     parser.add_argument(
-        "--blast-table",
-        help="Path to BLASTP results table. " "Note: Must be results from outfmt=6.",
-    )
-    parser.add_argument(
-        "--nopickle",
-        help="Prevent serializing intermediate files to disk for later lookup.",
-        action="store_false",
-        default=True,
+        "--blast",
+        help="Path to BLASTP results table. "
+        "Note: Results must be formatted using outfmt=6.",
     )
     parser.add_argument(
         "--verbose",
@@ -361,14 +339,12 @@ def main():
     )
     args = parser.parse_args()
 
-    results_fpath = majority_vote(
-        fasta=args.fasta,
+    majority_vote(
+        orfs=args.orfs,
+        out=args.out,
         ncbi_dir=args.dbdir,
-        outdir=args.outdir,
-        votes_fname=args.outfname,
-        blast=args.blast_table,
-        lca_fname=args.lca_fname,
-        usepickle=args.nopickle,
+        blast=args.blast,
+        lca_out=args.lca,
         verbose=args.verbose,
     )
 
