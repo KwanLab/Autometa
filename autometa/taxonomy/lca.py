@@ -406,11 +406,13 @@ class LCA(NCBI):
         # Now translate qseqid sseqids to taxids
         root_taxid = 1
         # Will place taxid as root (i.e. 1) if sseqid is not found in prot.accession2taxid
-        return {
-            qseqid: sseqids_to_taxids.get(sseqid, root_taxid)
-            for qseqid, qseqid_sseqids in sseqids.items()
-            for sseqid in qseqid_sseqids
-        }
+        taxids = {}
+        for qseqid, qseqid_sseqids in sseqids.items():
+            qseqid_taxids = [
+                sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
+            ]
+            taxids.update({qseqid: qseqid_taxids})
+        return taxids
 
     def reduce_taxids_to_lcas(self, taxids: Dict[str, int]) -> Dict[str, int]:
         """Retrieves the lowest common ancestor for each set of taxids in of the taxids
@@ -430,7 +432,7 @@ class LCA(NCBI):
         root_taxid = 1
         for qseqid, qseqid_taxids in taxids.items():
             # This will convert any deprecated taxids to their current taxids before reduction to LCA.
-            qseqid_taxids = {self.convert_taxid_dtype(taxid) for taxid in qseqid_taxids}
+            qseqid_taxids = [self.merged(taxid, taxid) for taxid in qseqid_taxids]
             lca_taxid = False
             num_taxids = len(qseqid_taxids)
             while not lca_taxid:
