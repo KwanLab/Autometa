@@ -104,7 +104,7 @@ class LCA(NCBI):
         self.level = None
         self.occurrence_fp = os.path.join(self.dbdir, "occurrence.pkl.gz")
         self.occurrence = None
-        self.sparse_fp = os.path.join(self.dbdir, "sparse.pkl.gz")
+        self.sparse_fp = os.path.join(self.dbdir, "precomputed_lcas.pkl.gz")
         self.sparse = None
         self.lca_prepared = False
 
@@ -236,7 +236,7 @@ class LCA(NCBI):
                 logger.error(
                     f"Error unpickling {self.sparse_fp}, this may be corrupted! Overwriting..."
                 )
-        logger.debug("Constructing Sparse Table")
+        logger.debug("Precomputing LCAs")
         # Instantiate an empty sparse array with dimensions from `self.level`
         nrows = len(self.level)
         ncols = int(np.floor(np.log2(nrows)) + 1)

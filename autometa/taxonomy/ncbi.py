@@ -223,9 +223,9 @@ class NCBI:
                 left_on=<taxid_column>,
                 right_index=True)
         """
-        canonical_ranks = [r for r in reversed(NCBI.CANONICAL_RANKS)]
-        if "root" in canonical_ranks:
-            canonical_ranks.remove("root")
+        canonical_ranks = [
+            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+        ]
         taxids = list(set(taxids))
         ranked_taxids = {}
         for rank in canonical_ranks:
@@ -321,7 +321,6 @@ class NCBI:
             logger.debug("names loaded")
         return names
 
-    # @timeit
     def parse_nodes(self):
         """
         Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.NCBI.parent`, :func:`autometa.taxonomy.ncbi.NCBI.rank`
@@ -339,7 +338,7 @@ class NCBI:
         nodes = {1: {"parent": 1, "rank": "root"}}
         for line in tqdm(fh, disable=self.disable, desc="parsing nodes", leave=False):
             child, parent, rank = line.split("\t|\t")[:3]
-            parent, child = map(int, [parent, child])
+            parent, child = [int(node) for node in [parent, child]]
             rank = rank.lower()
             nodes.update({child: {"parent": parent, "rank": rank}})
         fh.close()
