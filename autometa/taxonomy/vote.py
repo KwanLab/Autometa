@@ -52,10 +52,8 @@ def assign(
     prot_orfs: str = None,
     nucl_orfs: str = None,
     blast: str = None,
-    hits: str = None,
     lca_fpath: str = None,
     ncbi_dir: str = NCBI_DIR,
-    usepickle: bool = True,
     force: bool = False,
     verbose: bool = False,
     parallel: bool = True,
@@ -78,14 +76,10 @@ def assign(
         Path to nucleotide ORFs called from `assembly`, by default None
     blast : str, optional
         Path to blastp table, by default None
-    hits : str, optional
-        Path to pickled hits parsed from blastp table, by default None
     lca_fpath : str, optional
         Path to output of LCA analysis, by default None
     ncbi_dir : str, optional
         Path to NCBI databases directory, by default NCBI_DIR
-    usepickle : bool, optional
-        Pickle LCA analysis data structures for later LCA queries, by default True
     force : bool, optional
         Overwrite existing annotations, by default False
     verbose : bool, optional
@@ -115,7 +109,6 @@ def assign(
         raise NotImplementedError(method)
     outdir = os.path.dirname(os.path.realpath(out))
     lca_fpath = lca_fpath if lca_fpath else os.path.join(outdir, "lca.tsv")
-    hits = hits if hits else os.path.join(outdir, "hits.pkl.gz")
     blast = blast if blast else os.path.join(outdir, "blastp.tsv")
     prot_orfs = prot_orfs if prot_orfs else os.path.join(outdir, "orfs.faa")
     nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(outdir, "orfs.fna")
@@ -132,33 +125,17 @@ def assign(
 
     def blast2lca():
         if "lca" not in locals():
-            lca = LCA(
-                dbdir=ncbi_dir,
-                outdir=outdir,
-                usepickle=usepickle,
-                verbose=verbose,
-                cpus=cpus,
-            )
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
         lca.blast2lca(
-            fasta=prot_orfs,
-            outfpath=lca_fpath,
-            blast=blast,
-            hits_fpath=hits,
-            force=force,
+            orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus,
         )
 
     def majority_vote_lca(out=out):
         if "lca" not in locals():
-            lca = LCA(
-                dbdir=ncbi_dir,
-                outdir=outdir,
-                usepickle=usepickle,
-                verbose=verbose,
-                cpus=cpus,
-            )
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
-        votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca)
-        out = majority_vote.write_votes(results=votes, outfpath=out)
+        votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca, verbose=verbose)
+        out = majority_vote.write_votes(results=votes, out=out)
         return pd.read_csv(out, sep="\t", index_col="contig")
 
     logger.info(f"Assigning taxonomy via {method}. This may take a while...")
@@ -171,9 +148,7 @@ def assign(
     }
     # Now we need to determine which point to start the calculation...
     step = "full"
-    for fp, argname in zip(
-        [lca_fpath, hits, blast, prot_orfs], ["lca", "orfs", "orfs", "orfs"],
-    ):
+    for fp, argname in zip([lca_fpath, blast, prot_orfs], ["lca", "orfs", "orfs"]):
         if os.path.exists(fp) and os.path.getsize(fp):
             step = f"{argname}_exists"
             break
@@ -307,7 +282,9 @@ def write_ranks(
         raise KeyError(f"{rank} not in taxonomy columns: {taxonomy.columns}")
     if not os.path.exists(assembly) or not os.path.getsize(assembly):
         raise FileNotFoundError(assembly)
-    assembly_records = [r for r in SeqIO.parse(assembly, "fasta")]
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
     fpaths = []
     for rank_name, dff in taxonomy.groupby(rank):
         # First determine the file path respective to the rank name
@@ -343,9 +320,6 @@ def main():
         "taxonomy", help="Output path to write taxonomy table", type=str
     )
     parser.add_argument(
-        "--cache", help="Output directory to store annotations.", type=str
-    )
-    parser.add_argument(
         "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str,
     )
     parser.add_argument(
@@ -362,7 +336,7 @@ def main():
     )
     parser.add_argument(
         "--split-rank-and-write",
-        help="If specified, will split contigs by provided canonical-rank column then write to `outdir`",
+        help="If specified, will split contigs by provided canonical-rank column then write to same directory of `taxonomy`",
         choices=[
             "superkingdom",
             "phylum",
@@ -373,21 +347,9 @@ def main():
             "species",
         ],
     )
-    parser.add_argument(
-        "--kingdom",
-        help="Kingdom to retrieve",
-        default="bacteria",
-        choices=["bacteria", "archaea"],
-    )
     parser.add_argument("--method", default="majority_vote", choices=["majority_vote"])
     parser.add_argument(
         "--ncbi", help="Path to NCBI databases directory.", default=NCBI_DIR
-    )
-    parser.add_argument(
-        "--usepickle",
-        help="Whether to serialize taxonomy-specific files",
-        action="store_true",
-        default=False,
     )
     parser.add_argument(
         "--blast",
@@ -396,15 +358,9 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--hits",
-        help="Path to diamond blast hits.pkl.gz. "
-        "(Will write to path if it does not exist and `--pickle` is specified).",
-        default=None,
-    )
-    parser.add_argument(
         "--lca",
         help="Path to LCA results from autometa.taxonomy.lca"
-        "(Will write to path if it does not exist).",
+        " (Will write to path if it does not exist).",
         default=None,
     )
     parser.add_argument(
@@ -439,10 +395,8 @@ def main():
         prot_orfs=args.prot_orfs,
         nucl_orfs=args.nucl_orfs,
         blast=args.blast,
-        hits=args.hits,
         lca_fpath=args.lca,
         ncbi_dir=args.ncbi,
-        usepickle=args.usepickle,
         force=args.force,
         verbose=args.verbose,
         parallel=args.parallel,
@@ -451,13 +405,11 @@ def main():
     if taxa_df.shape[1] <= 2:
         taxa_df = add_ranks(taxa_df, ncbi=args.ncbi, out=args.taxonomy)
     if args.split_rank_and_write:
-        taxa_df = get(
-            filepath_or_dataframe=taxa_df, kingdom=args.kingdom, ncbi=args.ncbi,
-        )
+        outdir = os.path.dirname(os.path.realpath(args.taxonomy))
         written_ranks = write_ranks(
             taxonomy=taxa_df,
             assembly=args.assembly,
-            outdir=args.cache,
+            outdir=outdir,
             rank=args.split_rank_and_write,
         )
         num_written_ranks = len(written_ranks)
