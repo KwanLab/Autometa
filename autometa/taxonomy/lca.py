@@ -432,7 +432,7 @@ class LCA(NCBI):
         root_taxid = 1
         for qseqid, qseqid_taxids in taxids.items():
             # This will convert any deprecated taxids to their current taxids before reduction to LCA.
-            qseqid_taxids = [self.merged(taxid, taxid) for taxid in qseqid_taxids]
+            qseqid_taxids = [self.merged.get(taxid, taxid) for taxid in qseqid_taxids]
             lca_taxid = False
             num_taxids = len(qseqid_taxids)
             while not lca_taxid:
