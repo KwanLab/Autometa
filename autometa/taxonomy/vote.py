@@ -127,7 +127,7 @@ def assign(
         if "lca" not in locals():
             lca = LCA(dbdir=ncbi_dir, verbose=verbose)
         lca.blast2lca(
-            orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus,
+            orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
         )
 
     def majority_vote_lca(out=out):
@@ -185,7 +185,7 @@ def add_ranks(
     """
     ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
-    df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True,)
+    df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True)
     if out:
         # This allows overwriting the existing table with the canonical ranks added.
         df.to_csv(out, sep="\t", index=True, header=True)
@@ -320,7 +320,7 @@ def main():
         "taxonomy", help="Output path to write taxonomy table", type=str
     )
     parser.add_argument(
-        "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str,
+        "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str
     )
     parser.add_argument(
         "--nucl-orfs",

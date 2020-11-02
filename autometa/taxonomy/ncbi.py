@@ -159,8 +159,9 @@ class NCBI:
             if ancestor_rank == rank:
                 return self.names.get(ancestor_taxid, "unclassified")
             ancestor_taxid = self.parent(ancestor_taxid)
-        # At this point, taxid must equal 1 (root)
-        return self.names.get(ancestor_taxid, "unclassified")
+        # At this point we have not encountered a name for the taxid rank
+        # so we will place this as unclassified.
+        return "unclassified"
 
     def lineage(self, taxid, canonical=True):
         """
