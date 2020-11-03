@@ -44,11 +44,9 @@ Recruit unclustered contigs using metagenome annotations and binning results.
 
 """
 
-import typing
 from typing import List, Tuple
 import attr
 import logging
-import random
 import warnings
 import numpy as np
 import pandas as pd

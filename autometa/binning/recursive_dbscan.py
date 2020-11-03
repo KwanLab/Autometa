@@ -28,11 +28,11 @@ import logging
 import os
 import shutil
 import tempfile
+from typing import List, Tuple
 
 import pandas as pd
 import numpy as np
 
-from Bio import SeqIO
 from sklearn.cluster import DBSCAN
 from hdbscan import HDBSCAN
 
@@ -50,7 +50,9 @@ pd.set_option("mode.chained_assignment", None)
 logger = logging.getLogger(__name__)
 
 
-def add_metrics(df, markers_df, domain="bacteria"):
+def add_metrics(
+    df: pd.DataFrame, markers_df: pd.DataFrame, domain: str = "bacteria"
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Adds the completeness and purity metrics to each respective contig in df.
 
     Parameters
@@ -101,7 +103,11 @@ def add_metrics(df, markers_df, domain="bacteria"):
     return merged_df, metrics_df
 
 
-def run_dbscan(df, eps, dropcols=["cluster", "purity", "completeness"]):
+def run_dbscan(
+    df: pd.DataFrame,
+    eps: float,
+    dropcols: List[str] = ["cluster", "purity", "completeness"],
+):
     """Run clustering on `df` at provided `eps`.
 
     Notes
@@ -157,8 +163,13 @@ def run_dbscan(df, eps, dropcols=["cluster", "purity", "completeness"]):
 
 
 def recursive_dbscan(
-    table, markers_df, domain, completeness_cutoff, purity_cutoff, verbose=False,
-):
+    table: pd.DataFrame,
+    markers_df: pd.DataFrame,
+    domain: str,
+    completeness_cutoff: float,
+    purity_cutoff: float,
+    verbose: bool = False,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one
     group.
 
@@ -252,12 +263,12 @@ def recursive_dbscan(
 
 
 def run_hdbscan(
-    df,
-    min_cluster_size,
-    min_samples,
-    cache_dir=None,
-    dropcols=["cluster", "purity", "completeness"],
-):
+    df: pd.DataFrame,
+    min_cluster_size: int,
+    min_samples: int,
+    cache_dir: str = None,
+    dropcols: List[str] = ["cluster", "purity", "completeness"],
+) -> pd.DataFrame:
     """Run clustering on `df` at provided `min_cluster_size`.
 
     Notes
@@ -271,13 +282,21 @@ def run_hdbscan(
     ----------
     df : pd.DataFrame
         Contigs with embedded k-mer frequencies as ['x','y'] columns and optionally 'coverage' column
+
     min_cluster_size : int
         The minimum size of clusters; single linkage splits that contain
         fewer points than this will be considered points "falling out" of a
         cluster rather than a cluster splitting into two new clusters.
+
     min_samples : int
         The number of samples in a neighborhood for a point to be
         considered a core point.
+
+    cache_dir : str, optional
+        Used to cache the output of the computation of the tree.
+        By default, no caching is done. If a string is given, it is the
+        path to the caching directory.
+
     dropcols : list, optional
         Drop columns in list from `df`
         (the default is ['cluster','purity','completeness']).
@@ -322,8 +341,13 @@ def run_hdbscan(
 
 
 def recursive_hdbscan(
-    table, markers_df, domain, completeness_cutoff, purity_cutoff, verbose=False,
-):
+    table: pd.DataFrame,
+    markers_df: pd.DataFrame,
+    domain: str,
+    completeness_cutoff: float,
+    purity_cutoff: float,
+    verbose: bool = False,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Recursively run HDBSCAN starting with defaults and iterating the min_samples
      and min_cluster_size until only 1 cluster is recovered.
 
@@ -332,15 +356,20 @@ def recursive_hdbscan(
     table : pd.DataFrame
         Contigs with embedded k-mer frequencies as ['x','y','z'] columns and
         optionally 'coverage' column
+
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
+
     domain : str
         Kingdom to determine metrics (the default is 'bacteria').
         choices=['bacteria','archaea']
+
     completeness_cutoff : float
         `completeness_cutoff` threshold to retain cluster (the default is 20.0).
+
     purity_cutoff : float
         `purity_cutoff` threshold to retain cluster (the default is 90.0).
+
     verbose : bool
         log stats for each recursive_dbscan clustering iteration.
 
@@ -423,40 +452,46 @@ def recursive_hdbscan(
 
 
 def get_clusters(
-    master_df,
-    markers_df,
-    domain="bacteria",
-    completeness=20.0,
-    purity=90.0,
-    method="dbscan",
-    verbose=False,
-):
+    master: pd.DataFrame,
+    markers_df: pd.DataFrame,
+    domain: str = "bacteria",
+    completeness: float = 20.0,
+    purity: float = 90.0,
+    method: str = "dbscan",
+    verbose: bool = False,
+) -> pd.DataFrame:
     """Find best clusters retained after applying `completeness` and `purity` filters.
 
     Parameters
     ----------
-    master_df : pd.DataFrame
+    master : pd.DataFrame
         index=contig,
         cols=['x','y','coverage']
+
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
+
     domain : str
         Kingdom to determine metrics (the default is 'bacteria').
         choices=['bacteria','archaea'].
+
     completeness : float
         `completeness` threshold to retain cluster (the default is 20.).
+
     purity : float
         `purity` threshold to retain cluster (the default is 90.).
+
     method : str
         Description of parameter `method` (the default is 'dbscan').
         choices = ['dbscan','hdbscan']
+
     verbose : bool
         log stats for each recursive_dbscan clustering iteration
 
     Returns
     -------
     pd.DataFrame
-        `master_df` with ['cluster','completeness','purity'] columns added
+        `master` with ['cluster','completeness','purity'] columns added
     """
     num_clusters = 0
     clusters = []
@@ -469,7 +504,7 @@ def get_clusters(
     # break when either clustered_df or unclustered_df is empty
     while True:
         clustered_df, unclustered_df = clusterer(
-            master_df, markers_df, domain, completeness, purity, verbose=verbose,
+            master, markers_df, domain, completeness, purity, verbose=verbose,
         )
         # No contigs can be clustered, label as unclustered and add the final df
         # of (unclustered) contigs
@@ -496,7 +531,7 @@ def get_clusters(
         num_clusters += clustered_df.cluster.nunique()
         clusters.append(clustered_df)
         # continue with unclustered contigs
-        master_df = unclustered_df
+        master = unclustered_df
     df = pd.concat(clusters, sort=True)
     for metric in ["purity", "completeness"]:
         # Special case where no clusters are found in first round.
@@ -507,17 +542,17 @@ def get_clusters(
 
 
 def binning(
-    master,
-    markers,
-    domain="bacteria",
-    completeness=20.0,
-    purity=90.0,
-    taxonomy=True,
-    starting_rank="superkingdom",
-    method="dbscan",
-    reverse_ranks=False,
-    verbose=False,
-):
+    master: pd.DataFrame,
+    markers: pd.DataFrame,
+    domain: str = "bacteria",
+    completeness: float = 20.0,
+    purity: float = 90.0,
+    taxonomy: bool = True,
+    starting_rank: str = "superkingdom",
+    method: str = "dbscan",
+    reverse_ranks: bool = False,
+    verbose: bool = False,
+) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
     filter clusters that should be retained via `completeness` and `purity`
     thresholds.
@@ -529,27 +564,36 @@ def binning(
         cols=['x','y']
         taxa cols should be present if `taxonomy` is True.
         i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
+
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
+
     domain : str, optional
         Kingdom to determine metrics (the default is 'bacteria').
         choices=['bacteria','archaea']
+
     completeness : float, optional
         Description of parameter `completeness` (the default is 20.).
+
     purity : float, optional
         Description of parameter `purity` (the default is 90.).
+
     taxonomy : bool, optional
         Split canonical ranks and subset based on rank then attempt to find clusters (the default is True).
         taxonomic_levels = [superkingdom,phylum,class,order,family,genus,species]
+
     starting_rank : str, optional
         Starting canonical rank at which to begin subsetting taxonomy (the default is superkingdom).
         Choices are superkingdom, phylum, class, order, family, genus, species.
+
     method : str, optional
         Clustering `method` (the default is 'dbscan').
         choices = ['dbscan','hdbscan']
+
     reverse_ranks : bool, optional
         False - [superkingdom,phylum,class,order,family,genus,species] (Default)
         True - [species,genus,family,order,class,phylum,superkingdom]
+
     verbose : bool, optional
         log stats for each recursive_dbscan clustering iteration
 
@@ -671,7 +715,7 @@ def main():
         "composition, coverage and homology.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("kmers", help="</path/to/kmers.tsv>")
+    parser.add_argument("kmers", help="</path/to/normalized/kmers.tsv>")
     parser.add_argument("coverage", help="</path/to/coverages.tsv>")
     parser.add_argument("markers", help="</path/to/markers.tsv>")
     parser.add_argument("out", help="</path/to/output.tsv>")

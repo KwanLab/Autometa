@@ -181,7 +181,6 @@ def get_metabin_stats(
     for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
         "cluster"
     ):
-        contigs = set(dff.index)
         length_weighted_coverage = np.average(
             a=dff.coverage, weights=dff.length / dff.length.sum()
         )
@@ -227,9 +226,7 @@ def get_metabin_stats(
                 "num_single_copy_markers": num_single_copy_markers,
             }
         )
-    stats_df = pd.DataFrame(stats)
-    stats_df.set_index("cluster", inplace=True)
-    return stats_df
+    return pd.DataFrame(stats).set_index("cluster")
 
 
 def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
