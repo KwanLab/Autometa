@@ -292,6 +292,12 @@ av_gc           | The average GC (%) of the contigs in the cluster, weighted by 
 
 The cluster\_taxonomy.tab file similarly contains full taxonomic information for each cluster, assigned based on the assigned taxonomy of the component contigs.
 
+### Automappa: An interactive interface for exploration and refinement of metagenomes
+
+Automappa is a tool built to interface with Autometa output to help you explore your binning results. 
+
+For details, see the Automappa page here: https://github.com/WiscEvan/Automappa
+
 ### Visualizing your results
 
 Cluster\_process.py gives you some information about the clusters, but it's a good idea to manually look at the data to convince yourself that Autometa did a good job. It's worth noting here that no binning pipeline (including Autometa) is guaranteed to give 100% correct results all the time, and before using the results in publications etc. you should use your biological common sense/judgement. With the tables you have produced, this is easy to do using [R](https://www.r-project.org). Try typing the following in to R:
