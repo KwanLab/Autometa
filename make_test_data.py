@@ -136,6 +136,10 @@ class TestData:
     recruitment_binning: str
     data: typing.Dict = attr.ib(default={})
     seed: int = 42
+    sam_fpath: str
+    bed_fpath: str
+    fwd_reads: str
+    rev_read: str
 
     def prepare_metagenome(self, num_records: int = 4):
         logger.info("Preparing metagenome records test data...")

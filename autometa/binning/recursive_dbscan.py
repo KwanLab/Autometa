@@ -616,7 +616,7 @@ def binning(
     logger.info(f"Using {method} clustering method")
     if not taxonomy:
         return get_clusters(
-            master_df=master,
+            master=master,
             markers_df=markers,
             domain=domain,
             completeness=completeness,
@@ -669,7 +669,7 @@ def binning(
                 f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
             )
             clusters_df = get_clusters(
-                master_df=rank_df,
+                master=rank_df,
                 markers_df=markers,
                 domain=domain,
                 completeness=completeness,
