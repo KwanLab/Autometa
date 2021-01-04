@@ -128,7 +128,8 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, cpus=0, **kwar
     for flag, reads in zip(["-1", "-2", "-U"], [fwd_reads, rev_reads, se_reads]):
         if reads:
             reads_provided = True
-            params.append(f"{flag} {reads}")
+            reads_to_str = ",".join([str(read) for read in reads])
+            params.append(f"{flag} {reads_to_str}")
     if not reads_provided:
         raise ValueError(f"At least one fastq file is required!")
     if kwargs:
