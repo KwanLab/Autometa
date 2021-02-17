@@ -158,7 +158,7 @@ def prepare_databases(outdir, db="all", update=False):
             else:
                 print("nr.dmnd database is up to date.")
         else:
-            print("updating nr.dmnd")
+            print("{} not found. Downloading nr.gz".format(nr_md5_fpath))
             download_file(outdir, nr_db_url, nr_db_md5_url)
 
         nr_fpath = os.path.join(outdir, "nr.gz")
@@ -337,7 +337,7 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
 def run_blast2lca(input_file, taxdump_path):
     fname = os.path.splitext(os.path.basename(input_file))[0] + ".lca"
     output = os.path.join(output_dir, fname)
-    if os.path.isfile(output) and not os.stat(output).st_size == 0:
+    if os.path.isfile(output) and os.path.getsize(output):
         print("{} file already exists! Continuing to next step...".format(output))
     else:
         lca_script = os.path.join(PIPELINE, "lca.py")
