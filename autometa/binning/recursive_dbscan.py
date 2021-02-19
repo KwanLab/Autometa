@@ -41,7 +41,7 @@ from autometa.common import kmers
 
 # TODO: This should be from autometa.common.kmers import Kmers
 # So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
-from autometa.common.exceptions import TableFormatError
+from autometa.common.exceptions import TableFormatError, BinningError
 from autometa.taxonomy.ncbi import NCBI
 
 pd.set_option("mode.chained_assignment", None)
@@ -694,7 +694,13 @@ def binning(
             clustered.cluster = clustered.cluster.map(rename_cluster)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
+
+    if not clusters:
+        raise BinningError("Failed to recover any clusters from dataset")
+    # At this point we've went through all ranks and have clusters for each canonical-rank
+    # We place these into one table and then...
     clustered_df = pd.concat(clusters, sort=True)
+    # create a dataframe for any contigs *not* in the clustered dataframe
     unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
     unclustered_df["cluster"] = pd.NA
     return pd.concat([clustered_df, unclustered_df], sort=True)

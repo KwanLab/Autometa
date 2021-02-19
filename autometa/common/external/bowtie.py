@@ -27,12 +27,13 @@ Script containing wrapper functions for bowtie2.
 import logging
 import os
 import subprocess
+from typing import List
 
 
 logger = logging.getLogger(__name__)
 
 
-def run(cmd):
+def run(cmd: str) -> bool:
     """Run `cmd` via subprocess.
 
     Parameters
@@ -55,7 +56,7 @@ def run(cmd):
     return True
 
 
-def build(assembly, out):
+def build(assembly: str, out: str) -> str:
     """Build bowtie2 index.
 
     Parameters
@@ -83,7 +84,15 @@ def build(assembly, out):
     return out
 
 
-def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, cpus=0, **kwargs):
+def align(
+    db: str,
+    sam: str,
+    fwd_reads: List = None,
+    rev_reads: List = None,
+    se_reads: List = None,
+    cpus: int = 0,
+    **kwargs,
+) -> str:
     """Align reads to bowtie2-index `db` (at least one `*_reads` argument is required).
 
     Parameters
@@ -128,8 +137,11 @@ def align(db, sam, fwd_reads=None, rev_reads=None, se_reads=None, cpus=0, **kwar
     for flag, reads in zip(["-1", "-2", "-U"], [fwd_reads, rev_reads, se_reads]):
         if reads:
             reads_provided = True
-            reads_to_str = ",".join([str(read) for read in reads])
-            params.append(f"{flag} {reads_to_str}")
+            if isinstance(reads, list):
+                reads_to_str = ",".join([str(read) for read in reads])
+                params.append(f"{flag} {reads_to_str}")
+            else:
+                params.append(f"{flag} {reads}")
     if not reads_provided:
         raise ValueError(f"At least one fastq file is required!")
     if kwargs:
@@ -172,8 +184,8 @@ def main():
     parser.add_argument("--cpus", help="Num processors to use.", default=1, type=int)
     args = parser.parse_args()
 
-    db = build(args.assembly, args.database)
-    sam = align(
+    build(args.assembly, args.database)
+    align(
         database=args.database,
         sam=args.sam,
         fwd_reads=args.fwd_reads,

@@ -27,7 +27,6 @@ Script to summarize/write Autometa binning results
 import glob
 import logging
 import os
-import tempfile
 
 import pandas as pd
 import numpy as np
@@ -248,32 +247,33 @@ def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
     canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
     is_clustered = bin_df.cluster.notnull()
     bin_df = bin_df[is_clustered]
-    tmpfpath = tempfile.mktemp()
     outcols = ["cluster", "length", "taxid", *canonical_ranks]
-    bin_df[outcols].to_csv(tmpfpath, sep="\t", index=False, header=False)
+    tmp_table = bin_df[outcols].to_csv(sep="\t", index=False, header=False)
     taxonomies = {}
-    with open(tmpfpath) as fh:
-        for line in fh:
-            llist = line.strip().split("\t")
-            cluster = llist[0]
-            length = int(llist[1])
-            taxid = int(llist[2])
-            ranks = llist[3:]
-            for rank, canonical_rank in zip(ranks, canonical_ranks):
-                if rank != "unclassified":
-                    break
-            if cluster not in taxonomies:
-                taxonomies.update({cluster: {canonical_rank: {taxid: length}}})
-            elif canonical_rank not in taxonomies[cluster]:
-                taxonomies[cluster].update({canonical_rank: {taxid: length}})
-            elif taxid not in taxonomies[cluster][canonical_rank]:
-                taxonomies[cluster][canonical_rank].update({taxid: length})
-            else:
-                taxonomies[cluster][canonical_rank][taxid] += length
-    os.remove(tmpfpath)
+    # Here we prepare our datastructure for the majority_vote.rank_taxids(...) function.
+    for line in tmp_table:
+        llist = line.strip().split("\t")
+        cluster = llist[0]
+        length = int(llist[1])
+        taxid = int(llist[2])
+        ranks = llist[3:]
+        for rank, canonical_rank in zip(ranks, canonical_ranks):
+            if rank != "unclassified":
+                break
+        if cluster not in taxonomies:
+            taxonomies.update({cluster: {canonical_rank: {taxid: length}}})
+        elif canonical_rank not in taxonomies[cluster]:
+            taxonomies[cluster].update({canonical_rank: {taxid: length}})
+        elif taxid not in taxonomies[cluster][canonical_rank]:
+            taxonomies[cluster][canonical_rank].update({taxid: length})
+        else:
+            taxonomies[cluster][canonical_rank][taxid] += length
     cluster_taxonomies = majority_vote.rank_taxids(taxonomies, ncbi)
+    # With our cluster taxonomies, let's place these into a dataframe for easy data accession
     cluster_taxa_df = pd.Series(data=cluster_taxonomies, name="taxid").to_frame()
+    # With the list of taxids, we'll retrieve their complete canonical-rank information
     lineage_df = ncbi.get_lineage_dataframe(cluster_taxa_df.taxid.tolist(), fillna=True)
+    # Now put it all together
     cluster_taxa_df = pd.merge(
         cluster_taxa_df, lineage_df, how="left", left_on="taxid", right_index=True
     )

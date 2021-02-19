@@ -57,6 +57,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
 from autometa.common.markers import load as load_markers
+from autometa.common.exceptions import BinningError
 
 
 logger = logging.getLogger(__name__)
@@ -558,6 +559,8 @@ def main():
         args.assignments, sep="\t", index_col="contig", usecols=["contig", "cluster"]
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
+    if not prev_num_unclustered:
+        raise BinningError("No unclustered contigs are available to recruit!")
     markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(

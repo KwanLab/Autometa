@@ -43,6 +43,17 @@ class TableFormatError(AutometaError):
     pass
 
 
+class BinningError(AutometaError):
+    """BinningError exception class.
+
+    Exception called when issues arise during or after the binning process.
+
+    This is usually a result of no clusters being recovered.
+    """
+
+    pass
+
+
 class ChecksumMismatchError(AutometaError):
     """ChecksumMismatchError exception class
 

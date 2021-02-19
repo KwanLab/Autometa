@@ -27,7 +27,6 @@ Calculates coverage of contigs
 
 import logging
 import os
-import shutil
 import tempfile
 
 import pandas as pd
@@ -92,7 +91,7 @@ def make_length_table(fasta, out):
 
 
 def normalize(df):
-    return df
+    raise NotImplementedError
 
 
 @utilities.timeit
