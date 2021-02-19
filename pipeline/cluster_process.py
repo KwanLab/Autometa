@@ -183,7 +183,7 @@ for cluster in cluster_sequences:
 
 	# The following protects for the edge case where a cluster has zero marker genes
 	if number_unique_markers == 0:
-		completness = 'unknown'
+		completeness = 'unknown'
 	else:
 		completeness = (number_unique_markers / total_markers) * 100
 	if number_markers_found == 0:
