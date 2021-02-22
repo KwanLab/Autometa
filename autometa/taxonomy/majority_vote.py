@@ -31,8 +31,8 @@ from typing import Dict, Union
 
 from tqdm import tqdm
 
-from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy.lca import LCA
+from autometa.taxonomy.ncbi import NCBI
 
 logger = logging.getLogger(__name__)
 
@@ -318,10 +318,13 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "orfs",
+        "--orfs",
         help="Path to ORFs fasta containing amino-acid sequences to be annotated.",
+        required=True,
     )
-    parser.add_argument("out", help="Path to write voted taxid results table.")
+    parser.add_argument(
+        "--output", help="Path to write voted taxid results table.", required=True
+    )
     parser.add_argument(
         "--dbdir", help="Path to NCBI databases directory.", default=dbdir
     )
@@ -341,7 +344,7 @@ def main():
 
     majority_vote(
         orfs=args.orfs,
-        out=args.out,
+        out=args.output,
         ncbi_dir=args.dbdir,
         blast=args.blast,
         lca_out=args.lca,
