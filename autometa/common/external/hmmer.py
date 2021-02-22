@@ -263,10 +263,11 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
             raise FileNotFoundError(fp)
     if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
         raise FileExistsError(f"{outfpath} already exists")
-    hmmtab_header = ["sname", "sacc", "orf", "score"]
+
     col_indices = [0, 1, 2, 5]
-    columns = {i: k for i, k in zip(col_indices, hmmtab_header)}
     df = pd.read_csv(infpath, sep="\s+", usecols=col_indices, header=None, comment="#")
+    hmmtab_header = ["sname", "sacc", "orf", "score"]
+    columns = {i: k for i, k in zip(col_indices, hmmtab_header)}
     df.rename(columns=columns, inplace=True)
     # NaN may result from parsing issues while merging parallel results
     df.dropna(inplace=True)

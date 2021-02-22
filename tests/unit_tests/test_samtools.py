@@ -21,11 +21,18 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Wrapper to run Autometa from base directory without installing.
+Calculates coverage of contigs
 """
 
+import pytest
+from autometa.common.external import samtools
 
-from autometa.__main__ import main
 
-if __name__ == "__main__":
-    main()
+def test_sort_missing_file():
+    with pytest.raises(FileNotFoundError):
+        samtools.sort(sam="sam", bam="bam")
+
+@pytest.mark.parametrize("cpus", [2.9, -2])
+def test_sort_invalid_cpu_input(cpus):
+    with pytest.raises(TypeError):
+        samtools.sort(sam="sam_fpath", bam="bam", cpus=cpus)

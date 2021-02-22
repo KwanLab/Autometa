@@ -28,6 +28,7 @@ marker sets depending on sequence set taxonomy
 import logging
 import os
 
+import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
@@ -78,7 +79,7 @@ def load(fpath, format="wide"):
     elif format == "long":
         return grouped_df.value_counts().reset_index(level=1, name="count")
     elif format == "list":
-        return {k: v.tolist() for k, v in list(grouped_df)}
+        return {contig: markers.tolist() for contig, markers in list(grouped_df)}
     elif format == "counts":
         return grouped_df.count().to_dict()
     else:
@@ -89,15 +90,17 @@ def load(fpath, format="wide"):
 
 
 def get(
-    kingdom,
-    orfs,
-    dbdir,
-    scans=None,
-    out=None,
-    force=False,
-    seed=42,
-    format="wide",
-    **hmmer_args,
+    kingdom: str,
+    orfs: str,
+    dbdir: str,
+    scans: str = None,
+    out: str = None,
+    force: bool = False,
+    format: str = "wide",
+    cpus: int = mp.cpu_count(),
+    parallel: bool = True,
+    gnu_parallel: bool = False,
+    seed: int = 42,
 ) -> pd.DataFrame:
     """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
@@ -121,8 +124,14 @@ def get(
         * long - returns long dataframe of contig PFAM counts
         * list - returns list of pfams for each contig
         * counts - returns count of pfams for each contig
-    hmmer_args: dict, optional
-        additional keyword arguments to pass to `hmmer.hmmscan`
+    cpus: int, optional
+        Number of cores to use if running in parallel, by default all available.
+    parallel : bool, optional
+        Whether to run hmmscan using its parallel option, by default True.
+    gnu_parallel : bool, optional
+        Whether to run hmmscan using gnu parallel, by default False.
+    seed: int, optional
+        Seed to pass into hmmscan for determinism, by default 42.
 
     Returns
     -------
@@ -147,20 +156,22 @@ def get(
     out = os.path.join(os.path.dirname(orfs), markers_fname) if not out else out
     kingdom = kingdom.lower()
 
-    def do_scan():
-        hmmer.hmmscan(
-            orfs=orfs, hmmdb=hmmdb, outfpath=scans, seed=seed, **hmmer_args,
+    if not os.path.exists(scans) or not os.path.getsize(scans):
+        scans = hmmer.hmmscan(
+            orfs=orfs,
+            hmmdb=hmmdb,
+            outfpath=scans,
+            cpus=cpus,
+            force=force,
+            parallel=parallel,
+            gnu_parallel=gnu_parallel,
+            seed=seed,
         )
 
-    def do_filter():
-        hmmer.filter_markers(
-            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs,
+    if not os.path.exists(out) or not os.path.getsize(out):
+        out = hmmer.filter_markers(
+            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs, force=force,
         )
-
-    for fp, func in zip([scans, out], [do_scan, do_filter]):
-        if os.path.exists(fp) and os.path.getsize(fp):
-            continue
-        func()
     return load(fpath=out, format=format)
 
 
@@ -207,7 +218,25 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--seed", help=f"Seed to set random state for hmmscan.", default=42, type=int,
+        "--parallel",
+        help="Whether to use hmmscan parallel option.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--gnu-parallel",
+        help="Whether to run hmmscan using GNU parallel.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--cpus",
+        help=f"Number of cores to use for parallel execution.",
+        default=mp.cpu_count(),
+        type=int,
+    )
+    parser.add_argument(
+        "--seed", help="Seed to set random state for hmmscan.", default=42, type=int,
     )
     args = parser.parse_args()
 
@@ -218,6 +247,9 @@ def main():
         scans=args.hmmscan,
         out=args.out,
         force=args.force,
+        cpus=args.cpus,
+        parallel=args.parallel,
+        gnu_parallel=args.gnu_parallel,
         seed=args.seed,
     )
 

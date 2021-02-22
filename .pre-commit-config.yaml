@@ -1,6 +1,4 @@
 exclude: "^autometa/validation"
-default_language_version:
-  python: python3.7
 repos:
   - repo: https://github.com/psf/black
     rev: stable

@@ -38,21 +38,23 @@ from autometa.config.user import AutometaUser
 from autometa.taxonomy import vote
 from autometa.binning import recursive_dbscan
 from autometa.common.exceptions import AutometaError
+from autometa.common.external import prodigal
+from Bio import SeqIO
 
 
 logger = logging.getLogger("autometa")
 
 
-def init_logger(fpath=None, verbosity=0):
+def init_logger(out: str = None, verbosity: int = 0):
     """Initialize logger.
 
     By default will initialize streaming logger with INFO level messages.
-    If `fpath` is provided, will write DEBUG level messages to `fpath` and
+    If `out` is provided, will write DEBUG level messages to `out` and
     set streaming messages to INFO.
 
     Parameters
     ----------
-    fpath : str, optional
+    out : str, optional
         </path/to/file.log>
     verbosity : int, optional
         Overwrite default logging level behavior with provided `verbosity`.
@@ -92,8 +94,8 @@ def init_logger(fpath=None, verbosity=0):
     # Construct file/stream logging handlers
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
-    if fpath:
-        filehandler = logging.FileHandler(fpath)
+    if out:
+        filehandler = logging.FileHandler(out)
         filehandler.setFormatter(formatter)
         logger.addHandler(filehandler)
 
@@ -212,7 +214,7 @@ def run_autometa(mgargs):
         vote.assign(
             method=mgargs.parameters.taxon_method,
             outfpath=mgargs.files.taxonomy,
-            fasta=mg.assembly,
+            assembly=mg.assembly,
             prot_orfs=mgargs.files.amino_acid_orfs,
             nucl_orfs=mgargs.files.nucleotide_orfs,
             blast=mgargs.files.blastp,
@@ -227,18 +229,19 @@ def run_autometa(mgargs):
             cpus=mgargs.parameters.cpus,
         )
         # Now filter by Kingdom
-        metabin = vote.get(
-            fpath=mgargs.files.taxonomy,
-            assembly=mg.assembly,
-            ncbi_dir=mgargs.databases.ncbi,
+        kingdom_df = vote.get(
+            filepath_or_dataframe=mgargs.files.taxonomy,
             kingdom=mgargs.parameters.kingdom,
-            outdir=mgargs.parameters.outdir,
+            ncbi=mgargs.databases.ncbi,
         )
         orfs_fpath = os.path.join(
             mgargs.parameters.outdir, f"{mgargs.parameters.kingdom}.orfs.faa"
         )
-        metabin.write_orfs(fpath=orfs_fpath, orf_type="prot")
-        contigs = set(metabin.contig_ids)
+        contigs = set(kingdom_df.index.tolist())
+        amino_acid_orfs = prodigal.orf_records_from_contigs(
+            contigs=contigs, fpath=mgargs.files.amino_acid_orfs
+        )
+        SeqIO.write(amino_acid_orfs, orfs_fpath, "fasta")
     else:
         orfs_fpath = mgargs.files.amino_acid_orfs
         contigs = {record.id for record in mg.seqrecords}
@@ -311,56 +314,9 @@ def run_autometa(mgargs):
     return bins_df
 
 
-def main(args):
+def main():
     """
     Main logic for running autometa pipeline.
-
-    Warning: This should be called by `entrypoint` and not directly.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        namespace containing config information for AutometaUser
-
-    Returns
-    -------
-    NoneType
-        Nothing if no errors are encountered.
-
-    """
-
-    logger = init_logger(fpath=args.log, verbosity=args.verbosity)
-    # Configure AutometaUser
-    # TODO: master from WorkQueue is AutometaUser
-    user = AutometaUser(nproc=args.cpus)
-    user.configure(dryrun=args.check_dependencies, update=args.update)
-
-    # all_bins = {}
-    for config in args.config:
-        # TODO: Add directions to master from WorkQueue
-        mgargs = user.prepare_binning_args(config)
-        bins = run_autometa(mgargs)
-
-        # TODO: refinement/processing/prep for pangenome algos
-        # refined_bins = refine_binning(bins)
-        # processed_bins = process_binning(refined_bins)
-        # sample = mgargs.parameters.metagenome_num
-        # all_bins.update({sample: processed_bins})
-    # pangenomes = get_pangenomes(all_bins)
-
-
-def entrypoint():
-    """
-    Main entrypoint for autometa pipeline.
-
-    Note, a requirement of packaging and distribution is for entrypoints to not
-    require any arguments. This is a wrapper to the main functionality of running
-    autometa via the `main` function.
-
-    Returns
-    -------
-    NoneType
-
     """
     import argparse
 
@@ -402,9 +358,29 @@ def entrypoint():
         action="store_true",
     )
     args = parser.parse_args()
+    logger = init_logger(out=args.log, verbosity=args.verbosity)
+    # Configure AutometaUser
+    # TODO: master from WorkQueue is AutometaUser
+    user = AutometaUser(nproc=args.cpus)
+    user.configure(dryrun=args.check_dependencies, update=args.update)
 
+    # all_bins = {}
+    for config in args.config:
+        # TODO: Add directions to master from WorkQueue
+        mgargs = user.prepare_binning_args(config)
+        bins = run_autometa(mgargs)
+
+        # TODO: refinement/processing/prep for pangenome algos
+        # refined_bins = refine_binning(bins)
+        # processed_bins = process_binning(refined_bins)
+        # sample = mgargs.parameters.metagenome_num
+        # all_bins.update({sample: processed_bins})
+    # pangenomes = get_pangenomes(all_bins)
+
+
+if __name__ == "__main__":
     try:
-        main(args)
+        main()
     except KeyboardInterrupt:
         logger.info("User cancelled run. Exiting...")
         sys.exit(1)
@@ -420,7 +396,3 @@ def entrypoint():
             """
             logger.info(issue_request)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    entrypoint()

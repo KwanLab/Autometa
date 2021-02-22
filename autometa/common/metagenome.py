@@ -26,6 +26,7 @@ Script containing Metagenome class for general handling of metagenome assembly
 
 
 import decimal
+import gzip
 import logging
 import numbers
 import os
@@ -40,7 +41,6 @@ from functools import lru_cache
 
 from autometa.common.external import prodigal
 from autometa.common.utilities import timeit
-from autometa.common.utilities import gunzip
 from autometa.common.exceptions import ExternalToolError
 
 # TODO: Should place all imports of Database paths to a config module so they
@@ -135,8 +135,14 @@ class Metagenome:
             [seq, seq, ...]
 
         """
-        with open(self.assembly) as fh:
-            return [seq for title, seq in SimpleFastaParser(fh)]
+        fh = (
+            gzip.open(self.assembly, "rt")
+            if self.assembly.endswith(".gz")
+            else open(self.assembly)
+        )
+        sequences = [seq for __, seq in SimpleFastaParser(fh)]
+        fh.close()
+        return sequences
 
     @property
     @lru_cache(maxsize=None)
@@ -149,7 +155,13 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        return [seq for seq in SeqIO.parse(self.assembly, "fasta")]
+        if self.assembly.endswith(".gz"):
+            fh = gzip.open(self.assembly, "rt")
+            records = [seq for seq in SeqIO.parse(fh, "fasta")]
+            fh.close()
+        else:
+            records = [seq for seq in SeqIO.parse(self.assembly, "fasta")]
+        return records
 
     @property
     def nseqs(self):
@@ -230,37 +242,9 @@ class Metagenome:
         """
         # COMBAK: Add checkpointing checksum check here
         for fp in [self.prot_orfs_fpath, self.nucl_orfs_fpath]:
-            if not os.path.exists(fp):
-                return False
-            elif not os.path.getsize(fp) > 0:
+            if not os.path.exists(fp) or not os.path.getsize(fp):
                 return False
         return True
-
-    @property
-    @lru_cache(maxsize=None)
-    def nucls(self):
-        """Retrieve `assembly` nucleotide ORFs.
-
-        Returns
-        -------
-        list
-            [SeqRecord, SeqRecord, ...]
-
-        """
-        return self.orfs(orf_type="nucl")
-
-    @property
-    @lru_cache(maxsize=None)
-    def prots(self):
-        """Retrieve `assembly` amino-acid ORFs.
-
-        Returns
-        -------
-        list
-            [SeqRecord, SeqRecord, ...]
-
-        """
-        return self.orfs(orf_type="prot")
 
     def fragmentation_metric(self, quality_measure=0.50):
         """Describes the quality of assembled genomes that are fragmented in
@@ -282,6 +266,10 @@ class Metagenome:
             weighted median)
 
         """
+        if not 0 < quality_measure < 1:
+            raise ValueError(
+                f"quality measure must be b/w 0 and 1! given: {quality_measure}"
+            )
         target_size = self.size * quality_measure
         lengths = []
         for length in sorted([len(seq) for seq in self.sequences], reverse=True):
@@ -357,8 +345,8 @@ class Metagenome:
             cutoff value must be a positive real number
         FileExistsError
             filepath consisting of sequences that passed filter already exists
-
         """
+
         if not isinstance(cutoff, numbers.Number) or isinstance(cutoff, bool):
             # https://stackoverflow.com/a/4187220/13118765
             raise TypeError(f"cutoff: {cutoff} must be a float or int")
@@ -366,30 +354,29 @@ class Metagenome:
             raise ValueError(f"cutoff: {cutoff} must be a positive real number")
         if os.path.exists(out) and not force:
             raise FileExistsError(out)
-        outdir = os.path.dirname(out)
-        gunzipped_fname = os.path.basename(self.assembly.rstrip(".gz"))
-        gunzipped_fpath = os.path.join(outdir, gunzipped_fname)
-        if self.assembly.endswith(".gz"):
-            if not os.path.exists(gunzipped_fpath):
-                gunzip(self.assembly, gunzipped_fpath)
-            self.assembly = gunzipped_fpath
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
-        records = [seq for seq in self.seqrecords if len(seq) >= cutoff]
+        records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
         if self.orfs_called:
             msg = (
                 f"{self.nucl_orfs_fpath} and {self.prot_orfs_fpath} have already been called!"
                 "Call orfs again to retrieve only ORFs corresponding to filtered assembly"
             )
             logger.warning(msg)
-        SeqIO.write(records, out, "fasta")
-        return Metagenome(
-            assembly=out,
-            outdir=self.outdir,
-            nucl_orfs_fpath=self.nucl_orfs_fpath,
-            prot_orfs_fpath=self.prot_orfs_fpath,
-            fwd_reads=self.fwd_reads,
-            rev_reads=self.rev_reads,
-        )
+        n_written = SeqIO.write(records, out, "fasta")
+        if not n_written:
+            logger.warning(
+                f"No contigs pass {cutoff:,}. Returning original Metagenome."
+            )
+            return self
+        else:
+            return Metagenome(
+                assembly=out,
+                outdir=self.outdir,
+                nucl_orfs_fpath=self.nucl_orfs_fpath,
+                prot_orfs_fpath=self.prot_orfs_fpath,
+                fwd_reads=self.fwd_reads,
+                rev_reads=self.rev_reads,
+            )
 
     def call_orfs(self, force=False, cpus=0, parallel=True):
         """Calls ORFs on Metagenome assembly.
@@ -417,7 +404,7 @@ class Metagenome:
             ORF calling failed.
         """
         for arg, argname in zip([force, parallel], ["force", "parallel"]):
-            if not isinstance(arg, bool) and isinstance(arg, numbers.Number):
+            if not isinstance(arg, bool):
                 raise TypeError(f"{argname} must be a boolean!")
         if not isinstance(cpus, int) or isinstance(cpus, bool):
             raise TypeError(f"cpus:({cpus}) must be an integer!")
@@ -437,35 +424,6 @@ class Metagenome:
         except ChildProcessError as err:
             raise err
         return nucls_fp, prots_fp
-
-    def orfs(self, orf_type="prot", cpus=0):
-        """Retrieves ORFs after being called from self.call_orfs.
-
-        Parameters
-        ----------
-        orf_type : str
-            format of ORFs to retrieve choices=['nucl','prot'] either nucleotide
-            or amino acids (the default is 'prot').
-
-        Returns
-        -------
-        list
-            [SeqRecord, ...]
-
-        Raises
-        -------
-        ValueError
-            Invalid `orf_type`. Choices=['prot','nucl']
-
-        """
-        if not self.orfs_called:
-            self.call_orfs(cpus=cpus)
-        if orf_type not in {"prot", "nucl"}:
-            raise ValueError('orf_type must be "prot" or "nucl"!')
-        orfs_fpath = (
-            self.prot_orfs_fpath if orf_type == "prot" else self.nucl_orfs_fpath
-        )
-        return [orf for orf in SeqIO.parse(orfs_fpath, "fasta")]
 
 
 def main():
@@ -513,11 +471,7 @@ def main():
     args = parser.parse_args()
     dirpath = os.path.dirname(os.path.realpath(args.assembly))
     raw_mg = Metagenome(
-        assembly=args.assembly,
-        outdir=dirpath,
-        prot_orfs_fpath="",
-        nucl_orfs_fpath="",
-        force=args.force,
+        assembly=args.assembly, outdir=dirpath, prot_orfs_fpath="", nucl_orfs_fpath="",
     )
 
     filtered_mg = raw_mg.length_filter(

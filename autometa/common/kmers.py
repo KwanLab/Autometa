@@ -25,8 +25,10 @@ Count, normalize and embed k-mers given nucleotide sequences
 """
 
 
+import gzip
 import logging
 import os
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -49,7 +51,7 @@ numba_logger = logging.getLogger("numba").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-def _revcomp(string):
+def _revcomp(string: str) -> str:
     """Reverse complement the provided `string`.
 
     Parameters
@@ -67,7 +69,7 @@ def _revcomp(string):
     return "".join(complement.get(char) for char in reversed(string))
 
 
-def init_kmers(kmer_size=5):
+def init_kmers(kmer_size: int = 5) -> Dict[str, int]:
     """Initialize k-mers from `kmer_size`. Respective reverse complements will
     be removed.
 
@@ -82,11 +84,12 @@ def init_kmers(kmer_size=5):
         {kmer:index, ...}
 
     """
-    kmers = {}
+    if not isinstance(kmer_size, int):
+        raise TypeError(f"kmer_size must be an int! Given: {type(kmer_size)}")
     index = 0
     uniq_kmers = dict()
     dna_letters = ["A", "T", "C", "G"]
-    all_kmers = list(dna_letters)
+    all_kmers = dna_letters
     for i in range(1, kmer_size):
         new_list = []
         for current_seq in all_kmers:
@@ -102,13 +105,13 @@ def init_kmers(kmer_size=5):
     return uniq_kmers
 
 
-def load(kmers_fpath):
+def load(kmers_fpath: str) -> pd.DataFrame:
     """Load in a previously counted k-mer frequencies table.
 
     Parameters
     ----------
     kmers_fpath : str
-        Description of parameter `kmers_fpath`.
+        Path to kmer frequency table
 
     Returns
     -------
@@ -127,12 +130,14 @@ def load(kmers_fpath):
         raise FileNotFoundError(kmers_fpath)
     try:
         df = pd.read_csv(kmers_fpath, sep="\t", index_col="contig")
-    except ValueError:
+    except (ValueError, TypeError):
         raise TableFormatError(f"contig column not found in {kmers_fpath}!")
     return df
 
 
-def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
+def mp_counter(
+    assembly: str, ref_kmers: Dict[str, int], cpus: int = mp.cpu_count()
+) -> List:
     """Multiprocessing k-mer counter used in `count`. (Should not be used directly).
 
     Parameters
@@ -151,7 +156,12 @@ def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
 
     """
     pool = mp.Pool(cpus)
-    args = [(record, ref_kmers) for record in SeqIO.parse(assembly, "fasta")]
+    if assembly.endswith(".gz"):
+        fh = gzip.open(assembly, "rt")
+        args = [(record, ref_kmers) for record in SeqIO.parse(fh, "fasta")]
+        fh.close()
+    else:
+        args = [(record, ref_kmers) for record in SeqIO.parse(assembly, "fasta")]
     logger.debug(
         f"Pool counter (cpus={cpus}): counting {len(args):,} records k-mer frequencies"
     )
@@ -164,7 +174,9 @@ def mp_counter(assembly, ref_kmers, cpus=mp.cpu_count()):
     return counts
 
 
-def record_counter(args):
+def record_counter(
+    args: Tuple[SeqIO.SeqRecord, Dict[str, int]]
+) -> Dict[str, List[int]]:
     """single record counter used when multiprocessing.
 
     Parameters
@@ -210,7 +222,9 @@ def record_counter(args):
     return {record.id: contig_kmer_counts}
 
 
-def seq_counter(assembly, ref_kmers, verbose=True):
+def seq_counter(
+    assembly: str, ref_kmers: Dict[str, int], verbose: bool = True
+) -> Dict[str, List[int]]:
     """Sequentially count k-mer frequencies.
 
     Parameters
@@ -233,10 +247,11 @@ def seq_counter(assembly, ref_kmers, verbose=True):
         kmer_size = len(ref_kmer)
         break
     kmer_counts = {}
-    seqs = SeqIO.parse(assembly, "fasta")
+    fh = gzip.open(assembly, "rt") if assembly.endswith(".gz") else assembly
+    records = SeqIO.parse(fh, "fasta")
     desc = f"Counting {n_uniq_kmers} unique {kmer_size}-mers"
     disable = not verbose
-    for record in tqdm(seqs, desc=desc, disable=disable, leave=False):
+    for record in tqdm(records, desc=desc, disable=disable, leave=False):
         contig_kmer_counts = [0] * n_uniq_kmers
         max_length = len(record.seq) - kmer_size
         if max_length <= 0:
@@ -260,19 +275,22 @@ def seq_counter(assembly, ref_kmers, verbose=True):
             contig_kmer_counts[index] += 1
         contig_kmer_counts = [c if c != 0 else pd.NA for c in contig_kmer_counts]
         kmer_counts.update({record.id: contig_kmer_counts})
+    if hasattr(fh, "close"):
+        # Ensure we close the open gzipped file
+        fh.close()
     return kmer_counts
 
 
 @utilities.timeit
 def count(
-    assembly,
-    size=5,
-    out=None,
-    force=False,
-    verbose=True,
-    multiprocess=True,
-    cpus=mp.cpu_count(),
-):
+    assembly: str,
+    size: int = 5,
+    out: str = None,
+    force: bool = False,
+    verbose: bool = True,
+    multiprocess: bool = True,
+    cpus: int = mp.cpu_count(),
+) -> pd.DataFrame:
     """Counts k-mer frequencies for provided assembly file
 
     First we make a dictionary of all the possible k-mers (discounting reverse
@@ -315,11 +333,10 @@ def count(
         logger.warning(f"counts already exist: {out} force to overwrite. [retrieving]")
         df = pd.read_csv(out, sep="\t", index_col="contig")
     else:
+        # checks if it is something like 12.0 vs. 12.9. Also check is an int
         if not isinstance(size, int):
             raise TypeError(f"size must be an int! Given: {type(size)}")
         ref_kmers = init_kmers(size)
-        if assembly.endswith(".gz"):
-            assembly = utilities.gunzip(assembly, assembly.rstrip(".gz"))
         logger.info(f"Counting {size}-mers.")
         if multiprocess:
             kmer_counts = mp_counter(assembly, ref_kmers, cpus)
@@ -333,7 +350,7 @@ def count(
     return df
 
 
-def autometa_clr(df):
+def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize k-mers by Centered Log Ratio transformation
 
     1a. Drop any k-mers not present for all contigs
@@ -373,7 +390,9 @@ def autometa_clr(df):
     return df.transform(step_2a, axis="columns").transform(step_2b, axis="columns")
 
 
-def normalize(df, method="am_clr", out=None, force=False):
+def normalize(
+    df: pd.DataFrame, method: str = "am_clr", out: str = None, force: bool = False
+) -> pd.DataFrame:
     """Normalize raw k-mer counts by center or isometric log-ratio transform.
 
     Parameters
@@ -431,17 +450,17 @@ def normalize(df, method="am_clr", out=None, force=False):
 
 
 def embed(
-    kmers,
-    out=None,
-    force=False,
-    embed_dimensions=2,
-    do_pca=True,
-    pca_dimensions=50,
-    method="bhsne",
-    perplexity=30.0,
-    seed=42,
-    **method_args,
-):
+    kmers: Union[str, pd.DataFrame],
+    out: str = None,
+    force: bool = False,
+    embed_dimensions: int = 2,
+    do_pca: bool = True,
+    pca_dimensions: int = 50,
+    method: str = "bhsne",
+    perplexity: float = 30.0,
+    seed: int = 42,
+    **method_args: Dict,
+) -> pd.DataFrame:
     """Embed k-mers using provided `method`.
 
     Notes
@@ -500,7 +519,7 @@ def embed(
     elif isinstance(kmers, pd.DataFrame):
         df = kmers
     else:
-        TypeError(kmers)
+        raise TypeError(kmers)
     if out and os.path.exists(out) and os.path.getsize(out) and not force:
         logger.debug(f"k-mers frequency embedding already exists {out}")
         try:
@@ -511,7 +530,7 @@ def embed(
     if df.empty:
         kmers_desc = f"kmers:{kmers} type:{type(kmers)}"
         embed_desc = f"out:{out} type:{type(out)}"
-        requirements = f"kmers type must be a pd.DataFrame or filepath."
+        requirements = f"Given pd.DataFrame is empty!"
         raise FileNotFoundError(f"{kmers_desc} {embed_desc} {requirements}")
 
     method = method.lower()
@@ -521,7 +540,7 @@ def embed(
             f"{method} not in embedding methods. Choices: {', '.join(choices)}"
         )
     # PCA
-    n_samples, n_dims = df.shape
+    n_samples, n_components = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
     df.dropna(axis="index", how="all", inplace=True)
     df.fillna(0, inplace=True)
@@ -529,15 +548,15 @@ def embed(
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
 
-    if n_dims > pca_dimensions and do_pca:
+    if n_components > pca_dimensions and do_pca:
         logger.debug(
-            f"Performing decomposition with PCA (seed {seed}): {n_dims} to {pca_dimensions} dims"
+            f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
         )
         X = PCA(n_components=pca_dimensions, random_state=random_state).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
-        n_samples, n_dims = X.shape
+        n_samples, n_components = X.shape
 
-    logger.debug(f"{method}: {n_samples} data points and {n_dims} dimensions")
+    logger.debug(f"{method}: {n_samples} data points and {n_components} dimensions")
 
     # Adjust perplexity according to the number of data points
     n_rows = n_samples - 1
@@ -675,14 +694,17 @@ def main():
     )
     args = parser.parse_args()
 
-    df = count(
-        assembly=args.fasta,
-        size=args.size,
-        out=args.kmers,
-        force=args.force,
-        multiprocess=args.multiprocess,
-        cpus=args.cpus,
-    )
+    if os.path.exists(args.kmers) and not args.force:
+        df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+    else:
+        df = count(
+            assembly=args.fasta,
+            size=args.size,
+            out=args.kmers,
+            force=args.force,
+            multiprocess=args.multiprocess,
+            cpus=args.cpus,
+        )
 
     if args.normalized:
         df = normalize(

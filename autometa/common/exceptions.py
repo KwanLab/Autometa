@@ -43,6 +43,17 @@ class TableFormatError(AutometaError):
     pass
 
 
+class BinningError(AutometaError):
+    """BinningError exception class.
+
+    Exception called when issues arise during or after the binning process.
+
+    This is usually a result of no clusters being recovered.
+    """
+
+    pass
+
+
 class ChecksumMismatchError(AutometaError):
     """ChecksumMismatchError exception class
 
@@ -101,6 +112,7 @@ class DatabaseOutOfSyncError(AutometaError):
         Required files within taxdump tarball are *nodes.dmp*, *names.dmp* and *merged.dmp*
         """
         return f"{self.value}\n{message}"
+
 
 if __name__ == "__main__":
     print(

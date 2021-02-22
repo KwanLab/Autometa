@@ -24,7 +24,7 @@ COPYRIGHT
 Functions to retrieve orfs from provided assembly using prodigal
 """
 
-import gzip
+
 import logging
 import os
 import subprocess
@@ -34,9 +34,10 @@ import tempfile
 from glob import glob
 from Bio import SeqIO
 from Bio.SeqIO.FastaIO import SimpleFastaParser
+from typing import List, Set, Union, Mapping
 
 from autometa.config.environ import get_versions
-
+from autometa.common.utilities import gunzip
 
 logger = logging.getLogger(__name__)
 
@@ -160,14 +161,11 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     """
     if not os.path.exists(assembly):
         raise FileNotFoundError(f"{assembly} does not exists!")
+
     if assembly.endswith(".gz"):
-        with gzip.open(assembly) as fh:
-            lines = ""
-            for line in fh:
-                lines += line.decode()
-        assembly = assembly.rstrip(".gz")
-        with open(assembly, "w") as fh:
-            fh.write(lines)
+        assembly = gunzip(
+            infpath=assembly, outfpath=assembly.rstrip(".gz"), delete_original=False
+        )
     for fpath in [nucls_out, prots_out]:
         if os.path.exists(fpath) and not force:
             raise FileExistsError(f"{fpath} To overwrite use --force")
@@ -185,12 +183,12 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
             with open(fp) as fh:
                 for _ in SimpleFastaParser(fh):
                     pass
-        except (IOError, ValueError):
-            raise IOError(f"InvalidFileFormat: {fp}")
+        except (OSError, ValueError):
+            raise OSError(f"{fp} file is not properly formatted")
     return nucls_out, prots_out
 
 
-def contigs_from_headers(fpath):
+def contigs_from_headers(fpath: str) -> Mapping[str, str]:
     """Get ORF id to contig id translations using prodigal assigned ID from
     description.
 
@@ -255,7 +253,9 @@ def contigs_from_headers(fpath):
     return translations
 
 
-def orf_records_from_contigs(contigs, fpath):
+def orf_records_from_contigs(
+    contigs: Union[List, Set], fpath: str
+) -> List[SeqIO.SeqRecord]:
     """Retrieve list of *ORFs headers* from `contigs`. Prodigal annotated ORFs
     are required as the input `fpath`.
 
