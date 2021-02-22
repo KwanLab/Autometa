@@ -248,10 +248,12 @@ def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
     is_clustered = bin_df.cluster.notnull()
     bin_df = bin_df[is_clustered]
     outcols = ["cluster", "length", "taxid", *canonical_ranks]
-    tmp_table = bin_df[outcols].to_csv(sep="\t", index=False, header=False)
+    tmp_lines = bin_df[outcols].to_csv(
+        sep="\t", index=False, header=False, line_terminator="\n"
+    )
     taxonomies = {}
     # Here we prepare our datastructure for the majority_vote.rank_taxids(...) function.
-    for line in tmp_table:
+    for line in tmp_lines.split("\n"):
         llist = line.strip().split("\t")
         cluster = llist[0]
         length = int(llist[1])
