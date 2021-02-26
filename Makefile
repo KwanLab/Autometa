@@ -1,11 +1,11 @@
-.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 hello docs clean test test-wip test-entrypoints
+.PHONY: clean black requirements docs clean unit_test_data unit_test unit_test_wip unit_test_entrypoints
 
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJECT_NAME = Autometa
+PROJECT_NAME = autometa
 PYTHON_INTERPRETER = python3
 
 ifeq (,$(shell which conda))
@@ -37,7 +37,7 @@ ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
 else
 	conda create --name $(PROJECT_NAME) python=2.7
 endif
-		@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
+	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
 	$(PYTHON_INTERPRETER) -m pip install -q virtualenv virtualenvwrapper
 	@echo ">>> Installing virtualenvwrapper if not already installed.\nMake sure the following lines are in shell startup file\n\
@@ -46,34 +46,33 @@ else
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 endif
 
-## Test python environment is setup correctly
-test_environment:
-	$(PYTHON_INTERPRETER) test_environment.py
-
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
 
+## Install autometa from source
 install:
-	python setup.py install
+	$(PYTHON_INTERPRETER) setup.py install
 
 ## Build documentation for autometa.readthedocs.io
 docs:
 	make clean html -C docs && open docs/build/html/index.html
 
 ## Build test_data.json file for unit testing
-test_data: tests/data/
-	python make_test_data.py
+unit_test_data: tests/data/
+	$(PYTHON_INTERPRETER) make_test_data.py
 
-## Run unit test
+## Run all unit tests
 unit_test: tests/data/test_data.json
-	python -m pytest --durations=0 --cov=autometa --emoji --cov-report html
+	$(PYTHON_INTERPRETER) -m pytest --durations=0 --cov=autometa --emoji --cov-report html
 
+## Run unit tests marked with WIP
 unit_test_wip: tests/data/test_data.json
-	python -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report html
+	$(PYTHON_INTERPRETER) -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report html
 
-test_entrypoints: tests/data/test_data.json
-	python -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report html
+## Run unit tests marked with entrypoint
+unit_test_entrypoints: tests/data/test_data.json
+	$(PYTHON_INTERPRETER) -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report html
 
 
 #################################################################################
