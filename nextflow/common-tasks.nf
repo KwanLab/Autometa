@@ -87,6 +87,7 @@ process MARKERS {
   // container = 'placeholder for autometa image'
   cpus params.cpus
   publishDir params.interim, pattern: "${orfs.simpleName}.markers.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.hmmscan.tsv", mode:'copy'
 
   input:
     path orfs
@@ -98,6 +99,7 @@ process MARKERS {
   # usage: autometa-markers [-h] [--orfs ORFS] [--kingdom {bacteria,archaea}] [--hmmscan HMMSCAN] [--out OUT] [--dbdir DBDIR] [--force] [--parallel] [--gnu-parallel] [--cpus CPUS] [--seed SEED]
   autometa-markers \
     --orfs $orfs \
+    --hmmscan ${orfs.simpleName}.hmmscan.tsv \
     --out ${orfs.simpleName}.markers.tsv \
     --kingdom ${params.kingdom} \
     --dbdir ${params.markers_database} \
