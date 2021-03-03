@@ -336,7 +336,7 @@ def main():
     )
     parser.add_argument(
         "--split-rank-and-write",
-        help="If specified, will split contigs by provided canonical-rank column then write to same directory of `taxonomy`",
+        help="If specified, will split contigs by provided canonical-rank column then write to `outdir` directory",
         choices=[
             "superkingdom",
             "phylum",
@@ -346,6 +346,9 @@ def main():
             "genus",
             "species",
         ],
+    )
+    parser.add_argument(
+        "--outdir", help="Directory to output fasta files of split canonical ranks.",
     )
     parser.add_argument("--method", default="majority_vote", choices=["majority_vote"])
     parser.add_argument(
@@ -405,7 +408,13 @@ def main():
     if taxa_df.shape[1] <= 2:
         taxa_df = add_ranks(taxa_df, ncbi=args.ncbi, out=args.taxonomy)
     if args.split_rank_and_write:
-        outdir = os.path.dirname(os.path.realpath(args.taxonomy))
+        outdir = (
+            os.path.dirname(os.path.realpath(args.taxonomy))
+            if not args.outdir
+            else args.outdir
+        )
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
         written_ranks = write_ranks(
             taxonomy=taxa_df,
             assembly=args.assembly,

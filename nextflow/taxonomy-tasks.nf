@@ -50,19 +50,19 @@ process LCA {
 }
 
 process MAJORITY_VOTE {
-  tag "Performing taxon majority vote on ${metagenome.simpleName}"
+  tag "Performing taxon majority vote on ${orfs.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.votes.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv", mode:'copy'
 
   input:
     path orfs
     path lca
 
   output:
-    path "${metagenome.simpleName}.votes.tsv"
+    path "${orfs.simpleName}.votes.tsv"
 
   """
-  autometa-taxonomy-majority-vote --orfs $orfs --output ${metagenome.simpleName}.votes.tsv --dbdir ${params.ncbi_database} --lca $lca
+  autometa-taxonomy-majority-vote --orfs $orfs --output ${orfs.simpleName}.votes.tsv --dbdir ${params.ncbi_database} --lca $lca
   """
 }
 
@@ -86,7 +86,7 @@ process SPLIT_KINGDOMS {
 
   """
   cp $votes votes.tsv.bkup
-  autometa-taxonomy --split-rank-and-write superkingdom --assembly $metagenome --orfs $orfs --ncbi ${params.ncbi_database} $votes
+  autometa-taxonomy --split-rank-and-write superkingdom --outdir . --assembly $metagenome --prot-orfs $orfs --ncbi ${params.ncbi_database} $votes
   # script behavior should probably be cleaned up so we don't have to do these copies and renames.
   # TODO: Add --output argument or --prefix argument?
   mv $votes ${metagenome.simpleName}.taxonomy.tsv
