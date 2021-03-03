@@ -99,8 +99,8 @@ process MARKERS {
   autometa-markers \
     --orfs $orfs \
     --out ${orfs.simpleName}.markers.tsv \
-    --kingdom ${params.kingdom}
-    --dbdir ${params.markers_database}
+    --kingdom ${params.kingdom} \
+    --dbdir ${params.markers_database} \
     --multiprocess \
     --cpus ${task.cpus} \
     --seed 42
