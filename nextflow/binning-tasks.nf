@@ -11,8 +11,8 @@ params.processed = "</path/to/store/user/final/results>"
 
 process BINNING {
   tag "Performing Autometa binning"
-  container = 'placeholder for autometa image'
-  publishDir params.processed, pattern: "${params.kingdom}.*.tsv", mode:'copy'
+  // container = 'placeholder for autometa image'
+  publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.*.tsv", mode:'copy'
 
   input:
     path kmers
@@ -21,8 +21,8 @@ process BINNING {
     path taxonomy
 
   output:
-    path "${params.kingdom}.binning.tsv", emit: binning
-    path "${params.kingdom}.kmers.embedded.tsv", emit: embedded_kmers
+    path "${coverage.simpleName}.${params.kingdom}.binning.tsv", emit: binning
+    path "${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv", emit: embedded_kmers
 
   """
   autometa-binning \
@@ -33,18 +33,18 @@ process BINNING {
     --starting-rank superkingdom \
     --domain ${params.kingdom} \
     --embedding-method bhsne \
-    --embedded-kmers ${params.kingdom}.kmers.embedded.tsv
+    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv
     $kmers \
     $coverage \
     $markers \
-    ${params.kingdom}.binning.tsv
+    ${coverage.simpleName}.${params.kingdom}.binning.tsv
   """
 }
 
 process UNCLUSTERED_RECRUITMENT {
   tag "Performing Autometa unclustered recruitment"
-  container = 'placeholder for autometa image'
-  publishDir params.processed, pattern: "${params.kingdom}.recruitment.tsv", mode:'copy'
+  // container = 'placeholder for autometa image'
+  publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.recruitment.tsv", mode:'copy'
 
   input:
     path kmers
@@ -54,7 +54,7 @@ process UNCLUSTERED_RECRUITMENT {
     path taxonomy
 
   output:
-    path "${params.kingdom}.recruitment.tsv", emit: binning
+    path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv", emit: binning
 
   """
   autometa-unclustered-recruitment \
@@ -66,6 +66,6 @@ process UNCLUSTERED_RECRUITMENT {
     $coverage \
     $assignments \
     $markers \
-    ${params.kingdom}.recruitment.tsv
+    ${coverage.simpleName}.${params.kingdom}.recruitment.tsv
   """
 }

@@ -6,11 +6,15 @@ nextflow.enable.dsl = 2
 params.kingdom = "bacteria"
 params.length_cutoff = 3000
 params.kmer_size = 4
-params.metagenome = "</path/to/metagenome.fna>"
+params.metagenome = null
+if ( !params.metagenome || params.metagenome instanceof Boolean ) error "</path/to/metagenome.fna>"
 
 // Where to store intermediate and final results:
-params.interim = "</path/to/directory/to/store/user/interimediate/results>"
-params.processed = "</path/to/directory/to/store/user/final/results>"
+params.interim = null
+if ( !params.interim || params.interim instanceof Boolean ) error "/path/to/directory/to/store/user/interimediate/results>"
+
+params.processed = null
+if ( !params.processed || params.processed instanceof Boolean ) error "</path/to/directory/to/store/user/final/results>"
 
 // Databases
 params.ncbi_database = "$HOME/Autometa/autometa/databases/ncbi"
@@ -52,17 +56,9 @@ include { LENGTH_FILTER; KMERS; COVERAGE; ORFS; MARKERS } from './nextflow/commo
 include { TAXON_ASSIGNMENT } from './nextflow/taxonomy-tasks.nf'
 include { BINNING; UNCLUSTERED_RECRUITMENT } from './nextflow/binning-tasks.nf'
 
-// Just placing some ideas here as how you would want to modularize the workflows into the main Autometa pipeline.
-
-workflow {
+workflow AUTOMETA {
   take:
-    path metagenome
-    // We have had to deal with multiple scenarios here where the user has to separately provide coverage information
-    // Either they provide the coverage table of their coverage calculations
-    // *or*
-    //  we perform the coverage calculations with the reads they used to perform the assembly.
-    path coverage
-    path reads
+    metagenome
 
   main:
     // Perform various annotations on provided metagenome
@@ -77,14 +73,22 @@ workflow {
     // KMERS(TAXON_ASSIGNMENT.out.archaea) ... for case of performing binning on archaea
     BINNING(KMERS.out.normalized, COVERAGE.out, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
     // Then unclustered recruitment of any unclustered contigs using binning assignments from above.
-    UNCLUSTERED_RECRUITMENT(KMERS.out.normalized, COVERAGE.out, BINNING.out, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
+    UNCLUSTERED_RECRUITMENT(KMERS.out.normalized, COVERAGE.out, BINNING.out.binning, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
+
 
   emit:
     binning = BINNING.out.binning
     recruitment = UNCLUSTERED_RECRUITMENT.out
-    all_binning_results = BINNING.out | mix(UNCLUSTERED_RECRUITMENT.out) | collect
+    all_binning_results = BINNING.out.binning | mix(UNCLUSTERED_RECRUITMENT.out) | collect
 }
 
+workflow {
+  Channel
+    .fromPath(params.metagenome, checkIfExists: true, type: 'file')
+    .set{unfiltered_metagenome_ch}
+
+  AUTOMETA(unfiltered_metagenome_ch)
+}
 
 /*
  * completion handler

@@ -10,15 +10,15 @@ params.cpus = 2
 
 process DIAMOND {
   tag "diamond blastp on ${orfs.simpleName}"
-  container = 'placeholder for autometa image'
+  // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: 'blastp.tsv', mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.blastp.tsv", mode:'copy'
 
   input:
     path orfs
 
   output:
-    path "blastp.tsv"
+    path "${orfs.simpleName}.blastp.tsv"
 
   """
   diamond blastp \
@@ -28,48 +28,48 @@ process DIAMOND {
     --max-target-seqs 200 \
     --threads ${task.cpus} \
     --outfmt 6 \
-    --out blastp.tsv
+    --out ${orfs.simpleName}.blastp.tsv
   """
 }
 
 process LCA {
   tag "Assigning LCA to ${orfs.simpleName}"
-  container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: 'lca.tsv', mode:'copy'
+  // container = 'placeholder for autometa image'
+  publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv", mode:'copy'
 
   input:
     path orfs
     path blast
 
   output:
-    path "lca.tsv"
+    path "${orfs.simpleName}.lca.tsv"
 
   """
-  autometa-taxonomy-lca --blast $blast --dbdir ${params.ncbi_database} $orfs lca.tsv
+  autometa-taxonomy-lca --blast $blast --dbdir ${params.ncbi_database} $orfs ${orfs.simpleName}.lca.tsv
   """
 }
 
 process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${metagenome.simpleName}"
-  container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: 'votes.tsv', mode:'copy'
+  // container = 'placeholder for autometa image'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.votes.tsv", mode:'copy'
 
   input:
     path orfs
     path lca
 
   output:
-    path "votes.tsv"
+    path "${metagenome.simpleName}.votes.tsv"
 
   """
-  autometa-taxonomy-majority-vote --orfs $orfs --output votes.tsv --dbdir ${params.ncbi_database} --lca $lca
+  autometa-taxonomy-majority-vote --orfs $orfs --output ${metagenome.simpleName}.votes.tsv --dbdir ${params.ncbi_database} --lca $lca
   """
 }
 
 process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${metagenome.simpleName}"
-  container = 'placeholder for autometa image'
-  publishDir params.processed, pattern: 'taxonomy.tsv', mode:'copy'
+  // container = 'placeholder for autometa image'
+  publishDir params.processed, pattern: "${metagenome.simpleName}.taxonomy.tsv", mode:'copy'
   publishDir params.processed, pattern: '*.fna', mode:'copy'
 
   input:
@@ -78,9 +78,9 @@ process SPLIT_KINGDOMS {
     path votes
 
   output:
-    path "taxonomy.tsv", emit: taxonomy
-    path "Bacteria.fna", emit: bacteria
-    path "Archaea.fna", emit: archaea
+    path "${metagenome.simpleName}.taxonomy.tsv", emit: taxonomy
+    path "${metagenome.simpleName}.bacteria.fna", emit: bacteria
+    path "${metagenome.simpleName}.archaea.fna", emit: archaea
     // This may result in an error if there are not archaea present,
     // but I'm placing this here because we have written the pipeline to bin both bacteria and archaea
 
@@ -88,8 +88,11 @@ process SPLIT_KINGDOMS {
   cp $votes votes.tsv.bkup
   autometa-taxonomy --split-rank-and-write superkingdom --assembly $metagenome --orfs $orfs --ncbi ${params.ncbi_database} $votes
   # script behavior should probably be cleaned up so we don't have to do these copies and renames.
-  mv $votes taxonomy.tsv
-  mv votes.tsv.bkup votes.tsv
+  # TODO: Add --output argument or --prefix argument?
+  mv $votes ${metagenome.simpleName}.taxonomy.tsv
+  mv votes.tsv.bkup $votes
+  mv Bacteria.fna ${metagenome.simpleName}.bacteria.fna
+  mv Archaea.fna ${metagenome.simpleName}.archaea.fna
   """
 }
 
