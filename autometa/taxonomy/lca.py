@@ -641,7 +641,7 @@ def main():
     lca = LCA(dbdir=args.dbdir, verbose=args.verbose)
 
     lca.blast2lca(
-        fasta=args.orfs,
+        orfs=args.orfs,
         out=args.out,
         blast=args.blast,
         force=args.force,

@@ -101,7 +101,7 @@ process MARKERS {
     --out ${orfs.simpleName}.markers.tsv \
     --kingdom ${params.kingdom} \
     --dbdir ${params.markers_database} \
-    --multiprocess \
+    --parallel \
     --cpus ${task.cpus} \
     --seed 42
   """
