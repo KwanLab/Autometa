@@ -33,7 +33,7 @@ process BINNING {
     --starting-rank superkingdom \
     --domain ${params.kingdom} \
     --embedding-method bhsne \
-    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv
+    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv \
     $kmers \
     $coverage \
     $markers \
