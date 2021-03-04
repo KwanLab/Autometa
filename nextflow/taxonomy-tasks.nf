@@ -69,8 +69,8 @@ process MAJORITY_VOTE {
 process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.processed, pattern: "${metagenome.simpleName}.taxonomy.tsv", mode:'copy'
-  publishDir params.processed, pattern: '*.fna', mode:'copy'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.taxonomy.tsv", mode:'copy'
+  publishDir params.interim, pattern: '*.fna', mode:'copy'
 
   input:
     path metagenome

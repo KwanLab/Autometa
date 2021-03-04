@@ -6,6 +6,8 @@ nextflow.enable.dsl = 2
 params.kingdom = "bacteria"
 params.length_cutoff = 3000
 params.kmer_size = 4
+params.completeness = 20.0
+params.purity = 90.0
 params.metagenome = null
 if ( !params.metagenome || params.metagenome instanceof Boolean ) error "</path/to/metagenome.fna>"
 

@@ -33,7 +33,7 @@ process KMERS {
   tag "counting kmers for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.processed, pattern: "*.kmers.*", mode:'copy'
+  publishDir params.interim, pattern: "*.kmers.*", mode:'copy'
 
   input:
     path metagenome
