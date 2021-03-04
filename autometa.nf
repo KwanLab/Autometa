@@ -9,7 +9,7 @@ params.kmer_size = 4
 params.completeness = 20.0
 params.purity = 90.0
 params.metagenome = null
-if ( !params.metagenome || params.metagenome instanceof Boolean ) error "</path/to/metagenome.fna>"
+if ( !params.metagenome || params.metagenome instanceof Boolean ) error "</path(s)/to/metagenome.fna>"
 
 // Where to store intermediate and final results:
 params.interim = null
@@ -42,6 +42,8 @@ log.info """
  -----------------------------------------------------
  length_cutoff       : ${params.length_cutoff}
  kmer_size           : ${params.kmer_size}
+ completeness        : ${params.completeness}
+ purity              : ${params.purity}
  kingdom             : ${params.kingdom}
  -----------------------------------------------------
  Databases
