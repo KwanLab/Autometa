@@ -6,41 +6,18 @@ Install
 Currently installation is supported by constructing a conda_ environment. You need to be running
 a conda_ package (eg. miniconda, anaconda, etc) to install autometa.
 
-Conda environment creation:
+Conda installation
+==================
 
-.. code-block:: bash
-
-    conda create -n autometa "python>=3.7"
-    conda install -n autometa -c bioconda -c conda-forge \
-        biopython \
-        pandas \
-        tqdm \
-        tsne \
-        numpy \
-        scikit-learn \
-        scikit-bio \
-        samtools \
-        bedtools \
-        bowtie2 \
-        hmmer \
-        prodigal \
-        diamond \
-        ndcctools \
-        parallel \
-        requests \
-        umap-learn \
-        hdbscan
+1. Install miniconda_
+1. Create a new environment ``conda create -n autometa "python>=3.7"``
+1. Install autometa ``conda install -c conda-forge -c bioconda autometa --yes``
+1. Actiavate autometa envoirnonment ``conda activate autometa``
 
 
 .. _conda: https://docs.conda.io/en/latest/
 
-You can now activate the conda environment using
-
-    ``conda activate autometa``
-
-Now download autometa to your desired directory using:
-
-    ``git clone https://github.com/KwanLab/Autometa.git``
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html 
 
 
 If you are wanting to help develop autometa, you will need these additional dependencies:
