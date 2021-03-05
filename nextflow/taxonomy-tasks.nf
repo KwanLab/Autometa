@@ -92,7 +92,11 @@ process SPLIT_KINGDOMS {
   mv $votes ${metagenome.simpleName}.taxonomy.tsv
   mv votes.tsv.bkup $votes
   mv Bacteria.fna ${metagenome.simpleName}.bacteria.fna
-  mv Archaea.fna ${metagenome.simpleName}.archaea.fna
+  # Handling case where no archaea were recovered...
+  if [[ -f Archaea.fna ]]
+  then mv Archaea.fna ${metagenome.simpleName}.archaea.fna
+  else touch ${metagenome.simpleName}.archaea.fna
+  fi
   """
 }
 
