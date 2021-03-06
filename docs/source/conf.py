@@ -46,6 +46,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
+    "sphinxcontrib.programoutput",
+    'sphinx.ext.autosectionlabel',
 ]
 
 todo_include_todos = True

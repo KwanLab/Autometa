@@ -11,9 +11,11 @@ Autometa documentation
 Quickstart
 ==========
 
-Run with below code::
+Run with below code:
 
-    python autometa.py metagenome.config
+.. code-block:: bash
+    
+    ./nextflow run autometa.nf
 
 Guide
 =====
@@ -25,16 +27,16 @@ Guide
    databases
    running-autometa
    examining-results
+   benchmarking
    scripts/usage
    contribution-guidelines
    API_documentation/modules
-   api
    license
 
 
 Contact
 -------
-For suggestions, queries or appreciation feel free to contact `Dr. JasonKwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
+For suggestions, queries or appreciation feel free to contact `Dr. Jason Kwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
 at jason.kwan@wisc.edu
 
 Indices and tables

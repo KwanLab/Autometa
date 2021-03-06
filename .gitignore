@@ -139,6 +139,7 @@ autometa/*.pyc
 autometa/taxonomy/*.pyc
 autometa/databases/markers/*.h3*
 autometa/databases/ncbi/*
+autometa/docs/source/_build/
 
 # databases / testing
 tests/data/*
