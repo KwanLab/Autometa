@@ -37,7 +37,9 @@ from autometa.taxonomy.ncbi import NCBI
 logger = logging.getLogger(__name__)
 
 
-def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
+def is_consistent_with_other_orfs(
+    taxid: int, rank: str, rank_counts: Dict[str, Dict], ncbi: NCBI
+) -> bool:
     """Determines whether the majority of proteins in a contig, with rank equal
     to or above the given rank, are common ancestors of the taxid.
 
@@ -85,7 +87,7 @@ def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
         return False
 
 
-def lowest_majority(rank_counts, ncbi):
+def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
     """Determine the lowest majority given `rank_counts` by first attempting to
     get a taxid that leads in counts with the highest specificity in terms of
     canonical rank.
@@ -267,7 +269,7 @@ def majority_vote(
     verbose: bool = False,
     blast: str = None,
     force: bool = False,
-):
+) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
     Parameters

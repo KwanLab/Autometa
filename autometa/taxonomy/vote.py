@@ -164,17 +164,13 @@ def assign(
         calculation()
 
 
-def add_ranks(
-    df: pd.DataFrame, ncbi: Union[NCBI, str], out: str = None
-) -> pd.DataFrame:
+def add_ranks(df: pd.DataFrame, ncbi: Union[NCBI, str]) -> pd.DataFrame:
     """Add canonical ranks to `df` and write to `out`
 
     Parameters
     ----------
     df : pd.DataFrame
         index="contig", column="taxid"
-    out : str
-        Path to write taxonomy table with canonical ranks added.
     ncbi : str or NCBI
         Path to NCBI databases directory, or autometa NCBI instance.
 
@@ -185,12 +181,7 @@ def add_ranks(
     """
     ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
     dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
-    df = pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True)
-    if out:
-        # This allows overwriting the existing table with the canonical ranks added.
-        df.to_csv(out, sep="\t", index=True, header=True)
-        logger.debug(f"Added canonical rank names to {out}")
-    return df
+    return pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True)
 
 
 def get(
@@ -251,7 +242,11 @@ def get(
 
 
 def write_ranks(
-    taxonomy: pd.DataFrame, assembly: str, outdir: str, rank: str = "superkingdom"
+    taxonomy: pd.DataFrame,
+    assembly: str,
+    outdir: str,
+    rank: str = "superkingdom",
+    prefix: str = None,
 ) -> List[str]:
     """Write fastas split by `rank`
 
@@ -289,7 +284,10 @@ def write_ranks(
     for rank_name, dff in taxonomy.groupby(rank):
         # First determine the file path respective to the rank name
         rank_name = rank_name.replace(" ", "_")
-        rank_name_fname = ".".join([rank_name.title(), "fna"])
+        if prefix:
+            rank_name_fname = ".".join([prefix, rank_name.lower(), "fna"])
+        else:
+            rank_name_fname = ".".join([rank_name.lower(), "fna"])
         rank_name_fpath = os.path.join(outdir, rank_name_fname)
         # Now retrieve and write records respective to rank
         records = [record for record in assembly_records if record.id in dff.index]
@@ -297,7 +295,7 @@ def write_ranks(
             logger.warning(f"No records to write to {rank_name_fpath}")
         else:
             n_written = SeqIO.write(records, rank_name_fpath, "fasta")
-            logger.debug(f"Wrote {n_written} records to {rank_name_fpath}")
+            logger.debug(f"Wrote {n_written:,} records to {rank_name_fpath}")
             fpaths.append(rank_name_fpath)
     # Finally we will return all of the file paths that were written
     return fpaths
@@ -317,26 +315,31 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "taxonomy", help="Output path to write taxonomy table", type=str
-    )
-    parser.add_argument(
-        "--assembly", help="Path to metagenome assembly (nucleotide fasta).", type=str
-    )
-    parser.add_argument(
-        "--nucl-orfs",
-        help="Path to nucleotide ORFs corresponding to `assembly.` "
-        "(Will write to path if ORFs do not exist).",
+        "--input",
+        help="Input path to voted taxids table. should contain (at least) 'contig' and 'taxid' columns",
         type=str,
+        required=True,
     )
     parser.add_argument(
-        "--prot-orfs",
-        help="Path to amino acid ORFs corresponding to `assembly.` "
-        "(Will write to path if ORFs do not exist).",
+        "--output",
+        help="Directory to output fasta files of split canonical ranks and taxonomy.tsv.",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--assembly",
+        help="Path to metagenome assembly (nucleotide fasta).",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--prefix",
+        help="prefix to use for each file written e.g. `prefix`.taxonomy.tsv. Note: Do not use a directory prefix.",
         type=str,
     )
     parser.add_argument(
         "--split-rank-and-write",
-        help="If specified, will split contigs by provided canonical-rank column then write to `outdir` directory",
+        help="If specified, will split contigs by provided canonical-rank column then write to `output` directory",
         choices=[
             "superkingdom",
             "phylum",
@@ -348,78 +351,30 @@ def main():
         ],
     )
     parser.add_argument(
-        "--outdir", help="Directory to output fasta files of split canonical ranks.",
-    )
-    parser.add_argument("--method", default="majority_vote", choices=["majority_vote"])
-    parser.add_argument(
         "--ncbi", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
-    parser.add_argument(
-        "--blast",
-        help="Path to diamond blast results.tsv. (outfmt=6) "
-        "(Will write to path if it does not exist).",
-        default=None,
-    )
-    parser.add_argument(
-        "--lca",
-        help="Path to LCA results from autometa.taxonomy.lca"
-        " (Will write to path if it does not exist).",
-        default=None,
-    )
-    parser.add_argument(
-        "--cpus",
-        help="Number of cpus to use when performing "
-        "annotations (Default will use all possible if `--parallel` is supplied).",
-        default=0,
-        type=int,
-    )
-    parser.add_argument(
-        "--parallel",
-        help="Use GNU parallel when performing annotations.",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "--force", help="Overwrite existing files", action="store_true", default=False
-    )
-    parser.add_argument(
-        "--verbose",
-        help="Log more information to terminal.",
-        action="store_true",
-        default=False,
-    )
-
     args = parser.parse_args()
 
-    taxa_df = assign(
-        method=args.method,
-        out=args.taxonomy,
-        assembly=args.assembly,
-        prot_orfs=args.prot_orfs,
-        nucl_orfs=args.nucl_orfs,
-        blast=args.blast,
-        lca_fpath=args.lca,
-        ncbi_dir=args.ncbi,
-        force=args.force,
-        verbose=args.verbose,
-        parallel=args.parallel,
-        cpus=args.cpus,
-    )
+    filename = f"{args.prefix}.taxonomy.tsv" if args.prefix else "taxonomy.tsv"
+    out = os.path.join(args.output, filename)
+    taxa_df = pd.read_csv(args.input, sep="\t", index_col="contig")
+
+    if not os.path.isdir(args.output):
+        os.makedirs(args.output)
+
     if taxa_df.shape[1] <= 2:
-        taxa_df = add_ranks(taxa_df, ncbi=args.ncbi, out=args.taxonomy)
-    if args.split_rank_and_write:
-        outdir = (
-            os.path.dirname(os.path.realpath(args.taxonomy))
-            if not args.outdir
-            else args.outdir
+        taxa_df = add_ranks(taxa_df, ncbi=args.ncbi)
+        taxa_df.to_csv(out, sep="\t", index=True, header=True)
+        logger.debug(
+            f"Wrote {taxa_df.shape[0]:,} contigs canonical rank names to {out}"
         )
-        if not os.path.isdir(outdir):
-            os.makedirs(outdir)
+    if args.split_rank_and_write:
         written_ranks = write_ranks(
             taxonomy=taxa_df,
             assembly=args.assembly,
-            outdir=outdir,
+            outdir=args.output,
             rank=args.split_rank_and_write,
+            prefix=args.prefix,
         )
         num_written_ranks = len(written_ranks)
         logger.info(f"Wrote {num_written_ranks} ranks to files.")

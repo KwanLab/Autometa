@@ -30,27 +30,34 @@ log.info """
 
  Autometa - Automated Extraction of Genomes from Shotgun Metagenomes
  =====================================================
- projectDir          : ${workflow.projectDir}
+ projectDir                         : ${workflow.projectDir}
  -----------------------------------------------------
  Data
  -----------------------------------------------------
- metagenome          : ${params.metagenome}
- interim             : ${params.interim}
- processed           : ${params.processed}
+ metagenome                         : ${params.metagenome}
+ interim                            : ${params.interim}
+ processed                          : ${params.processed}
  -----------------------------------------------------
  Parameters
  -----------------------------------------------------
- length_cutoff       : ${params.length_cutoff}
- kmer_size           : ${params.kmer_size}
- completeness        : ${params.completeness}
- purity              : ${params.purity}
- kingdom             : ${params.kingdom}
+ length_cutoff                      : ${params.length_cutoff}
+ kmer_size                          : ${params.kmer_size}
+ kmer_norm_method                   : ${params.kmer_norm_method}
+ kmer_pca_dimensions                : ${params.kmer_pca_dimensions}
+ kmer_embed_method                  : ${params.kmer_embed_method}
+ kmer_embed_dimensions              : ${params.kmer_embed_dimensions}
+ clustering_method                  : ${params.clustering_method}
+ classification_kmer_pca_dimensions : ${params.classification_kmer_pca_dimensions}
+ classification_method              : ${params.classification_method}
+ completeness                       : ${params.completeness}
+ purity                             : ${params.purity}
+ kingdom                            : ${params.kingdom}
  -----------------------------------------------------
  Databases
  -----------------------------------------------------
- ncbi_database       : ${params.ncbi_database}
- diamond_database    : ${params.diamond_database}
- markers_database    : ${params.markers_database}
+ ncbi_database                      : ${params.ncbi_database}
+ diamond_database                   : ${params.diamond_database}
+ markers_database                   : ${params.markers_database}
  -----------------------------------------------------
 """
 

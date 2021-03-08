@@ -12,7 +12,7 @@ process DIAMOND {
   tag "diamond blastp on ${orfs.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: "${orfs.simpleName}.blastp.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.blastp.tsv"
 
   input:
     path orfs
@@ -35,7 +35,7 @@ process DIAMOND {
 process LCA {
   tag "Assigning LCA to ${orfs.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv"
 
   input:
     path orfs
@@ -52,7 +52,7 @@ process LCA {
 process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${orfs.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv"
 
   input:
     path orfs
@@ -69,33 +69,29 @@ process MAJORITY_VOTE {
 process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.taxonomy.tsv", mode:'copy'
-  publishDir params.interim, pattern: '*.fna', mode:'copy'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.taxonomy.tsv"
+  publishDir params.interim, pattern: '*.fna'
 
   input:
     path metagenome
-    path orfs
     path votes
 
   output:
     path "${metagenome.simpleName}.taxonomy.tsv", emit: taxonomy
     path "${metagenome.simpleName}.bacteria.fna", emit: bacteria
     path "${metagenome.simpleName}.archaea.fna", emit: archaea
-    // This may result in an error if there are not archaea present,
-    // but I'm placing this here because we have written the pipeline to bin both bacteria and archaea
 
   """
-  cp $votes votes.tsv.bkup
-  autometa-taxonomy --split-rank-and-write superkingdom --outdir . --assembly $metagenome --prot-orfs $orfs --ncbi ${params.ncbi_database} $votes
-  # script behavior should probably be cleaned up so we don't have to do these copies and renames.
-  # TODO: Add --output argument or --prefix argument?
-  mv $votes ${metagenome.simpleName}.taxonomy.tsv
-  mv votes.tsv.bkup $votes
-  mv Bacteria.fna ${metagenome.simpleName}.bacteria.fna
+  autometa-taxonomy \
+    --input $votes \
+    --output . \
+    --prefix ${metagenome.simpleName} \
+    --split-rank-and-write superkingdom \
+    --assembly $metagenome \
+    --ncbi ${params.ncbi_database}
   # Handling case where no archaea were recovered...
-  if [[ -f Archaea.fna ]]
-  then mv Archaea.fna ${metagenome.simpleName}.archaea.fna
-  else touch ${metagenome.simpleName}.archaea.fna
+  if [[ ! -f ${metagenome.simpleName}.archaea.fna ]]
+  then touch ${metagenome.simpleName}.archaea.fna
   fi
   """
 }
@@ -110,7 +106,7 @@ workflow TAXON_ASSIGNMENT {
       DIAMOND(orfs)
       LCA(orfs, DIAMOND.out)
       MAJORITY_VOTE(orfs, LCA.out)
-      SPLIT_KINGDOMS(metagenome, orfs, MAJORITY_VOTE.out)
+      SPLIT_KINGDOMS(metagenome, MAJORITY_VOTE.out)
 
     emit:
       taxonomy = SPLIT_KINGDOMS.out.taxonomy

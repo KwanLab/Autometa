@@ -4,6 +4,10 @@ nextflow.enable.dsl=2
 
 params.length_cutoff = 3000
 params.kmer_size = 4
+params.kmer_norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
+params.kmer_pca_dimensions = 50
+params.kmer_embed_method = "bhsne" // choices: "sksne", "bhsne", "umap"
+params.kmer_embed_dimensions = 2
 params.cpus = 2
 params.markers_database = "$HOME/Autometa/autometa/databases/markers"
 params.kingdom = "bacteria"
@@ -15,7 +19,7 @@ params.processed = "</path/to/store/user/final/results>"
 process LENGTH_FILTER {
   tag "filtering metagenome ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.filtered.fna", mode:'copy'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.filtered.fna"
 
   input:
     path metagenome
@@ -33,7 +37,7 @@ process KMERS {
   tag "counting kmers for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: "*.kmers.*", mode:'copy'
+  publishDir params.interim, pattern: "*.kmers.*"
 
   input:
     path metagenome
@@ -44,18 +48,17 @@ process KMERS {
     path "*.kmers.embedded.tsv", emit: embedded
 
   """
-  #usage: autometa-kmers [-h] --fasta FASTA --kmers KMERS [--size SIZE] [--normalized NORMALIZED] [--norm-method {ilr,clr,am_clr}] [--do-pca] [--pca-dimensions PCA_DIMENSIONS] [--embedded EMBEDDED] [--embed-method {sksne,bhsne,umap}] [--embed-dimensions EMBED_DIMENSIONS] [--force] [--multiprocess] [--cpus CPUS] [--seed SEED]
   autometa-kmers \
     --fasta $metagenome \
     --kmers ${metagenome.simpleName}.kmers.tsv \
     --size ${params.kmer_size} \
     --normalized ${metagenome.simpleName}.kmers.normalized.tsv \
-    --norm-method am_clr \
+    --norm-method ${params.kmer_norm_method} \
     --do-pca \
-    --pca-dimensions 50 \
+    --pca-dimensions ${params.kmer_pca_dimensions} \
     --embedded ${metagenome.simpleName}.kmers.embedded.tsv \
     --embed-method bhsne \
-    --embed-dimensions 2 \
+    --embed-dimensions ${params.kmer_embed_dimensions} \
     --multiprocess \
     --cpus ${task.cpus} \
     --seed 42
@@ -66,7 +69,7 @@ process COVERAGE {
   tag "Calculating coverage for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: "${metagenome.simpleName}.coverages.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.coverages.tsv"
 
   input:
     path metagenome
@@ -86,8 +89,8 @@ process MARKERS {
   tag "Finding markers for ${orfs.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: "${orfs.simpleName}.markers.tsv", mode:'copy'
-  publishDir params.interim, pattern: "${orfs.simpleName}.hmmscan.tsv", mode:'copy'
+  publishDir params.interim, pattern: "${orfs.simpleName}.markers.tsv"
+  publishDir params.interim, pattern: "${orfs.simpleName}.hmmscan.tsv"
 
   input:
     path orfs
@@ -113,7 +116,7 @@ process ORFS {
   tag "Calling orfs for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
   cpus params.cpus
-  publishDir params.interim, pattern: '*.orfs.*', mode:'copy'
+  publishDir params.interim, pattern: "${metagenome.simpleName}.orfs.f*"
 
   input:
     path metagenome
