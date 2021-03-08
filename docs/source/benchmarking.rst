@@ -16,7 +16,7 @@ Communities were simulated using ART, a sequencing read simulator, with a collec
 
 e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all bacterial genomes retrieved.
 
-.. code:: 
+.. code:: bash
 
     # Work out coverage level for art_illumina
     # C = [(LN)/G]/2 
@@ -29,8 +29,8 @@ e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all 
     # -m  : the mean size of DNA/RNA fragments for paired-end simulations
     # -s  : the standard deviation of DNA/RNA fragment size for paired-end simulations.
     # -l  : the length of reads to be simulated
-    coverage = ((250 * reads) / (length * 1000000))
-    art_illumina -p -ss HS25 -l 125 -f $coverage -o simulated_reads -m 275 -s 90 -i asm_path
+    $ coverage = ((250 * reads) / (length * 1000000))
+    $ art_illumina -p -ss HS25 -l 125 -f $coverage -o simulated_reads -m 275 -s 90 -i asm_path
 
 .. csv-table:: Simulated communities
     :file: simulated_community.csv

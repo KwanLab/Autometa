@@ -72,6 +72,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/source/_build/
 docs/source/scripts
 docs/source/API_documentation
 
@@ -139,7 +140,6 @@ autometa/*.pyc
 autometa/taxonomy/*.pyc
 autometa/databases/markers/*.h3*
 autometa/databases/ncbi/*
-autometa/docs/source/_build/
 
 # databases / testing
 tests/data/*
