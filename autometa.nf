@@ -40,6 +40,7 @@ log.info """
  -----------------------------------------------------
  Parameters
  -----------------------------------------------------
+ cpus                               : ${params.cpus}
  length_cutoff                      : ${params.length_cutoff}
  kmer_size                          : ${params.kmer_size}
  kmer_norm_method                   : ${params.kmer_norm_method}
