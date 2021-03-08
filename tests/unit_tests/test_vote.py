@@ -79,7 +79,7 @@ def fixture_votes_fpath(votes, tmp_path_factory):
 
 def test_add_ranks(ncbi, votes, tmp_path):
     out = tmp_path / "taxonomy.ranks_added.tsv"
-    df = vote.add_ranks(df=votes, out=out, ncbi=ncbi)
+    df = vote.add_ranks(df=votes, ncbi=ncbi)
     assert df.shape == (2, 8)
     assert df.index.name == "contig"
     canonical_ranks = {rank for rank in ncbi.CANONICAL_RANKS if rank != "root"}
