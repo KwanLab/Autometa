@@ -115,7 +115,7 @@ process MARKERS {
 process ORFS {
   tag "Calling orfs for ${metagenome.simpleName}"
   // container = 'placeholder for autometa image'
-  cpus params.cpus
+  // cpus params.cpus
   publishDir params.interim, pattern: "${metagenome.simpleName}.orfs.f*"
 
   input:
@@ -126,7 +126,12 @@ process ORFS {
     path "${metagenome.simpleName}.orfs.faa", emit: prots
 
   """
-  # usage: autometa-orfs [-h] [--force] [--cpus CPUS] [--parallel] assembly nucls_out prots_out
-  autometa-orfs --cpus ${task.cpus} --parallel $metagenome ${metagenome.simpleName}.orfs.fna ${metagenome.simpleName}.orfs.faa
+  prodigal \
+    -i $metagenome \
+    -d ${metagenome.simpleName}.orfs.fna \
+    -a ${metagenome.simpleName}.orfs.faa \
+    -p meta \
+    -q \
+    -m
   """
 }
