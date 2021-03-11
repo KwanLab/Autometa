@@ -24,49 +24,26 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda config --append channels bioconda \
-    && conda config --append channels conda-forge
-
-RUN conda install \
-    biopython \
-    pandas \
-    tqdm \
-    tsne \
-    numpy \
-    scikit-learn \
-    scikit-bio \
-    samtools \
-    bedtools \
-    bowtie2 \
-    hmmer \
-    prodigal \
-    diamond \
-    nextflow \
-    parallel \
-    requests \
-    umap-learn \
-    hdbscan -y \
+COPY requirements.txt ./
+RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y
 
-RUN git clone https://github.com/KwanLab/Autometa.git \
-    && cd Autometa \
-    && git checkout dev \
-    && python setup.py install
+COPY . .
+RUN python setup.py install
 
-RUN hmmpress /Autometa/autometa/databases/markers/bacteria.single_copy.hmm \
-    && hmmpress /Autometa/autometa/databases/markers/archaea.single_copy.hmm
+RUN hmmpress autometa/databases/markers/bacteria.single_copy.hmm \
+    && hmmpress autometa/databases/markers/archaea.single_copy.hmm
 
-RUN echo "testing autometa import" \
+RUN echo "Testing autometa import" \
     && python -c "import autometa"
 
 # Check entrypoints are available
-RUN autometa-length-filter -h \
-    & autometa-orfs -h \
-    & autometa-coverage -h \
-    & autometa-kmers -h \
-    & autometa-markers -h \
-    & autometa-taxonomy -h \
-    & autometa-taxonomy-lca -h \
-    & autometa-taxonomy-majority-vote -h \
-    & autometa-binning -h \
-    & autometa-unclustered-recruitment -h
+RUN echo "Checking autometa entrypoints" \
+    && autometa-length-filter -h > /dev/null \
+    && autometa-orfs -h > /dev/null  \
+    && autometa-coverage -h > /dev/null  \
+    && autometa-kmers -h > /dev/null \
+    && autometa-markers -h > /dev/null \
+    && autometa-taxonomy -h > /dev/null \
+    && autometa-binning -h > /dev/null \
+    && autometa-unclustered-recruitment -h > /dev/null 
