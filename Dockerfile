@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
-MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
+LABEL maintainer="jason.kwan@wisc.edu"
 
-# Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+# Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 # Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
@@ -19,15 +19,31 @@ MAINTAINER Jason C. Kwan "jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-RUN conda config --prepend channels erees \
-    && conda config --append channels bioconda \
-    && conda config --append channels conda-forge
+RUN apt-get update \
+    && apt install -y procps g++ \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda install autometa tsne
+COPY requirements.txt ./
+RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
+    && conda clean --all -y
 
-RUN echo "testing autometa and tsne import"
-RUN python -c "import autometa"
-RUN python -c "import tsne"
+COPY . .
+RUN python setup.py install
 
-RUN echo "Running Autometa dependencies test"
-RUN autometa --check-dependencies --debug
+RUN hmmpress autometa/databases/markers/bacteria.single_copy.hmm \
+    && hmmpress autometa/databases/markers/archaea.single_copy.hmm
+
+RUN echo "Testing autometa import" \
+    && python -c "import autometa"
+
+# Check entrypoints are available
+RUN echo "Checking autometa entrypoints" \
+    && autometa-length-filter -h > /dev/null \
+    && autometa-orfs -h > /dev/null  \
+    && autometa-coverage -h > /dev/null  \
+    && autometa-kmers -h > /dev/null \
+    && autometa-markers -h > /dev/null \
+    && autometa-taxonomy -h > /dev/null \
+    && autometa-binning -h > /dev/null \
+    && autometa-unclustered-recruitment -h > /dev/null 
