@@ -1,4 +1,5 @@
 biopython
+gdown
 pandas>=1.1
 tqdm
 tsne
