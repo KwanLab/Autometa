@@ -1,4 +1,4 @@
-.PHONY: clean black requirements docs clean unit_test_data unit_test_environment unit_test unit_test_wip unit_test_entrypoints
+.PHONY: clean black create_environment install image docs clean unit_test unit_test_data unit_test_data_download unit_test_data_build unit_test_wip unit_test_entrypoints
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -7,6 +7,8 @@
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME = autometa
 PYTHON_INTERPRETER = python3
+# This was retrieved from https://drive.google.com/file/d/1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk/view?usp=sharing
+TEST_DATA_FILEID = 1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -54,18 +56,21 @@ endif
 install:
 	$(PYTHON_INTERPRETER) setup.py install
 
+## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
+image: Dockerfile
+	docker build . -t jason-c-kwan/autometa:`git branch --show-current`
+
 ## Build documentation for autometa.readthedocs.io
 docs:
 	make clean html -C docs
 	@echo "docs built. Open docs/build/html/index.html to view"
 
-## Construct environment for unit testing
-unit_test_environment:
-	conda install -n $(PROJECT_NAME) -c conda-forge codecov pytest-cov pytest-variables gdown -y
-	gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
+## Download test_data.json for unit testing
+unit_test_data_download:
+	gdown --id $(TEST_DATA_FILEID) -O tests/data/test_data.json
 
 ## Build test_data.json file for unit testing (requires all files from https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS be downloaded into tests/data/)
-unit_test_data: tests/data/records.fna
+unit_test_data_build: tests/data/records.fna
 	$(PYTHON_INTERPRETER) make_test_data.py
 
 ## Run all unit tests
