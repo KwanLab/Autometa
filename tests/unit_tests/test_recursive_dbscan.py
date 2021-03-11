@@ -137,7 +137,7 @@ def test_binning_invalid_clustering_method(master, markers):
             reverse_ranks=False,
             domain="bacteria",
             completeness=20.0,
-            purity=90.0,
+            purity=95.0,
             method="invalid_clustering_method",
             verbose=False,
         )
@@ -184,7 +184,7 @@ def test_recursive_dbscan_main(
             self.embedding_method = "bhsne"
             self.clustering_method = "dbscan"
             self.completeness = 20.0
-            self.purity = 90.0
+            self.purity = 95.0
             self.cov_stddev_limit = 25.0
             self.gc_stddev_limit = 5.0
             self.taxonomy = taxonomy

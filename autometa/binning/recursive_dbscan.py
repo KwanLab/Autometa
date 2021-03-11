@@ -82,36 +82,38 @@ def add_metrics(
     if domain not in marker_sets:
         raise KeyError(f"{domain} is not bacteria or archaea!")
     expected_number = marker_sets[domain]
-    clusters = dict(list(df.groupby("cluster")))
     metrics = []
-    for cluster, dff in clusters.items():
-        pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
-        is_present = pfam_counts >= 1
-        is_single_copy = pfam_counts == 1
-        nunique_markers = pfam_counts[is_present].count()
-        num_single_copy_markers = pfam_counts[is_single_copy].count()
-        completeness = nunique_markers / expected_number * 100
-        # Protect from divide by zero
-        if nunique_markers == 0:
-            purity = pd.NA
-        else:
-            purity = num_single_copy_markers / nunique_markers * 100
-        if dff.shape[0] <= 1:
-            coverage_stddev = 0.0
-            gc_content_stddev = 0.0
-        else:
-            coverage_stddev = dff.coverage.std()
-            gc_content_stddev = dff.gc_content.std()
-        metrics.append(
-            {
-                "cluster": cluster,
-                "completeness": completeness,
-                "purity": purity,
-                "coverage_stddev": coverage_stddev,
-                "gc_content_stddev": gc_content_stddev,
-            }
-        )
-    if not metrics:
+    if "cluster" in df.columns:
+        clusters = dict(list(df.groupby("cluster")))
+        for cluster, dff in clusters.items():
+            pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
+            is_present = pfam_counts >= 1
+            is_single_copy = pfam_counts == 1
+            nunique_markers = pfam_counts[is_present].count()
+            num_single_copy_markers = pfam_counts[is_single_copy].count()
+            completeness = nunique_markers / expected_number * 100
+            # Protect from divide by zero
+            if nunique_markers == 0:
+                purity = pd.NA
+            else:
+                purity = num_single_copy_markers / nunique_markers * 100
+            if dff.shape[0] <= 1:
+                coverage_stddev = 0.0
+                gc_content_stddev = 0.0
+            else:
+                coverage_stddev = dff.coverage.std()
+                gc_content_stddev = dff.gc_content.std()
+            metrics.append(
+                {
+                    "cluster": cluster,
+                    "completeness": completeness,
+                    "purity": purity,
+                    "coverage_stddev": coverage_stddev,
+                    "gc_content_stddev": gc_content_stddev,
+                }
+            )
+    # Account for exceptions where clusters were not recovered
+    if not metrics or "cluster" not in df.columns:
         metrics_df = pd.DataFrame(
             [
                 {
@@ -129,6 +131,7 @@ def add_metrics(
         merged_df = df.copy()
         for metric in metric_cols:
             merged_df[metric] = pd.NA
+
     else:
         metrics_df = pd.DataFrame(metrics).set_index("cluster")
         merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
