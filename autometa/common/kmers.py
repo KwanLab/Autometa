@@ -366,13 +366,14 @@ def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
         K-mers Dataframe where index_col='contig' and column values are k-mer
         frequencies.
 
-    # TODO: Place these references in readthedocs documentation and remove from def.
-    References:
-    - Aitchison, J. The Statistical Analysis of Compositional Data (1986)
-    - Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
-    - https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce
-    - https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca
-    - http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf
+    References
+    ----------
+
+        * Aitchison, J. The Statistical Analysis of Compositional Data (1986)
+        * Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+        * Why ILR is preferred `stats stackexchange discussion <https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce>`_
+        * Use of CLR transformation prior to PCA `stats stackexchange discussion <https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca>`_
+        * Lecture notes on Compositional Data Analysis (CoDa) `PDF <http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf>`_
 
     Returns
     -------

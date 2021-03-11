@@ -5,12 +5,12 @@ nextflow.enable.dsl=2
 params.interim = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
 params.ncbi_database = "$HOME/Autometa/autometa/databases/ncbi"
-params.diamond_database = "$HOME/Autometa/autometa/databases/ncbi/nr.dmnd"
 params.cpus = 2
 
 process DIAMOND {
   tag "diamond blastp on ${orfs.simpleName}"
-  // container = 'placeholder for autometa image'
+  container = 'jason-c-kwan/autometa:dev'
+  containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
   cpus params.cpus
   publishDir params.interim, pattern: "${orfs.simpleName}.blastp.tsv"
 
@@ -22,8 +22,8 @@ process DIAMOND {
 
   """
   diamond blastp \
-    --query $orfs \
-    --db ${params.diamond_database} \
+    --query ${orfs} \
+    --db /ncbi/nr.dmnd \
     --evalue 1e-5 \
     --max-target-seqs 200 \
     --threads ${task.cpus} \
@@ -34,7 +34,8 @@ process DIAMOND {
 
 process LCA {
   tag "Assigning LCA to ${orfs.simpleName}"
-  // container = 'placeholder for autometa image'
+  container = 'jason-c-kwan/autometa:dev'
+  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
   publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv"
 
   input:
@@ -45,13 +46,14 @@ process LCA {
     path "${orfs.simpleName}.lca.tsv"
 
   """
-  autometa-taxonomy-lca --blast $blast --dbdir ${params.ncbi_database} $orfs ${orfs.simpleName}.lca.tsv
+  autometa-taxonomy-lca --blast $blast --dbdir /ncbi ${orfs} ${orfs.simpleName}.lca.tsv
   """
 }
 
 process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${orfs.simpleName}"
-  // container = 'placeholder for autometa image'
+  container = 'jason-c-kwan/autometa:dev'
+  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
   publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv"
 
   input:
@@ -62,36 +64,37 @@ process MAJORITY_VOTE {
     path "${orfs.simpleName}.votes.tsv"
 
   """
-  autometa-taxonomy-majority-vote --orfs $orfs --output ${orfs.simpleName}.votes.tsv --dbdir ${params.ncbi_database} --lca $lca
+  autometa-taxonomy-majority-vote --orfs ${orfs} --output ${orfs.simpleName}.votes.tsv --dbdir /ncbi --lca $lca
   """
 }
 
 process SPLIT_KINGDOMS {
-  tag "Splitting votes into kingdoms for ${metagenome.simpleName}"
-  // container = 'placeholder for autometa image'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.taxonomy.tsv"
-  publishDir params.interim, pattern: '*.fna'
+  tag "Splitting votes into kingdoms for ${assembly.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
+  publishDir params.interim, pattern: "${assembly.simpleName}.taxonomy.tsv"
+  publishDir params.interim, pattern: '*.{bacteria,archaea}.fna'
 
   input:
-    path metagenome
     path votes
+    path assembly
 
   output:
-    path "${metagenome.simpleName}.taxonomy.tsv", emit: taxonomy
-    path "${metagenome.simpleName}.bacteria.fna", emit: bacteria
-    path "${metagenome.simpleName}.archaea.fna", emit: archaea
+    path "${assembly.simpleName}.taxonomy.tsv", emit: taxonomy
+    path "${assembly.simpleName}.bacteria.fna", emit: bacteria
+    path "${assembly.simpleName}.archaea.fna", emit: archaea
 
   """
   autometa-taxonomy \
-    --input $votes \
+    --input ${votes} \
     --output . \
-    --prefix ${metagenome.simpleName} \
+    --prefix ${assembly.simpleName} \
     --split-rank-and-write superkingdom \
-    --assembly $metagenome \
-    --ncbi ${params.ncbi_database}
+    --assembly ${assembly} \
+    --ncbi /ncbi
   # Handling case where no archaea were recovered...
-  if [[ ! -f ${metagenome.simpleName}.archaea.fna ]]
-  then touch ${metagenome.simpleName}.archaea.fna
+  if [[ ! -f ${assembly.simpleName}.archaea.fna ]]
+  then touch ${assembly.simpleName}.archaea.fna
   fi
   """
 }
@@ -99,18 +102,19 @@ process SPLIT_KINGDOMS {
 // Autometa taxon assignment workflow
 workflow TAXON_ASSIGNMENT {
     take:
-      metagenome
+      assembly
       orfs
 
     main:
       DIAMOND(orfs)
       LCA(orfs, DIAMOND.out)
       MAJORITY_VOTE(orfs, LCA.out)
-      SPLIT_KINGDOMS(metagenome, MAJORITY_VOTE.out)
+      SPLIT_KINGDOMS(MAJORITY_VOTE.out, assembly)
 
     emit:
       taxonomy = SPLIT_KINGDOMS.out.taxonomy
       bacteria = SPLIT_KINGDOMS.out.bacteria
       archaea = SPLIT_KINGDOMS.out.archaea
-      all_voting_results = LCA.out | mix(MAJORITY_VOTE.out) | collect
+      orf_votes = LCA.out
+      contig_votes = MAJORITY_VOTE.out
 }

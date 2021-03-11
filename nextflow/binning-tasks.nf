@@ -16,7 +16,7 @@ params.processed = "</path/to/store/user/final/results>"
 
 process BINNING {
   tag "Performing Autometa binning"
-  // container = 'placeholder for autometa image'
+  container = 'jason-c-kwan/autometa:dev'
   publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.*.tsv"
 
   input:
@@ -48,7 +48,7 @@ process BINNING {
 
 process UNCLUSTERED_RECRUITMENT {
   tag "Performing Autometa unclustered recruitment"
-  // container = 'placeholder for autometa image'
+  container = 'jason-c-kwan/autometa:dev'
   publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.recruitment.tsv"
 
   input:

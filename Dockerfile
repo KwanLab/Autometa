@@ -29,10 +29,11 @@ RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y
 
 COPY . .
-RUN python setup.py install
+RUN python setup.py install \
+    && rm -rf Autometa.egg-info/ build dist
 
-RUN hmmpress autometa/databases/markers/bacteria.single_copy.hmm \
-    && hmmpress autometa/databases/markers/archaea.single_copy.hmm
+RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
+    && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm
 
 RUN echo "Testing autometa import" \
     && python -c "import autometa"
@@ -45,5 +46,7 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-kmers -h > /dev/null \
     && autometa-markers -h > /dev/null \
     && autometa-taxonomy -h > /dev/null \
+    && autometa-taxonomy-lca -h > /dev/null \
+    && autometa-taxonomy-majority-vote -h > /dev/null \
     && autometa-binning -h > /dev/null \
-    && autometa-unclustered-recruitment -h > /dev/null 
+    && autometa-unclustered-recruitment -h > /dev/null
