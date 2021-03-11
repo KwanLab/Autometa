@@ -533,12 +533,12 @@ def recursive_hdbscan(
 def get_clusters(
     master: pd.DataFrame,
     markers_df: pd.DataFrame,
-    domain: str = "bacteria",
-    completeness: float = 20.0,
-    purity: float = 95.0,
-    coverage_stddev: float = 25.0,
-    gc_content_stddev: float = 5.0,
-    method: str = "dbscan",
+    domain: str,
+    completeness: float,
+    purity: float,
+    coverage_stddev: float,
+    gc_content_stddev: float,
+    method: str,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Find best clusters retained after applying `completeness` and `purity` filters.
@@ -553,27 +553,27 @@ def get_clusters(
         wide format, i.e. index=contig cols=[marker,marker,...]
 
     domain : str
-        Kingdom to determine metrics (the default is 'bacteria').
+        Kingdom to determine metrics.
         choices=['bacteria','archaea'].
 
-    completeness : float, optional
-        completeness threshold to retain cluster (the default is 20.0).
+    completeness : float
+        completeness threshold to retain cluster.
         e.g. cluster completeness >= completeness
 
-    purity : float, optional
-        `purity` threshold to retain cluster (the default is 95.0).
+    purity : float
+        `purity` threshold to retain cluster.
         e.g. cluster purity >= purity
 
-    coverage_stddev : float, optional
-        cluster coverage std.dev. threshold to retain cluster (the default is 25.0).
+    coverage_stddev : float
+        cluster coverage std.dev. threshold to retain cluster.
         e.g. cluster coverage std.dev. <= coverage_stddev
 
-    gc_content_stddev : float, optional
-        cluster GC content std.dev. threshold to retain cluster (the default is 5.0).
+    gc_content_stddev : float
+        cluster GC content std.dev. threshold to retain cluster.
         e.g. cluster GC content std.dev. <= gc_content_stddev
 
     method : str
-        Description of parameter `method` (the default is 'dbscan').
+        Description of parameter `method`.
         choices = ['dbscan','hdbscan']
 
     verbose : bool
