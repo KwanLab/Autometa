@@ -1,4 +1,4 @@
-.PHONY: clean black requirements docs clean unit_test_data test_environment unit_test unit_test_wip unit_test_entrypoints
+.PHONY: clean black requirements docs clean unit_test_data unit_test_environment unit_test unit_test_wip unit_test_entrypoints
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -60,7 +60,7 @@ docs:
 	@echo "docs built. Open docs/build/html/index.html to view"
 
 ## Construct environment for unit testing
-test_environment:
+unit_test_environment:
 	conda install -n $(PROJECT_NAME) -c conda-forge codecov pytest-cov pytest-variables gdown -y
 	gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
 
