@@ -45,12 +45,16 @@ RUN conda install \
     parallel \
     requests \
     umap-learn \
-    hdbscan -y
+    hdbscan -y \
+    && conda clean --all -y
 
 RUN git clone https://github.com/KwanLab/Autometa.git \
     && cd Autometa \
     && git checkout dev \
     && python setup.py install
+
+RUN hmmpress /Autometa/autometa/databases/markers/bacteria.single_copy.hmm \
+    && hmmpress /Autometa/autometa/databases/markers/archaea.single_copy.hmm
 
 RUN echo "testing autometa import" \
     && python -c "import autometa"
