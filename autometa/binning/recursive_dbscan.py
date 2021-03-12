@@ -25,7 +25,6 @@ Cluster contigs recursively searching for bins with highest completeness and pur
 """
 
 import logging
-import os
 import shutil
 import tempfile
 from typing import List, Tuple
@@ -721,10 +720,10 @@ def main():
         "composition, coverage and homology.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("kmers", help="</path/to/normalized/kmers.tsv>")
-    parser.add_argument("coverage", help="</path/to/coverages.tsv>")
-    parser.add_argument("markers", help="</path/to/markers.tsv>")
-    parser.add_argument("out", help="</path/to/output.tsv>")
+    parser.add_argument("--kmers", help="</path/to/normalized/kmers.tsv>", required=True)
+    parser.add_argument("--coverage", help="</path/to/coverages.tsv>", required=True)
+    parser.add_argument("--markers", help="</path/to/markers.tsv>", required=True)
+    parser.add_argument("--output", help="</path/to/output.tsv>", required=True)
     parser.add_argument("--embedded-kmers", help="</path/to/embedded_kmers.tsv>")
     parser.add_argument(
         "--embedding-method",
@@ -816,7 +815,7 @@ def main():
 
     # Output table
     outcols = ["cluster", "completeness", "purity"]
-    master_out[outcols].to_csv(args.out, sep="\t", index=True, header=True)
+    master_out[outcols].to_csv(args.output, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":

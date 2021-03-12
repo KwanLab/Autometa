@@ -39,10 +39,10 @@ process BINNING {
     --domain ${params.kingdom} \
     --embedding-method ${params.kmer_embed_method} \
     --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv \
-    $kmers \
-    $coverage \
-    $markers \
-    ${coverage.simpleName}.${params.kingdom}.binning.tsv
+    --kmers $kmers \
+    --coverage $coverage \
+    --markers $markers \
+    --output ${coverage.simpleName}.${params.kingdom}.binning.tsv
   """
 }
 
@@ -67,10 +67,10 @@ process UNCLUSTERED_RECRUITMENT {
     --kmer-dimensions ${params.classification_kmer_pca_dimensions} \
     --seed 42 \
     --taxonomy $taxonomy \
-    $kmers \
-    $coverage \
-    $assignments \
-    $markers \
-    ${coverage.simpleName}.${params.kingdom}.recruitment.tsv
+    --kmers $kmers \
+    --coverage $coverage \
+    --binning $assignments \
+    --markers $markers \
+    --output ${coverage.simpleName}.${params.kingdom}.recruitment.tsv
   """
 }

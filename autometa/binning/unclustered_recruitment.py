@@ -493,16 +493,17 @@ def main():
         " Note: All tables must contain a 'contig' column to be used as the unique table index)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("kmers", help="Path to normalized kmer frequencies table.")
-    parser.add_argument("coverage", help="Path to coverage table.")
+    parser.add_argument("--kmers", help="Path to normalized kmer frequencies table.", required=True)
+    parser.add_argument("--coverage", help="Path to coverage table.", required=True)
     parser.add_argument(
-        "assignments",
+        "--binning",
         help="Path to contig to genome bin assignments."
         "(May be autometa binning output [col='cluster']"
         "or ground truth bin assignments [col='reference_genome'])",
+        required=True
     )
-    parser.add_argument("markers", help="Path to domain-specific markers table.")
-    parser.add_argument("out", help="Path to output unclustered recruitment table.")
+    parser.add_argument("--markers", help="Path to domain-specific markers table.", required=True)
+    parser.add_argument("--output", help="Path to output unclustered recruitment table.", required=True)
     parser.add_argument("--taxonomy", help="Path to taxonomy table.")
     parser.add_argument(
         "--taxa-dimensions",
@@ -556,7 +557,7 @@ def main():
         taxa_dimensions=args.taxa_dimensions,
     )
     bin_df = pd.read_csv(
-        args.assignments, sep="\t", index_col="contig", usecols=["contig", "cluster"]
+        args.binning, sep="\t", index_col="contig", usecols=["contig", "cluster"]
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     if not prev_num_unclustered:
@@ -599,7 +600,7 @@ def main():
     logger.info(
         f"unclustered {prev_num_unclustered} -> {now_num_unclustered} (recruited {n_recruited} contigs) in {n_runs} runs"
     )
-    bin_df.to_csv(args.out, sep="\t", index=True, header=True)
+    bin_df.to_csv(args.output, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":
