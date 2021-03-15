@@ -26,16 +26,11 @@ Configuration handling for Autometa environment.
 
 import logging
 import os
-import sys
 import shutil
 import subprocess
 
 from configparser import ConfigParser
-from configparser import ExtendedInterpolation
-
-from autometa.config import DEFAULT_CONFIG
-from autometa.config import get_config
-from autometa.config import put_config
+from typing import Dict, Tuple, Union
 
 
 logger = logging.getLogger(__name__)
@@ -203,7 +198,7 @@ def bedtools():
     return stdout.decode().strip().split()[-1].strip("v")
 
 
-def get_versions(program=None):
+def get_versions(program:str=None)->Union[Dict[str, str], str]:
     """
     Retrieve versions from all required executable dependencies.
     If `program` is provided will only return version for `program`.
@@ -254,7 +249,7 @@ def get_versions(program=None):
     return versions
 
 
-def configure(config=DEFAULT_CONFIG):
+def configure(config: ConfigParser)-> Tuple[ConfigParser, bool]:
     """Checks executable dependencies necessary to run autometa.
     Will update `config` with executable dependencies with details:
     1. presence/absence of dependency and its location
@@ -296,7 +291,7 @@ def configure(config=DEFAULT_CONFIG):
         user_executable = config.get("environ", executable)
         if not shutil.which(user_executable, mode=os.X_OK):
             logger.debug(f"{executable}: {found} (version: {version})")
-            config.set("environ", executable, found)
+            config.set("environ", executable, str(found))
             config.set("versions", executable, version)
         else:
             version = get_versions(user_executable)
@@ -304,29 +299,5 @@ def configure(config=DEFAULT_CONFIG):
     return config, satisfied
 
 
-def main():
-    import argparse
-    import logging as logger
-
-    logger.basicConfig(
-        format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG,
-    )
-    parser = argparse.ArgumentParser(description="Configure executables.config")
-    parser.add_argument(
-        "--infpath", help="</path/to/output/executables.config>", required=True
-    )
-    parser.add_argument("--out", help="</path/to/output/executables.config>")
-    args = parser.parse_args()
-    user_config = get_config(args.infpath)
-    config, satisfied = configure(config=user_config)
-    if not args.out:
-        import sys
-
-        sys.exit(0)
-    put_config(config, args.out)
-
-
 if __name__ == "__main__":
-    main()
+    import sys; sys.exit(0)

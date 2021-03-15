@@ -32,10 +32,9 @@ import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
+from autometa.config.databases import DEFAULT_CONFIG
 
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MARKERS_DIR = os.path.join(BASE_DIR, "databases", "markers")
+MARKERS_DIR = DEFAULT_CONFIG.get("databases", "markers")
 
 logger = logging.getLogger(__name__)
 

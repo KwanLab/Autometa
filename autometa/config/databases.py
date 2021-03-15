@@ -24,7 +24,7 @@ This file contains the Databases class responsible for configuration handling
 of Autometa Databases.
 """
 
-
+import argparse
 import logging
 import os
 import requests
@@ -34,15 +34,11 @@ import tempfile
 
 import multiprocessing as mp
 
+from typing import Dict, Iterable
 from configparser import ConfigParser
 from ftplib import FTP
 from glob import glob
 
-from autometa.config import get_config
-from autometa.config import DEFAULT_FPATH
-from autometa.config import DEFAULT_CONFIG
-from autometa.config import put_config
-from autometa.config import AUTOMETA_DIR
 from autometa.common.utilities import untar
 from autometa.common.utilities import calc_checksum
 from autometa.common.utilities import read_checksum
@@ -50,6 +46,10 @@ from autometa.common.utilities import write_checksum
 from autometa.common.exceptions import ChecksumMismatchError
 from autometa.common.external import diamond
 from autometa.common.external import hmmer
+from autometa.config.utilities import DEFAULT_FPATH
+from autometa.config.utilities import DEFAULT_CONFIG
+from autometa.config.utilities import AUTOMETA_DIR
+from autometa.config.utilities import put_config, get_config
 
 
 logger = logging.getLogger(__name__)
@@ -156,7 +156,7 @@ class Databases:
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
 
-    def satisfied(self, section=None, compare_checksums=False):
+    def satisfied(self, section:str=None, compare_checksums:bool=False)->bool:
         """Determines whether all database dependencies are satisfied.
 
         Parameters
@@ -181,7 +181,7 @@ class Databases:
             any_invalid = {}
         return not any_missing and not any_invalid
 
-    def internet_is_connected(self, host="8.8.8.8", port=53, timeout=2):
+    def internet_is_connected(self, host:str="8.8.8.8", port:int=53, timeout:int=2)->bool:
         # google.com
         try:
             socket.setdefaulttimeout(timeout)
@@ -190,7 +190,7 @@ class Databases:
         except socket.error:
             return False
 
-    def get_remote_checksum(self, section, option):
+    def get_remote_checksum(self, section:str, option:str)->str:
         """Get the checksum from provided `section` respective to `option` in
         `self.config`.
 
@@ -245,7 +245,7 @@ class Databases:
                 checksum = resp.text
         return checksum
 
-    def format_nr(self):
+    def format_nr(self)-> None:
         """Construct a diamond formatted database (nr.dmnd) from `nr` option
         in `ncbi` section in user config.
 
@@ -316,7 +316,7 @@ class Databases:
         self.config.set("ncbi", "nr", db_outfpath)
         logger.debug(f"set ncbi nr: {db_outfpath}")
 
-    def extract_taxdump(self):
+    def extract_taxdump(self)-> None:
         """Extract autometa required files from ncbi taxdump.tar.gz archive
         into ncbi databases directory and update user config with extracted
         paths.
@@ -359,7 +359,7 @@ class Databases:
             logger.debug(f"UPDATE (ncbi,{option}): {outfpath}")
             self.config.set("ncbi", option, outfpath)
 
-    def download_ncbi_files(self, options):
+    def download_ncbi_files(self, options:Iterable)->None:
         """Download NCBI database files.
 
         Parameters
@@ -411,14 +411,14 @@ class Databases:
             current_hash, __ = current_checksum.split()
             remote_checksum = self.get_remote_checksum("ncbi", option)
             remote_hash, __ = remote_checksum.split()
-            if current_checksum != remote_hash:
+            if current_hash != remote_hash:
                 raise ChecksumMismatchError(f"{option} download failed")
         if "taxdump" in options:
             self.extract_taxdump()
         if "nr" in options:
             self.format_nr()
 
-    def press_hmms(self):
+    def press_hmms(self)-> None:
         """hmmpress markers hmm database files.
 
         Returns
@@ -447,7 +447,7 @@ class Databases:
             for index_fp in glob(f"{hmm_fp}.h3?"):
                 write_checksum(index_fp, f"{index_fp}.md5")
 
-    def download_markers(self, options):
+    def download_markers(self, options:Iterable)-> None:
         """Download markers database files and amend user config to reflect this.
 
         Parameters
@@ -493,11 +493,11 @@ class Databases:
             current_hash, __ = current_checksum.split()
             remote_checksum = self.get_remote_checksum("markers", option)
             remote_hash, __ = remote_checksum.split()
-            if current_checksum != remote_hash:
+            if current_hash != remote_hash:
                 raise ChecksumMismatchError(f"{option} download failed")
         self.press_hmms()
 
-    def get_missing(self, section=None):
+    def get_missing(self, section:str=None)-> Dict[str, Dict]:
         """Get all missing database files in `options` from `sections`
         in config.
 
@@ -533,7 +533,7 @@ class Databases:
                 logger.debug(f"MISSING: ({section},{option})")
         return missing
 
-    def download_missing(self, section=None):
+    def download_missing(self, section:str=None)->None:
         """Download missing Autometa database dependencies from provided `section`.
         If no `section` is provided will check all sections.
 
@@ -569,7 +569,7 @@ class Databases:
             for section, options in missing.items():
                 dispatcher[section](options)
 
-    def compare_checksums(self, section=None):
+    def compare_checksums(self, section:str=None)->Dict[str, Dict]:
         """Get all invalid database files in `options` from `section`
         in config. An md5 checksum comparison will be performed between the
         current and file's remote md5 to ensure file integrity prior to
@@ -631,7 +631,7 @@ class Databases:
                 logger.debug(f"INVALID: ({section},{option})")
         return invalid
 
-    def fix_invalid_checksums(self, section=None):
+    def fix_invalid_checksums(self, section:str=None)->None:
         """Download/Update/Format databases where checksums are out-of-date.
 
         Parameters
@@ -666,7 +666,7 @@ class Databases:
             for section, options in invalid.items():
                 dispatcher[section](options)
 
-    def configure(self, section=None, no_checksum=False):
+    def configure(self, section:str=None, no_checksum:bool=False)->ConfigParser:
         """Configures Autometa's database dependencies by first checking missing
         dependencies then comparing checksums to ensure integrity of files.
 
@@ -728,7 +728,7 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--update",
+        "--update-all",
         help="Update all out-of-date databases.",
         action="store_true",
         default=False,
@@ -754,7 +754,7 @@ def main():
     parser.add_argument(
         "--no-checksum",
         help="Do not perform remote checksum comparisons to validate databases"
-        "are up-to-date.",
+        " are up-to-date.",
         action="store_true",
         default=False,
     )
@@ -769,11 +769,13 @@ def main():
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config, dryrun=args.dryrun, nproc=args.nproc, update=args.update,
+        config=config, dryrun=args.dryrun, nproc=args.nproc, update=args.update_all,
     )
 
     compare_checksums = False
-    for update_section in [args.update, args.update_markers, args.update_ncbi]:
+    for update_section in [args.update_all, args.update_markers, args.update_ncbi]:
+        # If any of these flags are provided and the --no-checksum flag was NOT provided.
+        # then we will go through checksum comparisons for all sections
         if update_section and not args.no_checksum:
             compare_checksums = True
 
@@ -793,7 +795,6 @@ def main():
 
         sys.exit(0)
 
-    # logger.debug(f'Configuring databases')
     config = dbs.configure(section=section, no_checksum=args.no_checksum)
 
     if not args.out:

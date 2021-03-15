@@ -2,6 +2,7 @@ attrs
 bedtools
 bowtie2
 biopython
+diamond
 hdbscan
 hmmer
 nextflow>=20.10
