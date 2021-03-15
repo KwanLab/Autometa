@@ -5,7 +5,7 @@ from autometa.taxonomy import majority_vote
 from argparse import Namespace
 from Bio import SeqIO
 import argparse
-from autometa import config
+from autometa.config import utilities
 import glob
 
 
@@ -202,7 +202,8 @@ def fixture_mock_rank_taxids(monkeypatch):
 
 @pytest.mark.skip
 def test_get_metabin_taxonomies(
-    mock_rank_taxids, bin_df,
+    mock_rank_taxids,
+    bin_df,
 ):
     mock_ncbi = return_mock_ncbi()
     df = summary.get_metabin_taxonomies(bin_df=bin_df, ncbi=mock_ncbi)
@@ -277,5 +278,5 @@ def test_main(monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids)
             return ["example/config/file/path"]
 
         m.setattr(glob, "glob", return_config_fpaths, raising=True)
-        m.setattr(config, "parse_args", return_mgargs, raising=True)
+        m.setattr(utilities, "parse_args", return_mgargs, raising=True)
         summary.main()
