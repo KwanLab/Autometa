@@ -198,7 +198,7 @@ def bedtools():
     return stdout.decode().strip().split()[-1].strip("v")
 
 
-def get_versions(program:str=None)->Union[Dict[str, str], str]:
+def get_versions(program: str = None) -> Union[Dict[str, str], str]:
     """
     Retrieve versions from all required executable dependencies.
     If `program` is provided will only return version for `program`.
@@ -232,7 +232,9 @@ def get_versions(program:str=None)->Union[Dict[str, str], str]:
         try:
             return globals()[exe_name]()
         except TypeError:
-            logger.warning(f"{exe_name} not found. This may impact a stage of the Autometa pipeline.")
+            logger.warning(
+                f"{exe_name} not found. This may impact a stage of the Autometa pipeline."
+            )
             return "Not found"
     versions = {}
     executables = find_executables()
@@ -249,7 +251,7 @@ def get_versions(program:str=None)->Union[Dict[str, str], str]:
     return versions
 
 
-def configure(config: ConfigParser)-> Tuple[ConfigParser, bool]:
+def configure(config: ConfigParser) -> Tuple[ConfigParser, bool]:
     """Checks executable dependencies necessary to run autometa.
     Will update `config` with executable dependencies with details:
     1. presence/absence of dependency and its location
@@ -300,4 +302,6 @@ def configure(config: ConfigParser)-> Tuple[ConfigParser, bool]:
 
 
 if __name__ == "__main__":
-    import sys; sys.exit(0)
+    import sys
+
+    sys.exit(0)

@@ -42,7 +42,7 @@ from functools import wraps
 logger = logging.getLogger(__name__)
 
 
-def unpickle(fpath:str)->Any:
+def unpickle(fpath: str) -> Any:
     """Load a serialized `fpath` from :func:`make_pickle`.
 
     Parameters
@@ -72,7 +72,7 @@ def unpickle(fpath:str)->Any:
     return obj
 
 
-def make_pickle(obj: Any, outfpath: str)->str:
+def make_pickle(obj: Any, outfpath: str) -> str:
     """Serialize a python object (`obj`) to `outfpath`.
     Note:  Opposite of :func:`unpickle`
 
@@ -105,7 +105,9 @@ def make_pickle(obj: Any, outfpath: str)->str:
     return outfpath
 
 
-def gunzip(infpath:str, outfpath:str, delete_original:bool=False, block_size:int=65536)->str:
+def gunzip(
+    infpath: str, outfpath: str, delete_original: bool = False, block_size: int = 65536
+) -> str:
     """Decompress gzipped `infpath` to `outfpath` and write checksum of `outfpath` upon successful decompression.
 
     Parameters
@@ -151,7 +153,7 @@ def gunzip(infpath:str, outfpath:str, delete_original:bool=False, block_size:int
     return outfpath
 
 
-def untar(tarchive:str, outdir:str, member:str=None)-> str:
+def untar(tarchive: str, outdir: str, member: str = None) -> str:
     """Decompress a tar archive (may be gzipped or bzipped). passing in `member`
     requires an `outdir` also be provided.
 
@@ -212,7 +214,7 @@ def untar(tarchive:str, outdir:str, member:str=None)-> str:
     return outdir
 
 
-def tarchive_results(outfpath:str, src_dirpath:str)-> str:
+def tarchive_results(outfpath: str, src_dirpath: str) -> str:
     """Generate a tar archive of Autometa Results
 
     See:
@@ -245,7 +247,7 @@ def tarchive_results(outfpath:str, src_dirpath:str)-> str:
     return outfpath
 
 
-def file_length(fpath:str, approximate:bool=False)->int:
+def file_length(fpath: str, approximate: bool = False) -> int:
     """Retrieve the number of lines in `fpath`
 
     See: https://stackoverflow.com/q/845058/13118765
@@ -290,7 +292,7 @@ def file_length(fpath:str, approximate:bool=False)->int:
     return i + 1
 
 
-def calc_checksum(fpath:str) -> str:
+def calc_checksum(fpath: str) -> str:
     """Retrieve md5 checksum from provided `fpath`.
 
     See:
@@ -370,7 +372,7 @@ def read_checksum(fpath: str) -> str:
         return fh.readline()
 
 
-def write_checksum(infpath:str, outfpath:str)-> str:
+def write_checksum(infpath: str, outfpath: str) -> str:
     """Calculate checksum for `infpath` and write to `outfpath`.
 
     Parameters
@@ -403,7 +405,7 @@ def write_checksum(infpath:str, outfpath:str)-> str:
     logger.debug(f"Wrote {infpath} checksum to {outfpath}")
 
 
-def timeit(func:FunctionType)->FunctionType:
+def timeit(func: FunctionType) -> FunctionType:
     """Time function run time (to be used as a decorator). I.e. when defining a
     function use python's decorator syntax
 

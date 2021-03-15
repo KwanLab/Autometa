@@ -169,7 +169,11 @@ def get(
 
     if not os.path.exists(out) or not os.path.getsize(out):
         out = hmmer.filter_markers(
-            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs, force=force,
+            infpath=scans,
+            outfpath=out,
+            cutoffs=cutoffs,
+            orfs=orfs,
+            force=force,
         )
     return load(fpath=out, format=format)
 
@@ -235,7 +239,10 @@ def main():
         type=int,
     )
     parser.add_argument(
-        "--seed", help="Seed to set random state for hmmscan.", default=42, type=int,
+        "--seed",
+        help="Seed to set random state for hmmscan.",
+        default=42,
+        type=int,
     )
     args = parser.parse_args()
 

@@ -17,7 +17,7 @@ DEFAULT_FPATH = os.path.join(os.path.dirname(__file__), "default.config")
 AUTOMETA_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
-def get_config(fpath: str)-> ConfigParser:
+def get_config(fpath: str) -> ConfigParser:
     """Load the config provided at `fpath`.
 
     Parameters
@@ -49,7 +49,7 @@ def get_config(fpath: str)-> ConfigParser:
 DEFAULT_CONFIG = get_config(fpath=DEFAULT_FPATH)
 
 
-def put_config(config:ConfigParser, out:str)->None:
+def put_config(config: ConfigParser, out: str) -> None:
     """Writes `config` to `out` and updates checkpoints checksum.
 
     Parameters
@@ -68,7 +68,9 @@ def put_config(config:ConfigParser, out:str)->None:
         config.write(fh)
 
 
-def update_config(section:str, option:str, value:str, fpath:str = DEFAULT_FPATH)->None:
+def update_config(
+    section: str, option: str, value: str, fpath: str = DEFAULT_FPATH
+) -> None:
     """Update `fpath` in `section` for `option` with `value`.
 
     Parameters
@@ -90,13 +92,15 @@ def update_config(section:str, option:str, value:str, fpath:str = DEFAULT_FPATH)
     cfg = get_config(fpath)
     if not cfg.has_option(section, option):
         options = ", ".join(cfg.options(section))
-        raise KeyError(f"option: `{option}` not available in section: `{section}`. Available options: {options}")
+        raise KeyError(
+            f"option: `{option}` not available in section: `{section}`. Available options: {options}"
+        )
     cfg.set(section, option, value)
     put_config(cfg, fpath)
     logger.debug(f"updated {fpath} [{section}] option: {option} : {value}")
 
 
-def parse_args(fpath:str=None)->Namespace:
+def parse_args(fpath: str = None) -> Namespace:
     """Generate argparse namespace (args) from config file.
 
     Parameters
@@ -175,7 +179,7 @@ def parse_args(fpath:str=None)->Namespace:
     return namespace
 
 
-def set_home_dir()->str:
+def set_home_dir() -> str:
     """Set the `home_dir` in autometa's default configuration (default.config)
     based on autometa's current location. If the `home_dir` variable is already
     set, then this will be used as the `home_dir` location.
@@ -198,15 +202,28 @@ def set_home_dir()->str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Update Autometa configuration using provided arguments')
-    logging_group = parser.add_argument_group('Logging')
-    update_group = parser.add_argument_group('Updating')
-    update_group.add_argument('--section', help='config section to update', choices=["environ", "databases", "ncbi", "markers"], required=False)
-    update_group.add_argument('--option', help='option in `--section` to update', required=False)
-    update_group.add_argument('--value', help='Value to update `--option`', required=False)
-    logging_group.add_argument('--print', help='Print configuration without updating', action='store_true')
+    parser = argparse.ArgumentParser(
+        description="Update Autometa configuration using provided arguments"
+    )
+    logging_group = parser.add_argument_group("Logging")
+    update_group = parser.add_argument_group("Updating")
+    update_group.add_argument(
+        "--section",
+        help="config section to update",
+        choices=["environ", "databases", "ncbi", "markers"],
+        required=False,
+    )
+    update_group.add_argument(
+        "--option", help="option in `--section` to update", required=False
+    )
+    update_group.add_argument(
+        "--value", help="Value to update `--option`", required=False
+    )
+    logging_group.add_argument(
+        "--print", help="Print configuration without updating", action="store_true"
+    )
     args = parser.parse_args()
-    
+
     # First update home_dir option in common section with Autometa installation path
     set_home_dir()
     # Now ensure executables are available: save versions to config
@@ -223,7 +240,9 @@ def main():
         exit(0)
     for option in [args.section, args.option, args.value]:
         if not option:
-            raise ValueError("the following arguments are required: --section, --option, --value")
+            raise ValueError(
+                "the following arguments are required: --section, --option, --value"
+            )
     update_config(section=args.section, option=args.option, value=args.value)
 
 
