@@ -297,7 +297,8 @@ def configure(config: ConfigParser) -> Tuple[ConfigParser, bool]:
             config.set("versions", executable, version)
         else:
             version = get_versions(user_executable)
-            config.set("versions", user_executable, version)
+            if not os.path.basename(user_executable) in config.options("versions"):
+                config.set("versions", user_executable, version)
     return config, satisfied
 
 

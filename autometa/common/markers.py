@@ -32,9 +32,13 @@ import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
-from autometa.config.databases import DEFAULT_CONFIG
+from autometa.config.utilities import DEFAULT_CONFIG
 
 MARKERS_DIR = DEFAULT_CONFIG.get("databases", "markers")
+# For cases where autometa has not been configured, attempt to find the markers via source
+MARKERS_DIR = (
+    MARKERS_DIR if not "None" in MARKERS_DIR else MARKERS_DIR.replace("None", ".")
+)
 
 logger = logging.getLogger(__name__)
 

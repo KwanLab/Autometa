@@ -35,12 +35,14 @@ import pandas as pd
 from tqdm import tqdm
 
 from autometa.common.exceptions import DatabaseOutOfSyncError
+from autometa.config.utilities import DEFAULT_CONFIG
 
 
 logger = logging.getLogger(__name__)
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-NCBI_DIR = os.path.join(BASE_DIR, "databases", "ncbi")
+NCBI_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
+# For cases where autometa has not been configured, attempt to find ncbi directory via source
+NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
 
 
 class NCBI:

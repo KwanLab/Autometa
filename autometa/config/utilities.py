@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-import argparse
 import os
 import logging
 
@@ -202,6 +201,14 @@ def set_home_dir() -> str:
 
 
 def main():
+    import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
     parser = argparse.ArgumentParser(
         description="Update Autometa configuration using provided arguments"
     )
@@ -227,15 +234,15 @@ def main():
     # First update home_dir option in common section with Autometa installation path
     set_home_dir()
     # Now ensure executables are available: save versions to config
-    cfg, environ_satisfied = environ.configure(DEFAULT_CONFIG)
+    cfg = get_config(DEFAULT_FPATH)
+    cfg, environ_satisfied = environ.configure(cfg)
     put_config(cfg, DEFAULT_FPATH)
     logger.debug(f"environment dependencies satisifed: {environ_satisfied}")
-
     if args.print:
         print("section\toption\tvalue")
-        for section in DEFAULT_CONFIG.sections():
-            for option in DEFAULT_CONFIG.options(section):
-                value = DEFAULT_CONFIG.get(section, option)
+        for section in cfg.sections():
+            for option in cfg.options(section):
+                value = cfg.get(section, option)
                 print(f"{section}\t{option}\t{value}")
         exit(0)
     for option in [args.section, args.option, args.value]:

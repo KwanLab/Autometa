@@ -333,7 +333,12 @@ def main():
         if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
             continue
         argparse_lines = get_argparse_block(fpath)
-        wrapped_lines = get_usage(argparse_lines)
+        try:
+            wrapped_lines = get_usage(argparse_lines)
+        except TypeError as err:
+            print(f"Error getting usage for {fpath}")
+            raise err
+
         rst_dirpath = make_rst_dir(fpath)
         write_usage(fpath, rst_dirpath, wrapped_lines)
     write_main_files(rst_scripts_dirpath)

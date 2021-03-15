@@ -38,8 +38,7 @@ from typing import Union, List
 from autometa.common.external import prodigal
 from autometa.taxonomy import majority_vote
 from autometa.taxonomy.lca import LCA
-from autometa.taxonomy.ncbi import NCBI_DIR
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 from autometa.common.exceptions import TableFormatError
 
 logger = logging.getLogger(__name__)
