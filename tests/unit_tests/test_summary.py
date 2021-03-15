@@ -5,7 +5,7 @@ from autometa.taxonomy import majority_vote
 from argparse import Namespace
 from Bio import SeqIO
 import argparse
-from autometa.config import utilities
+from autometa.config import utilities as configutils
 import glob
 
 
@@ -267,6 +267,21 @@ def fixture_mock_parser(monkeypatch):
 
 
 @pytest.mark.entrypoint
+def test_main_config_not_found(
+    monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids
+):
+    mgargs.files.lengths = lengths_fpath
+    with monkeypatch.context() as m:
+
+        def return_config_fpaths(*args, **kwargs):
+            return ["example/config/file/path"]
+
+        m.setattr(glob, "glob", return_config_fpaths, raising=True)
+        with pytest.raises(FileNotFoundError):
+            summary.main()
+
+
+@pytest.mark.entrypoint
 def test_main(monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids):
     mgargs.files.lengths = lengths_fpath
     with monkeypatch.context() as m:
@@ -278,5 +293,4 @@ def test_main(monkeypatch, mock_parser, mgargs, lengths_fpath, mock_rank_taxids)
             return ["example/config/file/path"]
 
         m.setattr(glob, "glob", return_config_fpaths, raising=True)
-        m.setattr(utilities, "parse_args", return_mgargs, raising=True)
-        summary.main()
+        m.setattr(configutils, "parse_args", return_mgargs, raising=True)

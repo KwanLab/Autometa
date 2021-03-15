@@ -37,7 +37,7 @@ from Bio.SeqUtils import GC
 
 from typing import Mapping
 
-from autometa.config.utilities import parse_args
+from autometa.config import utilities as configutils
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy import majority_vote
 from autometa.common import markers
@@ -317,7 +317,7 @@ def main():
     configs_search_str = os.path.join(args.workspace, "**", "metagenome_*.config")
     config_fpaths = glob.glob(configs_search_str, recursive=True)
     for config_fpath in config_fpaths:
-        mgargs = parse_args(config_fpath)
+        mgargs = configutils.parse_args(config_fpath)
         ncbi = NCBI(dirpath=mgargs.databases.ncbi)
         annotations = merge_annotations(mgargs)
         for domain, bin_df in annotations.items():
