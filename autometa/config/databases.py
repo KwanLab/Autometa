@@ -24,7 +24,6 @@ This file contains the Databases class responsible for configuration handling
 of Autometa Databases.
 """
 
-import argparse
 import logging
 import os
 import requests
@@ -85,7 +84,6 @@ class Databases:
         </path/to/databases/markers> SECTIONS : dict keys are `sections`
         respective to database config sections and values are options within
         the `sections`.
-
     """
 
     SECTIONS = {
