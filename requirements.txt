@@ -11,6 +11,7 @@ bedtools
 bowtie2
 hmmer
 prodigal
+make
 nextflow
 parallel
 requests

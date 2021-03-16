@@ -82,15 +82,15 @@ unit_test_data_build: tests/data/records.fna
 
 ## Run all unit tests
 unit_test: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest --durations=0 --cov=autometa --emoji --cov-report html
+	$(PYTHON_INTERPRETER) -m pytest --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with WIP
 unit_test_wip: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report html
+	$(PYTHON_INTERPRETER) -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with entrypoint
 unit_test_entrypoints: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report html
+	$(PYTHON_INTERPRETER) -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 
 #################################################################################
