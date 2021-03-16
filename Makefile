@@ -22,22 +22,25 @@ endif
 
 ## Delete all compiled Python files
 clean:
-	rm -rf htmlcov && make clean -C docs
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
+	find . -type d -name "htmlcov" -delete
+	find . -type d -name "Autometa.egg-info" -delete
+	find . -type d -name "dist" -delete
+	find . -type d -name "build" -delete
 
 ## Apply black formatting
 black:
 	black --exclude autometa/validation autometa
 
 ## Set up python interpreter environment
-create_environment:
+create_environment: requirements.txt
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda create --name $(PROJECT_NAME) python=3
+	conda create --name $(PROJECT_NAME) python=3 --file=requirements.txt
 else
-	conda create --name $(PROJECT_NAME) python=2.7
+	conda create --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
 endif
 	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
