@@ -32,7 +32,7 @@ from typing import Dict, Union
 from tqdm import tqdm
 
 from autometa.taxonomy.lca import LCA
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +300,12 @@ def majority_vote(
         filename, __ = os.path.splitext(os.path.basename(orfs))
         outdir = os.path.dirname(os.path.realpath(out))
         lca_out = os.path.join(outdir, ".".join([filename, "lca.tsv"]))
-    lca_fpath = lca.blast2lca(orfs=orfs, out=lca_out, blast=blast, force=force,)
+    lca_fpath = lca.blast2lca(
+        orfs=orfs,
+        out=lca_out,
+        blast=blast,
+        force=force,
+    )
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
@@ -313,7 +318,6 @@ def main():
     import argparse
 
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir, "databases", "ncbi")
     parser = argparse.ArgumentParser(
         description="Script to assign taxonomy via a modified majority voting"
         " algorithm.",
@@ -328,7 +332,7 @@ def main():
         "--output", help="Path to write voted taxid results table.", required=True
     )
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=dbdir
+        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
     parser.add_argument("--lca", help="Path to LCA results table.")
     parser.add_argument(

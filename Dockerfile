@@ -33,13 +33,16 @@ RUN python setup.py install \
     && rm -rf Autometa.egg-info/ build dist
 
 RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
-    && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm
+    && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm \
+    && autometa-config --section databases --option base --value autometa/databases
 
 RUN echo "Testing autometa import" \
     && python -c "import autometa"
 
 # Check entrypoints are available
 RUN echo "Checking autometa entrypoints" \
+    && autometa-config -h > /dev/null \
+    && autometa-update-databases -h > /dev/null \
     && autometa-length-filter -h > /dev/null \
     && autometa-orfs -h > /dev/null  \
     && autometa-coverage -h > /dev/null  \

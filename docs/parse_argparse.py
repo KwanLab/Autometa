@@ -60,11 +60,10 @@ def get_argparse_block(fpath):
     outlines = "import os\nimport multiprocessing as mp\n"
     with open(fpath) as fh:
         for line in fh:
-            line = line.strip()
-            if line == "import argparse":
+            if line.strip() == "import argparse":
                 writing = True
-            if line == "args = parser.parse_args()":
-                outlines += f"{line}\n"
+            if line.strip() == "args = parser.parse_args()":
+                outlines += line.lstrip()
                 writing = False
             if not writing:
                 continue
@@ -81,7 +80,7 @@ def get_argparse_block(fpath):
             if match:
                 cap_const = match.group(1)
                 line = line.replace(cap_const, f'"{cap_const}"')
-            outlines += f"{line}\n"
+            outlines += line.lstrip()
     return outlines
 
 
@@ -333,7 +332,12 @@ def main():
         if os.path.basename(os.path.dirname(fpath)) in exclude_dirs:
             continue
         argparse_lines = get_argparse_block(fpath)
-        wrapped_lines = get_usage(argparse_lines)
+        try:
+            wrapped_lines = get_usage(argparse_lines)
+        except TypeError as err:
+            print(f"Error getting usage for {fpath}")
+            raise err
+
         rst_dirpath = make_rst_dir(fpath)
         write_usage(fpath, rst_dirpath, wrapped_lines)
     write_main_files(rst_scripts_dirpath)
