@@ -1,4 +1,13 @@
 attrs
+biopython
+gdown
+pandas>=1.1
+tqdm
+tsne
+numpy
+scikit-learn
+scikit-bio
+samtools
 bedtools
 bowtie2
 biopython
@@ -8,8 +17,11 @@ nextflow>=20.10
 numpy
 pandas>=1.1
 prodigal
+make
+nextflow
 parallel
 requests
+rsync
 scikit-learn
 scikit-bio
 samtools
