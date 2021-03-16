@@ -1,0 +1,11 @@
+black
+pre_commit
+pytest
+pytest-cov
+pytest-html
+pytest-repeat
+pytest-variables
+pytest-emoji
+pytest-md
+sphinx_rtd_theme
+sphinx

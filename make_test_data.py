@@ -57,7 +57,8 @@ a json file to `test_data.json` to be read by pytest-variables during testing.
     6.2 kmers_embedded
     6.3 taxonomy
     6.4 coverage
-    6.3 markers
+    6.5 gc_content
+    6.6 markers
 7 summary
     7.1 bin_df
 """
@@ -130,16 +131,13 @@ class TestData:
     binning_norm_kmers: str
     binning_embedded_kmers: str
     binning_coverage: str
+    binning_gc_content: str
     binning_markers: str
     binning_taxonomy: str
     summary_bin_df: str
     recruitment_binning: str
     data: typing.Dict = attr.ib(default={})
     seed: int = 42
-    sam_fpath: str
-    bed_fpath: str
-    fwd_reads: str
-    rev_read: str
 
     def prepare_metagenome(self, num_records: int = 4):
         logger.info("Preparing metagenome records test data...")
@@ -345,6 +343,7 @@ class TestData:
             "kmers_embedded": self.binning_embedded_kmers,
             "taxonomy": self.binning_taxonomy,
             "coverage": self.binning_coverage,
+            "gc_content": self.binning_gc_content,
         }
 
         markers_df = pd.read_csv(self.binning_markers, sep="\t", index_col="contig")
@@ -358,7 +357,7 @@ class TestData:
                     df[df.index.isin(markers_df.index)].index.tolist()[:num_contigs]
                 )
             if annotation == "taxonomy":
-                for column in df.set_index("contig").select_dtypes(object).columns:
+                for column in df.select_dtypes(object).columns:
                     df[column] = df[column].map(lambda taxon: taxon.lower())
             # We need to reset the index from contig to None before json export.
             if contigs:
@@ -413,6 +412,7 @@ def main():
     binning_norm_kmers = os.path.join(outdir, "binning_kmers.am_clr.tsv.gz")
     binning_embedded_kmers = os.path.join(outdir, "binning_kmers.am_clr.bhsne.tsv.gz")
     binning_coverage = os.path.join(outdir, "binning_coverage.tsv.gz")
+    binning_gc_content = os.path.join(outdir, "binning_gc_content.tsv.gz")
     binning_markers = os.path.join(outdir, "binning_markers.tsv.gz")
     binning_taxonomy = os.path.join(outdir, "binning_taxonomy.tsv.gz")
     coverage_sam = os.path.join(outdir, "records.sam.gz")
@@ -435,6 +435,7 @@ def main():
         binning_norm_kmers=binning_norm_kmers,
         binning_embedded_kmers=binning_embedded_kmers,
         binning_coverage=binning_coverage,
+        binning_gc_content=binning_gc_content,
         binning_markers=binning_markers,
         binning_taxonomy=binning_taxonomy,
         coverage_sam=coverage_sam,
