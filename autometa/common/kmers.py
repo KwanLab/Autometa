@@ -288,7 +288,6 @@ def count(
     out: str = None,
     force: bool = False,
     verbose: bool = True,
-    multiprocess: bool = True,
     cpus: int = mp.cpu_count(),
 ) -> pd.DataFrame:
     """Counts k-mer frequencies for provided assembly file
@@ -309,8 +308,6 @@ def count(
         Whether to overwrite existing `out` k-mer counts table (the default is False).
     verbose : bool, optional
         Enable progress bar `verbose` (the default is True).
-    multiprocess : bool, optional
-        Use multiple cores to count k-mer frequencies (the default is True).
     cpus : int, optional
         Number of cpus to use. (the default will use all available).
 
@@ -338,7 +335,7 @@ def count(
             raise TypeError(f"size must be an int! Given: {type(size)}")
         ref_kmers = init_kmers(size)
         logger.info(f"Counting {size}-mers.")
-        if multiprocess:
+        if cpus > 1:
             kmer_counts = mp_counter(assembly, ref_kmers, cpus)
         else:
             kmer_counts = seq_counter(assembly, ref_kmers, verbose=verbose)
@@ -621,7 +618,8 @@ def main():
     skip_desc = "(will skip if file exists)"
     cpus = mp.cpu_count()
     parser = argparse.ArgumentParser(
-        description="Count k-mer frequencies of given `fasta`"
+        description="Count k-mer frequencies of given `fasta`",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--fasta", help="Metagenomic assembly fasta file", required=True
@@ -675,16 +673,7 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--multiprocess",
-        help="count k-mers using multiprocessing",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "--cpus",
-        help=f"num. processors to use if multiprocess is selected. (default = {cpus})",
-        default=cpus,
-        type=int,
+        "--cpus", help=f"num. processors to use.", default=cpus, type=int,
     )
     parser.add_argument(
         "--seed",
@@ -702,7 +691,6 @@ def main():
             size=args.size,
             out=args.kmers,
             force=args.force,
-            multiprocess=args.multiprocess,
             cpus=args.cpus,
         )
 
