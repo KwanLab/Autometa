@@ -27,21 +27,22 @@ File containing definition of the NCBI class and containing functions useful for
 import logging
 import os
 import string
-import subprocess
 import sys
+from typing import Dict, Iterable, List
 
 import pandas as pd
 
 from tqdm import tqdm
 
-from autometa.common.utilities import make_pickle, unpickle, timeit
 from autometa.common.exceptions import DatabaseOutOfSyncError
+from autometa.config.utilities import DEFAULT_CONFIG
 
 
 logger = logging.getLogger(__name__)
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-NCBI_DIR = os.path.join(BASE_DIR, "databases", "ncbi")
+NCBI_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
+# For cases where autometa has not been configured, attempt to find ncbi directory via source
+NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
 
 
 class NCBI:
@@ -119,7 +120,7 @@ class NCBI:
         # Perhaps should place summary here of files that do or do not exist?
         return self.dirpath
 
-    def name(self, taxid, rank=None):
+    def name(self, taxid: int, rank: str = None) -> str:
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
         deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
@@ -163,7 +164,7 @@ class NCBI:
         # so we will place this as unclassified.
         return "unclassified"
 
-    def lineage(self, taxid, canonical=True):
+    def lineage(self, taxid: int, canonical: bool = True) -> List[Dict]:
         """
         Returns the lineage of `taxids` encountered when traversing to root
 
@@ -191,7 +192,9 @@ class NCBI:
             taxid = self.parent(taxid)
         return lineage
 
-    def get_lineage_dataframe(self, taxids, fillna=True):
+    def get_lineage_dataframe(
+        self, taxids: Iterable, fillna: bool = True
+    ) -> pd.DataFrame:
         """
         Given an iterable of taxids generate a pandas DataFrame of their canonical
         lineages
@@ -242,7 +245,7 @@ class NCBI:
             df.fillna(value="unclassified", inplace=True)
         return df
 
-    def rank(self, taxid):
+    def rank(self, taxid: int) -> str:
         """
         Return the respective rank of provided `taxid`. If the `taxid` is deprecated, suppressed,
         withdrawn from NCBI (basically old) the updated rank will be retrieved
@@ -269,7 +272,7 @@ class NCBI:
             taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
-    def parent(self, taxid):
+    def parent(self, taxid: int) -> int:
         """
         Retrieve the parent taxid of provided `taxid`. If the `taxid` is deprecated, suppressed,
         withdrawn from NCBI (basically old) the updated parent will be retrieved
@@ -296,8 +299,7 @@ class NCBI:
             taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
-    # @timeit
-    def parse_names(self):
+    def parse_names(self) -> Dict[int, str]:
         """
         Parses through names.dmp database and loads taxids with scientific names
 
@@ -322,7 +324,7 @@ class NCBI:
             logger.debug("names loaded")
         return names
 
-    def parse_nodes(self):
+    def parse_nodes(self) -> Dict[int, str]:
         """
         Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.NCBI.parent`, :func:`autometa.taxonomy.ncbi.NCBI.rank`
         Note: This is performed when a new NCBI class instance is constructed
@@ -347,7 +349,7 @@ class NCBI:
             logger.debug("nodes loaded")
         return nodes
 
-    def parse_merged(self):
+    def parse_merged(self) -> Dict[int, int]:
         """
         Parse the merged.dmp database
         Note: This is performed when a new NCBI class instance is constructed
@@ -371,7 +373,7 @@ class NCBI:
             logger.debug("merged loaded")
         return merged
 
-    def is_common_ancestor(self, taxid_A, taxid_B):
+    def is_common_ancestor(self, taxid_A: int, taxid_B: int) -> bool:
         """
         Determines whether the provided taxids have a non-root common ancestor
 
@@ -393,7 +395,7 @@ class NCBI:
         common_ancestor.discard(1)  # This discards root
         return True if common_ancestor else False
 
-    def convert_taxid_dtype(self, taxid):
+    def convert_taxid_dtype(self, taxid: int) -> int:
         """
         1. Converts the given `taxid` to an integer and checks whether it is positive.
         2. Checks whether `taxid` is present in both nodes.dmp and names.dmp.

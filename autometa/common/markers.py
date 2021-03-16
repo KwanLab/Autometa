@@ -32,10 +32,13 @@ import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
+from autometa.config.utilities import DEFAULT_CONFIG
 
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MARKERS_DIR = os.path.join(BASE_DIR, "databases", "markers")
+MARKERS_DIR = DEFAULT_CONFIG.get("databases", "markers")
+# For cases where autometa has not been configured, attempt to find the markers via source
+MARKERS_DIR = (
+    MARKERS_DIR if not "None" in MARKERS_DIR else MARKERS_DIR.replace("None", ".")
+)
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +173,11 @@ def get(
 
     if not os.path.exists(out) or not os.path.getsize(out):
         out = hmmer.filter_markers(
-            infpath=scans, outfpath=out, cutoffs=cutoffs, orfs=orfs, force=force,
+            infpath=scans,
+            outfpath=out,
+            cutoffs=cutoffs,
+            orfs=orfs,
+            force=force,
         )
     return load(fpath=out, format=format)
 
@@ -236,7 +243,10 @@ def main():
         type=int,
     )
     parser.add_argument(
-        "--seed", help="Seed to set random state for hmmscan.", default=42, type=int,
+        "--seed",
+        help="Seed to set random state for hmmscan.",
+        default=42,
+        type=int,
     )
     args = parser.parse_args()
 

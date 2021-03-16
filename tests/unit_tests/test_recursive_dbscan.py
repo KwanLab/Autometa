@@ -156,7 +156,7 @@ def test_recursive_dbscan_main(
             self.kmers = kmers
             self.coverage = coverage
             self.markers = markers_fpath
-            self.out = out
+            self.output = out
             self.embedded_kmers = embedded_kmers
             self.embedding_method = "bhsne"
             self.clustering_method = "dbscan"

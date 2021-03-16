@@ -32,12 +32,14 @@ from typing import Dict, Union
 from tqdm import tqdm
 
 from autometa.taxonomy.lca import LCA
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 
 logger = logging.getLogger(__name__)
 
 
-def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
+def is_consistent_with_other_orfs(
+    taxid: int, rank: str, rank_counts: Dict[str, Dict], ncbi: NCBI
+) -> bool:
     """Determines whether the majority of proteins in a contig, with rank equal
     to or above the given rank, are common ancestors of the taxid.
 
@@ -85,7 +87,7 @@ def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
         return False
 
 
-def lowest_majority(rank_counts, ncbi):
+def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
     """Determine the lowest majority given `rank_counts` by first attempting to
     get a taxid that leads in counts with the highest specificity in terms of
     canonical rank.
@@ -267,7 +269,7 @@ def majority_vote(
     verbose: bool = False,
     blast: str = None,
     force: bool = False,
-):
+) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
     Parameters
@@ -298,7 +300,12 @@ def majority_vote(
         filename, __ = os.path.splitext(os.path.basename(orfs))
         outdir = os.path.dirname(os.path.realpath(out))
         lca_out = os.path.join(outdir, ".".join([filename, "lca.tsv"]))
-    lca_fpath = lca.blast2lca(orfs=orfs, out=lca_out, blast=blast, force=force,)
+    lca_fpath = lca.blast2lca(
+        orfs=orfs,
+        out=lca_out,
+        blast=blast,
+        force=force,
+    )
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
@@ -311,7 +318,6 @@ def main():
     import argparse
 
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir, "databases", "ncbi")
     parser = argparse.ArgumentParser(
         description="Script to assign taxonomy via a modified majority voting"
         " algorithm.",
@@ -326,7 +332,7 @@ def main():
         "--output", help="Path to write voted taxid results table.", required=True
     )
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=dbdir
+        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
     parser.add_argument("--lca", help="Path to LCA results table.")
     parser.add_argument(

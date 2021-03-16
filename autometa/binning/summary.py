@@ -37,7 +37,7 @@ from Bio.SeqUtils import GC
 
 from typing import Mapping
 
-from autometa import config
+from autometa.config import utilities as configutils
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy import majority_vote
 from autometa.common import markers
@@ -61,7 +61,7 @@ def merge_annotations(mgargs: Namespace) -> Mapping[str, pd.DataFrame]:
     Parameters
     ----------
     mgargs : argparse.Namespace
-        metagenome args parsed from config using `config.parse_args`.
+        metagenome args parsed from config using `autometa.config.utilities.parse_args`.
 
     Returns
     -------
@@ -303,7 +303,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "workspace", help="Path to Autometa results workspace directory",
+        "workspace",
+        help="Path to Autometa results workspace directory",
     )
     parser.add_argument(
         "--write",
@@ -316,7 +317,7 @@ def main():
     configs_search_str = os.path.join(args.workspace, "**", "metagenome_*.config")
     config_fpaths = glob.glob(configs_search_str, recursive=True)
     for config_fpath in config_fpaths:
-        mgargs = config.parse_args(config_fpath)
+        mgargs = configutils.parse_args(config_fpath)
         ncbi = NCBI(dirpath=mgargs.databases.ncbi)
         annotations = merge_annotations(mgargs)
         for domain, bin_df in annotations.items():

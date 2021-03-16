@@ -42,7 +42,7 @@ import multiprocessing as mp
 from tqdm import tqdm
 from pickle import UnpicklingError
 
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 from autometa.common.utilities import make_pickle, unpickle, file_length
 from autometa.common.external import diamond
 from autometa.common.external import prodigal
@@ -602,8 +602,6 @@ class LCA(NCBI):
 def main():
     import argparse
 
-    basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir, "databases", "ncbi")
     parser = argparse.ArgumentParser(
         description="Script to determine Lowest Common Ancestor",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -616,7 +614,7 @@ def main():
         "(Note: The table provided must be in outfmt=6)",
     )
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=dbdir
+        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
     parser.add_argument(
         "--verbose",
@@ -641,7 +639,7 @@ def main():
     lca = LCA(dbdir=args.dbdir, verbose=args.verbose)
 
     lca.blast2lca(
-        fasta=args.orfs,
+        orfs=args.orfs,
         out=args.out,
         blast=args.blast,
         force=args.force,
