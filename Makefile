@@ -61,7 +61,7 @@ install:
 
 ## Install dependencies for test environment
 test_environment: tests/requirements.txt
-	$(PYTHON_INTERPRETER) -m pip install --requirement=requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install --requirement=tests/requirements.txt
 
 ## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
 image: Dockerfile
@@ -81,15 +81,15 @@ unit_test_data_build: tests/data/records.fna
 	$(PYTHON_INTERPRETER) make_test_data.py
 
 ## Run all unit tests
-unit_test: tests/data/test_data.json
+unit_test: tests/data/test_data.json test_environment
 	$(PYTHON_INTERPRETER) -m pytest --durations=0 --cov=autometa --emoji --cov-report html
 
 ## Run unit tests marked with WIP
-unit_test_wip: tests/data/test_data.json
+unit_test_wip: tests/data/test_data.json test_environment
 	$(PYTHON_INTERPRETER) -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report html
 
 ## Run unit tests marked with entrypoint
-unit_test_entrypoints: tests/data/test_data.json
+unit_test_entrypoints: tests/data/test_data.json test_environment
 	$(PYTHON_INTERPRETER) -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report html
 
 
