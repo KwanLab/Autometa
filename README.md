@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/autometa/badge/?version=latest)](https://autometa.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/autometa/badge/?version=latest)](https://autometa.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.com/KwanLab/Autometa.svg?branch=dev)](https://travis-ci.com/KwanLab/Autometa)
 
 Autometa
 =========

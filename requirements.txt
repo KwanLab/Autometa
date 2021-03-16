@@ -10,7 +10,6 @@ bedtools
 bowtie2
 hmmer
 prodigal
-ndcctools
 parallel
 requests
 umap-learn
