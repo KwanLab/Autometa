@@ -59,6 +59,10 @@ endif
 install:
 	$(PYTHON_INTERPRETER) setup.py install
 
+## Install dependencies for test environment
+test_environment: tests/requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install --requirement=requirements.txt
+
 ## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
 image: Dockerfile
 	docker build . -t jason-c-kwan/autometa:`git branch --show-current`
