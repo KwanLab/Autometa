@@ -55,6 +55,16 @@ def fixture_coverage(variables, test_contigs, binning_testdir):
     return fpath
 
 
+@pytest.fixture(name="gc_content", scope="module")
+def fixture_gc_content(variables, test_contigs, binning_testdir):
+    binning_test_data = variables["binning"]
+    df = pd.read_json(binning_test_data["gc_content"])
+    df.set_index("contig", inplace=True)
+    fpath = binning_testdir / "gc_content.tsv"
+    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
+    return fpath
+
+
 @pytest.fixture(name="taxonomy", scope="module")
 def fixture_taxonomy(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
@@ -80,9 +90,9 @@ def fixture_markers(markers_fpath):
 
 
 @pytest.fixture(name="master", scope="module")
-def fixture_master(embedded_kmers, coverage, taxonomy):
+def fixture_master(embedded_kmers, coverage, gc_content, taxonomy):
     master = pd.read_csv(embedded_kmers, sep="\t", index_col="contig")
-    for fpath in [coverage, taxonomy]:
+    for fpath in [coverage, gc_content, taxonomy]:
         df = pd.read_csv(fpath, sep="\t", index_col="contig")
         master = pd.merge(master, df, how="left", right_index=True, left_index=True)
     master = master.convert_dtypes()
@@ -101,13 +111,18 @@ def test_binning(master, markers, usetaxonomy, method):
         reverse_ranks=False,
         domain="bacteria",
         completeness=20.0,
-        purity=90.0,
+        purity=95.0,
+        coverage_stddev=25.0,
+        gc_content_stddev=5.0,
         method=method,
         verbose=True,
     )
     assert isinstance(df, pd.DataFrame)
     assert "cluster" in df.columns
     assert "purity" in df.columns
+    assert "completeness" in df.columns
+    assert "coverage_stddev" in df.columns
+    assert "gc_content_stddev" in df.columns
     assert "completeness" in df.columns
     assert df.shape[0] == num_contigs
 
@@ -122,7 +137,7 @@ def test_binning_invalid_clustering_method(master, markers):
             reverse_ranks=False,
             domain="bacteria",
             completeness=20.0,
-            purity=90.0,
+            purity=95.0,
             method="invalid_clustering_method",
             verbose=False,
         )
@@ -146,7 +161,14 @@ def test_binning_empty_markers_table(master):
 
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
-    monkeypatch, kmers, coverage, markers_fpath, embedded_kmers, taxonomy, tmp_path
+    monkeypatch,
+    kmers,
+    coverage,
+    gc_content,
+    markers_fpath,
+    embedded_kmers,
+    taxonomy,
+    tmp_path,
 ):
     out = tmp_path / "binning.tsv"
 
@@ -154,14 +176,17 @@ def test_recursive_dbscan_main(
         def __init__(self):
             self.domain = "bacteria"
             self.kmers = kmers
-            self.coverage = coverage
+            self.coverages = coverage
+            self.gc_content = gc_content
             self.markers = markers_fpath
-            self.out = out
+            self.output = out
             self.embedded_kmers = embedded_kmers
             self.embedding_method = "bhsne"
             self.clustering_method = "dbscan"
             self.completeness = 20.0
-            self.purity = 90.0
+            self.purity = 95.0
+            self.cov_stddev_limit = 25.0
+            self.gc_stddev_limit = 5.0
             self.taxonomy = taxonomy
             self.starting_rank = "superkingdom"
             self.reverse_ranks = False

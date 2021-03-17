@@ -1,5 +1,6 @@
 biopython
-pandas
+gdown
+pandas>=1.1
 tqdm
 tsne
 numpy
@@ -10,6 +11,8 @@ bedtools
 bowtie2
 hmmer
 prodigal
+make
+nextflow
 parallel
 requests
 umap-learn
