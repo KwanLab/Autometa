@@ -141,9 +141,9 @@ class Databases:
         self.nproc = nproc
         self.update = update
         if self.config.get("common", "home_dir") == "None":
-            # neccessary if user not running databases through the user
-            # endpoint. where :func:`~autometa.config.init_default` would've
-            # been called.
+            # neccessary if user is running autometa-update-database
+            # before running the autometa-config endpoint.
+            # where :func:`~autometa.config.utilities.set_home_dir` would've been called.
             self.config.set("common", "home_dir", AUTOMETA_DIR)
         if not self.config.has_section("databases"):
             self.config.add_section("databases")
@@ -384,7 +384,14 @@ class Databases:
             NCBI file checksums do not match after file transfer.
 
         """
-        host = self.config.get("ncbi", "host")
+        # s.t. set methods are available
+        options = set(options)
+        # If any of the taxdump.tar.gz files are missing,
+        # we need to check that taxdump tarball is available to extract them (see self.extract_taxdump).
+        for taxdump_option in {"nodes", "names", "merged"}:
+            if taxdump_option in options:
+                options.add("taxdump")
+                options.discard(taxdump_option)
         for option in options:
             ftp_fullpath = self.config.get("database_urls", option)
 
@@ -563,7 +570,7 @@ class Databases:
             "markers": self.download_markers,
         }
         if section and section not in dispatcher:
-            raise ValueError(f'{section} does not match "ncbi" or "markers"')
+            raise ValueError(f"{section} does not match {dispatcher.keys()}")
         if section:
             missing = self.get_missing(section=section)
             options = missing.get(section, [])

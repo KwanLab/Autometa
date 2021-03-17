@@ -22,12 +22,12 @@ endif
 
 ## Delete all compiled Python files
 clean:
-	find . -type f -name "*.py[co]" -delete
-	find . -type d -name "__pycache__" -delete
-	find . -type d -name "htmlcov" -delete
-	find . -type d -name "Autometa.egg-info" -delete
-	find . -type d -name "dist" -delete
-	find . -type d -name "build" -delete
+	find . -type f -name "*.py[co]" -exec rm -r {} +
+	find . -type d -name "__pycache__" -exec rm -r {} +
+	find . -type d -name "htmlcov" -exec rm -r {} +
+	find . -type d -name "Autometa.egg-info" -exec rm -r {} +
+	find . -type d -name "dist" -exec rm -r {} +
+	find . -type d -name "build" -exec rm -r {} +
 
 ## Apply black formatting
 black:
