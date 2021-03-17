@@ -403,7 +403,7 @@ class Databases:
             if self.dryrun:
                 return
 
-            rsync_fpath = ftp_fullpath.replace("ftp", "rsync")
+            rsync_fpath = ftp_fullpath.replace("ftp", "rsync", 1)
             cmd = ["rsync", "--quiet", "--archive", rsync_fpath, outfpath]
             logger.debug(f"starting {option} download")
             subprocess.run(
