@@ -39,14 +39,13 @@ process LCA {
   publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv"
 
   input:
-    path orfs
     path blast
 
   output:
     path "${orfs.simpleName}.lca.tsv"
 
   """
-  autometa-taxonomy-lca --blast $blast --dbdir /ncbi ${orfs} ${orfs.simpleName}.lca.tsv
+  autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${orfs.simpleName}.lca.tsv
   """
 }
 
@@ -57,14 +56,13 @@ process MAJORITY_VOTE {
   publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv"
 
   input:
-    path orfs
     path lca
 
   output:
     path "${orfs.simpleName}.votes.tsv"
 
   """
-  autometa-taxonomy-majority-vote --orfs ${orfs} --output ${orfs.simpleName}.votes.tsv --dbdir /ncbi --lca $lca
+  autometa-taxonomy-majority-vote --lca ${lca} --output ${orfs.simpleName}.votes.tsv --dbdir /ncbi
   """
 }
 
@@ -107,8 +105,8 @@ workflow TAXON_ASSIGNMENT {
 
     main:
       DIAMOND(orfs)
-      LCA(orfs, DIAMOND.out)
-      MAJORITY_VOTE(orfs, LCA.out)
+      LCA(DIAMOND.out)
+      MAJORITY_VOTE(LCA.out)
       SPLIT_KINGDOMS(MAJORITY_VOTE.out, assembly)
 
     emit:

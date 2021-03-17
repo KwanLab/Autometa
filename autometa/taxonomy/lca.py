@@ -36,12 +36,13 @@ import os
 from typing import Dict
 from itertools import chain
 
+import pandas as pd
 import numpy as np
-import multiprocessing as mp
 
 from tqdm import tqdm
 from pickle import UnpicklingError
 
+from autometa.config.environ import get_versions
 from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 from autometa.common.utilities import make_pickle, unpickle, file_length
 from autometa.common.external import diamond
@@ -453,41 +454,30 @@ class LCA(NCBI):
             lca_taxids.update({qseqid: lca_taxid})
         return lca_taxids
 
-    def blast2lca(
-        self, orfs: str, out: str, blast: str, force: bool = False, cpus: int = 0
-    ) -> str:
+    def blast2lca(self, blast: str, out: str, force: bool = False) -> str:
         """Determine lowest common ancestor of provided amino-acid ORFs.
 
         Parameters
         ----------
-        orfs : str
-            </path/to/amino/acid/orfs.faa>.
+        blast : str
+            </path/to/diamond/outfmt6/blastp.tsv>.
         out : str
             </path/to/output/lca.tsv>.
-        blast : str
-            </path/to/diamond/output/blastp.tsv>. Will write if the table does not exist.
-        force : bool
+        force : bool, optional
             Force overwrite of existing `out`.
 
         Returns
         -------
         str
-            `out` </path/to/lca/output/table>.
+            `out` </path/to/output/lca.tsv>.
 
         """
         if os.path.exists(out) and os.path.getsize(out) and not force:
             logger.warning(f"FileAlreadyExists {out}")
             return out
-        if os.path.exists(blast) and os.path.getsize(blast):
-            blast = os.path.realpath(blast)
-        else:
-            blast = diamond.blast(
-                fasta=orfs,
-                database=self.nr_fpath,
-                outfpath=blast,
-                verbose=self.verbose,
-                cpus=cpus,
-            )
+        if not os.path.exists(blast) or not os.path.getsize(blast):
+            raise FileNotFoundError(blast)
+        blast = os.path.realpath(blast)
         sseqids = diamond.parse(results=blast, verbose=self.verbose)
         taxids = self.convert_sseqids_to_taxids(sseqids)
         lcas = self.reduce_taxids_to_lcas(taxids)
@@ -533,7 +523,7 @@ class LCA(NCBI):
         return out
 
     def parse(
-        self, lca_fpath: str, orfs_fpath: str
+        self, lca_fpath: str, orfs_fpath: str = None
     ) -> Dict[str, Dict[str, Dict[int, int]]]:
         """Retrieve and construct contig dictionary from provided `lca_fpath`.
 
@@ -543,7 +533,7 @@ class LCA(NCBI):
             </path/to/lcas.tsv>
             tab-delimited ordered columns: qseqid, name, rank, lca_taxid
 
-        orfs_fpath : str
+        orfs_fpath : str, optional (required if using prodigal version <2.6)
             </path/to/prodigal/called/orfs.fasta>
             Note: These ORFs should correspond to the ORFs provided in the BLAST table.
 
@@ -558,7 +548,8 @@ class LCA(NCBI):
             `lca_fpath` does not exist.
         FileNotFoundError
             `orfs_fpath` does not exist.
-
+        ValueError
+            If prodigal version is under 2.6, `orfs_fpath` is a required input.
         """
         logger.debug(f"Parsing LCA table: {lca_fpath}")
         if not os.path.exists(lca_fpath):
@@ -566,7 +557,20 @@ class LCA(NCBI):
         if orfs_fpath and not os.path.exists(orfs_fpath):
             raise FileNotFoundError(orfs_fpath)
 
-        contigs_from_orfs = prodigal.contigs_from_headers(orfs_fpath)
+        version = get_versions("prodigal")
+        if version.count(".") >= 2:
+            version = float(".".join(version.split(".")[:2]))
+        else:
+            version = float(version)
+        if version < 2.6:
+            raise ValueError("Prodigal version under 2.6 requires orfs_fpath input!")
+        # Create a contig translation dictionary with or without ORFs
+        if orfs_fpath:
+            contigs_from_orfs = prodigal.contigs_from_headers(orfs_fpath)
+        else:
+            df = pd.read_csv(lca_fpath, sep="\t", usecols=["qseqid"])
+            df["contig"] = df.qseqid.map(lambda orf: orf.rsplit("_", 1)[0])
+            contigs_from_orfs = df.set_index("qseqid")["contig"].to_dict()
 
         fname = os.path.basename(lca_fpath)
         n_lines = file_length(lca_fpath) if self.verbose else None
@@ -606,12 +610,12 @@ def main():
         description="Script to determine Lowest Common Ancestor",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("orfs", help="Path to amino-acids fasta file.")
-    parser.add_argument("out", help="Filename to write LCA results.")
+    parser.add_argument("--output", help="Path to write LCA results.", required=True)
     parser.add_argument(
         "--blast",
         help="Path to BLAST results table respective to `orfs`. "
         "(Note: The table provided must be in outfmt=6)",
+        required=True,
     )
     parser.add_argument(
         "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
@@ -628,22 +632,12 @@ def main():
         action="store_true",
         default=False,
     )
-    parser.add_argument(
-        "--cpus",
-        help="Number of cores to use for BLAST search",
-        default=mp.cpu_count(),
-        type=int,
-    )
     args = parser.parse_args()
 
     lca = LCA(dbdir=args.dbdir, verbose=args.verbose)
 
     lca.blast2lca(
-        orfs=args.orfs,
-        out=args.out,
-        blast=args.blast,
-        force=args.force,
-        cpus=args.cpus,
+        blast=args.blast, out=args.output, force=args.force,
     )
 
 
