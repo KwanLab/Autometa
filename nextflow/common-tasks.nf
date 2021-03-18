@@ -112,6 +112,7 @@ process MARKERS {
     --hmmscan ${orfs.simpleName}.hmmscan.tsv \
     --out ${orfs.simpleName}.markers.tsv \
     --kingdom ${params.kingdom} \
+    --dbdir /autometa/databases/markers/ \
     --parallel \
     --cpus ${task.cpus} \
     --seed 42

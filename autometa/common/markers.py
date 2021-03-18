@@ -149,14 +149,21 @@ def get(
     ValueError
         Why the exception is raised.
     """
-    orfs = os.path.realpath(orfs)
     kingdom = kingdom.lower()
     hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
     cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
     hmmscan_fname = ".".join([kingdom, "hmmscan.tsv"])
-    scans = os.path.join(os.path.dirname(orfs), hmmscan_fname) if not scans else scans
+    scans = (
+        os.path.join(os.path.dirname(os.path.abspath((orfs))), hmmscan_fname)
+        if not scans
+        else scans
+    )
     markers_fname = ".".join([kingdom, "markers.tsv"])
-    out = os.path.join(os.path.dirname(orfs), markers_fname) if not out else out
+    out = (
+        os.path.join(os.path.dirname(os.path.abspath((orfs))), markers_fname)
+        if not out
+        else out
+    )
     kingdom = kingdom.lower()
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
