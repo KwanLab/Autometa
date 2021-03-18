@@ -6,7 +6,7 @@ include { AUTOMETA } from './nextflow/autometa.nf'
 
 // Below listed parameters should be provided by the parameters.config file
 // Available here: https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow/parameters.config
-// 
+//
 
 // Check User data inputs
 params.metagenome = null
@@ -59,6 +59,8 @@ log.info """
  classification_method              : ${params.classification_method}
  completeness                       : ${params.completeness}
  purity                             : ${params.purity}
+ gc_stddev_limit                    : ${params.gc_stddev_limit}
+ cov_stddev_limit                   : ${params.cov_stddev_limit}
  kingdom                            : ${params.kingdom}
  -----------------------------------------------------
  Databases
