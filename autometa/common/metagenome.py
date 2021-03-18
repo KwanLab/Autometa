@@ -360,7 +360,7 @@ def main():
     )
     parser.add_argument(
         "--output-stats",
-        help="Path to output length-filtered assembly fasta file.",
+        help="Path to output assembly stats table.",
         metavar="filepath",
         required=False,
     )
