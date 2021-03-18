@@ -32,9 +32,14 @@ COPY . .
 RUN python setup.py install \
     && rm -rf Autometa.egg-info/ build dist
 
+# NOTE: DB_DIR must be an absolute path (not a relative path)
+ENV DB_DIR="/dbs"
 RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
     && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm \
-    && autometa-config --section databases --option base --value autometa/databases
+    && mkdir $DB_DIR \
+    && mv autometa/databases/* ${DB_DIR}/. \
+    && autometa-config --section databases --option base --value ${DB_DIR} \
+    && echo "databases base directory set in ${DB_DIR}/"
 
 RUN echo "Testing autometa import" \
     && python -c "import autometa"

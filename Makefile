@@ -38,9 +38,9 @@ create_environment: requirements.txt
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda create --name $(PROJECT_NAME) python=3 --file=requirements.txt
+	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=3 --file=requirements.txt
 else
-	conda create --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
+	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
 endif
 	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
