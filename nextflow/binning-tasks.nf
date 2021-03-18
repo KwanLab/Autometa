@@ -10,6 +10,8 @@ params.binning_starting_rank = "superkingdom" // choices: "superkingdom", "phylu
 params.classification_method = "decision_tree" // choices: "decision_tree", "random_forest"
 params.completeness = 20.0
 params.purity = 90.0
+params.cov_stddev_limit = 25.0
+params.gc_stddev_limit = 5.0
 params.interim = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
 
@@ -22,6 +24,7 @@ process BINNING {
   input:
     path kmers
     path coverage
+    path gc_content
     path markers
     path taxonomy
 
@@ -31,18 +34,21 @@ process BINNING {
 
   """
   autometa-binning \
+    --kmers $kmers \
+    --coverage $coverage \
+    --gc-content $gc_content \
+    --markers $markers \
+    --output ${coverage.simpleName}.${params.kingdom}.binning.tsv \
+    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv \
+    --embedding-method ${params.kmer_embed_method} \
     --clustering-method ${params.clustering_method} \
     --completeness ${params.completeness} \
     --purity ${params.purity} \
+    --cov-stddev-limit ${params.cov_stddev_limit} \
+    --gc-stddev-limit ${params.gc_stddev_limit} \
     --taxonomy $taxonomy \
     --starting-rank ${params.binning_starting_rank} \
-    --domain ${params.kingdom} \
-    --embedding-method ${params.kmer_embed_method} \
-    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv \
-    --kmers $kmers \
-    --coverage $coverage \
-    --markers $markers \
-    --output ${coverage.simpleName}.${params.kingdom}.binning.tsv
+    --domain ${params.kingdom}
   """
 }
 

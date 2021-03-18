@@ -13,15 +13,15 @@ workflow AUTOMETA {
   main:
     // Perform various annotations on provided metagenome
     LENGTH_FILTER(metagenome)
-    COVERAGE(LENGTH_FILTER.out)
-    ORFS(LENGTH_FILTER.out)
+    COVERAGE(LENGTH_FILTER.out.fasta)
+    ORFS(LENGTH_FILTER.out.fasta)
     MARKERS(ORFS.out.prots)
     // Perform taxon assignment with filtered metagenome
-    TAXON_ASSIGNMENT(LENGTH_FILTER.out, ORFS.out.prots)
+    TAXON_ASSIGNMENT(LENGTH_FILTER.out.fasta, ORFS.out.prots)
     // Now perform binning with all of our annotations.
     KMERS(TAXON_ASSIGNMENT.out.bacteria)
     // KMERS(TAXON_ASSIGNMENT.out.archaea) ... for case of performing binning on archaea
-    BINNING(KMERS.out.normalized, COVERAGE.out, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
+    BINNING(KMERS.out.normalized, COVERAGE.out, LENGTH_FILTER.out.gc_content, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
     // Then unclustered recruitment of any unclustered contigs using binning assignments from above.
     UNCLUSTERED_RECRUITMENT(KMERS.out.normalized, COVERAGE.out, BINNING.out.binning, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
 

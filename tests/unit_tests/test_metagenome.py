@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 import argparse
 import os
@@ -29,15 +30,8 @@ def fixture_assembly(variables, metagenome_testdir):
 
 
 @pytest.fixture(name="metagenome", scope="module")
-def fixture_metagenome(assembly, metagenome_testdir):
-    nucl_orfs = metagenome_testdir.joinpath("orfs.fna")
-    prot_orfs = metagenome_testdir.joinpath("orfs.faa")
-    return Metagenome(
-        assembly=assembly,
-        outdir=metagenome_testdir,
-        nucl_orfs_fpath=nucl_orfs,
-        prot_orfs_fpath=prot_orfs,
-    )
+def fixture_metagenome(assembly):
+    return Metagenome(assembly=assembly)
 
 
 @pytest.mark.parametrize("quality_measure", [0.1, 0.9])
@@ -91,9 +85,21 @@ def test_size(metagenome):
         assert metagenome.size == expected
 
 
-@pytest.mark.parametrize("details", [True, False])
-def test_describe(metagenome, details):
-    metagenome.describe(autometa_details=details)
+def test_describe(metagenome):
+    df = metagenome.describe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.index.name == "assembly"
+    expected_cols = [
+        "nseqs",
+        "size (bp)",
+        "N50 (bp)",
+        "N10 (bp)",
+        "N90 (bp)",
+        "length_weighted_gc_content (%)",
+        "largest_seq",
+    ]
+    for col in expected_cols:
+        assert col in df.columns
 
 
 @pytest.mark.parametrize("force", [False, True])
@@ -132,58 +138,20 @@ def test_length_filter_invalid_cutoff(metagenome, cutoff, tmp_path):
         assert filtered_metagenome.nseqs == metagenome.nseqs
 
 
-def test_call_orfs(monkeypatch, metagenome):
-    def return_args(*args, **kwargs):
-        return args, kwargs
-
-    monkeypatch.setattr(prodigal, "run", return_args)
-
-    force = False
-    cpus = 1
-    parallel = False
-    args, kwargs = metagenome.call_orfs(force=force, cpus=cpus, parallel=parallel)
-    # Let's ensure we are always passing in keyword arguments
-    assert not args
-    # Now let's make sure the arguments provided are the
-    # same as were called in prodigal.run(...)
-    assert metagenome.assembly == kwargs.get("assembly")
-    assert metagenome.prot_orfs_fpath == kwargs.get("prots_out")
-    assert metagenome.nucl_orfs_fpath == kwargs.get("nucls_out")
-    assert force == kwargs.get("force")
-    assert parallel == kwargs.get("parallel")
-    assert cpus == kwargs.get("cpus")
-
-
-@pytest.mark.parametrize(
-    "force,parallel,cpus", [(1, False, 1), (False, 1, 1), (False, False, False)]
-)
-def test_call_orfs_invalid_params(metagenome, force, parallel, cpus):
-    with pytest.raises(TypeError):
-        metagenome.call_orfs(force=force, parallel=parallel, cpus=cpus)
-
-
-def test_orfs_called(metagenome, monkeypatch):
-    called = metagenome.orfs_called
-    assert not called
-    with monkeypatch.context() as m:
-        # Here we set the filepaths to the metagenome fixture assembly path
-        # (since we know this exists and is non-empty)
-        # metagenome.__str__ == metagenome.assembly
-        m.setattr(metagenome, "prot_orfs_fpath", str(metagenome))
-        m.setattr(metagenome, "nucl_orfs_fpath", str(metagenome))
-
-
 @pytest.mark.entrypoint
 def test_metagenome_main(monkeypatch, assembly, tmp_path):
-    out = tmp_path / "metagenome.filtered.fna"
+    output_fasta = tmp_path / "metagenome.filtered.fna"
+    output_stats = tmp_path / "metagenome.stats.tsv"
+    output_gc_content = tmp_path / "metagenome.gc_content.tsv"
 
     class MockArgs:
         def __init__(self):
             self.assembly = assembly
             self.force = True
             self.cutoff = 7232
-            self.out = out
-            self.stats = True
+            self.output_fasta = output_fasta
+            self.output_gc_content = output_gc_content
+            self.output_stats = output_stats
 
     # Defining the MockParser class to represent parser
     class MockParser:
@@ -199,6 +167,11 @@ def test_metagenome_main(monkeypatch, assembly, tmp_path):
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
 
     am_metagenome.main()
-    assert out.exists()
+    assert output_fasta.exists()
+    assert output_gc_content.exists()
+    assert output_stats.exists()
     num_expected_seqs = 2
-    assert len([record for record in SeqIO.parse(out, "fasta")]) == num_expected_seqs
+    assert (
+        len([record for record in SeqIO.parse(output_fasta, "fasta")])
+        == num_expected_seqs
+    )

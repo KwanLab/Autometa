@@ -18,16 +18,23 @@ params.processed = "</path/to/store/user/final/results>"
 process LENGTH_FILTER {
   tag "filtering metagenome ${metagenome.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.filtered.fna"
+  publishDir params.interim, pattern: "${metagenome.simpleName}.*"
 
   input:
     path metagenome
 
   output:
-    path "${metagenome.simpleName}.filtered.fna"
+    path "${metagenome.simpleName}.filtered.fna", emit: fasta
+    path "${metagenome.simpleName}.stats.tsv", emit: stats
+    path "${metagenome.simpleName}.gc_content.tsv", emit: gc_content
 
   """
-  autometa-length-filter --cutoff ${params.length_cutoff} $metagenome ${metagenome.simpleName}.filtered.fna
+  autometa-length-filter \
+    --assembly $metagenome \
+    --cutoff ${params.length_cutoff} \
+    --output-fasta ${metagenome.simpleName}.filtered.fna \
+    --output-stats ${metagenome.simpleName}.stats.tsv \
+    --output-gc-content ${metagenome.simpleName}.gc_content.tsv
   """
 }
 
@@ -88,6 +95,8 @@ process MARKERS {
   tag "Finding markers for ${orfs.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   cpus params.cpus
+  // copying orfs via stageInMode is required to run hmmscan (does not handle symlinks)
+  stageInMode 'copy'
   publishDir params.interim, pattern: "${orfs.simpleName}.markers.tsv"
   publishDir params.interim, pattern: "${orfs.simpleName}.hmmscan.tsv"
 
