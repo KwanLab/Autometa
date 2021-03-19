@@ -64,7 +64,6 @@ process KMERS {
     --embedded ${metagenome.simpleName}.kmers.embedded.tsv \
     --embed-method bhsne \
     --embed-dimensions ${params.kmer_embed_dimensions} \
-    --multiprocess \
     --cpus ${task.cpus} \
     --seed 42
   """
