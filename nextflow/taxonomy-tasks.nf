@@ -33,36 +33,36 @@ process DIAMOND {
 }
 
 process LCA {
-  tag "Assigning LCA to ${orfs.simpleName}"
+  tag "Assigning LCA to ${blast.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
-  publishDir params.interim, pattern: "${orfs.simpleName}.lca.tsv"
+  publishDir params.interim, pattern: "${blast.simpleName}.lca.tsv"
 
   input:
     path blast
 
   output:
-    path "${orfs.simpleName}.lca.tsv"
+    path "${blast.simpleName}.lca.tsv"
 
   """
-  autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${orfs.simpleName}.lca.tsv
+  autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${blast.simpleName}.lca.tsv
   """
 }
 
 process MAJORITY_VOTE {
-  tag "Performing taxon majority vote on ${orfs.simpleName}"
+  tag "Performing taxon majority vote on ${lca.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
-  publishDir params.interim, pattern: "${orfs.simpleName}.votes.tsv"
+  publishDir params.interim, pattern: "${lca.simpleName}.votes.tsv"
 
   input:
     path lca
 
   output:
-    path "${orfs.simpleName}.votes.tsv"
+    path "${lca.simpleName}.votes.tsv"
 
   """
-  autometa-taxonomy-majority-vote --lca ${lca} --output ${orfs.simpleName}.votes.tsv --dbdir /ncbi
+  autometa-taxonomy-majority-vote --lca ${lca} --output ${lca.simpleName}.votes.tsv --dbdir /ncbi
   """
 }
 
