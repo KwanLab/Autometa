@@ -2,7 +2,7 @@
 Benchmarking
 ============
 
-This page contains information regarding the test datasests that the users can use as well as benchmarking of the current autometa algorithm with its previous version as well as with other binning pipelines.
+This page contains information regarding the test datasests the users can use as well as benchmarking of the current autometa algorithm against its previous version as well other binning pipelines.
 
 Test datasests
 ==============
@@ -36,7 +36,7 @@ e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all 
     :file: simulated_community.csv
     :header-rows: 1
 
-You can download all the Simulated communities using this `link <https://drive.google.com/drive/folders/1JFjVb-pfQTv4GXqvqRuTOZTfKdT0MwhN?usp=sharing>`__. Individual communities can be downloaded using the links mentioned in the above table.
+You can download all the Simulated communities using this `link <https://drive.google.com/drive/folders/1JFjVb-pfQTv4GXqvqRuTOZTfKdT0MwhN?usp=sharing>`__. Individual communities can be downloaded using the links in the above table.
 
 For more information on simulated communities, check the `README.md <https://drive.google.com/file/d/1Ti05Qp13FleuMQdnp3C5L-sXnIM25EZE/view?usp=sharing>`__ located in the `simulated_communities` directory.
 

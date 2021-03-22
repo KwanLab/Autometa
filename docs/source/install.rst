@@ -58,11 +58,10 @@ You can also check the installation using autometa's built in unit tests.This is
     # Download test data
     gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
 
-Run the tests using ``make test``. This will run the tests and make sure that everything is working well. 
+Run the tests using ``make unit_test``. This will run the tests and make sure that everything is working well. 
 
 Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
 
 .. _conda: https://docs.conda.io/en/latest/
 .. _miniconda: https://docs.conda.io/en/latest/miniconda.html 
 .. _Docker: https://www.docker.com/
-
