@@ -25,6 +25,7 @@ Functions to retrieve orfs from provided assembly using prodigal
 """
 
 
+import gzip
 import logging
 import os
 import subprocess
@@ -238,7 +239,8 @@ def contigs_from_headers(fpath: str) -> Mapping[str, str]:
     else:
         version = float(version)
     translations = {}
-    for record in SeqIO.parse(fpath, "fasta"):
+    fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath)
+    for record in SeqIO.parse(fh, "fasta"):
         if version < 2.6:
             orf_id = (
                 record.description.split("#")[-1]
@@ -250,6 +252,7 @@ def contigs_from_headers(fpath: str) -> Mapping[str, str]:
         else:
             contig_id = record.id.rsplit("_", 1)[0]
         translations.update({record.id: contig_id})
+    fh.close()
     return translations
 
 
