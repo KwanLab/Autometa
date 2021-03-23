@@ -14,7 +14,7 @@ parallel
 prodigal
 requests
 rsync
-samtools
+samtools=1.11
 scikit-bio
 scikit-learn
 tqdm

@@ -2,7 +2,6 @@
 .git
 docs
 autometa.mf
-Makefile
 MANIFEST.in
 LICENSE.txt
 meta.yaml

@@ -20,7 +20,7 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 RUN apt-get update \
-    && apt install -y procps g++ \
+    && apt-get install -y procps \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -28,15 +28,15 @@ COPY requirements.txt ./
 RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y
 
+
 COPY . .
-RUN python setup.py install \
-    && rm -rf Autometa.egg-info/ build dist
+RUN make install && make clean
 
 # NOTE: DB_DIR must be an absolute path (not a relative path)
-ENV DB_DIR="/dbs"
+ENV DB_DIR="/scratch/dbs"
 RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
     && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm \
-    && mkdir $DB_DIR \
+    && mkdir -p $DB_DIR \
     && mv autometa/databases/* ${DB_DIR}/. \
     && autometa-config --section databases --option base --value ${DB_DIR} \
     && echo "databases base directory set in ${DB_DIR}/"
