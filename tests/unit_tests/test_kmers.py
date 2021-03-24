@@ -4,8 +4,6 @@ import argparse
 import pandas as pd
 import pytest
 
-from Bio import SeqIO
-
 from autometa.common import kmers
 from autometa.common.exceptions import TableFormatError
 
@@ -213,6 +211,7 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
     counts_out = tmp_path / "kmers.tsv"
     normalized = tmp_path / f"kmers.{norm_method}.tsv"
     embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
+    embed_dimensions = 2
 
     class MockArgs:
         def __init__(self):
@@ -223,7 +222,7 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
             self.norm_method = norm_method
             self.normalized = normalized
             self.embed_method = embed_method
-            self.embed_dimensions = 2
+            self.embed_dimensions = embed_dimensions
             self.do_pca = True
             self.pca_dimensions = 3
             self.embedded = embedded
@@ -242,3 +241,9 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
 
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
     kmers.main()
+    assert embedded.exists()
+    df = pd.read_csv(embedded, sep="\t")
+    assert "contig" in df.columns
+    assert f"x_{embed_dimensions}" in df.columns
+    # Make sure we have all of our embedding dimensions and need to account for our contig column
+    assert embed_dimensions + 1 == df.shape[1]

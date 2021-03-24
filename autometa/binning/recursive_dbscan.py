@@ -38,8 +38,6 @@ from hdbscan import HDBSCAN
 from autometa.common.markers import load as load_markers
 from autometa.common import kmers
 
-# TODO: This should be from autometa.common.kmers import Kmers
-# So later we can simply/and more clearly do Kmers.load(kmers_fpath).embed(method)
 from autometa.common.exceptions import TableFormatError, BinningError
 from autometa.taxonomy.ncbi import NCBI
 
@@ -147,7 +145,7 @@ def run_dbscan(
         "coverage_stddev",
         "gc_content_stddev",
     ],
-):
+) -> pd.DataFrame:
     """Run clustering on `df` at provided `eps`.
 
     Notes
@@ -182,22 +180,20 @@ def run_dbscan(
     Dataframe is missing kmer/coverage annotations
 
     """
-    for col in dropcols:
-        if col in df.columns:
-            df.drop(columns=col, inplace=True)
+    df.drop(columns=dropcols, inplace=True, errors="ignore")
     n_samples = df.shape[0]
     if n_samples == 1:
         clusters = pd.Series([pd.NA], index=df.index, name="cluster")
         return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
-    cols = ["x", "y"]
-    if "coverage" in df.columns:
-        cols.append("coverage")
     if np.any(df.isnull()):
         raise TableFormatError(
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
-    # We should have 'gc_content' as a column here but we are explicitly leaving it out of the classification algo
-    X = df[cols].to_numpy()
+    # NOTE: all of our kmer embedded columns should correspond from "x_1" to "x_{embedding_dimensions}"
+    cols = [col for col in df.columns if "x_" in col or col == "coverage"]
+    # Subset what will go into clusterer to only kmer and coverage information
+    X = df.loc[:, cols].to_numpy()
+    # Perform clustering
     clusterer = DBSCAN(eps=eps, min_samples=1, n_jobs=-1).fit(X)
     clusters = pd.Series(clusterer.labels_, index=df.index, name="cluster")
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
@@ -331,7 +327,13 @@ def run_hdbscan(
     min_cluster_size: int,
     min_samples: int,
     cache_dir: str = None,
-    dropcols: List[str] = ["cluster", "purity", "completeness"],
+    dropcols: List[str] = [
+        "cluster",
+        "purity",
+        "completeness",
+        "coverage_stddev",
+        "gc_content_stddev",
+    ],
 ) -> pd.DataFrame:
     """Run clustering on `df` at provided `min_cluster_size`.
 
@@ -378,21 +380,21 @@ def run_hdbscan(
         `df` is missing k-mer or coverage annotations.
 
     """
-    for col in dropcols:
-        if col in df.columns:
-            df.drop(columns=col, inplace=True)
+    # Ignore any errors raised from trying to drop columns that do not exist in our df.
+    df.drop(columns=dropcols, inplace=True, errors="ignore")
     n_samples = df.shape[0]
     if n_samples == 1:
         clusters = pd.Series([pd.NA], index=df.index, name="cluster")
         return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
-    cols = ["x", "y"]
-    if "coverage" in df.columns:
-        cols.append("coverage")
     if np.any(df.isnull()):
         raise TableFormatError(
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
+    # NOTE: all of our kmer embedded columns should correspond from "x_1" to "x_{embedding_dimensions}"
+    cols = [col for col in df.columns if "x_" in col or col == "coverage"]
+    # Subset what will go into clusterer to only kmer and coverage information
     X = df.loc[:, cols].to_numpy()
+    # Perform clustering
     clusterer = HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
@@ -842,19 +844,39 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers", help="Path to normalized k-mer frequencies table", required=True
+        "--kmers",
+        help="Path to normalized k-mer frequencies table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "--coverages", help="Path to metagenome coverages table", required=True
+        "--coverages",
+        help="Path to metagenome coverages table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "--gc-content", help="Path to metagenome GC contents table", required=True
+        "--gc-content",
+        help="Path to metagenome GC contents table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "--markers", help="Path to Autometa annotated markers table", required=True
+        "--markers",
+        help="Path to Autometa annotated markers table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "--output", help="Path to write Autometa binning results", required=True
+        "--output-binning",
+        help="Path to write Autometa binning results",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-master",
+        help="Path to write Autometa master table used during/after binning",
+        metavar="filepath",
     )
     parser.add_argument(
         "--embedded-kmers",
@@ -862,11 +884,25 @@ def main():
         metavar="filepath",
     )
     parser.add_argument(
+        "--embedding-pca-dimensions",
+        help="PCA dimensions to use *prior* to dimension reduction via `--embedding-dimensions`.",
+        metavar="int",
+        default=50,
+        type=int,
+    )
+    parser.add_argument(
         "--embedding-method",
         help="Embedding method to use on normalized k-mer frequencies.",
         choices=["bhsne", "sksne", "umap"],
         metavar="string",
         default="bhsne",
+    )
+    parser.add_argument(
+        "--embedding-dimensions",
+        help="Embedding dimensions to use with `--embedding-method` from normalized k-mer frequencies (after PCA).",
+        metavar="int",
+        default=2,
+        type=int,
     )
     parser.add_argument(
         "--clustering-method",
@@ -880,14 +916,14 @@ def main():
         help="completeness cutoff to retain cluster."
         " e.g. cluster completeness >= `completeness`",
         default=20.0,
-        metavar="float",
+        metavar="0 < float <= 100",
         type=float,
     )
     parser.add_argument(
         "--purity",
         help="purity cutoff to retain cluster. e.g. cluster purity >= `purity`",
         default=95.0,
-        metavar="float",
+        metavar="0 < float <= 100",
         type=float,
     )
     parser.add_argument(
@@ -907,7 +943,9 @@ def main():
         type=float,
     )
     parser.add_argument(
-        "--taxonomy", metavar="filepath", help="</path/to/taxonomy.tsv>"
+        "--taxonomy",
+        metavar="filepath",
+        help="Path to Autometa assigned taxonomies table",
     )
     parser.add_argument(
         "--starting-rank",
@@ -946,8 +984,16 @@ def main():
         help="log debug information",
     )
     args = parser.parse_args()
+    if args.embedding_pca_dimensions <= args.embedding_dimensions:
+        raise ValueError(
+            f"--embedding-pca-dimensions ({args.embedding_pca_dimensions}) must greater than --embedding-dimensions ({args.embedding_dimensions})."
+        )
     kmers_df = kmers.embed(
-        kmers=args.kmers, out=args.embedded_kmers, method=args.embedding_method
+        kmers=args.kmers,
+        out=args.embedded_kmers,
+        method=args.embedding_method,
+        embed_dimensions=args.embedding_dimensions,
+        pca_dimensions=args.embedding_pca_dimensions,
     )
 
     cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
@@ -972,6 +1018,12 @@ def main():
 
     if args.taxonomy:
         taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
+        # Standardize naming (lower all rank names across taxonomy columns)
+        for rank in NCBI.CANONICAL_RANKS:
+            if rank not in taxa_df.columns:
+                continue
+            taxa_df[rank] = taxa_df[rank].map(lambda name: name.lower())
+        # Now we are ready to filter by kingdom
         taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
         master_df = pd.merge(
             left=master_df,
@@ -1000,9 +1052,19 @@ def main():
         verbose=args.verbose,
     )
 
-    # Output table
-    outcols = ["cluster", "completeness", "purity"]
-    master_out[outcols].to_csv(args.output, sep="\t", index=True, header=True)
+    # Write out binning results with their respective binning metrics
+    outcols = [
+        "cluster",
+        "completeness",
+        "purity",
+        "coverage_stddev",
+        "gc_content_stddev",
+    ]
+    master_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
+    logger.info(f"Wrote binning results to {args.output_binning}")
+    if args.output_master:
+        master_out.to_csv(args.output_master, sep="\t", index=True, header=True)
+        logger.info(f"Wrote master table to {args.output_master}")
 
 
 if __name__ == "__main__":
