@@ -76,14 +76,11 @@ def test_kmer_load_table_missing_contig_column(invalid_df_fpath):
         kmers.load(invalid_df_fpath)
 
 
-@pytest.mark.parametrize("multiprocess", [True, False])
-def test_count(assembly, multiprocess, tmp_path):
+def test_count(assembly, tmp_path):
     out = tmp_path / "kmers.tsv"
     size = 5
     force = False
-    df = kmers.count(
-        assembly=assembly, size=size, out=out, force=force, multiprocess=multiprocess,
-    )
+    df = kmers.count(assembly=assembly, size=size, out=out, force=force)
     assert df.shape[1] == 4 ** size / 2
     assert df.index.name == "contig"
     assert out.exists()
@@ -94,9 +91,7 @@ def test_count_out_exists(assembly, counts, force, tmp_path):
     out = tmp_path / "kmers.tsv"
     counts.to_csv(out, sep="\t", index=True, header=True)
     size = 5
-    df = kmers.count(
-        assembly=assembly, size=size, out=out, force=force, multiprocess=True,
-    )
+    df = kmers.count(assembly=assembly, size=size, out=out, force=force)
     assert df.shape[1] == 4 ** size / 2
     assert df.index.name == "contig"
     assert out.exists()
@@ -211,7 +206,6 @@ def test_embed_empty_dataframe(tmp_path):
         kmers.embed(kmers=empty_df, out=out, force=True)
 
 
-@pytest.mark.wip
 @pytest.mark.entrypoint
 def test_kmers_main(monkeypatch, tmp_path, assembly):
     norm_method = "am_clr"
@@ -233,7 +227,6 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
             self.do_pca = True
             self.pca_dimensions = 3
             self.embedded = embedded
-            self.multiprocess = False
             self.cpus = 1
             self.seed = 42
 

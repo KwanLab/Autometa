@@ -25,7 +25,7 @@ Conda environment creation:
         hmmer \
         prodigal \
         diamond \
-        ndcctools \
+        nextflow \
         parallel \
         requests \
         umap-learn \
@@ -47,8 +47,16 @@ If you are wanting to help develop autometa, you will need these additional depe
 
 .. code-block:: bash
 
-    conda install -n autometa \
-        black pre_commit pytest pytest-cov pytest-html pytest-repeat pytest-variables
+    conda install -n autometa -c conda-forge \
+        black \
+        pre_commit \
+        pytest \
+        pytest-cov \
+        pytest-html \
+        pytest-repeat \
+        pytest-variables \
+        sphinx \
+        sphinx_rtd_theme
 
     # Navigate to your autometa conda environment
     conda activate autometa

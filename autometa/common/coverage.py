@@ -25,6 +25,7 @@ Calculates coverage of contigs
 """
 
 
+import gzip
 import logging
 import os
 import tempfile
@@ -172,7 +173,9 @@ def get(
         return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
 
     if from_spades:
-        df = from_spades_names(records=[rec for rec in SeqIO.parse(fasta, "fasta")])
+        fh = gzip.open(fasta, "rt") if fasta.endswith(".gz") else open(fasta)
+        df = from_spades_names(records=[rec for rec in SeqIO.parse(fh, "fasta")])
+        fh.close()
         df.to_csv(out, sep="\t", index=True, header=True)
         return df
 
@@ -293,7 +296,13 @@ def main():
     args = parser.parse_args()
 
     if args.from_spades:
-        records = [rec for rec in SeqIO.parse(args.assembly, "fasta")]
+        fh = (
+            gzip.open(args.assembly, "rt")
+            if args.assembly.endswith(".gz")
+            else open(args.assembly)
+        )
+        records = [rec for rec in SeqIO.parse(fh, "fasta")]
+        fh.close()
         coverages = from_spades_names(records)
         logger.info(
             f"{coverages.index.nunique():,} contig coverages retrieved from {args.assembly}"
