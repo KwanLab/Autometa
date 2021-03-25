@@ -159,6 +159,28 @@ def test_binning_empty_markers_table(master):
         )
 
 
+def test_main_invalid_embedding_dimensions_args(monkeypatch):
+    class MockArgs:
+        def __init__(self):
+            self.domain = "bacteria"
+            self.embedding_pca_dimensions = 10
+            self.embedding_dimensions = 20
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    with pytest.raises(ValueError):
+        recursive_dbscan.main()
+
+
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
     monkeypatch,
@@ -170,7 +192,8 @@ def test_recursive_dbscan_main(
     taxonomy,
     tmp_path,
 ):
-    out = tmp_path / "binning.tsv"
+    output_binning = tmp_path / "binning.tsv"
+    output_master = tmp_path / "binning_master.tsv"
 
     class MockArgs:
         def __init__(self):
@@ -179,9 +202,12 @@ def test_recursive_dbscan_main(
             self.coverages = coverage
             self.gc_content = gc_content
             self.markers = markers_fpath
-            self.output = out
+            self.output_binning = output_binning
+            self.output_master = output_master
             self.embedded_kmers = embedded_kmers
+            self.embedding_pca_dimensions = 50
             self.embedding_method = "bhsne"
+            self.embedding_dimensions = 2
             self.clustering_method = "dbscan"
             self.completeness = 20.0
             self.purity = 95.0
@@ -204,7 +230,7 @@ def test_recursive_dbscan_main(
 
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
     recursive_dbscan.main()
-    assert out.exists()
-    df = pd.read_csv(out, sep="\t")
+    assert output_binning.exists()
+    df = pd.read_csv(output_binning, sep="\t")
     assert "contig" in df.columns
     assert "cluster" in df.columns

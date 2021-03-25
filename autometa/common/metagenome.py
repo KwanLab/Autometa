@@ -25,7 +25,6 @@ Script containing Metagenome class for general handling of metagenome assembly
 """
 
 
-import decimal
 import gzip
 import logging
 import numbers
@@ -39,12 +38,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio import SeqUtils
 from functools import lru_cache
 
-from autometa.common.external import prodigal
 from autometa.common.utilities import timeit
-from autometa.common.exceptions import ExternalToolError
-
-# TODO: Should place all imports of Database paths to a config module so they
-# all exist in one place
 
 logger = logging.getLogger(__name__)
 
@@ -56,23 +50,9 @@ class Metagenome:
     ----------
     assembly : str
         </path/to/metagenome/assembly.fasta>
-    outdir : str
-        </path/to/output/directory> (the default is None)
-    nucl_orfs_fpath : str
-        </path/to/assembly.orfs.fna>
-    prot_orfs_fpath : str
-        </path/to/assembly.orfs.faa>
-    fwd_reads : list, optional
-        [</path/to/forward_reads.fastq>, ...]
-    rev_reads : list, optional
-        [</path/to/reverse_reads.fastq>, ...]
-    se_reads : list, optional
-        [</path/to/single_end_reads.fastq>, ...]
 
     Attributes
     ----------
-    orfs_called : bool
-        True if both `nucl_orfs_fpath` and `prot_orfs_fpath` exist else False
     sequences : list
         [seq,...]
     seqrecords : list
@@ -85,48 +65,30 @@ class Metagenome:
         Total assembly size in bp.
     largest_seq : str
         id of longest sequence in assembly
-    nucls : list
-        SeqRecords all correspond to retrieved nucleotide ORFs. [SeqRecord, ...].
-    prots : list
-        SeqRecords all correspond to retrieved amino-acid ORFs. [SeqRecord, ...].
 
     Methods
     ----------
     * self.fragmentation_metric()
     * self.describe()
     * self.length_filter()
-    * self.call_orfs()
-    * self.orfs()
 
     """
 
     def __init__(
         self,
         assembly,
-        outdir,
-        nucl_orfs_fpath,
-        prot_orfs_fpath,
-        fwd_reads=None,
-        rev_reads=None,
-        se_reads=None,
     ):
         self.assembly = os.path.realpath(assembly)
-        self.fwd_reads = fwd_reads
-        self.rev_reads = rev_reads
-        self.se_reads = se_reads
-        self.outdir = outdir
-        self.nucl_orfs_fpath = nucl_orfs_fpath
-        self.prot_orfs_fpath = prot_orfs_fpath
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.assembly
 
     @property
     @lru_cache(maxsize=None)
-    def sequences(self):
+    def sequences(self) -> list:
         """Retrieve the sequences from provided `assembly`.
 
         Returns
@@ -146,7 +108,7 @@ class Metagenome:
 
     @property
     @lru_cache(maxsize=None)
-    def seqrecords(self):
+    def seqrecords(self) -> list:
         """Retrieve SeqRecord objects from provided `assembly`.
 
         Returns
@@ -155,16 +117,17 @@ class Metagenome:
             [SeqRecord, SeqRecord, ...]
 
         """
-        if self.assembly.endswith(".gz"):
-            fh = gzip.open(self.assembly, "rt")
-            records = [seq for seq in SeqIO.parse(fh, "fasta")]
-            fh.close()
-        else:
-            records = [seq for seq in SeqIO.parse(self.assembly, "fasta")]
+        fh = (
+            gzip.open(self.assembly, "rt")
+            if self.assembly.endswith(".gz")
+            else open(self.assembly)
+        )
+        records = [seq for seq in SeqIO.parse(fh, "fasta")]
+        fh.close()
         return records
 
     @property
-    def nseqs(self):
+    def nseqs(self) -> int:
         """Retrieve the number of sequences in provided `assembly`.
 
         Returns
@@ -177,7 +140,7 @@ class Metagenome:
 
     @property
     @lru_cache(maxsize=None)
-    def length_weighted_gc(self):
+    def length_weighted_gc(self) -> float:
         """Retrieve the length weighted average GC percentage of provided `assembly`.
 
         Returns
@@ -198,7 +161,7 @@ class Metagenome:
         return np.average(a=gc_contents, weights=weights)
 
     @property
-    def size(self):
+    def size(self) -> int:
         """Retrieve the summation of sizes for each contig in the provided `assembly`.
 
         Returns
@@ -210,7 +173,7 @@ class Metagenome:
         return sum(len(seq) for seq in self.sequences)
 
     @property
-    def largest_seq(self):
+    def largest_seq(self) -> str:
         """Retrieve the name of the largest sequence in the provided `assembly`.
 
         Returns
@@ -227,31 +190,13 @@ class Metagenome:
                 max = len(rec)
         return largest.id
 
-    @property
-    def orfs_called(self):
-        """Retrieve whether `prot_orfs_fpath` and `nucl_orfs_fpath` have been called.
-
-        Note: This will check whether the aforementioned paths exist and are not empty.
-        In the future, a checksum comparison will be performed to ensure file integrity.
-
-        Returns
-        -------
-        bool
-            Description of returned object.
-
-        """
-        # COMBAK: Add checkpointing checksum check here
-        for fp in [self.prot_orfs_fpath, self.nucl_orfs_fpath]:
-            if not os.path.exists(fp) or not os.path.getsize(fp):
-                return False
-        return True
-
-    def fragmentation_metric(self, quality_measure=0.50):
+    def fragmentation_metric(self, quality_measure: float = 0.50) -> int:
         """Describes the quality of assembled genomes that are fragmented in
         contigs of different length.
 
-        For more information see:
-            http://www.metagenomics.wiki/pdf/definition/assembly/n50
+        Note
+        ----
+        For more information see this metagenomics `wiki <http://www.metagenomics.wiki/pdf/definition/assembly/n50>`_ from Matthias Scholz
 
         Parameters
         ----------
@@ -271,54 +216,56 @@ class Metagenome:
                 f"quality measure must be b/w 0 and 1! given: {quality_measure}"
             )
         target_size = self.size * quality_measure
-        lengths = []
+        total_length = 0
+        # Sorts lengths from longest to shortest
         for length in sorted([len(seq) for seq in self.sequences], reverse=True):
-            lengths.append(length)
-            if sum(lengths) > target_size:
+            total_length += length
+            if total_length >= target_size:
                 return length
 
-    def describe(self, autometa_details=True):
-        """Print `assembly` details.
+    @timeit
+    def describe(self) -> pd.DataFrame:
+        """Return dataframe of details.
 
-        Parameters
-        ----------
-        autometa_details : bool
-            Also log Autometa specific information to the terminal (Default is True).
+        Columns
+        -------
+
+            # assembly : Assembly input into Metagenome(...) [index column]
+            # nseqs : Number of sequences in assembly
+            # size : Size or total sum of all sequence lengths
+            # N50 :
+            # N10 :
+            # N90 :
+            # length_weighted_gc_content : Length weighted average GC content
+            # largest_seq : Largest sequence in assembly
 
         Returns
         -------
-        NoneType
+        pd.DataFrame
 
         """
-        print(
-            "Metagenome Details\n"
-            "________________________\n"
-            f"Assembly: {self.assembly}\n"
-            f"Num. Sequences: {self.nseqs:,}\n"
-            f"Size: {self.size:,} bp\n"
-            f"N50: {self.fragmentation_metric():,} bp\n"
-            f"N10: {self.fragmentation_metric(.1):,} bp\n"
-            f"N90: {self.fragmentation_metric(.9):,} bp\n"
-            f"Length Weighted Avg. GC content: {self.length_weighted_gc:4.2f}%\n"
-            f"Largest sequence: {self.largest_seq}\n"
-            "________________________\n"
-        )
-        if not autometa_details:
-            return
-        print(
-            "Autometa Details\n"
-            "________________________\n"
-            f"Outdir: {self.outdir}\n"
-            f"ORFs called: {self.orfs_called}\n"
-            f"Prots filepath: {self.prot_orfs_fpath}\n"
-            f"Nucl filepath: {self.nucl_orfs_fpath}\n"
-        )
+        return pd.DataFrame(
+            [
+                {
+                    "assembly": self.assembly,
+                    "nseqs": self.nseqs,
+                    "size (bp)": self.size,
+                    "N50 (bp)": self.fragmentation_metric(0.5),
+                    "N10 (bp)": self.fragmentation_metric(0.1),
+                    "N90 (bp)": self.fragmentation_metric(0.9),
+                    "length_weighted_gc_content (%)": self.length_weighted_gc,
+                    "largest_seq": self.largest_seq,
+                }
+            ]
+        ).set_index("assembly")
 
     @timeit
-    def length_filter(self, out, cutoff=3000, force=False):
+    def length_filter(self, out: str, cutoff: int = 3000, force: bool = False):
         """Filters sequences by length with provided cutoff.
 
-        Note: A WARNING will be emitted if the length filter is applied *after*
+        Note
+        ----
+        A WARNING will be emitted if the length filter is applied *after*
         the ORFs provided for the Metagenome are already called prompting the
         user to perform orf calling again to correspond to length filtered
         contigs.
@@ -356,12 +303,6 @@ class Metagenome:
             raise FileExistsError(out)
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
         records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
-        if self.orfs_called:
-            msg = (
-                f"{self.nucl_orfs_fpath} and {self.prot_orfs_fpath} have already been called!"
-                "Call orfs again to retrieve only ORFs corresponding to filtered assembly"
-            )
-            logger.warning(msg)
         n_written = SeqIO.write(records, out, "fasta")
         if not n_written:
             logger.warning(
@@ -369,61 +310,27 @@ class Metagenome:
             )
             return self
         else:
-            return Metagenome(
-                assembly=out,
-                outdir=self.outdir,
-                nucl_orfs_fpath=self.nucl_orfs_fpath,
-                prot_orfs_fpath=self.prot_orfs_fpath,
-                fwd_reads=self.fwd_reads,
-                rev_reads=self.rev_reads,
-            )
+            return Metagenome(assembly=out)
 
-    def call_orfs(self, force=False, cpus=0, parallel=True):
-        """Calls ORFs on Metagenome assembly.
-
-        (Wrapper using external executable: prodigal).
-
-        Parameters
-        ----------
-        force : bool
-            force overwrite of existing ORFs files (the default is False).
-        cpus : int
-            Description of parameter `cpus` (the default is 0).
-        parallel : bool
-            Will parallelize prodigal using GNU parallel (the default is True).
+    @timeit
+    def gc_content(self) -> pd.DataFrame:
+        """Retrieves GC content from sequences in assembly
 
         Returns
-        ----------
-        2-tuple
-            (</path/to/nucls.orfs.fna>, </path/to/prots.orfs.faa>)
-        Raises
         -------
-        TypeError
-            `force`,`parallel` or `cpus` type was incorrectly supplied.
-        ChildProcessError
-            ORF calling failed.
+        pd.DataFrame
+            index="contig", columns=["gc_content","length"]
         """
-        for arg, argname in zip([force, parallel], ["force", "parallel"]):
-            if not isinstance(arg, bool):
-                raise TypeError(f"{argname} must be a boolean!")
-        if not isinstance(cpus, int) or isinstance(cpus, bool):
-            raise TypeError(f"cpus:({cpus}) must be an integer!")
-
-        # COMBAK: Add checkpointing checksum check here
-        try:
-            nucls_fp, prots_fp = prodigal.run(
-                assembly=self.assembly,
-                nucls_out=self.nucl_orfs_fpath,
-                prots_out=self.prot_orfs_fpath,
-                force=force,
-                cpus=cpus,
-                parallel=parallel,
-            )
-        except FileExistsError as err:
-            return self.nucl_orfs_fpath, self.prot_orfs_fpath
-        except ChildProcessError as err:
-            raise err
-        return nucls_fp, prots_fp
+        return pd.DataFrame(
+            [
+                {
+                    "contig": record.id,
+                    "gc_content": SeqUtils.GC(record.seq),
+                    "length": len(record.seq),
+                }
+                for record in self.seqrecords
+            ]
+        ).set_index("contig")
 
 
 def main():
@@ -440,17 +347,35 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "assembly", help="Path to metagenome assembly (nucleotide fasta)."
+        "--assembly",
+        help="Path to metagenome assembly (nucleotide fasta).",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "out", help="Path to output length-filtered assembly fasta file.",
+        "--output-fasta",
+        help="Path to output length-filtered assembly fasta file.",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-stats",
+        help="Path to output assembly stats table.",
+        metavar="filepath",
+        required=False,
+    )
+    parser.add_argument(
+        "--output-gc-content",
+        help="Path to output assembly contigs' GC content and length.",
+        metavar="filepath",
+        required=False,
     )
     parser.add_argument(
         "--cutoff",
         help="Cutoff to apply to length filter",
         default=3000,
         type=int,
-        metavar="<int>",
+        metavar="int",
     )
     parser.add_argument(
         "--force", help="Overwrite existing files", action="store_true", default=False
@@ -461,24 +386,19 @@ def main():
         action="store_true",
         default=False,
     )
-    parser.add_argument(
-        "--stats",
-        help="Print various metagenome assembly statistics.",
-        action="store_true",
-        default=False,
-    )
 
     args = parser.parse_args()
-    dirpath = os.path.dirname(os.path.realpath(args.assembly))
-    raw_mg = Metagenome(
-        assembly=args.assembly, outdir=dirpath, prot_orfs_fpath="", nucl_orfs_fpath="",
-    )
+    raw_mg = Metagenome(assembly=args.assembly)
 
     filtered_mg = raw_mg.length_filter(
-        out=args.out, cutoff=args.cutoff, force=args.force
+        out=args.output_fasta, cutoff=args.cutoff, force=args.force
     )
-    if args.stats:
-        filtered_mg.describe(autometa_details=False)
+    if args.output_stats:
+        stats_df = filtered_mg.describe()
+        stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
+    if args.output_gc_content:
+        gc_df = filtered_mg.gc_content()
+        gc_df.to_csv(args.output_gc_content, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":

@@ -31,13 +31,15 @@ from typing import Dict, Union
 
 from tqdm import tqdm
 
-from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy.lca import LCA
+from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
 
 logger = logging.getLogger(__name__)
 
 
-def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
+def is_consistent_with_other_orfs(
+    taxid: int, rank: str, rank_counts: Dict[str, Dict], ncbi: NCBI
+) -> bool:
     """Determines whether the majority of proteins in a contig, with rank equal
     to or above the given rank, are common ancestors of the taxid.
 
@@ -85,7 +87,7 @@ def is_consistent_with_other_orfs(taxid, rank, rank_counts, ncbi):
         return False
 
 
-def lowest_majority(rank_counts, ncbi):
+def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
     """Determine the lowest majority given `rank_counts` by first attempting to
     get a taxid that leads in counts with the highest specificity in terms of
     canonical rank.
@@ -260,30 +262,27 @@ def write_votes(results: Dict[str, int], out: str) -> str:
 
 
 def majority_vote(
-    orfs: str,
+    lca_fpath: str,
     out: str,
     ncbi_dir: str,
-    lca_out: str = None,
     verbose: bool = False,
-    blast: str = None,
+    orfs: str = None,
     force: bool = False,
-):
+) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
     Parameters
     ----------
-    orfs : str
-        Path to ORFs fasta containing amino-acid sequences to be annotated.
+    lca_fpath : str
+        Path to lowest common ancestor assignments table.
     out : str
         Path to write assigned taxids.
     ncbi_dir : str
         Path to NCBI databases directory.
-    lca_out : str, optional
-        Path to write lowest common ancestor assignments table.
     verbose : bool, optional
         Increase verbosity of logging stream
-    blast : str, optional
-        Path to blast table (Note: Must be outfmt 6).
+    orfs: str, optional
+        Path to prodigal called orfs corresponding to LCA table computed from BLAST output
     force : bool, optional
         Whether to overwrite existing LCA results.
 
@@ -294,11 +293,6 @@ def majority_vote(
 
     """
     lca = LCA(dbdir=ncbi_dir, verbose=verbose)
-    if not lca_out:
-        filename, __ = os.path.splitext(os.path.basename(orfs))
-        outdir = os.path.dirname(os.path.realpath(out))
-        lca_out = os.path.join(outdir, ".".join([filename, "lca.tsv"]))
-    lca_fpath = lca.blast2lca(orfs=orfs, out=lca_out, blast=blast, force=force,)
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
@@ -311,25 +305,22 @@ def main():
     import argparse
 
     basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    dbdir = os.path.join(basedir, "databases", "ncbi")
     parser = argparse.ArgumentParser(
         description="Script to assign taxonomy via a modified majority voting"
         " algorithm.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument("--lca", help="Path to LCA results table.", required=True)
     parser.add_argument(
-        "orfs",
-        help="Path to ORFs fasta containing amino-acid sequences to be annotated.",
+        "--output", help="Path to write voted taxid results table.", required=True
     )
-    parser.add_argument("out", help="Path to write voted taxid results table.")
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=dbdir
+        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
     )
-    parser.add_argument("--lca", help="Path to LCA results table.")
     parser.add_argument(
-        "--blast",
-        help="Path to BLASTP results table. "
-        "Note: Results must be formatted using outfmt=6.",
+        "--orfs",
+        help="Path to ORFs fasta containing amino-acid sequences to be annotated. (Only required for prodigal version < 2.6)",
+        required=False,
     )
     parser.add_argument(
         "--verbose",
@@ -340,12 +331,11 @@ def main():
     args = parser.parse_args()
 
     majority_vote(
-        orfs=args.orfs,
-        out=args.out,
+        lca_fpath=args.lca,
+        out=args.output,
         ncbi_dir=args.dbdir,
-        blast=args.blast,
-        lca_out=args.lca,
         verbose=args.verbose,
+        orfs=args.orfs,
     )
 
 

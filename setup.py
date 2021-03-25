@@ -23,14 +23,16 @@ setup(
     package_data={"": ["*.config"]},
     entry_points={
         "console_scripts": [
-            "autometa = autometa.__main__:main",
-            "autometa-configure = autometa.config.user:main",
+            "autometa-update-databases = autometa.config.databases:main",
+            "autometa-config = autometa.config.utilities:main",
             "autometa-kmers = autometa.common.kmers:main",
             "autometa-coverage = autometa.common.coverage:main",
             "autometa-orfs = autometa.common.external.prodigal:main",
             "autometa-markers = autometa.common.markers:main",
             "autometa-length-filter = autometa.common.metagenome:main",
             "autometa-taxonomy = autometa.taxonomy.vote:main",
+            "autometa-taxonomy-lca = autometa.taxonomy.lca:main",
+            "autometa-taxonomy-majority-vote = autometa.taxonomy.majority_vote:main",
             "autometa-binning = autometa.binning.recursive_dbscan:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
         ]

@@ -176,9 +176,9 @@ def test_main(
         def __init__(self):
             self.kmers: str = kmers
             self.coverage: str = coverage
-            self.assignments: str = assignments_fpath
+            self.binning: str = assignments_fpath
             self.markers: str = markers_fpath
-            self.out: str = out
+            self.output: str = out
             self.additional_features = []
             self.taxonomy: str = taxonomy
             self.kmer_dimensions: int = 50

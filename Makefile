@@ -22,12 +22,12 @@ endif
 
 ## Delete all compiled Python files
 clean:
-	find . -type f -name "*.py[co]" -delete
-	find . -type d -name "__pycache__" -delete
-	find . -type d -name "htmlcov" -delete
-	find . -type d -name "Autometa.egg-info" -delete
-	find . -type d -name "dist" -delete
-	find . -type d -name "build" -delete
+	find . -type f -name "*.py[co]" -exec rm -r {} +
+	find . -type d -name "__pycache__" -exec rm -r {} +
+	find . -type d -name "htmlcov" -exec rm -r {} +
+	find . -type d -name "Autometa.egg-info" -exec rm -r {} +
+	find . -type d -name "dist" -exec rm -r {} +
+	find . -type d -name "build" -exec rm -r {} +
 
 ## Apply black formatting
 black:
@@ -38,9 +38,9 @@ create_environment: requirements.txt
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda create --name $(PROJECT_NAME) python=3 --file=requirements.txt
+	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=3 --file=requirements.txt
 else
-	conda create --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
+	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
 endif
 	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
@@ -57,11 +57,11 @@ endif
 
 ## Install autometa from source
 install:
-	$(PYTHON_INTERPRETER) setup.py install
+	python setup.py install
 
 ## Install dependencies for test environment
 test_environment: tests/requirements.txt
-	$(PYTHON_INTERPRETER) -m pip install --requirement=tests/requirements.txt
+	python -m pip install --requirement=tests/requirements.txt
 
 ## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
 image: Dockerfile
@@ -78,19 +78,19 @@ unit_test_data_download:
 
 ## Build test_data.json file for unit testing (requires all files from https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS be downloaded into tests/data/)
 unit_test_data_build: tests/data/records.fna
-	$(PYTHON_INTERPRETER) make_test_data.py
+	python make_test_data.py
 
 ## Run all unit tests
 unit_test: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python -m pytest --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with WIP
 unit_test_wip: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with entrypoint
 unit_test_entrypoints: tests/data/test_data.json test_environment
-	$(PYTHON_INTERPRETER) -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 
 #################################################################################

@@ -363,13 +363,14 @@ def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
         K-mers Dataframe where index_col='contig' and column values are k-mer
         frequencies.
 
-    # TODO: Place these references in readthedocs documentation and remove from def.
-    References:
-    - Aitchison, J. The Statistical Analysis of Compositional Data (1986)
-    - Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
-    - https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce
-    - https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca
-    - http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf
+    References
+    ----------
+
+        * Aitchison, J. The Statistical Analysis of Compositional Data (1986)
+        * Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+        * Why ILR is preferred `stats stackexchange discussion <https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce>`_
+        * Use of CLR transformation prior to PCA `stats stackexchange discussion <https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca>`_
+        * Lecture notes on Compositional Data Analysis (CoDa) `PDF <http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf>`_
 
     Returns
     -------
@@ -476,7 +477,7 @@ def embed(
     force: bool, optional
         Whether to overwrite existing `out` file.
     embed_dimensions : int, optional
-        embedn_dimensions` to embed k-mer frequencies (the default is 2).
+        embed_dimensions` to embed k-mer frequencies (the default is 2).
     do_pca : bool, optional
         Perform PCA decomposition prior to embedding (the default is True).
     pca_dimensions : int, optional
@@ -594,12 +595,10 @@ def embed(
             X = dispatcher[method](**method_args)
         else:
             raise err
-    if embed_dimensions == 3:
-        embedded_df = pd.DataFrame(X, columns=["x", "y", "z"], index=df.index)
-    elif embed_dimensions == 2:
-        embedded_df = pd.DataFrame(X, columns=["x", "y"], index=df.index)
-    else:
-        embedded_df = pd.DataFrame(X, index=df.index)
+    embedded_df = pd.DataFrame(X, index=df.index)
+    # embedded kmers will follow columns of x_1 to x_{embed_dimensions}
+    # Make 1-indexed instead of 0-index
+    embedded_df.columns = embedded_df.columns.map(lambda x: f"x_{int(x)+1}")
     if out:
         embedded_df.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"embedded.shape {embedded_df.shape} : Written {out}")
@@ -673,7 +672,10 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--cpus", help=f"num. processors to use.", default=cpus, type=int,
+        "--cpus",
+        help=f"num. processors to use.",
+        default=cpus,
+        type=int,
     )
     parser.add_argument(
         "--seed",
