@@ -8,15 +8,6 @@ Autometa documentation
 | If you find Autometa useful to your work, please cite our Autometa_ paper:
 | Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial  genomes from individual shotgun metagenomes. *Nucleic Acids Research*, **2019**.  DOI: https://doi.org/10.1093/nar/gkz148
 
-Quickstart
-==========
-
-Run with below code:
-
-.. code-block:: bash
-    
-    ./nextflow run autometa.nf
-
 Guide
 =====
 
