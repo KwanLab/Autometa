@@ -46,4 +46,4 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-markers -h > /dev/null \
     && autometa-taxonomy -h > /dev/null \
     && autometa-binning -h > /dev/null \
-    && autometa-unclustered-recruitment -h > /dev/null 
+    && autometa-unclustered-recruitment -h > /dev/null

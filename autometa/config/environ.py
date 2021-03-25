@@ -237,7 +237,9 @@ def get_versions(program=None):
         try:
             return globals()[exe_name]()
         except TypeError:
-            logger.warning(f"{exe_name} not found. This may impact a stage of the Autometa pipeline.")
+            logger.warning(
+                f"{exe_name} not found. This may impact a stage of the Autometa pipeline."
+            )
             return "Not found"
     versions = {}
     executables = find_executables()

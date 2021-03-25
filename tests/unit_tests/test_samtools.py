@@ -32,6 +32,7 @@ def test_sort_missing_file():
     with pytest.raises(FileNotFoundError):
         samtools.sort(sam="sam", bam="bam")
 
+
 @pytest.mark.parametrize("cpus", [2.9, -2])
 def test_sort_invalid_cpu_input(cpus):
     with pytest.raises(TypeError):

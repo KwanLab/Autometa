@@ -400,7 +400,9 @@ def get_confidence_filtered_predictions(
         raise NotImplementedError(classifier)
 
     df = pd.DataFrame(
-        predictions, index=test_data.index, columns=train_data.target_names,
+        predictions,
+        index=test_data.index,
+        columns=train_data.target_names,
     )
     # Filter predictions by confidence threshold
     confidence_threshold = num_classifications * confidence

@@ -130,8 +130,7 @@ class Project:
             return mg_num
 
     def save(self):
-        """Save project config in project directory
-        """
+        """Save project config in project directory"""
         put_config(self.config, self.config_fpath)
 
     def new_metagenome_directory(self):

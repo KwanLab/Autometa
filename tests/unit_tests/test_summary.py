@@ -202,7 +202,8 @@ def fixture_mock_rank_taxids(monkeypatch):
 
 @pytest.mark.skip
 def test_get_metabin_taxonomies(
-    mock_rank_taxids, bin_df,
+    mock_rank_taxids,
+    bin_df,
 ):
     mock_ncbi = return_mock_ncbi()
     df = summary.get_metabin_taxonomies(bin_df=bin_df, ncbi=mock_ncbi)

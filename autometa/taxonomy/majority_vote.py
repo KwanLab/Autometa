@@ -298,7 +298,12 @@ def majority_vote(
         filename, __ = os.path.splitext(os.path.basename(orfs))
         outdir = os.path.dirname(os.path.realpath(out))
         lca_out = os.path.join(outdir, ".".join([filename, "lca.tsv"]))
-    lca_fpath = lca.blast2lca(orfs=orfs, out=lca_out, blast=blast, force=force,)
+    lca_fpath = lca.blast2lca(
+        orfs=orfs,
+        out=lca_out,
+        blast=blast,
+        force=force,
+    )
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids

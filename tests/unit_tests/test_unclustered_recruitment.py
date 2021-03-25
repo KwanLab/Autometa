@@ -113,7 +113,8 @@ def test_get_kmer_features(kmers, dimensions):
 
 
 def test_get_features_no_taxa(
-    kmers, coverage,
+    kmers,
+    coverage,
 ):
     df = unclustered_recruitment.get_features(kmers=kmers, coverage=coverage)
     assert isinstance(df, pd.DataFrame)

@@ -99,7 +99,11 @@ class Databases:
     }
 
     def __init__(
-        self, config=DEFAULT_CONFIG, dryrun=False, nproc=mp.cpu_count(), update=False,
+        self,
+        config=DEFAULT_CONFIG,
+        dryrun=False,
+        nproc=mp.cpu_count(),
+        update=False,
     ):
         """
 
@@ -719,7 +723,9 @@ def main():
         "into default databases directory.",
     )
     parser.add_argument(
-        "--config", help="</path/to/input/database.config>", default=DEFAULT_FPATH,
+        "--config",
+        help="</path/to/input/database.config>",
+        default=DEFAULT_FPATH,
     )
     parser.add_argument(
         "--dryrun",
@@ -769,7 +775,10 @@ def main():
 
     config = get_config(args.config)
     dbs = Databases(
-        config=config, dryrun=args.dryrun, nproc=args.nproc, update=args.update,
+        config=config,
+        dryrun=args.dryrun,
+        nproc=args.nproc,
+        update=args.update,
     )
 
     compare_checksums = False

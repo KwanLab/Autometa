@@ -303,7 +303,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "workspace", help="Path to Autometa results workspace directory",
+        "workspace",
+        help="Path to Autometa results workspace directory",
     )
     parser.add_argument(
         "--write",

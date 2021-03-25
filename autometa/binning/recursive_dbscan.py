@@ -931,7 +931,10 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose", action="store_true", default=False, help="log debug information",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="log debug information",
     )
     args = parser.parse_args()
     kmers_df = kmers.embed(
@@ -940,11 +943,19 @@ def main():
 
     cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
     master_df = pd.merge(
-        kmers_df, cov_df[["coverage"]], how="left", left_index=True, right_index=True,
+        kmers_df,
+        cov_df[["coverage"]],
+        how="left",
+        left_index=True,
+        right_index=True,
     )
     gc_content_df = pd.read_csv(args.gc_content, sep="\t", index_col="contig")
     master_df = pd.merge(
-        master_df, gc_content_df, how="left", left_index=True, right_index=True,
+        master_df,
+        gc_content_df,
+        how="left",
+        left_index=True,
+        right_index=True,
     )
 
     markers_df = load_markers(args.markers)

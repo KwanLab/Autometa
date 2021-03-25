@@ -673,7 +673,10 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--cpus", help=f"num. processors to use.", default=cpus, type=int,
+        "--cpus",
+        help=f"num. processors to use.",
+        default=cpus,
+        type=int,
     )
     parser.add_argument(
         "--seed",

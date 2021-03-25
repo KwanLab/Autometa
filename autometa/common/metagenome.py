@@ -443,7 +443,8 @@ def main():
         "assembly", help="Path to metagenome assembly (nucleotide fasta)."
     )
     parser.add_argument(
-        "out", help="Path to output length-filtered assembly fasta file.",
+        "out",
+        help="Path to output length-filtered assembly fasta file.",
     )
     parser.add_argument(
         "--cutoff",
@@ -471,7 +472,10 @@ def main():
     args = parser.parse_args()
     dirpath = os.path.dirname(os.path.realpath(args.assembly))
     raw_mg = Metagenome(
-        assembly=args.assembly, outdir=dirpath, prot_orfs_fpath="", nucl_orfs_fpath="",
+        assembly=args.assembly,
+        outdir=dirpath,
+        prot_orfs_fpath="",
+        nucl_orfs_fpath="",
     )
 
     filtered_mg = raw_mg.length_filter(
