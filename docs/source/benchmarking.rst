@@ -7,12 +7,10 @@ This page contains information regarding the test datasests the users can use as
 Test datasests
 ==============
 
-
-
 Simulated
 ---------
 
-Communities were simulated using ART, a sequencing read simulator, with a collection of 3000 bacteria randomly retrieved. Genomes were retrieved until the provided total length was reached.
+Communities were simulated using `ART <https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm>`__, a sequencing read simulator, with a collection of 3000 bacteria randomly retrieved. Genomes were retrieved until the provided total length was reached.
 
 e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all bacterial genomes retrieved.
 
@@ -48,6 +46,47 @@ Synthetic
 The initial synthetic community was prepared using a mixture of fifty-one bacterial isolates. The synthetic community's DNA was extracted for sequencing, assembly and binning.
 
 You can download the MIX51 community using this `link <https://drive.google.com/drive/folders/1x8d0o6HO5N72j7p_D_YxrSurBfpi9zmK?usp=sharing>`__.
+
+Download datasests
+==================
+
+Using autometa build-in module
+------------------------------
+
+.. todo::
+    Address `Issue #110 <https://github.com/KwanLab/Autometa/issues/110#issue-707373779>`_ and add steps here.
+
+
+Using command line
+------------------
+
+You can download the individual assemblies of different datasests with the help of ``gdown`` using command line. If you have installed autometa using ``conda`` then ``gdown`` should already be installed. If not, you can install is using ``conda install -c conda-forge gdown`` or ``pip install gdown``.
+
+`Example for the 78Mbp community`
+
+1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
+2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. This will have a ``copy link`` button that you should use. The link for the metagenome assembly (ie. metagenome.fna.gz) should like like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
+3. The file ID is within the / forward slashes between file/d/ and /, e.g:
+
+.. code:: bash
+
+    # Pasted from copy link button:
+    https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing
+    #                 begin file ID ^ ------------------------------^ end file ID
+
+4. Copy the file ID
+5. Now that we have the File ID, you can specify the ID or use the drive.google.com prefix. Both should work.
+
+.. code:: bash
+
+    file_id="15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y" 
+    gdown --id ${file_id} -O metagenome.fna.gz
+    # or
+    gdown https://drive.google.com/uc?id=${file_id} -O metagenome.fna.gz
+
+.. note:: 
+
+    Unfortunately, at the moment ``gdown`` doesn't support dowloading entire directories from Google drive. There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository addressing this specific issue which we are keeping a close eye on and would update the documentation when it is merged.
 
 Benchmarks
 ==========

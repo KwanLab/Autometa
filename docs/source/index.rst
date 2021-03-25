@@ -24,8 +24,9 @@ Guide
    :maxdepth: 1
 
    install
-   databases
    running-autometa
+   step-by-step-tutorial
+   databases
    examining-results
    benchmarking
    scripts/usage
@@ -36,7 +37,8 @@ Guide
 
 Contact
 -------
-For suggestions, queries or appreciation feel free to contact `Dr. Jason Kwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
+| If you like Autometa, visit our `lab website <https://kwanlab.github.io/>`_ to find out more about our research.
+| For suggestions, queries or appreciation feel free to contact `Dr. Jason Kwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
 at jason.kwan@wisc.edu
 
 Indices and tables
@@ -45,5 +47,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
 
 .. _Autometa: https://academic.oup.com/nar/article/47/10/e57/5369936
