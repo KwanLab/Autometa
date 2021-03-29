@@ -400,7 +400,9 @@ def get_confidence_filtered_predictions(
         raise NotImplementedError(classifier)
 
     df = pd.DataFrame(
-        predictions, index=test_data.index, columns=train_data.target_names,
+        predictions,
+        index=test_data.index,
+        columns=train_data.target_names,
     )
     # Filter predictions by confidence threshold
     confidence_threshold = num_classifications * confidence
@@ -493,17 +495,30 @@ def main():
         " Note: All tables must contain a 'contig' column to be used as the unique table index)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--kmers", help="Path to normalized kmer frequencies table.", required=True)
+    parser.add_argument(
+        "--kmers", help="Path to normalized kmer frequencies table.", required=True
+    )
     parser.add_argument("--coverage", help="Path to coverage table.", required=True)
     parser.add_argument(
         "--binning",
         help="Path to contig to genome bin assignments."
         "(May be autometa binning output [col='cluster']"
         "or ground truth bin assignments [col='reference_genome'])",
-        required=True
+        required=True,
     )
-    parser.add_argument("--markers", help="Path to domain-specific markers table.", required=True)
-    parser.add_argument("--output", help="Path to output unclustered recruitment table.", required=True)
+    parser.add_argument(
+        "--markers", help="Path to domain-specific markers table.", required=True
+    )
+    parser.add_argument(
+        "--output-binning",
+        help="Path to output unclustered recruitment table.",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-main",
+        help="Path to write Autometa main table used during/after unclustered recruitment.",
+        required=False,
+    )
     parser.add_argument("--taxonomy", help="Path to taxonomy table.")
     parser.add_argument(
         "--taxa-dimensions",
@@ -600,7 +615,9 @@ def main():
     logger.info(
         f"unclustered {prev_num_unclustered} -> {now_num_unclustered} (recruited {n_recruited} contigs) in {n_runs} runs"
     )
-    bin_df.to_csv(args.output, sep="\t", index=True, header=True)
+    bin_df.to_csv(args.output_binning, sep="\t", index=True, header=True)
+    if args.output_main:
+        features.to_csv(args.output_main, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":

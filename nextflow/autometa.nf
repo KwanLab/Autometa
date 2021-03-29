@@ -28,6 +28,8 @@ workflow AUTOMETA {
 
   emit:
     binning = BINNING.out.binning
-    recruitment = UNCLUSTERED_RECRUITMENT.out
+    binning_main = BINNING.out.main
+    recruitment = UNCLUSTERED_RECRUITMENT.out.binning
+    recruitment_main = UNCLUSTERED_RECRUITMENT.out.main
     all_binning_results = BINNING.out.binning | mix(UNCLUSTERED_RECRUITMENT.out) | collect
 }

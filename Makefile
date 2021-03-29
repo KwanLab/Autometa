@@ -40,7 +40,7 @@ ifeq (True,$(HAS_CONDA))
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
 	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=3 --file=requirements.txt
 else
-	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=2.7 --file=requirements.txt
+	@echo "It looks like you are not using python 3. Autometa is only compatible with python 3. Please upgrade."
 endif
 	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
@@ -56,7 +56,7 @@ endif
 #################################################################################
 
 ## Install autometa from source
-install:
+install: setup.py
 	python setup.py install
 
 ## Install dependencies for test environment

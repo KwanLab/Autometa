@@ -32,7 +32,7 @@ process BINNING {
 
   output:
     path "${coverage.simpleName}.${params.kingdom}.binning.tsv.gz", emit: binning
-    path "${coverage.simpleName}.${params.kingdom}.master.tsv.gz", emit: master
+    path "${coverage.simpleName}.${params.kingdom}.main.tsv.gz", emit: main
     path "${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv.gz", emit: embedded_kmers
 
   """
@@ -42,7 +42,7 @@ process BINNING {
     --gc-content $gc_content \
     --markers $markers \
     --output-binning ${coverage.simpleName}.${params.kingdom}.binning.tsv.gz \
-    --output-master ${coverage.simpleName}.${params.kingdom}.master.tsv.gz \
+    --output-main ${coverage.simpleName}.${params.kingdom}.main.tsv.gz \
     --embedding-pca-dimensions ${params.kmer_pca_dimensions} \
     --embedding-method ${params.kmer_embed_method} \
     --embedding-dimensions ${params.kmer_embed_dimensions} \
@@ -72,6 +72,7 @@ process UNCLUSTERED_RECRUITMENT {
 
   output:
     path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz", emit: binning
+    path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: binning
 
   """
   autometa-unclustered-recruitment \
@@ -83,6 +84,7 @@ process UNCLUSTERED_RECRUITMENT {
     --coverage $coverage \
     --binning $assignments \
     --markers $markers \
-    --output ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz
+    --output-binning ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz \
+    --output-main ${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz
   """
 }
