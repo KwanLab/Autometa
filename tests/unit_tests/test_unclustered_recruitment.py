@@ -113,7 +113,8 @@ def test_get_kmer_features(kmers, dimensions):
 
 
 def test_get_features_no_taxa(
-    kmers, coverage,
+    kmers,
+    coverage,
 ):
     df = unclustered_recruitment.get_features(kmers=kmers, coverage=coverage)
     assert isinstance(df, pd.DataFrame)
@@ -170,7 +171,8 @@ def test_add_predictions(assignments):
 def test_main(
     monkeypatch, kmers, coverage, taxonomy, assignments_fpath, markers_fpath, tmp_path
 ):
-    out = tmp_path / "unclustered_recruitment.tsv"
+    output_binning = tmp_path / "unclustered_recruitment.tsv"
+    output_main = tmp_path / "unclustered_recruitment.main.tsv"
 
     class MockArgs:
         def __init__(self):
@@ -178,7 +180,8 @@ def test_main(
             self.coverage: str = coverage
             self.binning: str = assignments_fpath
             self.markers: str = markers_fpath
-            self.output: str = out
+            self.output_binning: str = output_binning
+            self.output_main: str = output_main
             self.additional_features = []
             self.taxonomy: str = taxonomy
             self.kmer_dimensions: int = 50
