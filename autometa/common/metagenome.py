@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -265,17 +265,17 @@ class Metagenome:
 
         Note
         ----
-        A WARNING will be emitted if the length filter is applied *after*
-        the ORFs provided for the Metagenome are already called prompting the
-        user to perform orf calling again to correspond to length filtered
-        contigs.
+        A WARNING will be emitted and the original metagenome will be returned
+        if no contigs pass the length filter cutoff.
 
         Parameters
         ----------
         out : str
             Path to write length filtered output fasta file.
+
         cutoff : int, optional
             Lengths above or equal to `cutoff` that will be retained (the default is 3000).
+
         force : bool, optional
             Overwrite existing `out` file (the default is False).
 

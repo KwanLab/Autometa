@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-COPYRIGHT Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth
+COPYRIGHT Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth
 Uppal, Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -501,7 +501,7 @@ def main():
     parser.add_argument("--coverage", help="Path to coverage table.", required=True)
     parser.add_argument(
         "--binning",
-        help="Path to contig to genome bin assignments."
+        help="Path to genome bin assignments."
         "(May be autometa binning output [col='cluster']"
         "or ground truth bin assignments [col='reference_genome'])",
         required=True,

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -180,6 +180,7 @@ def run_dbscan(
     Dataframe is missing kmer/coverage annotations
 
     """
+    # Ignore any errors raised from trying to drop columns that do not exist in our df.
     df.drop(columns=dropcols, inplace=True, errors="ignore")
     n_samples = df.shape[0]
     if n_samples == 1:

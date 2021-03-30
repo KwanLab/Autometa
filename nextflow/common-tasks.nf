@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 params.length_cutoff = 3000
-params.kmer_size = 4
+params.kmer_size = 5
 params.kmer_norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
 params.kmer_pca_dimensions = 50
 params.kmer_embed_method = "bhsne" // choices: "sksne", "bhsne", "umap"
