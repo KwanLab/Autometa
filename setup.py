@@ -36,6 +36,7 @@ setup(
             "autometa-taxonomy-majority-vote = autometa.taxonomy.majority_vote:main",
             "autometa-binning = autometa.binning.recursive_dbscan:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
+            "autometa-benchmark = autometa.validation.benchmark:main",
         ]
     },
     author="Jason C. Kwan",
