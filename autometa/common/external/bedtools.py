@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -130,14 +130,7 @@ def parse(bed, out=None, force=False):
     return dff[["coverage"]]
 
 
-def main(args):
-    bed = genomecov(
-        ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed
-    )
-    df = parse(bed=bed, out=args.coverage, force=args.force_cov)
-
-
-if __name__ == "__main__":
+def main():
     import argparse
     import logging as logger
 
@@ -145,16 +138,30 @@ if __name__ == "__main__":
         format="%(asctime)s : %(name)s : %(levelname)s : %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
     )
-    parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("ibam", help="</path/to/BAM/alignment.bam>")
-    parser.add_argument(
-        "lengths",
-        help="</path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]",
+    parser = argparse.ArgumentParser(
+        description="Compute genome coverage from sorted BAM file"
     )
     parser.add_argument(
-        "bed", help="</path/to/alignment.bed> tab-delimited cols=[contig,length]"
+        "--ibam", metavar="filepath", help="Path to sorted alignment.bam", required=True
     )
-    parser.add_argument("--coverage", help="</path/to/coverage.tsv>")
+    parser.add_argument(
+        "--lengths",
+        metavar="filepath",
+        help="Path to genome lengths.tsv; tab-delimited cols=[contig,length]",
+        required=True,
+    )
+    parser.add_argument(
+        "--bed",
+        metavar="filepath",
+        help="Path to write alignment.bed; tab-delimited cols=[contig,length]",
+        required=True,
+    )
+    parser.add_argument(
+        "--output",
+        metavar="filepath",
+        help="Path to output coverage.tsv",
+        required=True,
+    )
     parser.add_argument(
         "--force-bed", help="force overwrite `bed`", action="store_true", default=False
     )
@@ -165,4 +172,11 @@ if __name__ == "__main__":
         default=False,
     )
     args = parser.parse_args()
-    main(args)
+    bed = genomecov(
+        ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed
+    )
+    parse(bed=bed, out=args.coverage, force=args.force_cov)
+
+
+if __name__ == "__main__":
+    main()

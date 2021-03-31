@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 params.length_cutoff = 3000
-params.kmer_size = 4
+params.kmer_size = 5
 params.kmer_norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
 params.kmer_pca_dimensions = 50
 params.kmer_embed_method = "bhsne" // choices: "sksne", "bhsne", "umap"
@@ -69,8 +69,8 @@ process KMERS {
   """
 }
 
-process COVERAGE {
-  tag "Calculating coverage for ${metagenome.simpleName}"
+process KMER_COVERAGE {
+  tag "Calculating k-mer coverage for ${metagenome.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   cpus params.cpus
   publishDir params.interim, pattern: "${metagenome.simpleName}.coverages.tsv"
@@ -140,4 +140,120 @@ process ORFS {
     -q \
     -m
   """
+}
+
+process ALIGN_READS {
+  tag "Aligning reads to ${metagenome.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  cpus params.cpus
+
+  input:
+    path metagenome
+    path fwd_reads
+    path rev_reads
+    path se_reads
+
+  output:
+    path "${metagenome.simpleName}.sam"
+
+  """
+  bowtie2-build \
+    --threads ${task.cpus}
+    ${metagenome} \
+    ${metagenome.simpleName}.db
+
+  bowtie2 \
+    -x ${metagenome.simpleName}.db \
+    -q \
+    --phred33 \
+    --very-sensitive \
+    --no-unal \
+    -p ${task.cpus} \
+    -S ${metagenome.simpleName}.sam \
+    -1 $fwd_reads \
+    -2 $rev_reads \
+    -U $se_reads
+  """
+}
+
+process SORT_READS {
+  tag "Sorting reads to ${sam.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  cpus params.cpus
+
+  input:
+    path sam
+
+  output:
+    path "${sam.simpleName}.bam"
+
+  """
+  samtools view -@${task.cpus} -bS ${sam} \
+    | samtools sort -@${task.cpus} -o ${sam.simpleName}.bam
+  """
+}
+
+process LENGTH_TABLE {
+  tag "length table for ${metagenome.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  cpus params.cpus
+
+  input:
+    path metagenome
+
+  output:
+    path "${metagenome.simpleName}.lengths.tsv"
+
+  """
+  #!/usr/bin/env python
+
+  from Bio import SeqIO
+  import pandas as pd
+
+  seqs = {record.id: len(record) for record in SeqIO.parse($metagenome, "fasta")}
+  lengths = pd.Series(seqs, name="length")
+  lengths.index.name = "contig"
+  lengths.to_csv(${metagenome.simpleName}.lengths.tsv, sep="\t", index=True, header=True)
+  """
+}
+
+process GENOMECOV {
+  tag "Computing genome coverage for ${bam.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  cpus params.cpus
+
+  input:
+    path bam
+    path lengths
+
+  output:
+    path "${bam.simpleName}.bed.tsv", emit: bed
+    path "${bam.simpleName}.coverage.tsv", emit: coverage
+
+  """
+  bedtools genomecov -ibam $bam -g $lengths > ${bam.simpleName}.bed.tsv
+  autometa-parse-bed \
+    --ibam $bam \
+    --lengths $lengths \
+    --bed ${bam.simpleName}.bed.tsv \
+    --output coverage.tsv
+  """
+}
+
+workflow READ_COVERAGE {
+  take:
+    metagenome
+    fwd_reads
+    rev_reads
+    se_reads
+
+  main:
+    LENGTH_TABLE(metagenome)
+    ALIGN_READS(metagenome, fwd_reads, rev_reads, se_reads)
+    SORT_READS(ALIGN_READS.out)
+    GENOMECOV(SORT_READS.out, LENGTH_TABLE.out)
+
+  emit:
+    bed = GENOMECOV.out.bed
+    coverage = GENOMECOV.out.coverage
 }

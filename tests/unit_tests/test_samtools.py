@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -21,7 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Calculates coverage of contigs
+Script to test autometa/common/external/samtools.py
 """
 
 import pytest
@@ -31,6 +31,7 @@ from autometa.common.external import samtools
 def test_sort_missing_file():
     with pytest.raises(FileNotFoundError):
         samtools.sort(sam="sam", bam="bam")
+
 
 @pytest.mark.parametrize("cpus", [2.9, -2])
 def test_sort_invalid_cpu_input(cpus):

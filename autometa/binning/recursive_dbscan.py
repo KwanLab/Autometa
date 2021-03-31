@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -180,6 +180,7 @@ def run_dbscan(
     Dataframe is missing kmer/coverage annotations
 
     """
+    # Ignore any errors raised from trying to drop columns that do not exist in our df.
     df.drop(columns=dropcols, inplace=True, errors="ignore")
     n_samples = df.shape[0]
     if n_samples == 1:
@@ -535,7 +536,7 @@ def recursive_hdbscan(
 
 
 def get_clusters(
-    master: pd.DataFrame,
+    main: pd.DataFrame,
     markers_df: pd.DataFrame,
     domain: str,
     completeness: float,
@@ -549,7 +550,7 @@ def get_clusters(
 
     Parameters
     ----------
-    master : pd.DataFrame
+    main : pd.DataFrame
         index=contig,
         cols=['x','y','coverage','gc_content']
 
@@ -586,7 +587,7 @@ def get_clusters(
     Returns
     -------
     pd.DataFrame
-        `master` with ['cluster','completeness','purity'] columns added
+        `main` with ['cluster','completeness','purity'] columns added
     """
     num_clusters = 0
     clusters = []
@@ -599,7 +600,7 @@ def get_clusters(
     # break when either clustered_df or unclustered_df is empty
     while True:
         clustered_df, unclustered_df = clusterer(
-            master,
+            main,
             markers_df,
             domain,
             completeness,
@@ -633,7 +634,7 @@ def get_clusters(
         num_clusters += clustered_df.cluster.nunique()
         clusters.append(clustered_df)
         # continue with unclustered contigs
-        master = unclustered_df
+        main = unclustered_df
     df = pd.concat(clusters, sort=True)
     for metric in [
         "purity",
@@ -649,7 +650,7 @@ def get_clusters(
 
 
 def binning(
-    master: pd.DataFrame,
+    main: pd.DataFrame,
     markers: pd.DataFrame,
     domain: str = "bacteria",
     completeness: float = 20.0,
@@ -668,7 +669,7 @@ def binning(
 
     Parameters
     ----------
-    master : pd.DataFrame
+    main : pd.DataFrame
         index=contig,
         cols=['x','y', 'coverage', 'gc_content']
         taxa cols should be present if `taxonomy` is True.
@@ -716,7 +717,7 @@ def binning(
     Returns
     -------
     pd.DataFrame
-        master with ['cluster','completeness','purity'] columns added
+        main with ['cluster','completeness','purity'] columns added
 
     Raises
     -------
@@ -724,17 +725,17 @@ def binning(
         No marker information is availble for contigs to be binned.
     """
     # First check needs to ensure we have markers available to check binning quality...
-    if master.loc[master.index.isin(markers.index)].empty:
+    if main.loc[main.index.isin(markers.index)].empty:
         raise TableFormatError(
             "No markers for contigs in table. Unable to assess binning quality"
         )
-    if master.shape[0] <= 1:
+    if main.shape[0] <= 1:
         raise BinningError("Not enough contigs in table for binning")
 
     logger.info(f"Using {method} clustering method")
     if not taxonomy:
         return get_clusters(
-            master=master,
+            main=main,
             markers_df=markers,
             domain=domain,
             completeness=completeness,
@@ -761,16 +762,16 @@ def binning(
     clusters = []
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
-        unclassified_filter = master[rank] != "unclassified"
-        master_grouped_by_rank = master.loc[unclassified_filter].groupby(rank)
-        taxa_counts = master_grouped_by_rank[rank].count()
+        unclassified_filter = main[rank] != "unclassified"
+        main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
+        taxa_counts = main_grouped_by_rank[rank].count()
         n_contigs_in_taxa = taxa_counts.sum()
         n_taxa = taxa_counts.index.nunique()
         logger.info(
             f"Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)"
         )
         # Group contigs by rank and find best clusters within subset
-        for rank_name_txt, dff in master_grouped_by_rank:
+        for rank_name_txt, dff in main_grouped_by_rank:
             if dff.empty:
                 continue
             # Only cluster contigs that have not already been assigned a bin.
@@ -789,7 +790,7 @@ def binning(
                 f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
             )
             clusters_df = get_clusters(
-                master=rank_df,
+                main=rank_df,
                 markers_df=markers,
                 domain=domain,
                 completeness=completeness,
@@ -823,7 +824,7 @@ def binning(
     # We place these into one table and then...
     clustered_df = pd.concat(clusters, sort=True)
     # create a dataframe for any contigs *not* in the clustered dataframe
-    unclustered_df = master.loc[~master.index.isin(clustered_df.index)]
+    unclustered_df = main.loc[~main.index.isin(clustered_df.index)]
     unclustered_df["cluster"] = pd.NA
     return pd.concat([clustered_df, unclustered_df], sort=True)
 
@@ -874,8 +875,8 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--output-master",
-        help="Path to write Autometa master table used during/after binning",
+        "--output-main",
+        help="Path to write Autometa main table used during/after binning",
         metavar="filepath",
     )
     parser.add_argument(
@@ -997,7 +998,7 @@ def main():
     )
 
     cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
-    master_df = pd.merge(
+    main_df = pd.merge(
         kmers_df,
         cov_df[["coverage"]],
         how="left",
@@ -1005,8 +1006,8 @@ def main():
         right_index=True,
     )
     gc_content_df = pd.read_csv(args.gc_content, sep="\t", index_col="contig")
-    master_df = pd.merge(
-        master_df,
+    main_df = pd.merge(
+        main_df,
         gc_content_df,
         how="left",
         left_index=True,
@@ -1025,20 +1026,20 @@ def main():
             taxa_df[rank] = taxa_df[rank].map(lambda name: name.lower())
         # Now we are ready to filter by kingdom
         taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
-        master_df = pd.merge(
-            left=master_df,
+        main_df = pd.merge(
+            left=main_df,
             right=taxa_df,
             how="inner",
             left_index=True,
             right_index=True,
         )
 
-    taxa_present = True if "taxid" in master_df else False
-    master_df = master_df.convert_dtypes()
-    logger.debug(f"master_df shape: {master_df.shape}")
+    taxa_present = True if "taxid" in main_df else False
+    main_df = main_df.convert_dtypes()
+    logger.debug(f"main_df shape: {main_df.shape}")
 
-    master_out = binning(
-        master=master_df,
+    main_out = binning(
+        main=main_df,
         markers=markers_df,
         taxonomy=taxa_present,
         starting_rank=args.starting_rank,
@@ -1060,11 +1061,11 @@ def main():
         "coverage_stddev",
         "gc_content_stddev",
     ]
-    master_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
+    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
     logger.info(f"Wrote binning results to {args.output_binning}")
-    if args.output_master:
-        master_out.to_csv(args.output_master, sep="\t", index=True, header=True)
-        logger.info(f"Wrote master table to {args.output_master}")
+    if args.output_main:
+        main_out.to_csv(args.output_main, sep="\t", index=True, header=True)
+        logger.info(f"Wrote main table to {args.output_main}")
 
 
 if __name__ == "__main__":
