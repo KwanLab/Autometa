@@ -246,12 +246,11 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
             self.kmers = counts_out
             self.force = True
             self.norm_method = norm_method
-            self.normalized = normalized
-            self.embed_method = embed_method
-            self.embed_dimensions = embed_dimensions
-            self.do_pca = True
+            self.norm_output = normalized
+            self.embedding_method = embed_method
+            self.embedding_dimensions = embed_dimensions
+            self.embedding_output = embedded
             self.pca_dimensions = 3
-            self.embedded = embedded
             self.cpus = 1
             self.seed = 42
 

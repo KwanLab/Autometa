@@ -57,13 +57,12 @@ process KMERS {
     --fasta $metagenome \
     --kmers ${metagenome.simpleName}.kmers.tsv \
     --size ${params.kmer_size} \
-    --normalized ${metagenome.simpleName}.kmers.normalized.tsv \
+    --norm-output ${metagenome.simpleName}.kmers.normalized.tsv \
     --norm-method ${params.kmer_norm_method} \
-    --do-pca \
     --pca-dimensions ${params.kmer_pca_dimensions} \
-    --embedded ${metagenome.simpleName}.kmers.embedded.tsv \
-    --embed-method bhsne \
-    --embed-dimensions ${params.kmer_embed_dimensions} \
+    --embedding-output ${metagenome.simpleName}.kmers.embedded.tsv \
+    --embedding-method bhsne \
+    --embedding-dimensions ${params.kmer_embed_dimensions} \
     --cpus ${task.cpus} \
     --seed 42
   """
