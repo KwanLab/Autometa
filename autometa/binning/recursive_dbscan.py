@@ -157,7 +157,7 @@ def run_dbscan(
     Parameters
     ----------
     df : pd.DataFrame
-        Contigs with embedded k-mer frequencies as ['x','y'] columns and 'coverage' column
+        Contigs with embedded k-mer frequencies as ['x_1','x_2',..., 'x_ndims'] columns and 'coverage' column
     eps : float
         The maximum distance between two samples for one to be considered
         as in the neighborhood of the other. This is not a maximum bound
@@ -1064,7 +1064,23 @@ def main():
     main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
     logger.info(f"Wrote binning results to {args.output_binning}")
     if args.output_main:
-        main_out.to_csv(args.output_main, sep="\t", index=True, header=True)
+        # First after binning relevant assignments/metrics place contig physical annotations
+        annotation_cols = ["coverage", "gc_content", "length"]
+        outcols.extend(annotation_cols)
+        if args.taxonomy:
+            # Add in taxonomy columns if taxa are present
+            # superkingdom, phylum, class, order, family, genus, species
+            taxa_cols = [
+                rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+            ]
+            taxa_cols.append("taxid")
+            # superkingdom, phylum, class, order, family, genus, species, taxid
+            outcols.extend(taxa_cols)
+        # Finally place kmer embeddings at end
+        kmer_cols = [col for col in main_out.columns if "x_" in col]
+        outcols.extend(kmer_cols)
+        # Now write out table with columns sorted using outcols list
+        main_out[outcols].to_csv(args.output_main, sep="\t", index=True, header=True)
         logger.info(f"Wrote main table to {args.output_main}")
 
 

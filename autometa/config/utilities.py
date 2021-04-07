@@ -128,7 +128,6 @@ def parse_args(fpath: str = None) -> Namespace:
         "kmer_size": int,
         "kmer_multiprocess": bool,
         "kmer_transform": str,
-        "do_pca": bool,
         "pca_dims": int,
         "embed_dimensions": int,
         "embed_method": str,

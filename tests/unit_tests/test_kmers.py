@@ -161,14 +161,12 @@ def test_embed_methods(norm_df, method, tmp_path):
     out = tmp_path / "kmers.embed.tsv"
     force = False
     embed_dimensions = 2
-    do_pca = True
     pca_dimensions = 3
     df = kmers.embed(
         kmers=norm_df,
         out=out,
         force=force,
         embed_dimensions=embed_dimensions,
-        do_pca=do_pca,
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
@@ -184,7 +182,6 @@ def test_embed_dimensions(norm_df, embed_dimensions, tmp_path):
         out=out,
         force=False,
         embed_dimensions=embed_dimensions,
-        do_pca=True,
         pca_dimensions=5,
         method="bhsne",
         seed=42,
@@ -198,14 +195,12 @@ def test_embed_out_exists(norm_df, force, tmp_path):
     out = tmp_path / "kmers.embed.tsv"
     method = "bhsne"
     embed_dimensions = 2
-    do_pca = True
     pca_dimensions = 3
     df = kmers.embed(
         kmers=norm_df,
         out=out,
         force=force,
         embed_dimensions=embed_dimensions,
-        do_pca=do_pca,
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
