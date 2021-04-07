@@ -909,7 +909,6 @@ def main():
         "--clustering-method",
         help="Clustering algorithm to use for recursive binning.",
         choices=["dbscan", "hdbscan"],
-        metavar="string",
         default="dbscan",
     )
     parser.add_argument(
