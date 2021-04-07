@@ -2,17 +2,21 @@
 
 nextflow.enable.dsl=2
 
-params.length_cutoff = 3000
-params.kmer_size = 5
-params.kmer_norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
-params.kmer_pca_dimensions = 50
-params.kmer_embed_method = "bhsne" // choices: "sksne", "bhsne", "umap"
-params.kmer_embed_dimensions = 2
-params.cpus = 2
-params.kingdom = "bacteria"
+// Data inputs
 params.metagenome = "</path/to/user/metagenome.fna>"
 params.interim = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
+params.length_cutoff = 3000
+// kmer parameters
+params.kmer_size = 5
+params.norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
+params.pca_dimensions = 50
+params.embedding_method = "bhsne" // choices: "sksne", "bhsne", "umap"
+params.embedding_dimensions = 2
+// Marker annotation parameters
+params.kingdom = "bacteria"
+// Runtime parameters
+params.cpus = 2
 
 
 process LENGTH_FILTER {
@@ -58,11 +62,11 @@ process KMERS {
     --kmers ${metagenome.simpleName}.kmers.tsv \
     --size ${params.kmer_size} \
     --norm-output ${metagenome.simpleName}.kmers.normalized.tsv \
-    --norm-method ${params.kmer_norm_method} \
-    --pca-dimensions ${params.kmer_pca_dimensions} \
+    --norm-method ${params.norm_method} \
+    --pca-dimensions ${params.pca_dimensions} \
     --embedding-output ${metagenome.simpleName}.kmers.embedded.tsv \
-    --embedding-method bhsne \
-    --embedding-dimensions ${params.kmer_embed_dimensions} \
+    --embedding-method ${params.embedding_method} \
+    --embedding-dimensions ${params.embedding_dimensions} \
     --cpus ${task.cpus} \
     --seed 42
   """
@@ -235,7 +239,7 @@ process GENOMECOV {
     --ibam $bam \
     --lengths $lengths \
     --bed ${bam.simpleName}.bed.tsv \
-    --output coverage.tsv
+    --output ${bam.simpleName}.coverage.tsv
   """
 }
 

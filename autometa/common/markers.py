@@ -78,7 +78,7 @@ def load(fpath, format="wide"):
     df = pd.read_csv(fpath, sep="\t", index_col="contig")
     grouped_df = df.groupby("contig")["sacc"]
     if format == "wide":
-        return grouped_df.value_counts().unstack()
+        return grouped_df.value_counts().unstack().convert_dtypes()
     elif format == "long":
         return grouped_df.value_counts().reset_index(level=1, name="count")
     elif format == "list":

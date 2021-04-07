@@ -54,16 +54,6 @@ def fixture_test_contigs(variables, markers, n=5, seed=42):
 @pytest.fixture(name="kmers", scope="module")
 def fixture_kmers(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
-    df = pd.read_json(binning_test_data["kmers_normalized"])
-    fpath = binning_testdir / "kmers.norm.tsv"
-    df.set_index("contig", inplace=True)
-    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
-    return str(fpath)
-
-
-@pytest.fixture(name="embedded_kmers", scope="module")
-def fixture_embedded_kmers(variables, test_contigs, binning_testdir):
-    binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["kmers_embedded"])
     fpath = binning_testdir / "kmers.embed.tsv"
     df.set_index("contig", inplace=True)
@@ -115,22 +105,22 @@ def fixture_markers(markers_fpath):
     return load_markers(markers_fpath)
 
 
-@pytest.fixture(name="main", scope="module")
-def fixture_main(embedded_kmers, coverage, gc_content, taxonomy):
-    main = pd.read_csv(embedded_kmers, sep="\t", index_col="contig")
+@pytest.fixture(name="main_df", scope="module")
+def fixture_main_df(kmers, coverage, gc_content, taxonomy):
+    main_df = pd.read_csv(kmers, sep="\t", index_col="contig")
     for fpath in [coverage, gc_content, taxonomy]:
         df = pd.read_csv(fpath, sep="\t", index_col="contig")
-        main = pd.merge(main, df, how="left", right_index=True, left_index=True)
-    main = main.convert_dtypes()
-    return main
+        main_df = pd.merge(main_df, df, how="left", right_index=True, left_index=True)
+    main_df = main_df.convert_dtypes()
+    return main_df
 
 
 @pytest.mark.parametrize("usetaxonomy", [True, False])
 @pytest.mark.parametrize("method", ["dbscan", "hdbscan"])
-def test_binning(main, markers, usetaxonomy, method):
+def test_binning(main_df, markers, usetaxonomy, method):
     num_contigs = main.shape[0]
     df = recursive_dbscan.binning(
-        main=main,
+        main=main_df,
         markers=markers,
         taxonomy=usetaxonomy,
         starting_rank="superkingdom",
@@ -153,10 +143,10 @@ def test_binning(main, markers, usetaxonomy, method):
     assert df.shape[0] == num_contigs
 
 
-def test_binning_invalid_clustering_method(main, markers):
+def test_binning_invalid_clustering_method(main_df, markers):
     with pytest.raises(ValueError):
         recursive_dbscan.binning(
-            main=main,
+            main=main_df,
             markers=markers,
             taxonomy=False,
             starting_rank="superkingdom",
@@ -169,7 +159,7 @@ def test_binning_invalid_clustering_method(main, markers):
         )
 
 
-def test_binning_empty_markers_table(main):
+def test_binning_empty_markers_table(main_df):
     invalid_dict = {
         "contig": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
         "markers": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
@@ -177,7 +167,7 @@ def test_binning_empty_markers_table(main):
     df = pd.DataFrame(invalid_dict)
     with pytest.raises(TableFormatError):
         recursive_dbscan.binning(
-            main=main,
+            main=main_df,
             markers=df,
             domain="bacteria",
             method="hdbscan",
@@ -214,7 +204,7 @@ def test_recursive_dbscan_main(
     coverage,
     gc_content,
     markers_fpath,
-    embedded_kmers,
+    kmers,
     taxonomy,
     tmp_path,
 ):
@@ -230,10 +220,6 @@ def test_recursive_dbscan_main(
             self.markers = markers_fpath
             self.output_binning = output_binning
             self.output_main = output_main
-            self.embedded_kmers = embedded_kmers
-            self.embedding_pca_dimensions = 50
-            self.embedding_method = "bhsne"
-            self.embedding_dimensions = 2
             self.clustering_method = "dbscan"
             self.completeness = 20.0
             self.purity = 95.0

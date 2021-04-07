@@ -846,7 +846,7 @@ def main():
     )
     parser.add_argument(
         "--kmers",
-        help="Path to normalized k-mer frequencies table",
+        help="Path to embedded k-mer frequencies table",
         metavar="filepath",
         required=True,
     )
@@ -878,32 +878,6 @@ def main():
         "--output-main",
         help="Path to write Autometa main table used during/after binning",
         metavar="filepath",
-    )
-    parser.add_argument(
-        "--embedded-kmers",
-        help="Path to provide embedded k-mer frequencies table if embedding has already been performed.",
-        metavar="filepath",
-    )
-    parser.add_argument(
-        "--embedding-pca-dimensions",
-        help="PCA dimensions to use *prior* to dimension reduction via `--embedding-dimensions`.",
-        metavar="int",
-        default=50,
-        type=int,
-    )
-    parser.add_argument(
-        "--embedding-method",
-        help="Embedding method to use on normalized k-mer frequencies.",
-        choices=["bhsne", "sksne", "umap"],
-        metavar="string",
-        default="bhsne",
-    )
-    parser.add_argument(
-        "--embedding-dimensions",
-        help="Embedding dimensions to use with `--embedding-method` from normalized k-mer frequencies (after PCA).",
-        metavar="int",
-        default=2,
-        type=int,
     )
     parser.add_argument(
         "--clustering-method",
@@ -960,7 +934,6 @@ def main():
             "genus",
             "species",
         ],
-        metavar="string",
     )
     parser.add_argument(
         "--reverse-ranks",
@@ -972,9 +945,8 @@ def main():
     )
     parser.add_argument(
         "--domain",
-        help="Kingdom to consider (archaea|bacteria)",
+        help="Kingdom to consider",
         choices=["bacteria", "archaea"],
-        metavar="string",
         default="bacteria",
     )
     parser.add_argument(
@@ -984,18 +956,8 @@ def main():
         help="log debug information",
     )
     args = parser.parse_args()
-    if args.embedding_pca_dimensions <= args.embedding_dimensions:
-        raise ValueError(
-            f"--embedding-pca-dimensions ({args.embedding_pca_dimensions}) must greater than --embedding-dimensions ({args.embedding_dimensions})."
-        )
-    kmers_df = kmers.embed(
-        kmers=args.kmers,
-        out=args.embedded_kmers,
-        method=args.embedding_method,
-        embed_dimensions=args.embedding_dimensions,
-        pca_dimensions=args.embedding_pca_dimensions,
-    )
-
+    # First merge all annotations
+    kmers_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
     cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
     main_df = pd.merge(
         kmers_df,
@@ -1012,9 +974,8 @@ def main():
         left_index=True,
         right_index=True,
     )
-
+    # Now read in markers for completeness and purity calculations
     markers_df = load_markers(args.markers)
-    markers_df = markers_df.convert_dtypes()
 
     if args.taxonomy:
         taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
@@ -1023,8 +984,9 @@ def main():
             if rank not in taxa_df.columns:
                 continue
             taxa_df[rank] = taxa_df[rank].map(lambda name: name.lower())
-        # Now we are ready to filter by kingdom
+        # Now we are ready to filter by superkingdom
         taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
+        # merge taxa annotations with other annotations
         main_df = pd.merge(
             left=main_df,
             right=taxa_df,
@@ -1035,6 +997,7 @@ def main():
 
     taxa_present = True if "taxid" in main_df else False
     main_df = main_df.convert_dtypes()
+    # Sanity checks
     logger.debug(f"main_df shape: {main_df.shape}")
 
     main_out = binning(
