@@ -36,13 +36,6 @@ You can now run the following R scripts (preferably in RStudio) to examine your 
 
 In the above chart the points represent contigs. They are plotted on the two dimensions that result from dimension-reduction by BH-tSNE (or any other dimension reduction method that you have chosen) - you can think of the distance between points as being roughly proportional to their differences in 5-mer frequency. The points are also scaled in size according to the contig length, and they are colored by the assigned cluster/bin. You can see that there are some bins which are well-separated from others, but there are other bins that are close together. Cases like these might be worth investigating manually if you think, for instance, that multiple Autometa bins close together could actually be different parts of the same genome. If clusters are close together, there is also the possibility that contigs in the region have been misassigned.
 
-.. plotly:: 
-
-    import plotly.express as px
- 
-    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-    fig.show()
-
 In addition to using nucleotide composition, Autometa uses coverage and can also use taxonomy to distinguish contigs with similar composition. We can also visualize these differences with R.
 
 .. code-block:: R
@@ -57,7 +50,7 @@ In addition to using nucleotide composition, Autometa uses coverage and can also
 
 In the above plot, we have now colored the points by taxonomic phylum, and this reveals that several clusters that are close together in BH-tSNE space are in fact quite divergent from one another (like bottom left). This is probably the basis for Autometa's assignment of separate bins in these cases. 
 
-In some cases, the contigs in a bin may in fact look divergent. You may want to manually examine cases such as these, but they could well be real if, for example, some contigs have few protein coding genes, or the organism is highly divergent from known sequences (see our paper `here <https://www.nature.com/articles/srep34362>`_ for some examples).
+In some cases, the contigs in a bin may in fact look divergent. You may want to manually examine cases such as these, but they could well be real if, for example, some contigs have few protein coding genes, or the organism is highly divergent from known sequences (see our paper `here <https://www.nature.com/articles/srep34362>`__ for some examples).
 
 In this particular dataset, the coverages of all genomes are fairly similar, as revealed in the next plot:
 

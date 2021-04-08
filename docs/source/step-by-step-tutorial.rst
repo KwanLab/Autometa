@@ -293,9 +293,9 @@ Breaking down the above command:
 | --out             | Path to BLASTP results                                                |
 +-------------------+-----------------------------------------------------------------------+
 
-To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`_. A complete list of all command line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`_.
+To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`__. A complete list of all command line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`__.
 
-The only output from the above command is blastp output table, 78mbp_metagenome.blastp.tsvin formate 6. Complete description of the output format can be found `here <https://github.com/bbuchfink/diamond/wiki/1.-Tutorial>`_.
+The only output from the above command is blastp output table, 78mbp_metagenome.blastp.tsvin formate 6. Complete description of the output format can be found `here <https://github.com/bbuchfink/diamond/wiki/1.-Tutorial>`__.
 
 
 The above command would generate the following files:
@@ -473,15 +473,15 @@ The above command generates the following files:
 +---------------------------------------+--------------------------------------------------------+
 | File                                  | Description                                            |
 +=======================================+========================================================+
-| 78mbp_metagenome.bacteria.kmers.tsv            | Table with raw k-mer frequencies of each contig        |
+| 78mbp_metagenome.kmers.tsv            | Table with raw k-mer frequencies of each contig        |
 +---------------------------------------+--------------------------------------------------------+
-| 78mbp_metagenome.bacteria.kmers.normalized.tsv | Table with normalized k-mer frequencies of each contig |
+| 78mbp_metagenome.kmers.normalized.tsv | Table with normalized k-mer frequencies of each contig |
 +---------------------------------------+--------------------------------------------------------+
-| 78mbp_metagenome.bacteria.kmers.embedded.tsv   | Table with embedded k-mer frequencies of each contig   |
+| 78mbp_metagenome.kmers.embedded.tsv   | Table with embedded k-mer frequencies of each contig   |
 +---------------------------------------+--------------------------------------------------------+
 
 10. Binning
-----------
+-----------
 
 This is the step where contigs are binned into genomes. Autometa assesses clusters by examining both their completeness (number of expected single copy markers) and purity (number of single copy markers that are unique in the cluster). If we supply a taxonomy table, then that is also used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. 
 
@@ -606,7 +606,7 @@ Description of additional columns in ``78mbp_metagenome.main.tsv``:
 | x_2          | The second coordinate after dimension reduction |
 +--------------+-------------------------------------------------+
 
-You can now move on to improving your clusters using the unclustered recruitment using supervised machine learning or analyze/ examine your results
+You can now move on to improving your clusters using the unclustered recruitment using supervised machine learning or analyze/ examine your results. See :ref:`Examining Results`.
 
 11. Unclustered recruitment (Optional)
 --------------------------------------
@@ -661,6 +661,9 @@ You can view the complete command line opions using ``autometa-unclustered-recru
 The above command would generate ``78mbp_metagenome.recruitment.tsv`` and ``78mbp_metagenome.recruitment.main.tsv``.
 
 ``78mbp_metagenome.recruitment.tsv`` represents the complete input matrix required to run ``autometa-unclustered-recruitment``. ``autometa-unclustered-recruitment`` take as input a matrix of features (unclustered contigs with their respective annotations) and output predictions of targets or target classes (in our case already recovered bins). Encoding the taxonomic ranks into this matrix is an input format required by the classification algorithms. In this case it is a “one-hot encoding” or a presence/absence matrix where each column is a canonical taxonomic rank and its respective value for each row represents its presence or absence. Presence and absence are denoted with 1 and 0, respectively. Hence ‘one-hot’ encoding being an encoding of presence and absence of the respective annotation type. In our case taxonomic designation.
+
+.. todo::
+    Add file description of ``78mbp_metagenome.recruitment.tsv`` after evan edits it.
 
 Running modules
 ---------------

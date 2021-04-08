@@ -29,8 +29,7 @@ Guide
 Contact
 -------
 | If you like Autometa, visit our `lab website <https://kwanlab.github.io/>`_ to find out more about our research.
-| For suggestions, queries or appreciation feel free to contact `Dr. Jason Kwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_
-at jason.kwan@wisc.edu
+| For suggestions, queries or appreciation feel free to contact `Dr. Jason Kwan <https://apps.pharmacy.wisc.edu/sopdir/jason_kwan/>`_ at jason.kwan@wisc.edu
 
 Indices and tables
 ------------------

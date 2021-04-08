@@ -48,7 +48,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate into the cloned repository
     cd $HOME/Autometa
     # Construct the autometa environment from requirements.txt
-    conda create -n autometa --file=requirements.txt
+    conda create -n autometa -c conda-forge -c bioconda --file=requirements.txt
     # Install the autometa code base from source
     python setup.py install
 
