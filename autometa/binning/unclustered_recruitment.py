@@ -600,23 +600,36 @@ def main():
             classifier=args.classifier,
             seed=args.seed,
         )
+        # Filter out any predictions that would reduce cluster purity
         predictions_df = filter_contaminating_predictions(
             predictions=predictions_df, markers=markers_df, binning=bin_df
         )
-
+        # Stop if no contigs are recruited to clusters
         if predictions_df.empty:
             break
 
         bin_df = add_predictions(binning=bin_df, predictions=predictions_df)
 
+    # Unclustered recruitment finished
+    # Determine the resulting number of unclustered contigs.
     now_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
 
     n_recruited = prev_num_unclustered - now_num_unclustered
     logger.info(
         f"unclustered {prev_num_unclustered} -> {now_num_unclustered} (recruited {n_recruited} contigs) in {n_runs} runs"
     )
-    bin_df.to_csv(args.output_binning, sep="\t", index=True, header=True)
+    # Re-read in the binning dataframe to merge with the newly recruited contigs
+    prev_bin_df = pd.read_csv(
+        args.binning, sep="\t", index_col="contig", usecols=["contig", "cluster"]
+    )
+    # Rename the 'cluster' column to 'recruited_cluster'
+    bin_df.rename(columns={"cluster": "recruited_cluster"}, inplace=True)
+    main_df = pd.merge(prev_bin_df, bin_df, left_index=True, right_index=True)
+    # index = 'contig', cols = 'cluster', 'recruited_cluster'
+    cols = ["cluster", "recruited_cluster"]
+    main_df[cols].to_csv(args.output_binning, sep="\t", index=True, header=True)
     if args.output_main:
+        # Outputs features matrix used as input to recruitment algorithm
         features.to_csv(args.output_main, sep="\t", index=True, header=True)
 
 

@@ -157,7 +157,7 @@ def run_dbscan(
     Parameters
     ----------
     df : pd.DataFrame
-        Contigs with embedded k-mer frequencies as ['x','y'] columns and 'coverage' column
+        Contigs with embedded k-mer frequencies as ['x_1','x_2',..., 'x_ndims'] columns and 'coverage' column
     eps : float
         The maximum distance between two samples for one to be considered
         as in the neighborhood of the other. This is not a maximum bound
@@ -846,7 +846,7 @@ def main():
     )
     parser.add_argument(
         "--kmers",
-        help="Path to normalized k-mer frequencies table",
+        help="Path to embedded k-mer frequencies table",
         metavar="filepath",
         required=True,
     )
@@ -880,36 +880,9 @@ def main():
         metavar="filepath",
     )
     parser.add_argument(
-        "--embedded-kmers",
-        help="Path to provide embedded k-mer frequencies table if embedding has already been performed.",
-        metavar="filepath",
-    )
-    parser.add_argument(
-        "--embedding-pca-dimensions",
-        help="PCA dimensions to use *prior* to dimension reduction via `--embedding-dimensions`.",
-        metavar="int",
-        default=50,
-        type=int,
-    )
-    parser.add_argument(
-        "--embedding-method",
-        help="Embedding method to use on normalized k-mer frequencies.",
-        choices=["bhsne", "sksne", "umap"],
-        metavar="string",
-        default="bhsne",
-    )
-    parser.add_argument(
-        "--embedding-dimensions",
-        help="Embedding dimensions to use with `--embedding-method` from normalized k-mer frequencies (after PCA).",
-        metavar="int",
-        default=2,
-        type=int,
-    )
-    parser.add_argument(
         "--clustering-method",
         help="Clustering algorithm to use for recursive binning.",
         choices=["dbscan", "hdbscan"],
-        metavar="string",
         default="dbscan",
     )
     parser.add_argument(
@@ -961,7 +934,6 @@ def main():
             "genus",
             "species",
         ],
-        metavar="string",
     )
     parser.add_argument(
         "--reverse-ranks",
@@ -973,9 +945,8 @@ def main():
     )
     parser.add_argument(
         "--domain",
-        help="Kingdom to consider (archaea|bacteria)",
+        help="Kingdom to consider",
         choices=["bacteria", "archaea"],
-        metavar="string",
         default="bacteria",
     )
     parser.add_argument(
@@ -985,18 +956,8 @@ def main():
         help="log debug information",
     )
     args = parser.parse_args()
-    if args.embedding_pca_dimensions <= args.embedding_dimensions:
-        raise ValueError(
-            f"--embedding-pca-dimensions ({args.embedding_pca_dimensions}) must greater than --embedding-dimensions ({args.embedding_dimensions})."
-        )
-    kmers_df = kmers.embed(
-        kmers=args.kmers,
-        out=args.embedded_kmers,
-        method=args.embedding_method,
-        embed_dimensions=args.embedding_dimensions,
-        pca_dimensions=args.embedding_pca_dimensions,
-    )
-
+    # First merge all annotations
+    kmers_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
     cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
     main_df = pd.merge(
         kmers_df,
@@ -1013,9 +974,8 @@ def main():
         left_index=True,
         right_index=True,
     )
-
+    # Now read in markers for completeness and purity calculations
     markers_df = load_markers(args.markers)
-    markers_df = markers_df.convert_dtypes()
 
     if args.taxonomy:
         taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
@@ -1024,8 +984,9 @@ def main():
             if rank not in taxa_df.columns:
                 continue
             taxa_df[rank] = taxa_df[rank].map(lambda name: name.lower())
-        # Now we are ready to filter by kingdom
+        # Now we are ready to filter by superkingdom
         taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
+        # merge taxa annotations with other annotations
         main_df = pd.merge(
             left=main_df,
             right=taxa_df,
@@ -1036,6 +997,7 @@ def main():
 
     taxa_present = True if "taxid" in main_df else False
     main_df = main_df.convert_dtypes()
+    # Sanity checks
     logger.debug(f"main_df shape: {main_df.shape}")
 
     main_out = binning(
@@ -1064,7 +1026,23 @@ def main():
     main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
     logger.info(f"Wrote binning results to {args.output_binning}")
     if args.output_main:
-        main_out.to_csv(args.output_main, sep="\t", index=True, header=True)
+        # First after binning relevant assignments/metrics place contig physical annotations
+        annotation_cols = ["coverage", "gc_content", "length"]
+        outcols.extend(annotation_cols)
+        if args.taxonomy:
+            # Add in taxonomy columns if taxa are present
+            # superkingdom, phylum, class, order, family, genus, species
+            taxa_cols = [
+                rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+            ]
+            taxa_cols.append("taxid")
+            # superkingdom, phylum, class, order, family, genus, species, taxid
+            outcols.extend(taxa_cols)
+        # Finally place kmer embeddings at end
+        kmer_cols = [col for col in main_out.columns if "x_" in col]
+        outcols.extend(kmer_cols)
+        # Now write out table with columns sorted using outcols list
+        main_out[outcols].to_csv(args.output_main, sep="\t", index=True, header=True)
         logger.info(f"Wrote main table to {args.output_main}")
 
 

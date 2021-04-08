@@ -2,20 +2,20 @@
 
 nextflow.enable.dsl=2
 
-params.kingdom = "bacteria"
-params.classification_kmer_pca_dimensions = 50
-params.kmer_embed_method = "bhsne" // choices: "bhsne", "sksne", "umap"
-params.kmer_pca_dimensions = 50 // Must be below the number of columns in kmer counts table
-params.kmer_embed_dimensions = 2 // Must be below `kmer_pca_dimensions`
-params.clustering_method = "dbscan" // choices: "dbscan", "hdbscan"
-params.binning_starting_rank = "superkingdom" // choices: "superkingdom", "phylum", "class", "order", "family", "genus", "species"
-params.classification_method = "decision_tree" // choices: "decision_tree", "random_forest"
-params.completeness = 20.0
-params.purity = 90.0
-params.cov_stddev_limit = 25.0
-params.gc_stddev_limit = 5.0
+// Data inputs
 params.interim = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
+// Binning parameters
+params.kingdom = "bacteria"
+params.clustering_method = "dbscan" // choices: "dbscan", "hdbscan"
+params.binning_starting_rank = "superkingdom" // choices: "superkingdom", "phylum", "class", "order", "family", "genus", "species"
+params.completeness = 20.0
+params.purity = 95.0
+params.cov_stddev_limit = 25.0
+params.gc_stddev_limit = 5.0
+// Unclustered recruitment parameters
+params.classification_method = "decision_tree" // choices: "decision_tree", "random_forest"
+params.classification_kmer_pca_dimensions = 50
 
 
 process BINNING {
@@ -43,10 +43,6 @@ process BINNING {
     --markers $markers \
     --output-binning ${coverage.simpleName}.${params.kingdom}.binning.tsv.gz \
     --output-main ${coverage.simpleName}.${params.kingdom}.main.tsv.gz \
-    --embedding-pca-dimensions ${params.kmer_pca_dimensions} \
-    --embedding-method ${params.kmer_embed_method} \
-    --embedding-dimensions ${params.kmer_embed_dimensions} \
-    --embedded-kmers ${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv.gz \
     --clustering-method ${params.clustering_method} \
     --completeness ${params.completeness} \
     --purity ${params.purity} \
