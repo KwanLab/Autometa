@@ -207,13 +207,12 @@ One of the most powerful features of nextflow_ is resuming the workflow from the
 Execution Report
 ^^^^^^^^^^^^^^^^
 
-.. todo::
-    Add the steps to get this
+After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report automatically for you in the ``pipeline`` directory. You can read more about these execution reports `here <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
 
 Workflow Visualized
 ^^^^^^^^^^^^^^^^^^^
 
-You can also visualize the entire workflow ie. create the DAG from the written DOT file using ``dot -Tgif < pipeline_info/autometa-dot > autometa-dag.gif``
+You can also visualize the entire workflow ie. create the DAG from the written DOT file. Install `Graphviz <https://graphviz.org/>`_ and do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the in the ``png`` format.
 
 Configure nextflow with your 'executor'
 ---------------------------------------
