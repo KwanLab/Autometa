@@ -164,7 +164,7 @@ def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
     for prediction in predictions:
         labels = get_categorical_labels(predictions=prediction, reference=reference)
         metrics = compute_clustering_metrics(labels)
-        metrics.update({"dataset": os.path.basename(predictions)})
+        metrics.update({"dataset": os.path.basename(prediction)})
         all_metrics.append(metrics)
     df = pd.DataFrame(all_metrics).set_index("dataset")
     return df
