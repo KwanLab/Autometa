@@ -35,7 +35,16 @@ from typing import Dict, Iterable, NamedTuple, Union
 import pandas as pd
 from collections import namedtuple
 
-from sklearn import metrics
+from sklearn.metrics import (
+    adjusted_rand_score,
+    homogeneity_score,
+    completeness_score,
+    v_measure_score,
+    adjusted_mutual_info_score,
+    normalized_mutual_info_score,
+    fowlkes_mallows_score,
+    classification_report,
+)
 
 from autometa.taxonomy.ncbi import NCBI
 
@@ -132,35 +141,32 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
 
     """
     # Calculate cluster variety of cluster evaluation metrics with labels
-    ari = metrics.adjusted_rand_score(labels_true=labels.true, labels_pred=labels.pred)
-    homogeneity_score = metrics.homogeneity_score(labels.true, labels.pred)
-    completeness_score = metrics.completeness_score(labels.true, labels.pred)
-    v_measure = metrics.v_measure_score(labels.true, labels.pred)
-    ami = metrics.adjusted_mutual_info_score(
-        labels_true=labels.true, labels_pred=labels.pred
-    )
-    gnmi = metrics.normalized_mutual_info_score(
+    ami = adjusted_mutual_info_score(labels_true=labels.true, labels_pred=labels.pred)
+    ari = adjusted_rand_score(labels_true=labels.true, labels_pred=labels.pred)
+    gnmi = normalized_mutual_info_score(
         labels_true=labels.true,
         labels_pred=labels.pred,
         average_method="geometric",
     )
-    fowlkes_mallows_score = metrics.fowlkes_mallows_score(
+    fowlkes_score = fowlkes_mallows_score(
         labels_true=labels.true, labels_pred=labels.pred
     )
     return {
         "adjusted mutual info score": ami,
         "geometric normalized mutual info score": gnmi,
         "adjusted rand score": ari,
-        "homogeneity score": homogeneity_score,
-        "completeness score": completeness_score,
-        "V-measure": v_measure,
-        "fowlkes-mallows score": fowlkes_mallows_score,
+        "homogeneity score": homogeneity_score(labels.true, labels.pred),
+        "completeness score": completeness_score(labels.true, labels.pred),
+        "V-measure": v_measure_score(labels.true, labels.pred),
+        "fowlkes-mallows score": fowlkes_score,
     }
 
 
 def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
-    reference = pd.read_csv(reference, sep="\t", usecols=["contig", "reference_genome"])
     all_metrics = []
+    reference = pd.read_csv(
+        reference, sep="\t", usecols=["contig", "reference_genome"], index_col="contig"
+    )
     for prediction in predictions:
         labels = get_categorical_labels(predictions=prediction, reference=reference)
         metrics = compute_clustering_metrics(labels)
@@ -273,7 +279,7 @@ def get_target_labels(
 
 
 def compute_classification_metrics(labels: namedtuple) -> dict:
-    return metrics.classification_report(
+    return classification_report(
         y_true=labels.true,
         y_pred=labels.pred,
         target_names=labels.target_names,
@@ -321,6 +327,49 @@ def evaluate_classification(
             all_metrics.append(metrics)
     df = pd.DataFrame(all_metrics).set_index("dataset")
     return df, all_reports
+
+
+def write_reports(reports: Iterable[Dict], outdir: str, ncbi: NCBI) -> None:
+    """Write taxid multi-label classification reports in `reports`
+
+    Parameters
+    ----------
+    reports : Iterable[Dict]
+        List of classification report dicts from each classification benchmarking evaluation
+    outdir : str
+        Directory path to write reports
+    ncbi : NCBI
+        autometa.taxonomy.ncbi.NCBI instance for taxid name and rank look-up.
+
+    Returns
+    -------
+    NoneType
+
+    """
+    # First create the output directory if it does not exist
+    if not os.path.isdir(outdir) or not os.path.exists(outdir):
+        os.makedirs(outdir)
+        logger.info(f"Created new directory: {outdir}")
+    # Now format each report then write out to outdir
+    for report in reports:
+        # Get dataset to name report filepath
+        dataset = report.pop("dataset")
+        dataset = dataset.replace(".tsv", "").replace(".gz", "")
+        dataset = f"{dataset}_classification_report.tsv.gz"
+        report_filepath = os.path.join(outdir, dataset)
+        # Remove overall averages:
+        # Remove any rows of the report that are averages of other rows (These can easily be retrieved with DataFrame later if needed.)
+        avgs = [k for k in report if " avg" in k]
+        for avg in avgs:
+            report.pop(avg)
+        # Reshape from wide to long
+        report_df = pd.DataFrame(report).transpose()
+        # Add human-readable taxonomic information according to taxid classification benchmarks
+        report_df["name"] = report_df.index.map(lambda taxid: ncbi.name(taxid))
+        report_df["rank"] = report_df.index.map(lambda taxid: ncbi.rank(taxid))
+        report_df.index.name = "taxid"
+        report_df.to_csv(report_filepath, sep="\t", index=True, header=True)
+    logger.info(f"Wrote {len(reports):,} report(s) to {outdir}")
 
 
 def main():
@@ -379,6 +428,8 @@ def main():
         required=False,
     )
     args = parser.parse_args()
+
+    logger.info(f"Evaluating {args.benchmark} benchmarks")
     if args.benchmark == "clustering":
         df = evaluate_clustering(predictions=args.predictions, reference=args.reference)
     else:
@@ -391,31 +442,8 @@ def main():
             ncbi=ncbi,
         )
         if args.output_classification_reports:
-            if not os.path.isdir(
-                args.output_classification_reports
-            ) or not os.path.exists(args.output_classification_reports):
-                os.makedirs(args.output_classification_reports)
-                logger.info(
-                    f"Created new directory: {args.output_classification_reports}"
-                )
-            for report in reports:
-                dataset = report.pop("dataset")
-                dataset = dataset.replace(".tsv", "").replace(".gz", "")
-                dataset = f"{dataset}_classification_report.tsv.gz"
-                report_filepath = os.path.join(
-                    args.output_classification_reports, dataset
-                )
-                # Remove overall averages:
-                avgs = [k for k in report if " avg" in k]
-                for avg in avgs:
-                    report.pop(avg)
-                report_df = pd.DataFrame(report).transpose()
-                report_df["name"] = report_df.index.map(lambda taxid: ncbi.name(taxid))
-                report_df["rank"] = report_df.index.map(lambda taxid: ncbi.rank(taxid))
-                report_df.index.name = "taxid"
-                report_df.to_csv(report_filepath, sep="\t", index=True, header=True)
-            logger.info(
-                f"Wrote {len(reports):,} report(s) to {args.output_classification_reports}"
+            write_reports(
+                reports=reports, outdir=args.output_classification_reports, ncbi=ncbi
             )
 
     output_wide = (
