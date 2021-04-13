@@ -21,7 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-taxonomy voting script
+Script to split metagenome assembly by kingdoms given the input votes. The lineages of the provided voted taxids will also be added and written to taxonomy.tsv
 """
 
 
@@ -259,6 +259,8 @@ def write_ranks(
         Path to output directory to write fasta files
     rank : str, optional
         canonical rank column in taxonomy table to split by, by default "superkingdom"
+    prefix : str, optional
+        Prefix each of the paths written with `prefix` string.
 
     Returns
     -------
@@ -314,8 +316,16 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--input",
+        "--votes",
         help="Input path to voted taxids table. should contain (at least) 'contig' and 'taxid' columns",
+        type=str,
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--assembly",
+        help="Path to metagenome assembly (nucleotide fasta).",
+        metavar="filepath",
         type=str,
         required=True,
     )
@@ -323,18 +333,14 @@ def main():
         "--output",
         help="Directory to output fasta files of split canonical ranks and taxonomy.tsv.",
         type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "--assembly",
-        help="Path to metagenome assembly (nucleotide fasta).",
-        type=str,
+        metavar="dirpath",
         required=True,
     )
     parser.add_argument(
         "--prefix",
         help="prefix to use for each file written e.g. `prefix`.taxonomy.tsv. Note: Do not use a directory prefix.",
         type=str,
+        metavar="str",
     )
     parser.add_argument(
         "--split-rank-and-write",
@@ -350,13 +356,16 @@ def main():
         ],
     )
     parser.add_argument(
-        "--ncbi", help="Path to NCBI databases directory.", default=NCBI_DIR
+        "--ncbi",
+        help="Path to NCBI databases directory.",
+        metavar="dirpath",
+        default=NCBI_DIR,
     )
     args = parser.parse_args()
 
     filename = f"{args.prefix}.taxonomy.tsv" if args.prefix else "taxonomy.tsv"
     out = os.path.join(args.output, filename)
-    taxa_df = pd.read_csv(args.input, sep="\t", index_col="contig")
+    taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
 
     if not os.path.isdir(args.output):
         os.makedirs(args.output)

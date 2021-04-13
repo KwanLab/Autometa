@@ -84,7 +84,7 @@ process SPLIT_KINGDOMS {
 
   """
   autometa-taxonomy \
-    --input ${votes} \
+    --votes ${votes} \
     --output . \
     --prefix ${assembly.simpleName} \
     --split-rank-and-write superkingdom \

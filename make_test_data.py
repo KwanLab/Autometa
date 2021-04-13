@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -375,8 +375,8 @@ class TestData:
         bin_df = pd.read_csv(self.summary_bin_df, sep="\t")
         if "coverage" not in bin_df.columns:
             bin_df["coverage"] = bin_df.contig.map(lambda x: x.split("_cov_")[-1])
-        if "GC" not in bin_df.columns:
-            bin_df["GC"] = np.random.random_sample(bin_df.contig.nunique())
+        if "gc_content" not in bin_df.columns:
+            bin_df["gc_content"] = np.random.random_sample(bin_df.contig.nunique())
         if "length" not in bin_df.columns:
             bin_df["length"] = bin_df.contig.map(
                 lambda x: x.split("_length_")[-1].split("_cov_")[0]

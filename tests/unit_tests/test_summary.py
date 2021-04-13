@@ -34,11 +34,7 @@ import argparse
 @pytest.fixture(name="bin_df", scope="module")
 def fixture_bin_df(variables):
     binning_test_data = variables["summary"]
-    gc_df = pd.read_json(variables["binning"].get("gc_content")).set_index("contig")
-    df = pd.read_json(binning_test_data["bin_df"]).set_index("contig")
-    return pd.merge(
-        df, gc_df[["gc_content"]], how="left", left_index=True, right_index=True
-    )
+    return pd.read_json(binning_test_data["bin_df"]).set_index("contig")
 
 
 @pytest.fixture(name="assembly", scope="module")
