@@ -199,14 +199,7 @@ def test_main_invalid_embedding_dimensions_args(monkeypatch):
 
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
-    monkeypatch,
-    kmers,
-    coverage,
-    gc_content,
-    markers_fpath,
-    kmers,
-    taxonomy,
-    tmp_path,
+    monkeypatch, kmers, coverage, gc_content, markers_fpath, taxonomy, tmp_path,
 ):
     output_binning = tmp_path / "binning.tsv"
     output_main = tmp_path / "binning_main.tsv"

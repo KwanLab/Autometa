@@ -21,23 +21,17 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Script to summarize/write Autometa binning results
+Script to summarize Autometa binning results
 """
 
-import glob
 import logging
 import os
 
 import pandas as pd
 import numpy as np
 
-from argparse import Namespace
 from Bio import SeqIO
-from Bio.SeqUtils import GC
 
-from typing import Mapping
-
-from autometa.config import utilities as configutils
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy import majority_vote
 from autometa.common import markers
@@ -46,62 +40,9 @@ from autometa.common import markers
 logger = logging.getLogger(__name__)
 
 
-def get_gc_content(metagenome: str) -> pd.DataFrame:
-    gc_content = [
-        {"contig": rec.id, "GC": GC(rec.seq)}
-        for rec in SeqIO.parse(metagenome, "fasta")
-    ]
-    df = pd.DataFrame(gc_content).set_index("contig")
-    return df
-
-
-def merge_annotations(mgargs: Namespace) -> Mapping[str, pd.DataFrame]:
-    """Merge all required annotations for binning summaries.
-
-    Parameters
-    ----------
-    mgargs : argparse.Namespace
-        metagenome args parsed from config using `autometa.config.utilities.parse_args`.
-
-    Returns
-    -------
-    Mapping[str, pd.DataFrame]
-        {"kingdom" :index=contig, cols=['cluster','length','coverage','taxid', *canonical_ranks]}
-
-    Raises
-    ------
-    FileNotFoundError
-        One of lengths.tsv or coverages.tsv does not exist.
-    """
-    binning_fpaths = {
-        "bacteria": mgargs.files.bacteria_binning,
-        "archaea": mgargs.files.archaea_binning,
-    }
-    gc_df = get_gc_content(metagenome=mgargs.files.metagenome)
-    dataframes = [gc_df]
-    for fpath in [mgargs.files.lengths, mgargs.files.coverages]:
-        if not os.path.exists(fpath):
-            raise FileNotFoundError(fpath)
-        df = pd.read_csv(fpath, sep="\t", index_col="contig")
-        dataframes.append(df)
-    if os.path.exists(mgargs.files.taxonomy):
-        df = pd.read_csv(mgargs.files.taxonomy, sep="\t", index_col="contig")
-        dataframes.append(df)
-    annotations = {}
-    for domain, fpath in binning_fpaths.items():
-        if not os.path.exists(fpath) or not os.path.getsize(fpath):
-            bin_df = pd.DataFrame({"contig": []}).set_index("contig")
-        else:
-            bin_df = pd.read_csv(fpath, sep="\t", index_col="contig")
-            for df in dataframes:
-                bin_df = pd.merge(
-                    bin_df, df, how="left", left_index=True, right_index=True
-                )
-        annotations.update({domain: bin_df})
-    return annotations
-
-
-def write_cluster_records(bin_df: pd.DataFrame, metagenome: str, outdir: str) -> None:
+def write_cluster_records(
+    bin_df: pd.DataFrame, metagenome: str, outdir: str, cluster_col: str = "cluster"
+) -> None:
     """Write clusters to `outdir` given clusters `df` and metagenome `records`
 
     Parameters
@@ -112,13 +53,18 @@ def write_cluster_records(bin_df: pd.DataFrame, metagenome: str, outdir: str) ->
         Path to metagenome fasta file
     outdir : str
         Path to output directory to write fastas for each metagenome-assembled genome
+    cluster_col : str, optional
+        Clustering column by which to group metabins
 
     """
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+    if os.path.isdir(outdir):
+        raise ValueError(
+            f"{outdir} already exists! Please provide a path to a non-existent directory path"
+        )
+    os.makedirs(outdir)
     mgrecords = [rec for rec in SeqIO.parse(metagenome, "fasta")]
-    for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
-        "cluster"
+    for cluster, dff in bin_df.fillna(value={cluster_col: "unclustered"}).groupby(
+        cluster_col
     ):
         contigs = set(dff.index)
         records = [rec for rec in mgrecords if rec.id in contigs]
@@ -131,8 +77,10 @@ def fragmentation_metric(df: pd.DataFrame, quality_measure: float = 0.50) -> int
     """Describes the quality of assembled genomes that are fragmented in
     contigs of different length.
 
-    For more information see:
-        http://www.metagenomics.wiki/pdf/definition/assembly/n50
+    Note
+    ----
+
+        For more information see this metagenomics `wiki <http://www.metagenomics.wiki/pdf/definition/assembly/n50>`_ from Matthias Scholz
 
     Parameters
     ----------
@@ -157,7 +105,7 @@ def fragmentation_metric(df: pd.DataFrame, quality_measure: float = 0.50) -> int
 
 
 def get_metabin_stats(
-    bin_df: pd.DataFrame, markers_fpath: str, assembly: str
+    bin_df: pd.DataFrame, markers_fpath: str, cluster_col: str = "cluster"
 ) -> pd.DataFrame:
     """Retrieve statistics for all clusters recovered from Autometa binning.
 
@@ -166,24 +114,27 @@ def get_metabin_stats(
     bin_df : pd.DataFrame
         Autometa binning table. index=contig, cols=['cluster','length', 'GC', 'coverage', ...]
     markers_fpath : str
-        </path/to/{domain}.markers.tsv
-    assembly : str
-        </path/to/corresponding/metagenome/assembly.fna
+        Path to autometa annotated and filtered markers table respective to kingdom binned.
+    cluster_col : str, optional
+        Clustering column by which to group metabins
 
     Returns
     -------
     pd.DataFrame
         dataframe consisting of various metagenome-assembled genome statistics indexed by cluster.
     """
+    logger.info(f"Retrieving metabins' stats for {cluster_col}")
     stats = []
     markers_df = markers.load(markers_fpath)
-    for cluster, dff in bin_df.fillna(value={"cluster": "unclustered"}).groupby(
-        "cluster"
+    for cluster, dff in bin_df.fillna(value={cluster_col: "unclustered"}).groupby(
+        cluster_col
     ):
         length_weighted_coverage = np.average(
             a=dff.coverage, weights=dff.length / dff.length.sum()
         )
-        length_weighted_gc = np.average(a=dff.GC, weights=dff.length / dff.length.sum())
+        length_weighted_gc = np.average(
+            a=dff.gc_content, weights=dff.length / dff.length.sum()
+        )
         num_expected_markers = markers_df.shape[1]
         cluster_pfams = markers_df[markers_df.index.isin(dff.index)]
         if cluster_pfams.empty:
@@ -202,7 +153,7 @@ def get_metabin_stats(
 
         stats.append(
             {
-                "cluster": cluster,
+                cluster_col: cluster,
                 "nseqs": dff.shape[0],
                 "seqs_pct": dff.shape[0] / bin_df.shape[0] * 100,
                 "size (bp)": dff.length.sum(),
@@ -210,10 +161,10 @@ def get_metabin_stats(
                 "N90": fragmentation_metric(dff, quality_measure=0.9),
                 "N50": fragmentation_metric(dff, quality_measure=0.5),
                 "N10": fragmentation_metric(dff, quality_measure=0.1),
-                "length_weighted_gc": length_weighted_gc,
-                "min_GC": dff.GC.min(),
-                "max_GC": dff.GC.max(),
-                "std_GC": dff.GC.std(),
+                "length_weighted_gc_content": length_weighted_gc,
+                "min_gc_content": dff.gc_content.min(),
+                "max_gc_content": dff.gc_content.max(),
+                "std_gc_content": dff.gc_content.std(),
                 "length_weighted_coverage": length_weighted_coverage,
                 "min_coverage": dff.coverage.min(),
                 "max_coverage": dff.coverage.max(),
@@ -225,10 +176,12 @@ def get_metabin_stats(
                 "num_single_copy_markers": num_single_copy_markers,
             }
         )
-    return pd.DataFrame(stats).set_index("cluster")
+    return pd.DataFrame(stats).set_index("cluster").convert_dtypes()
 
 
-def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
+def get_metabin_taxonomies(
+    bin_df: pd.DataFrame, ncbi: NCBI, cluster_col: str = "cluster"
+) -> pd.DataFrame:
     """Retrieve taxonomies of all clusters recovered from Autometa binning.
 
     Parameters
@@ -237,6 +190,8 @@ def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
         Autometa binning table. index=contig, cols=['cluster','length','taxid', *canonical_ranks]
     ncbi : autometa.taxonomy.ncbi.NCBI instance
         Autometa NCBI class instance
+    cluster_col : str, optional
+        Clustering column by which to group metabins
 
     Returns
     -------
@@ -244,10 +199,11 @@ def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
         Dataframe consisting of cluster taxonomy with taxid and canonical rank.
         Indexed by cluster
     """
+    logger.info(f"Retrieving metabin taxonomies for {cluster_col}")
     canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
-    is_clustered = bin_df.cluster.notnull()
+    is_clustered = bin_df[cluster_col].notnull()
     bin_df = bin_df[is_clustered]
-    outcols = ["cluster", "length", "taxid", *canonical_ranks]
+    outcols = [cluster_col, "length", "taxid", *canonical_ranks]
     tmp_lines = (
         bin_df[outcols]
         .to_csv(sep="\t", index=False, header=False, line_terminator="\n")
@@ -284,7 +240,7 @@ def get_metabin_taxonomies(bin_df: pd.DataFrame, ncbi: NCBI) -> pd.DataFrame:
     cluster_taxa_df = pd.merge(
         cluster_taxa_df, lineage_df, how="left", left_on="taxid", right_index=True
     )
-    cluster_taxa_df.index.name = "cluster"
+    cluster_taxa_df.index.name = cluster_col
     return cluster_taxa_df
 
 
@@ -303,70 +259,88 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "workspace",
-        help="Path to Autometa results workspace directory",
+        "--binning-main",
+        help="Path to Autometa binning main table (output from --binning-main argument)",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
-        "--write",
-        help="Write genomes assembled by Autometa into each of their respective fasta files.",
-        action="store_true",
-        default=False,
+        "--markers",
+        help="Path to annotated markers respective to domain (bacteria or archaea) binned",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--metagenome",
+        help="Path to metagenome assembly",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--ncbi",
+        help="Path to user NCBI databases directory (Required for retrieving metabin taxonomies)",
+        metavar="dirpath",
+        required=False,
+    )
+    parser.add_argument(
+        "--binning-column",
+        help="Binning column to use for grouping metabins",
+        metavar="str",
+        required=False,
+        default="cluster",
+    )
+    parser.add_argument(
+        "--output-stats",
+        help="Path to write metabins stats table",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-taxonomy",
+        help="Path to write metabins taxonomies table",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-metabins",
+        help="Path to output directory. (Directory must not exist. This directory will be created.)",
+        metavar="dirpath",
+        required=True,
     )
     args = parser.parse_args()
 
-    configs_search_str = os.path.join(args.workspace, "**", "metagenome_*.config")
-    config_fpaths = glob.glob(configs_search_str, recursive=True)
-    for config_fpath in config_fpaths:
-        mgargs = configutils.parse_args(config_fpath)
-        ncbi = NCBI(dirpath=mgargs.databases.ncbi)
-        annotations = merge_annotations(mgargs)
-        for domain, bin_df in annotations.items():
-            if bin_df.empty:
-                logger.info(f"{domain} bin_df empty, skipping...")
-                continue
+    bin_df = pd.read_csv(args.binning_main, sep="\t", index_col="contig")
+    if bin_df.empty:
+        logger.error(f"{args.binning} empty...")
+        exit(1)
 
-            if args.write:
-                logger.info(f"Writing {domain} metagenome-assembled genomes")
-                domain_outdir = os.path.join(
-                    mgargs.parameters.outdir, "metabins", domain
-                )
-                write_cluster_records(
-                    bin_df=bin_df,
-                    metagenome=mgargs.files.metagenome,
-                    outdir=domain_outdir,
-                )
-            logger.info(f"Retrieving {domain} stats")
-            markers_fpath = (
-                mgargs.files.bacteria_markers
-                if domain == "bacteria"
-                else mgargs.files.archaea_markers
-            )
-            df = get_metabin_stats(
-                bin_df=bin_df,
-                markers_fpath=markers_fpath,
-                assembly=mgargs.files.metagenome,
-            )
-            if os.path.exists(mgargs.files.taxonomy) and os.path.getsize(
-                mgargs.files.taxonomy
-            ):
-                logger.info(f"Retrieving {domain} taxonomies")
-                taxa_df = get_metabin_taxonomies(bin_df=bin_df, ncbi=ncbi)
-                df = pd.merge(
-                    df, taxa_df, how="left", left_index=True, right_index=True
-                )
-            if args.write:
-                outfpath = os.path.join(
-                    mgargs.parameters.outdir,
-                    "metabins",
-                    f"{domain}_metabin_summary.tsv",
-                )
-            else:
-                outfpath = os.path.join(
-                    mgargs.parameters.outdir, f"{domain}_metabin_summary.tsv"
-                )
+    write_cluster_records(
+        bin_df=bin_df,
+        metagenome=args.metagenome,
+        outdir=args.output_metabins,
+        cluster_col=args.binning_column,
+    )
 
-            df = df.convert_dtypes()
-            df.to_csv(outfpath, sep="\t", index=True, header=True)
+    metabin_stats_df = get_metabin_stats(
+        bin_df=bin_df,
+        markers_fpath=args.markers,
+        assembly=args.metagenome,
+        cluster_col=args.binning_column,
+    )
+    metabin_stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
+    logger.info(f"Wrote metabin stats to {args.output_stats}")
+
+    if "taxid" in bin_df.columns:
+        if not args.ncbi:
+            logger.warn(
+                "taxid found in dataframe. --ncbi argument is required to retrieve metabin taxonomies. Skipping..."
+            )
+        else:
+            ncbi = NCBI(dirpath=args.ncbi)
+            taxa_df = get_metabin_taxonomies(
+                bin_df=bin_df, ncbi=ncbi, cluster_col=args.binning_column
+            )
+            taxa_df.to_csv(args.output_taxonomy, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":

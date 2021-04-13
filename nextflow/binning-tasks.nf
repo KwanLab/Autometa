@@ -16,7 +16,8 @@ params.gc_stddev_limit = 5.0
 // Unclustered recruitment parameters
 params.classification_method = "decision_tree" // choices: "decision_tree", "random_forest"
 params.classification_kmer_pca_dimensions = 50
-
+// Summary parameters
+params.ncbi_database = "Path to user ncbi databases directory"
 
 process BINNING {
   tag "Performing Autometa binning"
@@ -33,7 +34,6 @@ process BINNING {
   output:
     path "${coverage.simpleName}.${params.kingdom}.binning.tsv.gz", emit: binning
     path "${coverage.simpleName}.${params.kingdom}.main.tsv.gz", emit: main
-    path "${coverage.simpleName}.${params.kingdom}.kmers.embedded.tsv.gz", emit: embedded_kmers
 
   """
   autometa-binning \
@@ -62,13 +62,13 @@ process UNCLUSTERED_RECRUITMENT {
   input:
     path kmers
     path coverage
-    path assignments
+    path binning
     path markers
     path taxonomy
 
   output:
     path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz", emit: binning
-    path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: binning
+    path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: main
 
   """
   autometa-unclustered-recruitment \
@@ -78,9 +78,39 @@ process UNCLUSTERED_RECRUITMENT {
     --taxonomy $taxonomy \
     --kmers $kmers \
     --coverage $coverage \
-    --binning $assignments \
+    --binning $binning \
     --markers $markers \
     --output-binning ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz \
     --output-main ${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz
+  """
+}
+
+process BINNING_SUMMARY {
+  tag "diamond blastp on ${orfs.simpleName}"
+  container = 'jason-c-kwan/autometa:dev'
+  containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
+
+  input:
+    path binning_main
+    path markers
+    path metagenome
+    val binning_column
+
+  output:
+    path 'metabin_stats.tsv', emit: stats
+    path 'metabin_taxonomy.tsv', emit: taxonomies
+    path 'metabins', emit: metabins
+
+  script:
+  """
+  autometa-binning-summary \
+    --ncbi /ncbi \
+    --binning-main $binning_main \
+    --markers $markers \
+    --metagenome $metagenome \
+    --binning-column $binning_column \
+    --output-stats metabin_stats.tsv \
+    --output-taxonomy metabin_taxonomy.tsv \
+    --output-metabins metabins
   """
 }

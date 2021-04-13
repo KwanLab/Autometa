@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 include { LENGTH_FILTER; KMERS; KMER_COVERAGE; READ_COVERAGE; ORFS; MARKERS } from './common-tasks.nf'
 include { TAXON_ASSIGNMENT } from './taxonomy-tasks.nf'
-include { BINNING; UNCLUSTERED_RECRUITMENT } from './binning-tasks.nf'
+include { BINNING; UNCLUSTERED_RECRUITMENT; BINNING_SUMMARY } from './binning-tasks.nf'
 
 workflow AUTOMETA {
   take:
@@ -31,6 +31,10 @@ workflow AUTOMETA {
     UNCLUSTERED_RECRUITMENT(KMERS.out.normalized, KMER_COVERAGE.out, BINNING.out.binning, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
     // UNCLUSTERED_RECRUITMENT(KMERS.out.normalized, READ_COVERAGE.out.coverage, BINNING.out.binning, MARKERS.out, TAXON_ASSIGNMENT.out.taxonomy)
 
+    // Summary for Binning
+    BINNING_SUMMARY(BINNING.out.main, MARKERS.out, LENGTH_FILTER.out.fasta, "cluster")
+    // Summary for unclustered recruitment
+    // BINNING_SUMMARY(UNCLUSTERED_RECRUITMENT.out.main, MARKERS.out, LENGTH_FILTER.out.fasta, "recruited_cluster")
 
   emit:
     binning = BINNING.out.binning
@@ -38,4 +42,7 @@ workflow AUTOMETA {
     recruitment = UNCLUSTERED_RECRUITMENT.out.binning
     recruitment_main = UNCLUSTERED_RECRUITMENT.out.main
     all_binning_results = BINNING.out.binning | mix(UNCLUSTERED_RECRUITMENT.out) | collect
+    summary_stats = BINNING_SUMMARY.out.stats
+    summary_taxa = BINNING_SUMMARY.out.taxonomies
+    metabins = BINNING_SUMMARY.out.metabins
 }
