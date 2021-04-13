@@ -73,7 +73,7 @@ def fixture_norm_df(variables):
 
 
 @pytest.fixture(name="invalid_df_fpath")
-def fixture_df_without_contig_index_(tmp_path):
+def fixture_invalid_df_fpath(tmp_path):
     invalid_dict = {
         "column1": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
         "column2": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
@@ -121,7 +121,7 @@ def test_count_out_exists(assembly, counts, force, tmp_path):
     assert out.exists()
 
 
-def test_count_wrong_size(assembly, tmp_path):
+def test_count_wrong_size(assembly):
     size = 5.5
     with pytest.raises(TypeError):
         kmers.count(assembly=assembly, size=size)

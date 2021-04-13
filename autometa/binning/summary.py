@@ -314,22 +314,20 @@ def main():
         logger.error(f"{args.binning} empty...")
         exit(1)
 
+    # First write out directory with fasta files per each metabin
     write_cluster_records(
         bin_df=bin_df,
         metagenome=args.metagenome,
         outdir=args.output_metabins,
         cluster_col=args.binning_column,
     )
-
+    # Now retrieve stats for each metabin
     metabin_stats_df = get_metabin_stats(
-        bin_df=bin_df,
-        markers_fpath=args.markers,
-        assembly=args.metagenome,
-        cluster_col=args.binning_column,
+        bin_df=bin_df, markers_fpath=args.markers, cluster_col=args.binning_column,
     )
     metabin_stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
     logger.info(f"Wrote metabin stats to {args.output_stats}")
-
+    # Finally if taxonomy information is available then write out each metabin's taxonomy by modified majority voting method.
     if "taxid" in bin_df.columns:
         if not args.ncbi:
             logger.warn(
