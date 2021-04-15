@@ -28,7 +28,6 @@ COPY requirements.txt ./
 RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y
 
-
 COPY . .
 RUN make install && make clean
 
@@ -57,4 +56,5 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-taxonomy-lca -h > /dev/null \
     && autometa-taxonomy-majority-vote -h > /dev/null \
     && autometa-binning -h > /dev/null \
-    && autometa-unclustered-recruitment -h > /dev/null
+    && autometa-unclustered-recruitment -h > /dev/null \
+    && autometa-binning-summary -h > /dev/null
