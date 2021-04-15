@@ -365,7 +365,7 @@ def main():
 
     filename = f"{args.prefix}.taxonomy.tsv" if args.prefix else "taxonomy.tsv"
     out = os.path.join(args.output, filename)
-    taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
+    taxa_df = pd.read_csv(args.votes, sep="\t", index_col="contig")
 
     if not os.path.isdir(args.output):
         os.makedirs(args.output)
