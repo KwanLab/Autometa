@@ -50,10 +50,10 @@ log.info """
  cpus                               : ${params.cpus}
  length_cutoff                      : ${params.length_cutoff}
  kmer_size                          : ${params.kmer_size}
- kmer_norm_method                   : ${params.kmer_norm_method}
- kmer_pca_dimensions                : ${params.kmer_pca_dimensions}
- kmer_embed_method                  : ${params.kmer_embed_method}
- kmer_embed_dimensions              : ${params.kmer_embed_dimensions}
+ norm_method                        : ${params.norm_method}
+ pca_dimensions                     : ${params.pca_dimensions}
+ embedding_method                   : ${params.embedding_method}
+ embedding_dimensions               : ${params.embedding_dimensions}
  clustering_method                  : ${params.clustering_method}
  classification_kmer_pca_dimensions : ${params.classification_kmer_pca_dimensions}
  classification_method              : ${params.classification_method}
