@@ -86,7 +86,7 @@ process UNCLUSTERED_RECRUITMENT {
 }
 
 process BINNING_SUMMARY {
-  tag "diamond blastp on ${orfs.simpleName}"
+  tag "Binning summary for ${binning_main.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
 
