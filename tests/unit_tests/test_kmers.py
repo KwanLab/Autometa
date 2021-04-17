@@ -1,10 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+COPYRIGHT
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Script to test autometa/common/kmers.py
+"""
+
 import pytest
 import argparse
 
 import pandas as pd
 import pytest
-
-from Bio import SeqIO
 
 from autometa.common import kmers
 from autometa.common.exceptions import TableFormatError
@@ -49,7 +73,7 @@ def fixture_norm_df(variables):
 
 
 @pytest.fixture(name="invalid_df_fpath")
-def fixture_df_without_contig_index_(tmp_path):
+def fixture_invalid_df_fpath(tmp_path):
     invalid_dict = {
         "column1": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
         "column2": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
@@ -97,7 +121,7 @@ def test_count_out_exists(assembly, counts, force, tmp_path):
     assert out.exists()
 
 
-def test_count_wrong_size(assembly, tmp_path):
+def test_count_wrong_size(assembly):
     size = 5.5
     with pytest.raises(TypeError):
         kmers.count(assembly=assembly, size=size)
@@ -137,14 +161,12 @@ def test_embed_methods(norm_df, method, tmp_path):
     out = tmp_path / "kmers.embed.tsv"
     force = False
     embed_dimensions = 2
-    do_pca = True
     pca_dimensions = 3
     df = kmers.embed(
         kmers=norm_df,
         out=out,
         force=force,
         embed_dimensions=embed_dimensions,
-        do_pca=do_pca,
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
@@ -160,7 +182,6 @@ def test_embed_dimensions(norm_df, embed_dimensions, tmp_path):
         out=out,
         force=False,
         embed_dimensions=embed_dimensions,
-        do_pca=True,
         pca_dimensions=5,
         method="bhsne",
         seed=42,
@@ -174,14 +195,12 @@ def test_embed_out_exists(norm_df, force, tmp_path):
     out = tmp_path / "kmers.embed.tsv"
     method = "bhsne"
     embed_dimensions = 2
-    do_pca = True
     pca_dimensions = 3
     df = kmers.embed(
         kmers=norm_df,
         out=out,
         force=force,
         embed_dimensions=embed_dimensions,
-        do_pca=do_pca,
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
@@ -213,6 +232,7 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
     counts_out = tmp_path / "kmers.tsv"
     normalized = tmp_path / f"kmers.{norm_method}.tsv"
     embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
+    embed_dimensions = 2
 
     class MockArgs:
         def __init__(self):
@@ -221,12 +241,11 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
             self.kmers = counts_out
             self.force = True
             self.norm_method = norm_method
-            self.normalized = normalized
-            self.embed_method = embed_method
-            self.embed_dimensions = 2
-            self.do_pca = True
+            self.norm_output = normalized
+            self.embedding_method = embed_method
+            self.embedding_dimensions = embed_dimensions
+            self.embedding_output = embedded
             self.pca_dimensions = 3
-            self.embedded = embedded
             self.cpus = 1
             self.seed = 42
 
@@ -242,3 +261,9 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
 
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
     kmers.main()
+    assert embedded.exists()
+    df = pd.read_csv(embedded, sep="\t")
+    assert "contig" in df.columns
+    assert f"x_{embed_dimensions}" in df.columns
+    # Make sure we have all of our embedding dimensions and need to account for our contig column
+    assert embed_dimensions + 1 == df.shape[1]
