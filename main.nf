@@ -1,6 +1,17 @@
 #!/usr/bin/env nextflow
-
 nextflow.enable.dsl = 2
+
+/*
+========================================================================================
+                         Autometa   
+========================================================================================
+ Autometa's Nextflow Analysis Pipeline
+ #### Homepage
+ https://github.com/KwanLab/Autometa
+ #### Documentation
+ https://autometa.readthedocs.io/en/latest/
+----------------------------------------------------------------------------------------
+*/
 
 include { AUTOMETA } from './nextflow/autometa.nf'
 
