@@ -17,3 +17,6 @@ pipeline_info
 # Ignore any files/directories built from source
 dist
 Autometa.egg-info
+# Ignore databases
+autometa/databases
+!autometa/databases/markers

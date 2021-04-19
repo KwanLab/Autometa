@@ -257,7 +257,7 @@ def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
 
     class MockArgs:
         def __init__(self):
-            self.input = taxonomy
+            self.votes = taxonomy
             self.output = outdir
             self.assembly = assembly
             self.split_rank_and_write = "superkingdom"

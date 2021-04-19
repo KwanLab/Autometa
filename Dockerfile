@@ -58,4 +58,5 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-taxonomy-majority-vote -h > /dev/null \
     && autometa-binning -h > /dev/null \
     && autometa-unclustered-recruitment -h > /dev/null \
-    && autometa-benchmark -h > /dev/null
+    && autometa-benchmark -h > /dev/null \
+    && autometa-binning-summary -h > /dev/null

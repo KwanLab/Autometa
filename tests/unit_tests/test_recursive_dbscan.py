@@ -118,7 +118,7 @@ def fixture_main_df(kmers, coverage, gc_content, taxonomy):
 @pytest.mark.parametrize("usetaxonomy", [True, False])
 @pytest.mark.parametrize("method", ["dbscan", "hdbscan"])
 def test_binning(main_df, markers, usetaxonomy, method):
-    num_contigs = main.shape[0]
+    num_contigs = main_df.shape[0]
     df = recursive_dbscan.binning(
         main=main_df,
         markers=markers,
@@ -204,7 +204,6 @@ def test_recursive_dbscan_main(
     coverage,
     gc_content,
     markers_fpath,
-    kmers,
     taxonomy,
     tmp_path,
 ):
