@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 // Data inputs
-params.metagenome = "</path/to/user/metagenome.fna>"
+params.input_fna = "</path/to/user/metagenome.fna>"
 params.interim_dir = "</path/to/store/user/interimediate/results>"
 params.outdir = "</path/to/store/user/final/results>"
 params.length_cutoff = 3000

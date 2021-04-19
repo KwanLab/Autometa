@@ -18,8 +18,8 @@ nextflow.enable.dsl = 2
 //
 
 // Check User data inputs
-params.metagenome = null
-if ( !params.metagenome || params.metagenome instanceof Boolean )
+params.fna_path = null
+if ( !params.fna_path || params.fna_path instanceof Boolean )
 error """
 You must supply the `metagenome` parameter in the config or on the command line!
 e.g.
@@ -50,7 +50,7 @@ log.info """
  -----------------------------------------------------
  Data
  -----------------------------------------------------
- metagenome                         : ${params.metagenome}
+ metagenome                         : ${params.input_fna}
  interim                            : ${params.interim_dir}
  processed                          : ${params.outdir}
  -----------------------------------------------------
@@ -86,7 +86,7 @@ include { AUTOMETA } from './nextflow/autometa.nf'
 
 workflow {
   Channel
-    .fromPath(params.metagenome, checkIfExists: true, type: 'file')
+    .fromPath(params.input_fna, checkIfExists: true, type: 'file')
     .set{unfiltered_metagenome_ch}
 
   AUTOMETA(unfiltered_metagenome_ch)
