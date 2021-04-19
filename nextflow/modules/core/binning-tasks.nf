@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 // Data inputs
-params.interim = "</path/to/store/user/interimediate/results>"
+params.interim_dir = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
 // Binning parameters
 params.kingdom = "bacteria"

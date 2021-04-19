@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 // Data inputs
 params.metagenome = "</path/to/user/metagenome.fna>"
-params.interim = "</path/to/store/user/interimediate/results>"
+params.interim_dir = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
 params.length_cutoff = 3000
 // kmer parameters
@@ -22,7 +22,7 @@ params.cpus = 2
 process LENGTH_FILTER {
   tag "filtering metagenome ${metagenome.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
-  publishDir params.interim, pattern: "${metagenome.simpleName}.*"
+  publishDir params.interim_dir, pattern: "${metagenome.simpleName}.*"
 
   input:
     path metagenome
@@ -46,7 +46,7 @@ process KMERS {
   tag "counting kmers for ${metagenome.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   cpus params.cpus
-  publishDir params.interim, pattern: "*.kmers.*"
+  publishDir params.interim_dir, pattern: "*.kmers.*"
 
   input:
     path metagenome
@@ -76,7 +76,7 @@ process KMER_COVERAGE {
   tag "Calculating k-mer coverage for ${metagenome.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   cpus params.cpus
-  publishDir params.interim, pattern: "${metagenome.simpleName}.coverages.tsv"
+  publishDir params.interim_dir, pattern: "${metagenome.simpleName}.coverages.tsv"
 
   input:
     path metagenome
@@ -99,8 +99,8 @@ process MARKERS {
   cpus params.cpus
   // copying orfs via stageInMode is required to run hmmscan (does not handle symlinks)
   stageInMode 'copy'
-  publishDir params.interim, pattern: "${orfs.simpleName}.markers.tsv"
-  publishDir params.interim, pattern: "${orfs.simpleName}.hmmscan.tsv"
+  publishDir params.interim_dir, pattern: "${orfs.simpleName}.markers.tsv"
+  publishDir params.interim_dir, pattern: "${orfs.simpleName}.hmmscan.tsv"
 
   input:
     path orfs
@@ -125,7 +125,7 @@ process ORFS {
   container = 'jason-c-kwan/autometa:dev'
   // Hardcoding cpus here b/c prodigal is limited to only using single core
   cpus 1
-  publishDir params.interim, pattern: "${metagenome.simpleName}.orfs.f*"
+  publishDir params.interim_dir, pattern: "${metagenome.simpleName}.orfs.f*"
 
   input:
     path metagenome

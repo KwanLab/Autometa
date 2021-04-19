@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.interim = "</path/to/store/user/interimediate/results>"
+params.interim_dir = "</path/to/store/user/interimediate/results>"
 params.processed = "</path/to/store/user/final/results>"
 params.ncbi_database = "$HOME/Autometa/autometa/databases/ncbi"
 params.cpus = 2
@@ -12,7 +12,7 @@ process DIAMOND {
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
   cpus params.cpus
-  publishDir params.interim, pattern: "${orfs.simpleName}.blastp.tsv"
+  publishDir params.interim_dir, pattern: "${orfs.simpleName}.blastp.tsv"
 
   input:
     path orfs
@@ -36,7 +36,7 @@ process LCA {
   tag "Assigning LCA to ${blast.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
-  publishDir params.interim, pattern: "${blast.simpleName}.lca.tsv"
+  publishDir params.interim_dir, pattern: "${blast.simpleName}.lca.tsv"
 
   input:
     path blast
@@ -53,7 +53,7 @@ process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${lca.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
-  publishDir params.interim, pattern: "${lca.simpleName}.votes.tsv"
+  publishDir params.interim_dir, pattern: "${lca.simpleName}.votes.tsv"
 
   input:
     path lca
@@ -70,8 +70,8 @@ process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${assembly.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
-  publishDir params.interim, pattern: "${assembly.simpleName}.taxonomy.tsv"
-  publishDir params.interim, pattern: '*.{bacteria,archaea}.fna'
+  publishDir params.interim_dir, pattern: "${assembly.simpleName}.taxonomy.tsv"
+  publishDir params.interim_dir, pattern: '*.{bacteria,archaea}.fna'
 
   input:
     path votes

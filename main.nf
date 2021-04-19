@@ -26,8 +26,8 @@ e.g.
 nextflow run main.nf -c parameters.config --metagenome "</path/to/your/metagenome(s)>"
 """
 // Where to store intermediate and final results:
-params.interim = null
-if ( !params.interim || params.interim instanceof Boolean )
+params.interim_dir = null
+if ( !params.interim_dir || params.interim_dir instanceof Boolean )
 error """
 You must supply the `--interim` parameter in the config or on the command line!
 e.g.
@@ -51,7 +51,7 @@ log.info """
  Data
  -----------------------------------------------------
  metagenome                         : ${params.metagenome}
- interim                            : ${params.interim}
+ interim                            : ${params.interim_dir}
  processed                          : ${params.processed}
  -----------------------------------------------------
  Parameters
