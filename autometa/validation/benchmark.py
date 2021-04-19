@@ -24,14 +24,13 @@ COPYRIGHT
 Autometa clustering evaluation benchmarking.
 
 Script to benchmark Autometa clustering results using clustering evaluation metrics.
-# Setting seed? See: https://stackoverflow.com/a/5837352/13118765
 """
 
 
 import logging
 
 import os
-from typing import Dict, Iterable, NamedTuple, Union
+from typing import Dict, Iterable, List, NamedTuple, Tuple, Union
 import pandas as pd
 from collections import namedtuple
 
@@ -57,6 +56,27 @@ Targets = namedtuple("Targets", ["true", "pred", "target_names"])
 def get_categorical_labels(
     predictions: str, reference: Union[str, pd.DataFrame]
 ) -> NamedTuple:
+    """Retrieve categorical labels from `predictions` and `reference`
+
+    Parameters
+    ----------
+    predictions : str
+        Path to tab-delimited file containing contig clustering predictions with columns 'contig' and 'cluster'.
+    reference : Union[str, pd.DataFrame]
+        Path to tab-delimited file containing ground truth reference genome assignments with columns 'contig' and 'reference_genome'.
+
+    Returns
+    -------
+    NamedTuple
+        Labels namedtuple with 'true' and 'pred' fields containing respective dataframes of categorical values
+
+    Raises
+    ------
+    ValueError
+        Provided `reference` is not a pd.DataFrame or path to ground-truth reference genome assignments file.
+    ValueError
+        The provided `reference` community contigs do not match the `predictions` contigs
+    """
     pred_df = pd.read_csv(
         predictions, sep="\t", index_col="contig", usecols=["contig", "cluster"]
     )
@@ -163,6 +183,20 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
 
 
 def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
+    """Evaluate clustering performance of `predictions` against `reference`
+
+    Parameters
+    ----------
+    predictions : Iterable
+        Paths to binning predictions. Paths should be tab-delimited files with 'cluster' and 'contig' columns.
+    reference : str
+        Path to ground truth reference genome assignments. Should be tab-delimited file with 'contig' and 'reference_genome' columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe of clustering metrics indexed by 'dataset' computed as each predictions basename
+    """
     all_metrics = []
     reference = pd.read_csv(
         reference, sep="\t", usecols=["contig", "reference_genome"], index_col="contig"
@@ -179,7 +213,7 @@ def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
 def get_target_labels(
     prediction: str, reference: Union[str, pd.DataFrame], ncbi: Union[str, NCBI]
 ) -> namedtuple:
-    """[summary]
+    """Retrieve taxid lineage as target labels from merge of `reference` and `prediction`.
 
     Note
     ----
@@ -190,23 +224,23 @@ def get_target_labels(
     Parameters
     ----------
     prediction : str
-        [description]
+        Path to contig taxid predictions
     reference : Union[str, pd.DataFrame]
-        [description]
+        Path to ground truth contig taxids
     ncbi : Union[str, NCBI]
-        [description]
+        Path to NCBI databases directory or instance of autometa NCBI class.
 
     Returns
     -------
     namedtuple
-        [description]
+        Targets namedtuple with fields 'true', 'pred' and 'target_names'
 
     Raises
     ------
     ValueError
-        [description]
+        Provided reference is not a pd.DataFrame or path to reference assignments file.
     ValueError
-        [description]
+        The provided reference community and predictions do not match
     """
     pred_df = pd.read_csv(
         prediction, sep="\t", index_col="contig", usecols=["contig", "taxid"]
@@ -279,6 +313,18 @@ def get_target_labels(
 
 
 def compute_classification_metrics(labels: namedtuple) -> dict:
+    """Retrieve classification report from using scikit-learn's metrics.classification_report method.
+
+    Parameters
+    ----------
+    labels : namedtuple
+        Labels namedtuple containing 'true' and 'pred' fields
+
+    Returns
+    -------
+    dict
+        Computed classification metrics corresponding to `labels`
+    """
     return classification_report(
         y_true=labels.true,
         y_pred=labels.pred,
@@ -293,7 +339,25 @@ def evaluate_classification(
     reference: str,
     ncbi: Union[str, NCBI],
     keep_averages=["weighted avg", "samples avg"],
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, List[Dict[str, str]]]:
+    """Evaluate classification `predictions` against provided `reference`
+
+    Parameters
+    ----------
+    predictions : Iterable
+        Paths to taxonomic predictions (tab-delimited files of contig and taxid columns)
+    reference : str
+        Path to ground truths (tab-delimited file containing at least contig and taxid columns)
+    ncbi : Union[str, NCBI]
+        Path to NCBI databases directory or instance of autometa NCBI class
+    keep_averages : list, optional
+        averages to keep from classification report, by default ["weighted avg", "samples avg"]
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, List[dict]]
+        Metrics
+    """
     # Read in community reference assignments
     reference = (
         pd.read_csv(

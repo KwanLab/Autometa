@@ -18,6 +18,7 @@ process BENCHMARK_CLUSTERING {
   output:
     path "${community}.clustering_benchmarks.*.tsv.gz"
 
+  script:
   """
   # First retrieve reference assignments for provided community
   autometa-datasets \
