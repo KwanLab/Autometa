@@ -89,6 +89,7 @@ process BINNING_SUMMARY {
   tag "Binning summary for ${binning_main.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
+  publishDir params.processed
 
   input:
     path binning_main
