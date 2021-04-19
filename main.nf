@@ -33,8 +33,8 @@ You must supply the `--interim` parameter in the config or on the command line!
 e.g.
 nextflow run main.nf -c parameters.config --interim "</directory/path/to/store/interimediate/results>""
 """
-params.processed = null
-if ( !params.processed || params.processed instanceof Boolean )
+params.outdir = null
+if ( !params.outdir || params.outdir instanceof Boolean )
 error """
 You must supply the `--processed` parameter in the config or on the command line!
 e.g.
@@ -52,7 +52,7 @@ log.info """
  -----------------------------------------------------
  metagenome                         : ${params.metagenome}
  interim                            : ${params.interim_dir}
- processed                          : ${params.processed}
+ processed                          : ${params.outdir}
  -----------------------------------------------------
  Parameters
  -----------------------------------------------------

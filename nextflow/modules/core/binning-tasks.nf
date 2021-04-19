@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 // Data inputs
 params.interim_dir = "</path/to/store/user/interimediate/results>"
-params.processed = "</path/to/store/user/final/results>"
+params.outdir = "</path/to/store/user/final/results>"
 // Binning parameters
 params.kingdom = "bacteria"
 params.clustering_method = "dbscan" // choices: "dbscan", "hdbscan"
@@ -22,7 +22,7 @@ params.ncbi_database = "Path to user ncbi databases directory"
 process BINNING {
   tag "Performing Autometa binning"
   container = 'jason-c-kwan/autometa:dev'
-  publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.*.tsv.gz"
+  publishDir params.outdir, pattern: "${coverage.simpleName}.${params.kingdom}.*.tsv.gz"
 
   input:
     path kmers
@@ -57,7 +57,7 @@ process BINNING {
 process UNCLUSTERED_RECRUITMENT {
   tag "Performing Autometa unclustered recruitment"
   container = 'jason-c-kwan/autometa:dev'
-  publishDir params.processed, pattern: "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz"
+  publishDir params.outdir, pattern: "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz"
 
   input:
     path kmers

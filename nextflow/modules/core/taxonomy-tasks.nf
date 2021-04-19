@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 params.interim_dir = "</path/to/store/user/interimediate/results>"
-params.processed = "</path/to/store/user/final/results>"
+params.outdir = "</path/to/store/user/final/results>"
 params.ncbi_database = "$HOME/Autometa/autometa/databases/ncbi"
 params.cpus = 2
 
