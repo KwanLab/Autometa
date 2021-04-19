@@ -175,37 +175,9 @@ def test_binning_empty_markers_table(main_df):
         )
 
 
-def test_main_invalid_embedding_dimensions_args(monkeypatch):
-    class MockArgs:
-        def __init__(self):
-            self.domain = "bacteria"
-            self.embedding_pca_dimensions = 10
-            self.embedding_dimensions = 20
-
-    class MockParser:
-        def add_argument(self, *args, **kwargs):
-            pass
-
-        def parse_args(self):
-            return MockArgs()
-
-    def return_mock_parser(*args, **kwargs):
-        return MockParser()
-
-    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
-    with pytest.raises(ValueError):
-        recursive_dbscan.main()
-
-
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
-    monkeypatch,
-    kmers,
-    coverage,
-    gc_content,
-    markers_fpath,
-    taxonomy,
-    tmp_path,
+    monkeypatch, kmers, coverage, gc_content, markers_fpath, taxonomy, tmp_path,
 ):
     output_binning = tmp_path / "binning.tsv"
     output_main = tmp_path / "binning_main.tsv"
