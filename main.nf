@@ -13,8 +13,6 @@ nextflow.enable.dsl = 2
 ----------------------------------------------------------------------------------------
 */
 
-include { AUTOMETA } from './nextflow/autometa.nf'
-
 // Below listed parameters should be provided by the parameters.config file
 // Available here: https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow/parameters.config
 //
@@ -79,6 +77,12 @@ log.info """
  ncbi_database                      : ${params.ncbi_database}
  -----------------------------------------------------
 """
+
+/*
+ * Retrieve the main 'AUTOMETA' worflow
+ */
+include { AUTOMETA } from './nextflow/autometa.nf'
+
 
 workflow {
   Channel
