@@ -2,10 +2,10 @@
 Benchmarking
 ============
 
-This page contains information regarding the test datasests the users can use as well as benchmarking of the current autometa algorithm against its previous version as well other binning pipelines.
+This page contains information regarding test datasets as well as benchmarking statistics. The current Autometa pipeline was compared against its previous version as well other binning pipelines.
 
-Test datasests
-==============
+Test datasets
+=============
 
 Simulated
 ---------
@@ -50,7 +50,7 @@ You can download the MIX51 community using this `link <https://drive.google.com/
 Download datasests
 ==================
 
-Using autometa build-in module
+Using autometa built-in module
 ------------------------------
 
 .. todo::
@@ -60,12 +60,12 @@ Using autometa build-in module
 Using command line
 ------------------
 
-You can download the individual assemblies of different datasests with the help of ``gdown`` using command line. If you have installed autometa using ``conda`` then ``gdown`` should already be installed. If not, you can install is using ``conda install -c conda-forge gdown`` or ``pip install gdown``.
+You can download the individual assemblies of different datasests with the help of ``gdown`` using command line. If you have installed autometa using ``conda`` then ``gdown`` should already be installed. If not, you can install it using ``conda install -c conda-forge gdown`` or ``pip install gdown``.
 
 `Example for the 78Mbp community`
 
 1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
-2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. This will have a ``copy link`` button that you should use. The link for the metagenome assembly (ie. metagenome.fna.gz) should like like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
+2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. This will have a ``copy link`` button that you should use. The link for the metagenome assembly (ie. metagenome.fna.gz) should look like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
 3. The file ID is within the / forward slashes between file/d/ and /, e.g:
 
 .. code:: bash
@@ -86,7 +86,7 @@ You can download the individual assemblies of different datasests with the help 
 
 .. note:: 
 
-    Unfortunately, at the moment ``gdown`` doesn't support dowloading entire directories from Google drive. There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository addressing this specific issue which we are keeping a close eye on and would update the documentation when it is merged.
+    Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive. There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
 
 Benchmarks
 ==========

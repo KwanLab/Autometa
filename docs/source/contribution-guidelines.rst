@@ -2,9 +2,7 @@
 Contributing Guidelines
 =======================
 
-"Autometa is an open-source project developed on
-GitHub. If you would like to help develop Autometa or
-have ideas for new features please see our `contributing guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__
+"Autometa is an open-source project developed on GitHub. If you would like to help develop Autometa or have ideas for new features please see our `contributing guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__
 
 If you are wanting to help develop autometa, you will need these additional dependencies:
 
@@ -70,7 +68,7 @@ This command downloads the test_data.json object that you need to run the Unit t
 ``make unit_test_data_build``
 -----------------------------
 
-This is used to create your own ``test_data.json`` object locally. This step is NOT required for running unit tests, you can directly download the ``test_data.json`` object using the previous command. This command is needed in case you are changing file formats or addding more objects into the tests suite. To do this you first need to download all the files from `here <https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS>`__ in ``tests/data/`` and then run ``make unit_test_data_build``. This would generate a similar ``test_data.json`` object that you get by running the previous command.
+This is used to create your own ``test_data.json`` object locally. This step is NOT required for running unit tests, you can directly download the ``test_data.json`` object using the previous command. This command is needed in case you are changing file formats or adding more objects into the test suite. To do this you first need to download all the files from `here <https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS>`__ in ``tests/data/`` and then run ``make unit_test_data_build``. This would generate a similar ``test_data.json`` object that you get by running the previous command.
 
 The above command is used to manually build the test_data.json file for unit testing. I.e. it will run the script make_test_data.py which will aggregate all of the files in the tests/data folder that have been downloaded from `here <https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS>`__. This is the first or perhaps 0th step when it comes to running the tests without an already generated ``test_data.json`` object as it generates the test_data.json file that is parsed to retrieve all of the pre-generated variables used for intermediate stages of the pipeline. This is done to reduce the test time and computational workload when running through the test suite.
 
