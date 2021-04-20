@@ -155,3 +155,9 @@ tests/data/*
 
 # Mac
 .DS_Store
+
+# nextflow
+.nextflow
+.nextflow.log*
+pipeline_info
+work

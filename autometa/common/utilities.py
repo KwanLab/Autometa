@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -32,20 +32,17 @@ import pickle
 import sys
 import tarfile
 import time
+from types import FunctionType
+from typing import Any
 
 import numpy as np
-import pandas as pd
 
-from datetime import datetime
 from functools import wraps
-from functools import namedtuple
-
-from autometa.common.exceptions import TableFormatError
 
 logger = logging.getLogger(__name__)
 
 
-def unpickle(fpath):
+def unpickle(fpath: str) -> Any:
     """Load a serialized `fpath` from :func:`make_pickle`.
 
     Parameters
@@ -75,7 +72,7 @@ def unpickle(fpath):
     return obj
 
 
-def make_pickle(obj, outfpath):
+def make_pickle(obj: Any, outfpath: str) -> str:
     """Serialize a python object (`obj`) to `outfpath`.
     Note:  Opposite of :func:`unpickle`
 
@@ -108,7 +105,9 @@ def make_pickle(obj, outfpath):
     return outfpath
 
 
-def gunzip(infpath, outfpath, delete_original=False, block_size=65536):
+def gunzip(
+    infpath: str, outfpath: str, delete_original: bool = False, block_size: int = 65536
+) -> str:
     """Decompress gzipped `infpath` to `outfpath` and write checksum of `outfpath` upon successful decompression.
 
     Parameters
@@ -154,7 +153,7 @@ def gunzip(infpath, outfpath, delete_original=False, block_size=65536):
     return outfpath
 
 
-def untar(tarchive, outdir, member=None):
+def untar(tarchive: str, outdir: str, member: str = None) -> str:
     """Decompress a tar archive (may be gzipped or bzipped). passing in `member`
     requires an `outdir` also be provided.
 
@@ -215,7 +214,7 @@ def untar(tarchive, outdir, member=None):
     return outdir
 
 
-def tarchive_results(outfpath, src_dirpath):
+def tarchive_results(outfpath: str, src_dirpath: str) -> str:
     """Generate a tar archive of Autometa Results
 
     See:
@@ -248,7 +247,7 @@ def tarchive_results(outfpath, src_dirpath):
     return outfpath
 
 
-def file_length(fpath, approximate=False):
+def file_length(fpath: str, approximate: bool = False) -> int:
     """Retrieve the number of lines in `fpath`
 
     See: https://stackoverflow.com/q/845058/13118765
@@ -293,7 +292,7 @@ def file_length(fpath, approximate=False):
     return i + 1
 
 
-def calc_checksum(fpath):
+def calc_checksum(fpath: str) -> str:
     """Retrieve md5 checksum from provided `fpath`.
 
     See:
@@ -342,7 +341,7 @@ def calc_checksum(fpath):
     return f"{hash} {os.path.basename(fpath)}\n"
 
 
-def read_checksum(fpath):
+def read_checksum(fpath: str) -> str:
     """Read checksum from provided checksum formatted `fpath`.
 
     Note: See `write_checksum` for how a checksum file is generated.
@@ -373,7 +372,7 @@ def read_checksum(fpath):
         return fh.readline()
 
 
-def write_checksum(infpath, outfpath):
+def write_checksum(infpath: str, outfpath: str) -> str:
     """Calculate checksum for `infpath` and write to `outfpath`.
 
     Parameters
@@ -406,133 +405,7 @@ def write_checksum(infpath, outfpath):
     logger.debug(f"Wrote {infpath} checksum to {outfpath}")
 
 
-def get_existing_checkpoints(fpath):
-    """Get checkpoints from `fpath`.
-
-    Parameters
-    ----------
-    fpath : str
-        </path/to/checkpoints.tsv>
-
-    Returns
-    -------
-    pd.DataFrame
-        index=enumerated cols=[checksum_hash, checksum_name, filename, description, accession_time, modified_time]
-
-    Raises
-    -------
-    TypeError
-    """
-
-    if not isinstance(fpath, str):
-        raise TypeError(f"{fpath} is type: {type(fpath)}")
-    if not os.path.exists(fpath):
-        return pd.DataFrame(
-            columns=[
-                "hash",
-                "name",
-                "filepath",
-                "accession_time",
-                "modified_time",
-                "checksum_time",
-            ]
-        )
-    try:
-        return pd.read_csv(fpath, sep="\t")
-    except ValueError:
-        TableFormatError(f"{fpath} must be a tab-delimited file")
-
-
-def make_inputs_checkpoints(inputs, dtype="frame"):
-    """Make `inputs` into checkpoints dataframe
-
-    Parameters
-    ----------
-    inputs : iterable
-        [filepath, filepath, filepath]
-    dtype : str, optional
-        if list will return list of checkpoints, by default "frame"
-        i.e. [Checkpoint, Checkpoint, ...]
-
-    Returns
-    -------
-    pd.DataFrame
-
-
-    Raises
-    ------
-    FileNotFoundError
-        One of provided input files in `inputs` does not exist.
-    """
-    checkpoints = []
-    Checkpoint = namedtuple(
-        "Checkpoint",
-        [
-            "hash",
-            "name",
-            "filepath",
-            "accession_time",
-            "modified_time",
-            "checksum_time",
-        ],
-    )
-    for fpath in inputs:
-        if not os.path.exists(fpath):
-            raise FileNotFoundError(fpath)
-        checksum_hash, checksum_name = calc_checksum(fpath).split()
-        checksum_timestamp = datetime.now().timestamp()
-        checksum_time = datetime.fromtimestamp(checksum_timestamp).strftime(
-            "%Y-%m-%d_%H-%M-%S"
-        )
-        atimestamp = os.path.getatime(fpath)
-        accession_time = datetime.fromtimestamp(atimestamp).strftime(
-            "%Y-%m-%d_%H-%M-%S"
-        )
-        mtimestamp = os.path.getmtime(fpath)
-        modified_time = datetime.fromtimestamp(mtimestamp).strftime("%Y-%m-%d_%H-%M-%S")
-        checkpoint = Checkpoint(
-            hash=checksum_hash,
-            name=checksum_name,
-            filepath=os.path.realpath(fpath),
-            accession_time=accession_time,
-            modified_time=modified_time,
-            checksum_time=checksum_time,
-        )
-        checkpoints.append(checkpoint)
-    if dtype == "list":
-        return checkpoints
-    else:
-        return pd.DataFrame(checkpoints)
-
-
-def merge_checkpoints(old_checkpoint_fpath, new_checkpoints, overwrite=False):
-    """Merge existing checkpoints with new checkpoints
-
-    Parameters
-    ----------
-    old_checkpoint_fpath : str
-        Path to existing checkpoints file
-    new_checkpoints : iterable
-        list of files to be made into checkpoints
-    overwrite : bool, optional
-        Will overwrite `old_checkpoint_fpath` after `new_checkpoints` have been merged, by default False
-
-    Returns
-    -------
-    pd.DataFrame
-        Checkpoints dataframe
-        index=enumerated cols=["hash","name","filepath","accession_time","modified_time"]
-    """
-    old_df = get_existing_checkpoints(fpath=old_checkpoint_fpath)
-    new_df = make_inputs_checkpoints(inputs=new_checkpoints)
-    df = pd.concat([old_df, new_df]).drop_duplicates(["hash", "name", "filepath"])
-    df.reset_index(drop=True)
-    if overwrite:
-        df.to_csv(old_checkpoint_fpath, sep="\t", index=False, header=True)
-    return df
-
-
-def timeit(func):
+def timeit(func: FunctionType) -> FunctionType:
     """Time function run time (to be used as a decorator). I.e. when defining a
     function use python's decorator syntax
 
