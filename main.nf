@@ -17,9 +17,79 @@ nextflow.enable.dsl = 2
 // Available here: https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow/parameters.config
 //
 
-// Check User data inputs
-params.fna_path = null
-if ( !params.fna_path || params.fna_path instanceof Boolean )
+////////////////////////////////////////////////////
+/* --               PRINT HELP                 -- */
+////////////////////////////////////////////////////
+def helpMessage() {
+    log.info nfcoreHeader()
+    log.info"""
+
+    Usage:
+
+    The typical command for running the pipeline is as follows:
+
+    nextflow run Autometa --input '*_R{1,2}.fastq.gz' -profile docker
+
+    Note: Pay attention to the use of "--" vs "-" in the below arguments.
+
+    Mandatory arguments:
+      --input_fna  [file]            path to fasta.gz containing assembled contigs
+      --interim_dir [file]           path to directory where intermediate (temporary) 
+                                       files will be written/read
+      --outdir [file]                The output directory where the results will be saved
+      --result_mode [str]           Mode for publishing results in the output directory. 
+                                       Available: symlink, rellink, link, copy, copyNoFollow,
+                                       move (Default: copy)
+
+    Other Autometa arguments:
+    Metagenome Length filtering
+      --length_cutoff [int]             Minimum contig length to use as input to Autometa
+    Kmer counting/normalization/embedding
+      --kmer_size [int]                 default: 5
+      --kmer_norm_method [str]          default: "am_clr"
+                                        choices: "am_clr", "clr", "ilr"
+      --kmer_pca_dimensions [int]       default: 2
+      --kmer_embed_method [str]         default: "bhsne"
+                                        choices: "sksne", "bhsne", "umap"
+      --kmer_embed_dimensions [int]     default: 2
+    Binning parameters
+      --kingdom  [str]                  default: "bacteria"
+      --binning_starting_rank           default: "superkingdom"
+                                        choices: "superkingdom", "phylum", "class", "order", "family", "genus", "species"
+      --clustering_method [str]         default: "dbscan"
+                                        choices: "dbscan", "hdbscan"
+      --classification_kmer_pca_dimensions [int] e.g. 50
+      --classification_method           default: "decision_tree"
+                                        options: "decision_tree", "random_forest"
+      --completeness [float]            default: 20.0
+      --purity [float]                  default: 90.0
+
+    Optional Nextflow arguments:
+      -profile [str]                  Configuration profile to use.
+                                        Available: "conda", "docker", "test"
+      --max_memory [str]              e.g. "128.GB"
+      --max_cpus [int]                e.g. 10
+
+    Other options:
+      --email [email]                 Set this parameter to your e-mail address to get a summary
+                                        e-mail with details of the run sent to you when the workflow exits
+      --email_on_fail [email]         Same as --email, except only send mail if the workflow is not successful
+      -name [str]                     Name for the pipeline run. If not specified, Nextflow will 
+                                        automatically generate a random mnemonic
+
+    AWSBatch options (placeholder-not yet implemented/tested):
+      --awsqueue [str]                The AWSBatch JobQueue that needs to be set when running on AWSBatch
+      --awsregion [str]               The AWS Region for your AWS Batch job to run on
+      --awscli [str]                  Path to the AWS CLI tool
+      
+    """.stripIndent()
+}
+
+// Show help message
+if (params.help) {
+    helpMessage()
+    exit 0
+}
 error """
 You must supply the `metagenome` parameter in the config or on the command line!
 e.g.
