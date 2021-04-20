@@ -2,15 +2,15 @@
 Install
 =======
 
-Currently installation is supported by constructing a conda_ environment. You need to be running
-a conda_ package (eg. miniconda, anaconda, etc) to install autometa. Before you proceed to installation download and install a conda_ package. You can start with miniconda_.
+Currently installation is supported by conda_ and docker_.
+For installation using conda, we suggest downloading miniconda_.
 
 Direct installation (Quickest)
 ==============================
 
 #. Install miniconda_
-#. Create a new environment and install autometa using ``conda create -c bioconda -n autometa autometa``
-#. Actiavate autometa envoirnonment ``conda activate autometa``
+#. Create a new environment with autometa installed: ``conda create -c bioconda -n autometa autometa``
+#. Activate autometa environment ``conda activate autometa``
 
 Install from source (using make)
 ================================
@@ -19,19 +19,19 @@ Download and install miniconda_. Now run the following commands:
 
 .. code-block:: bash
 
-    # Navigate to the directory where you need to clone Autometa
+    # Navigate to the directory where you would like to clone Autometa
     cd $HOME
-    # Clone the autimeta git repository
+    # Clone the Autometa repository
     git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
-    cd $HOME/Autometa
+    cd Autometa
     # List all make commands
     make
     # create autometa conda environment
     make create_environment
     # activate autometa conda environment
     conda activate autometa
-    # install autometa source code
+    # install autometa source code in autometa environment
     make install
 
 Install from source (full commands)
@@ -43,10 +43,10 @@ Download and install miniconda_. Now run the following commands:
 
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
-    # Clone the autimeta git repository
+    # Clone the Autometa repository
     git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
-    cd $HOME/Autometa
+    cd Autometa
     # Construct the autometa environment from requirements.txt
     conda create -n autometa -c conda-forge -c bioconda --file=requirements.txt
     # Install the autometa code base from source
@@ -64,17 +64,17 @@ You can build a docker image for your clone of Autometa repository.
 
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
-    # Clone the autimeta git repository
+    # Clone the Autometa repository
     git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
-    cd $HOME/Autometa
+    cd Autometa
     # This will tag the image as jason-c-kwan/autometa:<your current branch>
     make image
 
 Testing Autometa
 ================
 
-You can also check the installation using autometa's built in unit tests.This is not at all necessary and is primarily meant for development and debuggging purposes. To run the tests however, you'll first need to install the following packages and download the test dataset.
+You can also check the installation using autometa's built-in unit tests. This is not at all necessary and is primarily meant for development and debugging purposes. To run the tests, however, you'll first need to install the following packages and download the test dataset.
 
 .. code-block:: bash
 

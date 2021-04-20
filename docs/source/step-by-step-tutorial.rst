@@ -11,7 +11,7 @@ See the :ref:`Install` page for details on setting up your conda environment.
 
 I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_. You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/autometa_run/test_data/``. Now unzip the above metagenome assembly using ``gunzip $HOME/autometa_run/test_data/metagenome.fna.gz``. For instructions on how to download the dataset using command line see "Using command line" section on :ref:`Benchmarking` page.
 
-I'm also creating an interim and processed directory to seprately store the intermediate results and the final results. This is completely optional and is done to properly segregate the final output files.
+I'm also creating an interim and processed directory to separately store the intermediate results and the final results. This is completely optional and is done to properly segregate the final output files.
 
 .. code-block:: bash
 
@@ -35,7 +35,7 @@ Use the following command to run the length-filter step:
     --output-stats $HOME/autometa_run/interim/78mbp_metagenome.stats.tsv \
     --output-gc-content $HOME/autometa_run/interim/78mbp_metagenome.gc_content.tsv
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +---------------------+----------------------------------------------------------------------+
 | Flag                |                            Function                                  |
@@ -76,7 +76,7 @@ Coverage calculation for each contig is done to provide another parameter to use
     autometa-coverage --assembly $HOME/autometa_run/interim/78mbp_metagenome.fna --from-spades \
     --out $HOME/autometa_run/interim/78mbp_metagenome.coverages.tsv --cpus 40
 
-If you have assembled your metagenome using some other assembler you can use the any one of the following commands to generate the coverage table.
+If you have assembled your metagenome using some other assembler you can use one of the following commands to generate the coverage table.
 
 .. code-block:: bash
 
@@ -105,7 +105,7 @@ If you have assembled your metagenome using some other assembler you can use the
     --rev-reads rev_reads_1.fastq,rev_reads_2.fastq \
     --out $HOME/autometa_run/interim/78mbp_metagenome.coverages.tsv --cpus 40
 
-Let us disect the above commands:
+Let us dissect the above commands:
 
 +---------------+----------------------------------------------------------------------------------------------+
 | Flag          | Function                                                                                     |
@@ -686,4 +686,3 @@ function.
     from autometa.common.external import samtools
 
     samtools.sort(sam=<path/to/sam/file>, out=<path/to/output/file>, nproc=4)
-

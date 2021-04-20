@@ -7,16 +7,16 @@ Data preparation
 
 Before you run Autometa, you need to have assembled your shotgun metagenome. The following workflow is recommended:
 
-#. Trim adapter sequences from the reads. We prefer to use Trimmomatic_, but you can go ahead and any tool of your preference.
+#. Trim adapter sequences from the reads. We prefer to use Trimmomatic_, but you can go ahead and use any tool of your preference.
 #. Quality check of reads to make sure that the adapters have been removed, we use FastQC_ for this.
 #. Assemble the trimmed reads. We recommend using MetaSPAdes which is a part of the SPAdes_ package to assemble the trimmed reads but you can use any other assembler as well.
-#. An optional thing to do here would be to check the quality of your assembly as well. This would give you N50 which could be useful in selecting the value of length-filter. We tend to use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
+#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step. We tend to use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
 .. note::
 
-    If you use end up using SPAdes then Autometa can use the coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
+    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
 
-    Fortunately, Autometa can construct this table for you with: ``python -m autometa.commmon.coverage``. Use ``--help`` to get the complete usage.
+    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage.
 
 Nextflow walkthrough
 ====================
@@ -27,10 +27,10 @@ Why nextflow
 .. todo::
     Mention some advantages of using nextflow
 
-Set autometa parameteres
-------------------------
+Set autometa parameters
+-----------------------
 
-Before we start running the pipeline we first need to alter some of the default paprameters in ``parameters.config``. A pre-made template is available on our `Autometa GitHub repository <https://github.com/KwanLab/Autometa>`_ which you can edit and customize as per your needs. You can access the ``parameters.config`` file template from `here <https://github.com/WiscEvan/Autometa/blob/4b4e3c60e076706e28deae4ae4d45f26b5df7dee/nextflow/parameters.config>`_. Go ahead and copy the file to the location of your choice and open it in your favorite text editor (vim, nano, vscode, etc).
+Before we start running the pipeline we first need to alter some of the default parameters in ``parameters.config``. A pre-made template is available on our `Autometa GitHub repository <https://github.com/KwanLab/Autometa>`_ which you can edit and customize as per your needs. You can access the ``parameters.config`` file template from `here <https://github.com/WiscEvan/Autometa/blob/4b4e3c60e076706e28deae4ae4d45f26b5df7dee/nextflow/parameters.config>`_. Go ahead and copy the file to the location of your choice and open it in your favorite text editor (vim, nano, vscode, etc).
 
 .. todo::
     Need to alter the url for ``parameters.config`` after the merge is done.
@@ -61,9 +61,9 @@ You can also input multiple asseblies at once with the help of wildcards. In the
 .. code-block:: bash
 
     // Find this section of code in parameters.config
-    params.metagenome = "<path/to/assembly_dir/*.fasta>" 
-    params.interim = "<path/to/interim_results/>" 
-    params.processed = "<path/to/processed_results/>"
+    params.metagenome = "<path/to/assemblies/*.fasta>" 
+    params.interim = "<path/to/interim/>" 
+    params.processed = "<path/to/processed/>"
 
 .. note::
     Wildcard characters will only be interpreted when "double quotes" are used
@@ -102,24 +102,24 @@ You can configure the number of CPUs that each job should use.
     // Change the number of CPUs you want each job to use
     params.cpus = 2
 
-Additional autometa parameteres
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Additional autometa parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also adjust other pipeline parameteres that ultimate control how the binning would be done.
+You can also adjust other pipeline parameters that ultimately control how the binning is performed.
 
-*params.length_cutoff* : Smallest contiog you want binned (default is 3000bp)
+*params.length_cutoff* : Smallest contig you want binned (default is 3000bp)
 
 *params.kmer_size* : kmer size to use
 
-*params.kmer_norm_method* : Which normaization method to use. Choices are centered log-ratio transformation (clr), Autometa's clr implementation (am_clr) and isometric log-ratio transformation (default is am_clr)
+*params.norm_method* : Which normalization method to use. See :ref: kmer advanced usage section for details
 
-*params.kmer_pca_dimensions* : Number of dimensions to reduce the initial 512 dimension big k-mer matrix to (default is 50)
+*params.pca_dimensions* : Number of dimensions of which to reduce the initial k-mer frequencies matrix (default is 50)
 
-*params.kmer_embed_method* :  kmer-embedding method. Choices are "sksne", "bhsne", "umap" (default is bhsne)
+*params.embedding_method* :  Choices are "sksne", "bhsne", "umap" (default is bhsne) See :ref: kmer advanced section for details
 
-*params.kmer_embed_dimensions* : Final dimensions you want to reduce the pca reduced kmer matrix to (default is 2).
+*params.embedding_dimensions* : Final dimensions of the kmer frequencies matrix (default is 2). See :ref: kmer advanced usage section for details
 
-*params.kingdom* : Bins contigs belonging to which kingdom. Choices are "bacteria" and "archaea" (default is bacteria)
+*params.kingdom* : Bin contigs belonging to this kingdom. Choices are "bacteria" and "archaea" (default is bacteria)
 
 *params.clustering_method* : Cluster contigs using which clustering method. Choices are "dbscan" and "hdbscan" (default is "dbscan")
 
@@ -156,20 +156,18 @@ In case you want to tweak some of the scripts and modify the pipeline you can cl
 .. code-block:: bash
 
     # Clone the autometa repository
-    git clone git@github.com:KwanLab/Autometa.git
-    # Navigate to the clone repository
-    cd $HOME
+    git clone git@github.com:KwanLab/Autometa.git $HOME/Autometa
     # Run nextflow
-    nextflow run main.nf
+    nextflow run $HOME/Autometa/main.nf
 
 Without docker
 ^^^^^^^^^^^^^^
 
-By default autometa's implementation using nextflow_ makes use of Docker_. You can diasble it in either your ``nextflow.config`` file or the ``parameters.config`` file.
+By default autometa's implementation using nextflow_ makes use of Docker_. You can disable it in either your ``nextflow.config`` file or the ``parameters.config`` file.
 
 Editing ``nextflow.config``:
 
-.. code-block:: bash
+.. code-block:: groovy
 
     // Find this section of code in nextflow.config
     docker {
@@ -179,11 +177,11 @@ Editing ``nextflow.config``:
     fixOwnership = true
     }
 
-Editing ``parameteres.config``:
+Editing ``parameters.config``:
 
-.. code-block:: bash
+.. code-block:: groovy
 
-    // Find this section of code in parameteres.config
+    // Add this section of code in parameters.config
     docker.enabled = false // override use of docker to use local Autometa installation
 
 Now install autometa using one of the three install methods specified in :ref:`Install` (Directly using conda or from source). After the install you can run autometa using ``nextflow run KwanLab/Autometa -c parameters.config``. Nextflow_ would use the entrypoints created during the install to run autometa. Make sure to actiavte your conda environment before running incase you have installed using conda.
@@ -193,21 +191,21 @@ Other useful options
 
 ``-c`` : In case you have configured nextflow_ with your executor (see below) and have made other modifications on how to run nextflow_ using your ``nexflow.config`` file, you can specify that file using the ``-c`` flag
 
-``-w`` : BY default nextflow_ uses the current directory to store all the temporary files (called as ``work`` directory). You can change that using the ``-w`` flag
+``-w`` : By default nextflow_ will create a ``work`` directory in the current directory to store all temporary files and nextflow related files. You can change this work directory using the ``-w`` flag
 
-``-p`` : You can specify the executor to use using ``-p`` flag. Rightnow the available profiles are cluster, HTCondor and startard (default).
+``-profile`` : You can specify the profile to use using ``-profile`` flag. For details on profiles see :ref: Configuring Profiles section
 
 To see all of the command line options available you can refer to `nexflow CLI documentation <https://www.nextflow.io/docs/latest/cli.html#command-line-interface-cli>`_
 
 Resuming the workflow
 ^^^^^^^^^^^^^^^^^^^^^
 
-One of the most powerful features of nextflow_ is resuming the workflow from the last checkpoint. If your pipeline was interrupted for some reason you can resume it from the lat checkpoint using the resume flag (``-resume``). Eg, ``nextflow run KwanLab/Autometa -c parameters.config -resume``
+One of the most powerful features of nextflow_ is resuming the workflow from the last completed process. If your pipeline was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``). Eg, ``nextflow run KwanLab/Autometa -c parameters.config -resume``
 
 Execution Report
 ^^^^^^^^^^^^^^^^
 
-After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report automatically for you in the ``pipeline`` directory. You can read more about these execution reports `here <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
+After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report automatically for you in the ``pipeline_info`` directory. You can read more about these execution reports `here <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
 
 Workflow Visualized
 ^^^^^^^^^^^^^^^^^^^
@@ -227,14 +225,14 @@ SLURM
 This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo`` on our cluster we get the following:
 
 .. image:: ../img/slurm_partitions.png
-    :alt: Slurm partitions
+    :alt: Screen shot of ``sinfo`` output showing ``queue`` listed under partition  
 
 The slurm partition available on our cluster is queue.  You'll need to update this in ``nextflow.config``. 
 
 .. todo::
     Change the path to ``nextflow.config`` after the merge.
 
-.. code-block:: bash
+.. code-block:: groovy
 
     // Find this section of code in nextflow.config
     }
@@ -253,7 +251,7 @@ HTCondor
 
 This allows you to run the pipeline using the HTCondor resource manager. To do this you'll need to enable the HTCondor executor to condor value in the ``nextflow.config``.
 
-.. code-block:: bash
+.. code-block:: groovy
 
     // Find this section of code in nextflow.config
     }
@@ -262,7 +260,7 @@ This allows you to run the pipeline using the HTCondor resource manager. To do t
         // See https://www.nextflow.io/docs/latest/executor.html#htcondor for more configuration options.
     }
 
-More parameters that are available for the slurm executor are listed in the nextflow executor `docs for HTCondor <https://www.nextflow.io/docs/latest/executor.html#htcondor>`_.
+More parameters that are available for the htcondor executor are listed in the nextflow executor `docs for HTCondor <https://www.nextflow.io/docs/latest/executor.html#htcondor>`_.
 
 .. _nextflow: https://www.nextflow.io/
 .. _Docker: https://www.docker.com/

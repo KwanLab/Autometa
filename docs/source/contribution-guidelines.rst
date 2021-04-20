@@ -94,7 +94,7 @@ This command runs the tests marked as entrypoints. This is denoted in pytest wit
     def test_some_function_that_is_an_entrypoint(...):
     ...
 
-Entrypoints are basically the commands are list out as 'console scripts' in setup.py that are available as commands to the end user. These are important and sometimes referred to as "happy" tests because if one of these fail for the end-user, they will probably be quite unhappy and likely distrust the functionality of the rest of the codebase.
+Entrypoints correspond to the entry point functions listed out by 'console scripts' in setup.py. These entry point functions are aliased to provide more intuitive commands for the end user. These are important and sometimes referred to as "happy" tests because if one of these fail for the end-user, they will probably be quite unhappy and likely distrust the functionality of the rest of the codebase.
 
 ``make unit_test_wip``
 ----------------------
