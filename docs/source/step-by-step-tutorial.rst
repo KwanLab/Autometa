@@ -9,7 +9,7 @@ Before running anything make sure you have activated the conda environment using
 
 See the :ref:`Install` page for details on setting up your conda environment.
 
-I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_. You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/autometa_run/test_data/``. Now unzip the above metagenome assembly using ``gunzip $HOME/autometa_run/test_data/metagenome.fna.gz``. For instructions on how to download the dataset using command line see "Using command line" section on :ref:`Benchmarking` page.
+I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_. You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/autometa_run/test_data/``. Now unzip the above metagenome assembly using ``gunzip $HOME/autometa_run/test_data/metagenome.fna.gz``. For instructions on how to download the dataset using command line see the "Using command line" section on :ref:`Benchmarking` page.
 
 I'm also creating an interim and processed directory to separately store the intermediate results and the final results. This is completely optional and is done to properly segregate the final output files.
 
@@ -144,7 +144,7 @@ The above command would generate the following files:
 3. Generate Open Reading Frames (ORFs)
 --------------------------------------
 
-ORFs calling using prodigal is performed here. The ORFs are needed for single copy marker gene detection and for taxonomic assignment.
+ORF calling using prodigal is performed here. The ORFs are needed for single copy marker gene detection and for taxonomic assignment.
 
 Use the following command to run the ORF calling step:
 
@@ -154,7 +154,7 @@ Use the following command to run the ORF calling step:
     --nucls_out $HOME/autometa_run/interim/78mbp_metagenome.orfs.fna --prots_out \
     $HOME/autometa_run/interim/a78mbp_metagenome.orfs.faa --parallel --cpus 90
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +-------------+--------------------------------------------------------------+
 | Flag        | Function                                                     |
@@ -199,7 +199,7 @@ Autometa uses single-copy markers to guide clustering, and does not assume that 
     hmmpress -f /Autometa/autometa/databases/markers/bacteria.single_copy.hmm
     hmmpress -f /Autometa/autometa/databases/markers/archaea.single_copy.hmm
 
-Use the following command to run the assign single copy marker genes:
+Use the following command to annotate contigs containing single copy marker genes:
 
 .. code-block:: bash
 
@@ -242,9 +242,9 @@ The above command would generate the following files:
 5. Taxonomy assignment: BLASTP
 ------------------------------
 
-Autometa assigns a taxonomic rank to each contig and then takes only the contig belong to the specified kingdom (either bacteria or archaea) for binning. We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic or viral contigs will be binned into bacterial bins. 
+Autometa assigns a taxonomic rank to each contig and then takes only the contig belonging to the specified kingdom (either bacteria or archaea) for binning. We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic or viral contigs will be binned into bacterial bins. 
 
-The first step in assigning taxonomy to the contigs is good old BLASTP of the ORFs. This can be accelerated using `Diamond <https://github.com/bbuchfink/diamond>`_.
+The first step for contig taxonomy assignment is a local alignment search of the ORFs against a reference database. This can be accelerated using `diamond <https://github.com/bbuchfink/diamond>`_.
 
 Create a diamond formatted database of the NCBI non-redundant (nr) protein database.
 
@@ -295,7 +295,8 @@ Breaking down the above command:
 
 To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`__. A complete list of all command line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`__.
 
-The only output from the above command is blastp output table, 78mbp_metagenome.blastp.tsvin formate 6. Complete description of the output format can be found `here <https://github.com/bbuchfink/diamond/wiki/1.-Tutorial>`__.
+.. note:: 
+    Autometa only parses output format 6 provided above as: ``--outfmt 6``
 
 
 The above command would generate the following files:
@@ -315,7 +316,7 @@ Use the following command to run the LCA:
     --dbdir /Autometa/autometa/databases/ncbi/ \
     --output $HOME/autometa_run/interim/78mbp_metagenome.lca.tsv
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +----------+-----------------------------------------+
 | Flag     | Function                                |
@@ -344,7 +345,7 @@ You can run the majority vote step using the following command:
     --output $HOME/autometa_run/interim/78mbp_metagenome.votes.tsv \
     --dbdir /Autometa/autometa/databases/ncbi/
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +----------+-----------------------------------+
 | Flag     | Function                          |
@@ -373,7 +374,7 @@ In this final step of taxon assignment we use the voted taxid of each contig to 
     --prefix 78mbp_metagenome --split-rank-and-write superkingdom \
     --ncbi /Autometa/autometa/databases/ncbi/
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +------------------------+--------------------------------------------------------------------------------+
 | Flag                   | Function                                                                       |
@@ -391,7 +392,7 @@ Let us disect the above command:
 | --ncbi                 | Path to ncbi database directory                                                |
 +------------------------+--------------------------------------------------------------------------------+
 
-Other opetions available for ``--split-rank-and-write`` are phylum,class,order,family,genus and species
+Other options available for ``--split-rank-and-write`` are phylum, class, order, family, genus and species
 
 You can view the complete command line opions using ``autometa-taxonomy -h``
 
@@ -410,7 +411,7 @@ In my case there are no non-bacterial contigs. For your dataset, ``autometa-taxo
 9. K-mer counting
 -----------------
 
-A k-mer (`ref <https://bioinfologics.github.io/post/2018/09/17/k-mer-counting-part-i-introduction/>`_) is just a sequence of k characters in a string (or nucleotides in a DNA sequence). It is known that contigs that belong to the same genome have similar k-mer composition. Here, we make use of the ``78mbp_metagenome.bacteria.fna`` generated in the previous step as this had only bacterial contigs without any known contamination.
+A k-mer (`ref <https://bioinfologics.github.io/post/2018/09/17/k-mer-counting-part-i-introduction/>`_) is just a sequence of k characters in a string (or nucleotides in a DNA sequence). It is known that contigs that belong to the same genome have similar k-mer composition. Here, we compute k-mer frequencies of only the bacterial contigs.
 
 This step does the following:
 
@@ -432,10 +433,10 @@ Use the following command to run the k-mer counting step:
 
 If you noticed I stored the ``78mbp_metagenome.bacteria.kmers.embedded.tsv`` file in the ``processed`` directory as no further analysis is required on the final.
 
-..note::
+.. note::
     In case you put ``--pca-dimensions`` as zero then autometa will skip PCA.
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +--------------------+--------------------------------------------------------------------------------------------------------------------------+
 | Flag               | Function                                                                                                                 |
@@ -461,7 +462,7 @@ Let us disect the above command:
 | --seed             | Set random seed for dimension reduction determinism (default 42). Useful in replicating the results                      |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------+
 
-You can view the complete command line opions using ``autometa-kmers -h``
+You can view the complete command line options using ``autometa-kmers -h``
 
 In the above command k-mer normalization is being done using Autometa's implementation of center
 log-ratio transform (am_clr). Other available normalization methods are isometric log-ratio transform (ilr, scikit-bio implementation) and center log-ratio transform (clr, scikit-bio implementation)
@@ -488,11 +489,11 @@ This is the step where contigs are binned into genomes. Autometa assesses cluste
 This step does the following:
 
 #. Find single-copy marker genes in the input contigs with HMMER
-#. Cluster contigs based on BH-tSNE coordinates (or any other embedding method that you have used), coverage and (optionally) taxonomy
+#. Bin contigs based on embedded k-mer coordinates, coverage and (optionally) taxonomy
 #. Accept clusters that are estimated to be over 20% complete and 95% pure based on single-copy marker genes. These are default papameteres and can be altered to suit your needs. Completeness can be altered using the ``--completeness`` flag and purity using the ``--purity`` flag
 #. Unclustered contigs leftover will be re-clustered until no more acceptable clusters are yielded
 
-If you include a taxonomy table Autometa will attempt to further partition the data based on ascending taxonomic specificity (i.e. in the order phylum, class, order, family, genus, species) when clustering unclustered contigs from a previous attempt. We found that this is mainly useful if you have a highly complex metagenome (lots of species), or you have several related species at similar coverage level.
+If you include a taxonomy table Autometa will attempt to further partition the data based on ascending taxonomic specificity (i.e. in the order superkingdom, phylum, class, order, family, genus, species) when binning unbinned contigs from a previous attempt. We found that this is mainly useful if you have a highly complex metagenome (lots of species), or you have several related species at similar coverage level.
 
 Use the following command to run the binning:
 
@@ -511,7 +512,7 @@ Use the following command to run the binning:
 
 Since these are the final binning results we store them in the ``processed`` directory.
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +---------------------+-----------------------------------------------------------------------------------------+
 | Flag                | Function                                                                                |
@@ -549,14 +550,14 @@ Let us disect the above command:
 
 There are two binning algorithms to chose from Density-Based Spatial Clustering of Applications with Noise (DBSCAN) and Hierarchical Density-Based Spatial Clustering of Applications with Noise (HDBSCAN). The default is DBSCAN.
 
-You can view the complete command line opions using ``autometa-binning -h``
+You can view the complete command line options using ``autometa-binning -h``
 
-The above command would generates the following files:
+The above command generates the following files:
 
-#. ``78mbp_metagenome.binning.tsv`` which contains has the final binning results along with a few more meterics regarding each cluster (or bin).
-#. ``78mbp_metagenome.main.tsv`` wich can be considered a kind of final binning summary file. This has the same resulst as ``78mbp_metagenome.binning.tsv`` but with additional metrics including the taxonomic classification, dimension-reduced coordinates, coverage and length of each contig, etc.
+#. ``78mbp_metagenome.binning.tsv`` contains the final binning results along with a few more metrics regarding each genome bin.
+#. ``78mbp_metagenome.main.tsv`` which contains the feature table that was utilized during the genome binning process as well as the corresponding output predictions.
 
-Since the above two files are so important the following table describes what each column in the table actually mean. We'll start with the columns present in ``78mbp_metagenome.binning.tsv`` and then describe the additional columns that are preseny in ``78mbp_metagenome.main.tsv``.
+The following table describes each column for the resulting binning outputs. We'll start with the columns present in ``78mbp_metagenome.binning.tsv`` then describe the additional columns that are present in ``78mbp_metagenome.main.tsv``.
 
 +-------------------+---------------------------------------------------------------------------------------------------------------------+
 | Column            | Description                                                                                                         |
@@ -606,7 +607,7 @@ Description of additional columns in ``78mbp_metagenome.main.tsv``:
 | x_2          | The second coordinate after dimension reduction |
 +--------------+-------------------------------------------------+
 
-You can now move on to improving your clusters using the unclustered recruitment using supervised machine learning or analyze/ examine your results. See :ref:`Examining Results`.
+You can attempt to improve your genome bins with an unclustered recruitment step which uses features from existing genome bins to recruit unbinned contigs. Alternatively you can use these initial genome bin predictions and continue to the :ref:`Examining Results` section.
 
 11. Unclustered recruitment (Optional)
 --------------------------------------
@@ -614,7 +615,7 @@ You can now move on to improving your clusters using the unclustered recruitment
 Supervised machine learning is used to classify the unclustered contigs to the bins that we have produced. This steop is optional and the results should be verified (see Note below) before going ahead with it.
 
 .. note::
-    The machine learning step has been seen to pick up contigs that not necessary belong to the genome. Careful inscpection of coverage and taxonomy should be done before you go ahead and use results from this step.
+    The machine learning step has been observed to bin contigs that do not necessary belong to the predicted genome. Careful inspection of coverage and taxonomy should be done before proceed to use these results.
 
 Use the following command to run the unclustered recruitment step:
 
@@ -632,7 +633,7 @@ Use the following command to run the unclustered recruitment step:
 
 Since these are the final binning results we store them in the ``processed`` directory.
 
-Let us disect the above command:
+Let us dissect the above command:
 
 +------------------+-------------------------------------------------------------------------------------------------+
 | Flag             | Function                                                                                        |
@@ -656,11 +657,11 @@ Let us disect the above command:
 | --seed           | Seed to use for RandomState when initializing classifiers                                       |
 +------------------+-------------------------------------------------------------------------------------------------+
 
-You can view the complete command line opions using ``autometa-unclustered-recruitment -h``
+You can view the complete command line options using ``autometa-unclustered-recruitment -h``
 
 The above command would generate ``78mbp_metagenome.recruitment.tsv`` and ``78mbp_metagenome.recruitment.main.tsv``.
 
-``78mbp_metagenome.recruitment.tsv`` represents the complete input matrix required to run ``autometa-unclustered-recruitment``. ``autometa-unclustered-recruitment`` take as input a matrix of features (unclustered contigs with their respective annotations) and output predictions of targets or target classes (in our case already recovered bins). Encoding the taxonomic ranks into this matrix is an input format required by the classification algorithms. In this case it is a “one-hot encoding” or a presence/absence matrix where each column is a canonical taxonomic rank and its respective value for each row represents its presence or absence. Presence and absence are denoted with 1 and 0, respectively. Hence ‘one-hot’ encoding being an encoding of presence and absence of the respective annotation type. In our case taxonomic designation.
+``78mbp_metagenome.recruitment.tsv`` contains the final predictions of ``autometa-unclustered-recruitment``. ``78mbp_metagenome.recruitment.main.tsv`` is the feature table with corresponding predictions utilized during/after the unclustered recruitment algorithm. This represents unbinned contigs with their respective annotations and output predictions of their recruitment into a genome bin. The taxonomic features have been encoded using “one-hot encoding” or a presence/absence matrix where each column is a canonical taxonomic rank and its respective value for each row represents its presence or absence. Presence and absence are denoted with 1 and 0, respectively. Hence ‘one-hot’ encoding being an encoding of presence and absence of the respective annotation type. In our case taxonomic designation.
 
 .. todo::
     Add file description of ``78mbp_metagenome.recruitment.tsv`` after evan edits it.
