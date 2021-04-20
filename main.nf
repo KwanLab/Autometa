@@ -90,18 +90,28 @@ if (params.help) {
     helpMessage()
     exit 0
 }
+////////////////////////////////////////////////////
+/* --          VALIDATE INPUTS                 -- */
+////////////////////////////////////////////////////
+
+// Path of fna files used as input:
+params.input_fna = null
+if ( !params.input_fna || params.input_fna instanceof Boolean )
 error """
-You must supply the `metagenome` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --metagenome "</path/to/your/metagenome(s)>"
+You must supply the `input_fna` parameter in the config or on the command line!
+For a single input use the path
+    nextflow run main.nf -c parameters.config --input_fna "</path/to/your/metagenome.fna>"
+For multiple input files, glob patterns may be used:
+    nextflow run main.nf -c parameters.config --input_fna "</path/to/your/metagenome_*.fna>"
 """
-// Where to store intermediate and final results:
-params.interim_dir = null
-if ( !params.interim_dir || params.interim_dir instanceof Boolean )
+
+// Where to store final results:
+params.outdir = null
+if ( !params.outdir || params.outdir instanceof Boolean )
 error """
-You must supply the `--interim` parameter in the config or on the command line!
+You must supply the `--outdir` parameter in the config or on the command line!
 e.g.
-nextflow run main.nf -c parameters.config --interim "</directory/path/to/store/interimediate/results>""
+nextflow run main.nf -c parameters.config --outdir "</directory/path/to/final/results>"
 """
 params.outdir = null
 if ( !params.outdir || params.outdir instanceof Boolean )
