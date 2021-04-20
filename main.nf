@@ -113,13 +113,22 @@ You must supply the `--outdir` parameter in the config or on the command line!
 e.g.
 nextflow run main.nf -c parameters.config --outdir "</directory/path/to/final/results>"
 """
-params.outdir = null
-if ( !params.outdir || params.outdir instanceof Boolean )
+
+// Where to store intermediate results:
+params.interim_dir = null
+if ( !params.interim_dir )
 error """
-You must supply the `--processed` parameter in the config or on the command line!
+You must supply the `--interim_dir` parameter in the config or on the command line!
 e.g.
-nextflow run main.nf -c parameters.config --processed "</directory/path/to/final/results>""
+nextflow run main.nf -c parameters.config --interim_dir "</directory/path/to/store/interimediate/results>"
 """
+if ( params.interim_dir = true ) {
+    params.interim_dir = "${params.outdir}/interim_outputs"
+    println "Intermediate results will be saved to:\n${params.outdir}/interim_outputs"
+}
+if ( params.interim_dir = false ) {
+    // TODO: Don't publish/create the copies of intermediate results
+}
 
 
 log.info """
