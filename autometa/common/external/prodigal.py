@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -25,6 +25,7 @@ Functions to retrieve orfs from provided assembly using prodigal
 """
 
 
+import gzip
 import logging
 import os
 import subprocess
@@ -34,7 +35,7 @@ import tempfile
 from glob import glob
 from Bio import SeqIO
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from typing import List, Set, Union, Mapping
+from typing import List, Set, Tuple, Union, Mapping
 
 from autometa.config.environ import get_versions
 from autometa.common.utilities import gunzip
@@ -42,7 +43,7 @@ from autometa.common.utilities import gunzip
 logger = logging.getLogger(__name__)
 
 
-def aggregate_orfs(search_str, outfpath):
+def aggregate_orfs(search_str: str, outfpath: str) -> None:
     tmpfpaths = glob(search_str)
     lines = ""
     for fp in tmpfpaths:
@@ -54,7 +55,7 @@ def aggregate_orfs(search_str, outfpath):
     out.close()
 
 
-def annotate_sequential(assembly, prots_out, nucls_out):
+def annotate_sequential(assembly: str, prots_out: str, nucls_out: str) -> None:
     cmd = [
         "prodigal",
         "-i",
@@ -75,7 +76,7 @@ def annotate_sequential(assembly, prots_out, nucls_out):
     )
 
 
-def annotate_parallel(assembly, prots_out, nucls_out, cpus):
+def annotate_parallel(assembly: str, prots_out: str, nucls_out: str, cpus: int) -> None:
     outdir = os.path.dirname(os.path.realpath(nucls_out))
     log = os.path.join(outdir, "prodigal.parallel.log")
     outprefix = os.path.splitext(os.path.basename(nucls_out))[0]
@@ -125,7 +126,9 @@ def annotate_parallel(assembly, prots_out, nucls_out, cpus):
     shutil.rmtree(tmpdir)
 
 
-def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
+def run(
+    assembly: str, nucls_out: str, prots_out: str, force: bool = False, cpus: int = 0
+) -> Tuple[str, str]:
     """Calls ORFs from provided input assembly
 
     Parameters
@@ -140,8 +143,6 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
         overwrite outfpath if it already exists (the default is False).
     cpus : int
         num `cpus` to use. **Default (cpus=0) will run as many `cpus` as possible**
-    parallel : bool
-        Will parallelize prodigal using GNU parallel (the default is True).
 
     Returns
     -------
@@ -169,12 +170,12 @@ def run(assembly, nucls_out, prots_out, force=False, cpus=0, parallel=True):
     for fpath in [nucls_out, prots_out]:
         if os.path.exists(fpath) and not force:
             raise FileExistsError(f"{fpath} To overwrite use --force")
-    if parallel:
+    if cpus == 1:
+        annotate_sequential(assembly=assembly, prots_out=prots_out, nucls_out=nucls_out)
+    else:
         annotate_parallel(
             assembly=assembly, prots_out=prots_out, nucls_out=nucls_out, cpus=cpus
         )
-    else:
-        annotate_sequential(assembly=assembly, prots_out=prots_out, nucls_out=nucls_out)
     for fp in [nucls_out, prots_out]:
         if not os.path.exists(fp) or not os.path.getsize(fp):
             raise ChildProcessError(f"{fp} not written")
@@ -238,7 +239,8 @@ def contigs_from_headers(fpath: str) -> Mapping[str, str]:
     else:
         version = float(version)
     translations = {}
-    for record in SeqIO.parse(fpath, "fasta"):
+    fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath)
+    for record in SeqIO.parse(fh, "fasta"):
         if version < 2.6:
             orf_id = (
                 record.description.split("#")[-1]
@@ -250,6 +252,7 @@ def contigs_from_headers(fpath: str) -> Mapping[str, str]:
         else:
             contig_id = record.id.rsplit("_", 1)[0]
         translations.update({record.id: contig_id})
+    fh.close()
     return translations
 
 
@@ -311,27 +314,48 @@ def main():
         level=logger.DEBUG,
     )
     parser = argparse.ArgumentParser(
-        description="Calls ORFs with provided input assembly"
+        description="Calls ORFs with provided input assembly",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("assembly", help="</path/to/assembly>", type=str)
-    parser.add_argument("nucls_out", help="</path/to/nucls.out>", type=str)
-    parser.add_argument("prots_out", help="</path/to/prots.out>", type=str)
     parser.add_argument(
-        "--force", help="force overwrite of ORFs out filepaths", action="store_true"
+        "--assembly",
+        help="Path to metagenome assembly",
+        type=str,
+        metavar="filepath",
+        required=True,
     )
-    parser.add_argument("--cpus", help="num cpus to use", type=int, default=0)
     parser.add_argument(
-        "--parallel", help="Enable GNU parllel", action="store_true", default=False
+        "--output-nucls",
+        help="Path to output nucleotide ORFs",
+        type=str,
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-prots",
+        help="Path to output amino-acid ORFs",
+        type=str,
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--cpus",
+        help="Number of processors to use. (If more than one this will parallelize prodigal using GNU parallel)",
+        type=int,
+        default=1,
+        metavar="int",
+    )
+    parser.add_argument(
+        "--force", help="Overwrite existing output ORF filepaths", action="store_true"
     )
     args = parser.parse_args()
 
     nucls_out, prots_out = run(
         assembly=args.assembly,
-        nucls_out=args.nucls_out,
-        prots_out=args.prots_out,
-        force=args.force,
+        nucls_out=args.output_nucls,
+        prots_out=args.output_prots,
         cpus=args.cpus,
-        parallel=args.parallel,
+        force=args.force,
     )
     logger.info(f"written:\nnucls fpath: {nucls_out}\nprots fpath: {prots_out}")
 
