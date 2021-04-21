@@ -1,0 +1,188 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/autometa/master/nextflow_schema.json",
+    "title": "autometa pipeline parameters",
+    "description": "Autometa: Automated Extraction of Microbial Genomes from Shotgun Metagenomes",
+    "type": "object",
+    "definitions": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "required": [
+                "input",
+                "interim_dir",
+                "outdir"
+            ],
+            "properties": {
+                "input": {
+                    "type": "string",
+                    "fa_icon": "fas fa-dna",
+                    "description": "Input FAST (.fna) files.",
+                    "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input 'path/to/data/sample.fna'\n```\n\nMultiple FASTA files: \n\n```bash\n--input 'path/to/data/sample_*.fna'\n```\n\nPlease note the following requirements:\n\n1. The path must be enclosed in quotes\n\n",
+                    "default": "null"
+                },
+                "interim_dir": {
+                    "type": "string",
+                    "description": "Directory for intermediate files",
+                    "default": "null"
+                },
+                "outdir": {
+                    "type": "string",
+                    "description": "The output directory where the results will be saved.",
+                    "default": "./results",
+                    "fa_icon": "fas fa-folder-open"
+                }
+            }
+        },
+        "autometa_options": {
+            "title": "Autometa Options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "ncbi_database": {
+                    "type": "string",
+                    "default": "null",
+                    "description": "Path to Autometa databases"
+                },
+                "length_cutoff": {
+                    "type": "integer",
+                    "default": 3000,
+                    "description": "Minimum contig length to use as input to Autometa"
+                },
+                "norm_method": {
+                    "type": "string",
+                    "default": "am_clr",
+                    "description": "TODO:  fill description"
+                },
+                "pca_dimensions": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "TODO:  fill description"
+                },
+                "embedding_method": {
+                    "type": "string",
+                    "default": "bhsne",
+                    "description": "TODO:  fill description"
+                },
+                "embedding_dimensions": {
+                    "type": "integer",
+                    "default": 2,
+                    "description": "TODO:  fill description"
+                },
+                "kmer_size": {
+                    "type": "integer",
+                    "default": 5,
+                    "description": "TODO:  fill description"
+                },
+                "binning_starting_rank": {
+                    "type": "string",
+                    "default": "superkingdom",
+                    "description": "TODO:  fill description"
+                },
+                "clustering_method": {
+                    "type": "string",
+                    "default": "dbscan",
+                    "description": "TODO:  fill description"
+                },
+                "classification_method": {
+                    "type": "string",
+                    "default": "decision_tree",
+                    "description": "TODO:  fill description"
+                },
+                "classification_kmer_pca_dimensions": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "TODO:  fill description"
+                },
+                "completeness": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "TODO:  fill description"
+                },
+                "purity": {
+                    "type": "integer",
+                    "default": 90,
+                    "description": "TODO:  fill description"
+                },
+                "kingdom": {
+                    "type": "string",
+                    "default": "bacteria",
+                    "description": "TODO:  fill description"
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "description": "Email address for completion summary.",
+                    "fa_icon": "fas fa-envelope",
+                    "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+                },
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-question-circle"
+                },
+                "email_on_fail": {
+                    "type": "string",
+                    "description": "Email address for completion summary, only when pipeline fails.",
+                    "fa_icon": "fas fa-exclamation-triangle",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+                    "hidden": true,
+                    "help_text": "This works exactly as with `--email`, except emails are only sent if the workflow is not successful."
+                },
+                "plaintext_email": {
+                    "type": "boolean",
+                    "description": "Send plain-text email instead of HTML.",
+                    "fa_icon": "fas fa-remove-format",
+                    "hidden": true,
+                    "help_text": "Set to receive plain-text e-mails instead of HTML formatted."
+                },
+                "max_multiqc_email_size": {
+                    "type": "string",
+                    "description": "File size limit when attaching MultiQC reports to summary emails.",
+                    "default": "25.MB",
+                    "fa_icon": "fas fa-file-upload",
+                    "hidden": true,
+                    "help_text": "If file generated by pipeline exceeds the threshold, it will not be attached."
+                },
+                "monochrome_logs": {
+                    "type": "boolean",
+                    "description": "Do not use coloured log outputs.",
+                    "fa_icon": "fas fa-palette",
+                    "hidden": true,
+                    "help_text": "Set to disable colourful command line output and live life in monochrome."
+                },
+                "tracedir": {
+                    "type": "string",
+                    "description": "Directory to keep pipeline Nextflow logs and reports.",
+                    "default": "${params.outdir}/pipeline_info",
+                    "fa_icon": "fas fa-cogs",
+                    "hidden": true
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/autometa_options"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
+        }
+    ]
+}
