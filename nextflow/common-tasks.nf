@@ -196,48 +196,21 @@ process SORT_READS {
   """
 }
 
-process LENGTH_TABLE {
-  tag "length table for ${metagenome.simpleName}"
-  container = 'jason-c-kwan/autometa:dev'
-  cpus params.cpus
-
-  input:
-    path metagenome
-
-  output:
-    path "${metagenome.simpleName}.lengths.tsv"
-
-  """
-  #!/usr/bin/env python
-
-  from Bio import SeqIO
-  import pandas as pd
-
-  seqs = {record.id: len(record) for record in SeqIO.parse($metagenome, "fasta")}
-  lengths = pd.Series(seqs, name="length")
-  lengths.index.name = "contig"
-  lengths.to_csv(${metagenome.simpleName}.lengths.tsv, sep="\t", index=True, header=True)
-  """
-}
-
 process GENOMECOV {
-  tag "Computing genome coverage for ${bam.simpleName}"
+  tag "Computing contig coverages for ${bam.simpleName}"
   container = 'jason-c-kwan/autometa:dev'
   cpus params.cpus
 
   input:
     path bam
-    path lengths
 
   output:
     path "${bam.simpleName}.bed.tsv", emit: bed
     path "${bam.simpleName}.coverage.tsv", emit: coverage
 
   """
-  bedtools genomecov -ibam $bam -g $lengths > ${bam.simpleName}.bed.tsv
-  autometa-parse-bed \
+  autometa-bedtools-genomecov \
     --ibam $bam \
-    --lengths $lengths \
     --bed ${bam.simpleName}.bed.tsv \
     --output ${bam.simpleName}.coverage.tsv
   """
@@ -251,10 +224,9 @@ workflow READ_COVERAGE {
     se_reads
 
   main:
-    LENGTH_TABLE(metagenome)
     ALIGN_READS(metagenome, fwd_reads, rev_reads, se_reads)
     SORT_READS(ALIGN_READS.out)
-    GENOMECOV(SORT_READS.out, LENGTH_TABLE.out)
+    GENOMECOV(SORT_READS.out)
 
   emit:
     bed = GENOMECOV.out.bed

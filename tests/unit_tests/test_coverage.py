@@ -189,7 +189,6 @@ def test_coverage_main(
             self.rev_reads = rev_reads
             self.sam = sam_alignment
             self.bam = bam_alignment
-            self.lengths = "lengths.tsv"
             self.bed = bed_alignment
             self.cpus = 2
             self.out = out
