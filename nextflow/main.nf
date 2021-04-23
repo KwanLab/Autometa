@@ -18,7 +18,7 @@ nextflow.enable.dsl = 2
 
 ////////////////////////////////////////////////////
 /* --               PRINT HELP                 -- */
-////////////////////////////////////////////////////+
+////////////////////////////////////////////////////
 def json_schema = "$projectDir/nextflow_schema.json"
 if (params.help) {
     def command = "nextflow run autometa --input 'input/path/sample.fna'" //TODO
@@ -26,6 +26,9 @@ if (params.help) {
     exit 0
 }
 
+////////////////////////////////////////////////////
+/* --         VALIDATE PARAMETERS              -- */
+////////////////////////////////////////////////////
 
 Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
