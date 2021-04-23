@@ -29,6 +29,9 @@ if (params.help) {
 ////////////////////////////////////////////////////
 /* --         VALIDATE PARAMETERS              -- */
 ////////////////////////////////////////////////////
+if (params.validate_params) {
+    NfcoreSchema.validateParameters(params, json_schema, log)
+}
 
 Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
