@@ -13,7 +13,6 @@ process SINGLE_RSYNC_DOWNLOAD {
     val filename
 
   output:
-    path "*"
     path "${filename}"
 
   """
