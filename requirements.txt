@@ -7,6 +7,7 @@ diamond==2.*
 gdown
 hdbscan
 hmmer
+libiconv
 make
 nextflow>=20.10
 numpy
