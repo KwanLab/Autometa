@@ -24,7 +24,7 @@ include { SINGLE_WGET_DOWNLOAD as DOWNLOAD_ARCHAEA_SINGLE_COPY } from "../utilit
 include { SINGLE_WGET_DOWNLOAD as DOWNLOAD_ARCHAEA_SINGLE_COPY_CUTOFFS } from "../utilities/download.nf" addParams(rsync_storedir: params.archaea_single_copy_cutoffs_dir)
 
 
-workflow {
+workflow DOWNLOAD_DATABASES{
     DOWNLOAD_TAXDUMP(
         "rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
         "taxdump.tar.gz"
@@ -57,4 +57,17 @@ workflow {
         "https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/archaea.single_copy.cutoffs.md5",
         "archaea.single_copy.cutoffs"
     )
+
+emit:
+    ch_taxdump_dir = DOWNLOAD_TAXDUMP.out
+    ch_accession2taxid_dir = DOWNLOAD_ACCESSION2TAXID_DIR.out
+    ch_nr_dir = DOWNLOAD_NR.out
+    ch_bacteria_single_copy_dir = DOWNLOAD_BACTERIA_SINGLE_COPY.out
+    ch_bacteria_single_copy_cutoffs_dir = DOWNLOAD_BACTERIA_SINGLE_COPY_CUTOFFS.out
+    ch_archaea_single_copy_dir = DOWNLOAD_ARCHAEA_SINGLE_COPY.out
+    ch_archaea_single_copy_cutoffs_dir = DOWNLOAD_ARCHAEA_SINGLE_COPY_CUTOFFS.out
+}
+
+workflow {
+    DOWNLOAD_DATABASES()
 }

@@ -155,12 +155,13 @@ process get_software_versions {
  * Retrieve the main 'AUTOMETA' worflow
  */
 include { AUTOMETA } from './modules/core/autometa.nf'
-
+include { DOWNLOAD_DATABASES } from './modules/core/download-databases.nf'
 
 workflow {
   Channel
     .fromPath(params.input, checkIfExists: true, type: 'file')
     .set{unfiltered_metagenome_ch}
+  DOWNLOAD_DATABASES()
   AUTOMETA(unfiltered_metagenome_ch)
 }
 
