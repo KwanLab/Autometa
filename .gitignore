@@ -159,4 +159,7 @@ tests/data/*
 .nextflow
 .nextflow.log*
 pipeline_info
-work
+work/
+large_db/
+
+
