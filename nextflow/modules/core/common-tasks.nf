@@ -21,7 +21,6 @@ params.cpus = 2
 
 process LENGTH_FILTER {
   tag "filtering metagenome ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   publishDir params.interim_dir, pattern: "${metagenome.simpleName}.*"
 
   input:
@@ -44,7 +43,6 @@ process LENGTH_FILTER {
 
 process KMERS {
   tag "counting kmers for ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   cpus params.cpus
   publishDir params.interim_dir, pattern: "*.kmers.*"
 
@@ -74,7 +72,6 @@ process KMERS {
 
 process KMER_COVERAGE {
   tag "Calculating k-mer coverage for ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   cpus params.cpus
   publishDir params.interim_dir, pattern: "${metagenome.simpleName}.coverages.tsv"
 
@@ -95,7 +92,6 @@ process KMER_COVERAGE {
 
 process MARKERS {
   tag "Finding markers for ${orfs.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   cpus params.cpus
   // copying orfs via stageInMode is required to run hmmscan (does not handle symlinks)
   stageInMode 'copy'
@@ -122,7 +118,6 @@ process MARKERS {
 
 process ORFS {
   tag "Calling orfs for ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   // Hardcoding cpus here b/c prodigal is limited to only using single core
   cpus 1
   publishDir params.interim_dir, pattern: "${metagenome.simpleName}.orfs.f*"
@@ -147,7 +142,6 @@ process ORFS {
 
 process ALIGN_READS {
   tag "Aligning reads to ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   cpus params.cpus
 
   input:

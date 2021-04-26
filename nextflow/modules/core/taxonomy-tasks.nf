@@ -9,7 +9,6 @@ params.cpus = 2
 
 process DIAMOND {
   tag "diamond blastp on ${orfs.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
   cpus params.cpus
   publishDir params.interim_dir, pattern: "${orfs.simpleName}.blastp.tsv"
@@ -34,7 +33,6 @@ process DIAMOND {
 
 process LCA {
   tag "Assigning LCA to ${blast.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${blast.simpleName}.lca.tsv"
 
@@ -51,7 +49,6 @@ process LCA {
 
 process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${lca.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${lca.simpleName}.votes.tsv"
 
@@ -68,7 +65,6 @@ process MAJORITY_VOTE {
 
 process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${assembly.simpleName}"
-  container = 'jasonkwan/autometa:dev'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${assembly.simpleName}.taxonomy.tsv"
   publishDir params.interim_dir, pattern: '*.{bacteria,archaea}.fna'
