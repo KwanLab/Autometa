@@ -59,13 +59,13 @@ workflow DOWNLOAD_DATABASES{
     )
 
 emit:
-    ch_taxdump_dir = DOWNLOAD_TAXDUMP.out
-    ch_accession2taxid_dir = DOWNLOAD_ACCESSION2TAXID_DIR.out
-    ch_nr_dir = DOWNLOAD_NR.out
-    ch_bacteria_single_copy_dir = DOWNLOAD_BACTERIA_SINGLE_COPY.out
-    ch_bacteria_single_copy_cutoffs_dir = DOWNLOAD_BACTERIA_SINGLE_COPY_CUTOFFS.out
-    ch_archaea_single_copy_dir = DOWNLOAD_ARCHAEA_SINGLE_COPY.out
-    ch_archaea_single_copy_cutoffs_dir = DOWNLOAD_ARCHAEA_SINGLE_COPY_CUTOFFS.out
+    ch_taxdump = DOWNLOAD_TAXDUMP.out
+    ch_accession2taxid = DOWNLOAD_ACCESSION2TAXID_DIR.out
+    ch_nr = DOWNLOAD_NR.out
+    ch_bacteria_single_copy = DOWNLOAD_BACTERIA_SINGLE_COPY.out
+    ch_bacteria_single_copy_cutoffs = DOWNLOAD_BACTERIA_SINGLE_COPY_CUTOFFS.out
+    ch_archaea_single_copy = DOWNLOAD_ARCHAEA_SINGLE_COPY.out
+    ch_archaea_single_copy_cutoffs = DOWNLOAD_ARCHAEA_SINGLE_COPY_CUTOFFS.out
 }
 
 workflow {
