@@ -21,7 +21,7 @@ params.ncbi_database = "Path to user ncbi databases directory"
 
 process BINNING {
   tag "Performing Autometa binning"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   publishDir params.outdir, pattern: "${coverage.simpleName}.${params.kingdom}.*.tsv.gz"
 
   input:
@@ -56,7 +56,7 @@ process BINNING {
 
 process UNCLUSTERED_RECRUITMENT {
   tag "Performing Autometa unclustered recruitment"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   publishDir params.outdir, pattern: "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz"
 
   input:
@@ -87,7 +87,7 @@ process UNCLUSTERED_RECRUITMENT {
 
 process BINNING_SUMMARY {
   tag "Binning summary for ${binning_main.simpleName}"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
 
   input:

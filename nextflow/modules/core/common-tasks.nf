@@ -175,7 +175,7 @@ process ALIGN_READS {
 
 process SORT_READS {
   tag "Sorting reads to ${sam.simpleName}"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   cpus params.cpus
 
   input:
@@ -192,7 +192,7 @@ process SORT_READS {
 
 process LENGTH_TABLE {
   tag "length table for ${metagenome.simpleName}"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   cpus params.cpus
 
   input:
@@ -216,7 +216,7 @@ process LENGTH_TABLE {
 
 process GENOMECOV {
   tag "Computing genome coverage for ${bam.simpleName}"
-  container = 'jasonkwan/autometa:dev'
+  container = 'chaseauto:latest'
   cpus params.cpus
 
   input:
