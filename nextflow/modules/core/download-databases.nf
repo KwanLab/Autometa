@@ -2,7 +2,7 @@
 nextflow.enable.dsl=2
 
 
-params.single_db_dir = "${projectDir}/large_db"
+params.single_db_dir = null
 
 // Allows flexibility for storing databases
 // Defaults to everything saving into one directory, as in Autometa 1.0
