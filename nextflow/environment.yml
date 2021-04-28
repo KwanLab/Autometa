@@ -1,0 +1,15 @@
+# You can use this file to create a conda environment for this pipeline:
+#   conda env create -f environment.yml
+name: autometa-nextflow-1.0
+channels:
+  - conda-forge
+  - bioconda
+  - hcc
+  - defaults
+dependencies:
+  - conda-forge::python=3.9.2
+  - conda-forge::gdown=3.12.2
+  - conda-forge::markdown=3.3.4
+  - bioconda::nf-core=1.13.3
+  - bioconda::nextflow=20.10.0
+# - hcc::aspera-cli=3.9.1 # for downloading nr.gz from ncbi
