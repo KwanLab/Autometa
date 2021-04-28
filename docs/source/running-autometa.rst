@@ -43,30 +43,31 @@ Data Inputs
 
 The first and the most important thing that you need to alter is the paths to various input and output files.
 
-*params.metagenome* : Change this to point to your metagenome assembly. Eg. ``"/media/bigdrive1/sidd/test_data/78mbp_metagenome.fna"``
+*params.metagenome* : Change this to point to your metagenome assembly. Eg. ``"$HOME/tutorial/test_data/78mbp_metagenome.fna"``
 
-*params.interim* : Change this to point to where you want the interim results to be stored. Eg. ``"/media/bigdrive1/sidd//test_data/interim/"``. Nextflow_ will create a new directory if absent.
+*params.interim* : Change this to point to where you want the interim results to be stored. Eg. ``"$HOME/tutorial/interim/"``. Nextflow_ will create a new directory if absent.
 
-*params.processed* : Change this to point to where you want the final results to be stored. Eg. ``"/media/bigdrive1/sidd/test_data/processed/"``. Nextflow_ will create a new directory if absent.
+*params.processed* : Change this to point to where you want the final results to be stored. Eg. ``"$HOME/tutorial/processed/"``. Nextflow_ will create a new directory if absent.
 
 .. code-block:: bash
 
     // Find this section of code in parameters.config
-    params.metagenome = "<path/to/assembly.fna>" 
-    params.interim = "<path/to/interim_results/>" 
-    params.processed = "<path/to/processed_results/>"
+    params.metagenome = "$HOME/tutorial/test_data/78mbp_metagenome.fna" 
+    params.interim = "$HOME/tutorial/interim/" 
+    params.processed = "$HOME/tutorial/processed/"
 
 You can also input multiple asseblies at once with the help of wildcards. In the below example all the files with extension "fasta" would be taken as input by nextflow_.
 
 .. code-block:: bash
 
     // Find this section of code in parameters.config
-    params.metagenome = "<path/to/assemblies/*.fasta>" 
-    params.interim = "<path/to/interim/>" 
-    params.processed = "<path/to/processed/>"
+    params.metagenome = "$HOME/tutorial/test_data/*.fna"
+    params.interim = "$HOME/tutorial/interim/" 
+    params.processed = "$HOME/tutorial/processed/"
 
 .. note::
-    Wildcard characters will only be interpreted when "double quotes" are used
+    1. Wildcard characters will only be interpreted when "double quotes" are used
+    2. If the interim and processed directories doens't exist, nextflow would generate them 
 
 Database directory
 ^^^^^^^^^^^^^^^^^^
@@ -111,29 +112,29 @@ You can also adjust other pipeline parameters that ultimately control how the bi
 
 *params.kmer_size* : kmer size to use
 
-*params.norm_method* : Which normalization method to use. See :ref: kmer advanced usage section for details
+*params.norm_method* : Which normalization method to use. See :ref:`advanced-usage-kmers` section for deails
 
-*params.pca_dimensions* : Number of dimensions of which to reduce the initial k-mer frequencies matrix (default is 50)
+*params.pca_dimensions* : Number of dimensions of which to reduce the initial k-mer frequencies matrix (default is 50). See :ref:`advanced-usage-kmers` section for deails
 
-*params.embedding_method* :  Choices are "sksne", "bhsne", "umap" (default is bhsne) See :ref: kmer advanced section for details
+*params.embedding_method* :  Choices are "sksne", "bhsne", "umap" (default is bhsne) See :ref:`advanced-usage-kmers` section for deails
 
-*params.embedding_dimensions* : Final dimensions of the kmer frequencies matrix (default is 2). See :ref: kmer advanced usage section for details
+*params.embedding_dimensions* : Final dimensions of the kmer frequencies matrix (default is 2). See :ref:`advanced-usage-kmers` section for deails
 
-*params.kingdom* : Bin contigs belonging to this kingdom. Choices are "bacteria" and "archaea" (default is bacteria)
+*params.kingdom* : Bin contigs belonging to this kingdom. Choices are "bacteria" and "archaea" (default is bacteria). 
 
-*params.clustering_method* : Cluster contigs using which clustering method. Choices are "dbscan" and "hdbscan" (default is "dbscan")
+*params.clustering_method* : Cluster contigs using which clustering method. Choices are "dbscan" and "hdbscan" (default is "dbscan"). See :ref:`advanced-usage-binning` section for deails
 
-*params.binning_starting_rank* : Which taxonomic rank to start the binning from. Choices are "superkingdom", "phylum", "class", "order", "family", "genus", "species" (default is "superkingdom")
+*params.binning_starting_rank* : Which taxonomic rank to start the binning from. Choices are "superkingdom", "phylum", "class", "order", "family", "genus", "species" (default is "superkingdom"). See :ref:`advanced-usage-binning` section for deails
 
-*params.classification_method* : Which clustering method to use for unclustered recruitment step. Choices are "decision_tree" and "random_forest" (default is "decision_tree")
+*params.classification_method* : Which clustering method to use for unclustered recruitment step. Choices are "decision_tree" and "random_forest" (default is "decision_tree"). See :ref:`advanced-usage-unclustered-recruitment` section for deails
 
-*params.completeness* :  Minimum completeness needed to keep a cluster (default is atleast 20% complete)
+*params.completeness* :  Minimum completeness needed to keep a cluster (default is atleast 20% complete). See :ref:`advanced-usage-binning` section for deails
 
-*params.purity* : Minimum purity needed to keep a cluster (default is atleast 95% pure)
+*params.purity* : Minimum purity needed to keep a cluster (default is atleast 95% pure). See :ref:`advanced-usage-binning` section for deails
 
-*params.cov_stddev_limit* : Which clusters to keep depending on the covergae std.dev (default is 25%)
+*params.cov_stddev_limit* : Which clusters to keep depending on the covergae std.dev (default is 25%). See :ref:`advanced-usage-binning` section for deails
 
-*params.gc_stddev_limit* : Which clusters to keep depending on the GC% std.dev (default is 5%)
+*params.gc_stddev_limit* : Which clusters to keep depending on the GC% std.dev (default is 5%). See :ref:`advanced-usage-binning` section for deails
 
 Running the pipeline
 --------------------
@@ -143,15 +144,13 @@ You can run autometa using nextflow_ in multiple ways. You can install nexflow u
 .. note::
     1. Run the following commands directly in ``bash``. Nexflow will automatically submit jobs to SLURM or any other sheduling system.
     2. You can use `tmux <https://github.com/tmux/tmux/wiki>`_ or `screen <https://www.gnu.org/software/screen/>`_ in case you want to exit the window or disconnect from the server.
-    3. The pipeline must be launched from a node where the ``condor_submit`` command is available, that is, in a common usage scenario, the cluster head node.
-    4. The HTCondor executor for Nextflow_ does not support at this time the HTCondor ability to transfer input/output data to the corresponding job computing node. Therefore the data needs to be made accessible to the computing nodes using a shared file system directory from where the Nextflow_ workflow has to be executed (or specified via the -w option).
 
 With docker (Simplest)
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure that you have Docker_ and nextflow_ installed. You can run autometa pipeline using ``nextflow run KwanLab/Autometa -c parameters.config``
 
-In case you want to tweak some of the scripts and modify the pipeline you can clone the repository and then run autometa using ``main.nf``. This is completely optional and would be useful only for development purposes.
+In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone the repository and then run autometa using ``main.nf``. 
 
 .. code-block:: bash
 
@@ -186,14 +185,14 @@ Editing ``parameters.config``:
 
 Now install autometa using one of the three install methods specified in :ref:`Install` (Directly using conda or from source). After the install you can run autometa using ``nextflow run KwanLab/Autometa -c parameters.config``. Nextflow_ would use the entrypoints created during the install to run autometa. Make sure to actiavte your conda environment before running incase you have installed using conda.
 
-Other useful options
-^^^^^^^^^^^^^^^^^^^^
+Useful options
+^^^^^^^^^^^^^^
 
-``-c`` : In case you have configured nextflow_ with your executor (see below) and have made other modifications on how to run nextflow_ using your ``nexflow.config`` file, you can specify that file using the ``-c`` flag
+``-c`` : In case you have configured nextflow_ with your executor (see :ref:`Configure nextflow with your 'executor'`) and have made other modifications on how to run nextflow_ using your ``nexflow.config`` file, you can specify that file using the ``-c`` flag
 
 ``-w`` : By default nextflow_ will create a ``work`` directory in the current directory to store all temporary files and nextflow related files. You can change this work directory using the ``-w`` flag
 
-``-profile`` : You can specify the profile to use using ``-profile`` flag. For details on profiles see :ref: Configuring Profiles section
+``-profile`` : You can specify the profile to use using ``-profile`` flag. For details on profiles see :ref:`Configure nextflow with your 'executor'`
 
 To see all of the command line options available you can refer to `nexflow CLI documentation <https://www.nextflow.io/docs/latest/cli.html#command-line-interface-cli>`_
 
@@ -261,6 +260,33 @@ This allows you to run the pipeline using the HTCondor resource manager. To do t
     }
 
 More parameters that are available for the htcondor executor are listed in the nextflow executor `docs for HTCondor <https://www.nextflow.io/docs/latest/executor.html#htcondor>`_.
+
+.. note::
+    1. The pipeline must be launched from a node where the ``condor_submit`` command is available, that is, in a common usage scenario, the cluster head node.
+    2. The HTCondor executor for Nextflow_ does not support at this time the HTCondor ability to transfer input/output data to the corresponding job computing node. Therefore the data needs to be made accessible to the computing nodes using a shared file system directory from where the Nextflow_ workflow has to be executed (or specified via the -w option).
+
+Running modules
+===============
+
+Many of the Autometa modules may be run standalone.
+
+Simply pass in the ``-m`` flag when calling a script to signify to python you are
+running an Autometa *module*.
+
+I.e. ``python -m autometa.common.kmers -h``
+
+Running functions
+=================
+
+Many of the Autometa functions may be run standalone as well. It is same as importing any other python
+function.
+
+.. code-block:: python
+
+    from autometa.common.external import samtools
+
+    samtools.sort(sam=<path/to/sam/file>, out=<path/to/output/file>, nproc=4)
+
 
 .. _nextflow: https://www.nextflow.io/
 .. _Docker: https://www.docker.com/

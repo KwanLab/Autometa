@@ -9,8 +9,13 @@ An interactive interface for exploration and refinement of metagenomes Automappa
 
 For details, see the `Automappa page <https://github.com/WiscEvan/Automappa>`__
 
+.. note:: 
+    The performance of of Automappa may slow down when trying to visualize highly complex communities. 
+
 Visualize bins
 ==============
+
+To run the following commands you'll need to install `R <https://www.r-project.org/>`_, `Rstudio <https://www.rstudio.com/products/rstudio/download/>`_ and `ggplot2 <https://ggplot2.tidyverse.org/>`_ package in R.
 
 You can now run the following R scripts (preferably in RStudio) to examine your results.
 

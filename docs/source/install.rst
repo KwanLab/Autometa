@@ -98,6 +98,9 @@ You can now run different unit tests using the following commands:
     # Run unit tests marked with WIP
     make unit_test_wip
 
+.. note::
+    As a shortcut you can also create the test environment and run **all** the unit tests using ``make unit_test`` command.
+
 For more information about the above commands see the :ref:`Contributing Guidelines` page. Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa. 
 
 .. _conda: https://docs.conda.io/en/latest/
