@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl = 2
 
-include { LENGTH_FILTER; KMERS; KMER_COVERAGE; READ_COVERAGE; ORFS; MARKERS } from './common-tasks.nf'
-include { TAXON_ASSIGNMENT } from './taxonomy-tasks.nf'
-include { BINNING; UNCLUSTERED_RECRUITMENT; BINNING_SUMMARY } from './binning-tasks.nf'
+include { LENGTH_FILTER; KMERS; KMER_COVERAGE; READ_COVERAGE; ORFS; MARKERS } from './utilities/common_autometa_tasks.nf'
+include { TAXON_ASSIGNMENT } from './taxonomy/taxonomy_workflow.nf'
+include { BINNING; UNCLUSTERED_RECRUITMENT; BINNING_SUMMARY } from './binning/process/binning.nf'
 
 workflow AUTOMETA {
   take:

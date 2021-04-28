@@ -145,7 +145,21 @@ process get_software_versions {
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
+/*
+process output_documentation {
+    publishDir "${params.outdir}/pipeline_info", mode: "${params.publish_dir_mode}"
 
+    input:
+    path output_docs 
+
+    output:
+    path 'results_description.html'
+
+    script:
+    """
+    markdown_to_html.py $output_docs -o results_description.html
+    """
+ */
 
 //log.info summary
 
@@ -153,7 +167,7 @@ process get_software_versions {
  * Retrieve the main 'AUTOMETA' worflow
  */
 include { AUTOMETA } from './modules/core/autometa.nf' addParams(single_db_dir: params.single_db_dir)
-include { DOWNLOAD_DATABASES } from './modules/core/download-databases.nf' addParams(single_db_dir: params.single_db_dir)
+// include { DOWNLOAD_DATABASES } from './modules/core/download-databases.nf' addParams(single_db_dir: params.single_db_dir)
 
 workflow {
   Channel

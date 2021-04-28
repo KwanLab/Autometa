@@ -2,23 +2,6 @@
 
 nextflow.enable.dsl=2
 
-// Data inputs
-params.interim_dir = "</path/to/store/user/interimediate/results>"
-params.outdir = "</path/to/store/user/final/results>"
-// Binning parameters
-params.kingdom = "bacteria"
-params.clustering_method = "dbscan" // choices: "dbscan", "hdbscan"
-params.binning_starting_rank = "superkingdom" // choices: "superkingdom", "phylum", "class", "order", "family", "genus", "species"
-params.completeness = 20.0
-params.purity = 95.0
-params.cov_stddev_limit = 25.0
-params.gc_stddev_limit = 5.0
-// Unclustered recruitment parameters
-params.classification_method = "decision_tree" // choices: "decision_tree", "random_forest"
-params.classification_kmer_pca_dimensions = 50
-// Summary parameters
-params.ncbi_database = "Path to user ncbi databases directory"
-
 process BINNING {
   tag "Performing Autometa binning"
   container = 'chaseauto:latest'
