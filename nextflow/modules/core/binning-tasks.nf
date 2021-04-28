@@ -88,7 +88,7 @@ process UNCLUSTERED_RECRUITMENT {
 process BINNING_SUMMARY {
   tag "Binning summary for ${binning_main.simpleName}"
   container = 'chaseauto:latest'
-  containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
+  containerOptions = "-v ${params.single_db_dir}:/ncbi:ro"
 
   input:
     path binning_main

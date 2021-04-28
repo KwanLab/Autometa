@@ -9,7 +9,7 @@ params.cpus = 2
 
 process DIAMOND {
   tag "diamond blastp on ${orfs.simpleName}"
-  containerOptions = "-v ${params.ncbi_database}:/ncbi:ro"
+  containerOptions = "-v ${params.single_db_dir}:/ncbi:ro"
   cpus params.cpus
   publishDir params.interim_dir, pattern: "${orfs.simpleName}.blastp.tsv"
 
@@ -27,13 +27,15 @@ process DIAMOND {
     --max-target-seqs 200 \
     --threads ${task.cpus} \
     --outfmt 6 \
-    --out ${orfs.simpleName}.blastp.tsv
+    --out ${orfs.simpleName}.blastp.tsv \
+    -b 10
+
   """
 }
 
 process LCA {
   tag "Assigning LCA to ${blast.simpleName}"
-  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
+  containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${blast.simpleName}.lca.tsv"
 
   input:
@@ -49,7 +51,7 @@ process LCA {
 
 process MAJORITY_VOTE {
   tag "Performing taxon majority vote on ${lca.simpleName}"
-  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
+  containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${lca.simpleName}.votes.tsv"
 
   input:
@@ -65,7 +67,7 @@ process MAJORITY_VOTE {
 
 process SPLIT_KINGDOMS {
   tag "Splitting votes into kingdoms for ${assembly.simpleName}"
-  containerOptions = "-v ${params.ncbi_database}:/ncbi:rw"
+  containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${assembly.simpleName}.taxonomy.tsv"
   publishDir params.interim_dir, pattern: '*.{bacteria,archaea}.fna'
 
