@@ -42,10 +42,9 @@
             "description": "",
             "default": "",
             "properties": {
-                "ncbi_database": {
+                "single_db_dir": {
                     "type": "string",
-                    "default": "null",
-                    "description": "Path to Autometa databases"
+                    "default": "/home/chase/temp/Autometa/nextflow/large_db"
                 },
                 "length_cutoff": {
                     "type": "integer",
@@ -111,6 +110,10 @@
                     "type": "string",
                     "default": "bacteria",
                     "description": "TODO:  fill description"
+                },
+                "gc_stddev_limit": {
+                    "type": "integer",
+                    "default": 25
                 }
             }
         },
@@ -187,5 +190,11 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "cov_stddev_limit": {
+            "type": "integer",
+            "default": 5
+        }
+    }
 }
