@@ -1,5 +1,18 @@
 # ![autometa](docs/images/autometa_logo.png)
 
+Download databases:
+```{bash}
+
+touch empty.config
+
+nextflow run /home/chase/temp/Autometa/nextflow/modules/core/download-databases.nf \
+    -C empty.config \
+    --single_db_dir = "/home/chase/temp/Autometa/nextflow/large_db"
+
+rm empty.config
+
+```
+
 **sdds**.
 
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A520.10-brightgreen.svg)](https://www.nextflow.io/)
