@@ -159,7 +159,7 @@ workflow {
   Channel
     .fromPath(params.input, checkIfExists: true, type: 'file')
     .set{unfiltered_metagenome_ch}
-  DOWNLOAD_DATABASES()
+  //DOWNLOAD_DATABASES()
   AUTOMETA(unfiltered_metagenome_ch)
 }
 
