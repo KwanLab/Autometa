@@ -161,5 +161,4 @@ tests/data/*
 pipeline_info
 work/
 large_db/
-
-
+nf-params.json
