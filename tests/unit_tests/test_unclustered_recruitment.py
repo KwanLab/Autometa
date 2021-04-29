@@ -1,6 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+COPYRIGHT
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Script to test autometa/binning/unclustered_recruitment.py
+"""
+
 import argparse
-from multiprocessing import Value
-from random import seed
 from autometa.binning.unclustered_recruitment import Labels
 import pandas as pd
 import pytest
@@ -171,15 +195,17 @@ def test_add_predictions(assignments):
 def test_main(
     monkeypatch, kmers, coverage, taxonomy, assignments_fpath, markers_fpath, tmp_path
 ):
-    out = tmp_path / "unclustered_recruitment.tsv"
+    output_binning = tmp_path / "unclustered_recruitment.tsv"
+    output_main = tmp_path / "unclustered_recruitment.main.tsv"
 
     class MockArgs:
         def __init__(self):
             self.kmers: str = kmers
             self.coverage: str = coverage
-            self.assignments: str = assignments_fpath
+            self.binning: str = assignments_fpath
             self.markers: str = markers_fpath
-            self.out: str = out
+            self.output_binning: str = output_binning
+            self.output_main: str = output_main
             self.additional_features = []
             self.taxonomy: str = taxonomy
             self.kmer_dimensions: int = 50

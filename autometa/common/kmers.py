@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -363,13 +363,14 @@ def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
         K-mers Dataframe where index_col='contig' and column values are k-mer
         frequencies.
 
-    # TODO: Place these references in readthedocs documentation and remove from def.
-    References:
-    - Aitchison, J. The Statistical Analysis of Compositional Data (1986)
-    - Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
-    - https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce
-    - https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca
-    - http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf
+    References
+    ----------
+
+        * Aitchison, J. The Statistical Analysis of Compositional Data (1986)
+        * Pawlowsky-Glahn, Egozcue, Tolosana-Delgado. Lecture Notes on Compositional Data Analysis (2011)
+        * Why ILR is preferred `stats stackexchange discussion <https://stats.stackexchange.com/questions/242445/why-is-isometric-log-ratio-transformation-preferred-over-the-additivealr-or-ce>`_
+        * Use of CLR transformation prior to PCA `stats stackexchange discussion <https://stats.stackexchange.com/questions/305965/can-i-use-the-clr-centered-log-ratio-transformation-to-prepare-data-for-pca>`_
+        * Lecture notes on Compositional Data Analysis (CoDa) `PDF <http://www.sediment.uni-goettingen.de/staff/tolosana/extra/CoDa.pdf>`_
 
     Returns
     -------
@@ -451,7 +452,6 @@ def embed(
     out: str = None,
     force: bool = False,
     embed_dimensions: int = 2,
-    do_pca: bool = True,
     pca_dimensions: int = 50,
     method: str = "bhsne",
     perplexity: float = 30.0,
@@ -476,12 +476,10 @@ def embed(
     force: bool, optional
         Whether to overwrite existing `out` file.
     embed_dimensions : int, optional
-        embedn_dimensions` to embed k-mer frequencies (the default is 2).
-    do_pca : bool, optional
-        Perform PCA decomposition prior to embedding (the default is True).
+        embed_dimensions` to embed k-mer frequencies (the default is 2).
     pca_dimensions : int, optional
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
-        If None, will estimate based on
+        If zero, will skip this step.
     method : str, optional
         embedding method to use (the default is 'bhsne').
         choices include sksne, bhsne and umap.
@@ -545,7 +543,7 @@ def embed(
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
 
-    if n_components > pca_dimensions and do_pca:
+    if n_components > pca_dimensions and pca_dimensions != 0:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
         )
@@ -588,18 +586,16 @@ def embed(
     except ValueError as err:
         if method == "sksne":
             logger.warning(
-                f"--embed-dimensions ({embed_dimensions}) is too high for sksne. Reducing to 3."
+                f"embed_dimensions ({embed_dimensions}) is too high for sksne. Reducing to 3."
             )
             embed_dimensions = 3
             X = dispatcher[method](**method_args)
         else:
             raise err
-    if embed_dimensions == 3:
-        embedded_df = pd.DataFrame(X, columns=["x", "y", "z"], index=df.index)
-    elif embed_dimensions == 2:
-        embedded_df = pd.DataFrame(X, columns=["x", "y"], index=df.index)
-    else:
-        embedded_df = pd.DataFrame(X, index=df.index)
+    embedded_df = pd.DataFrame(X, index=df.index)
+    # embedded kmers will follow columns of x_1 to x_{embed_dimensions}
+    # Make 1-indexed instead of 0-index
+    embedded_df.columns = embedded_df.columns.map(lambda x: f"x_{int(x)+1}")
     if out:
         embedded_df.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"embedded.shape {embedded_df.shape} : Written {out}")
@@ -622,48 +618,58 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--fasta", help="Metagenomic assembly fasta file", required=True
+        "--fasta",
+        help="Metagenomic assembly fasta file",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
         "--kmers",
         help=f"K-mers frequency tab-delimited table {skip_desc}",
+        metavar="filepath",
         required=True,
     )
-    parser.add_argument("--size", help="k-mer size in bp", default=5, type=int)
     parser.add_argument(
-        "--normalized", help=f"</path/to/output/kmers.normalized.tsv> {skip_desc}"
+        "--size", help="k-mer size in bp", default=5, metavar="int", type=int
+    )
+    parser.add_argument(
+        "--norm-output",
+        help=f"Path to normalized kmers table {skip_desc}",
+        metavar="filepath",
     )
     parser.add_argument(
         "--norm-method",
-        help="embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.",
+        help="""Normalization method to transform kmer counts prior to PCA and embedding.
+        ilr: isometric log-ratio transform (scikit-bio implementation).
+        clr: center log-ratio transform (scikit-bio implementation).
+        am_clr: center log-ratio transform (Autometa implementation).
+        """,
         choices=["ilr", "clr", "am_clr"],
         default="am_clr",
     )
     parser.add_argument(
-        "--do-pca",
-        help="Whether to perform PCA prior to dimension reduction",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
         "--pca-dimensions",
-        help="<num components to reduce to PCA feature space",
+        help="Number of dimensions to reduce to PCA feature space after normalization and prior to embedding (NOTE: Setting to zero will skip PCA step)",
         type=int,
+        metavar="int",
         default=50,
     )
     parser.add_argument(
-        "--embedded", help=f"</path/to/output/kmers.embedded.tsv> {skip_desc}"
+        "--embedding-output",
+        help=f"Path to write embedded kmers table {skip_desc}",
+        metavar="filepath",
     )
     parser.add_argument(
-        "--embed-method",
+        "--embedding-method",
         help="embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.",
         choices=["sksne", "bhsne", "umap"],
         default="bhsne",
     )
     parser.add_argument(
-        "--embed-dimensions",
-        help="Number of dimensions to reduce k-mer frequencies to",
+        "--embedding-dimensions",
+        help="Number of dimensions of which to reduce k-mer frequencies",
         type=int,
+        metavar="int",
         default=2,
     )
     parser.add_argument(
@@ -676,12 +682,14 @@ def main():
         "--cpus",
         help=f"num. processors to use.",
         default=cpus,
+        metavar="int",
         type=int,
     )
     parser.add_argument(
         "--seed",
         help=f"Seed to set random state for dimension reduction determinism.",
         default=42,
+        metavar="int",
         type=int,
     )
     args = parser.parse_args()
@@ -697,19 +705,18 @@ def main():
             cpus=args.cpus,
         )
 
-    if args.normalized:
+    if args.norm_output:
         df = normalize(
-            df=df, method=args.norm_method, out=args.normalized, force=args.force
+            df=df, method=args.norm_method, out=args.norm_output, force=args.force
         )
 
-    if args.embedded:
+    if args.embedding_output:
         embedded_df = embed(
             kmers=df,
-            out=args.embedded,
+            out=args.embedding_output,
             force=args.force,
-            method=args.embed_method,
-            embed_dimensions=args.embed_dimensions,
-            do_pca=args.do_pca,
+            method=args.embedding_method,
+            embed_dimensions=args.embedding_dimensions,
             pca_dimensions=args.pca_dimensions,
             seed=args.seed,
         )

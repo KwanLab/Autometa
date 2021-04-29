@@ -1,3 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+COPYRIGHT
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Script to test autometa/binning/recursive_dbscan.py
+"""
+
 import pytest
 import argparse
 
@@ -27,16 +53,6 @@ def fixture_test_contigs(variables, markers, n=5, seed=42):
 
 @pytest.fixture(name="kmers", scope="module")
 def fixture_kmers(variables, test_contigs, binning_testdir):
-    binning_test_data = variables["binning"]
-    df = pd.read_json(binning_test_data["kmers_normalized"])
-    fpath = binning_testdir / "kmers.norm.tsv"
-    df.set_index("contig", inplace=True)
-    df.loc[test_contigs].to_csv(fpath, sep="\t", index=True, header=True)
-    return str(fpath)
-
-
-@pytest.fixture(name="embedded_kmers", scope="module")
-def fixture_embedded_kmers(variables, test_contigs, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["kmers_embedded"])
     fpath = binning_testdir / "kmers.embed.tsv"
@@ -89,22 +105,22 @@ def fixture_markers(markers_fpath):
     return load_markers(markers_fpath)
 
 
-@pytest.fixture(name="master", scope="module")
-def fixture_master(embedded_kmers, coverage, gc_content, taxonomy):
-    master = pd.read_csv(embedded_kmers, sep="\t", index_col="contig")
+@pytest.fixture(name="main_df", scope="module")
+def fixture_main_df(kmers, coverage, gc_content, taxonomy):
+    main_df = pd.read_csv(kmers, sep="\t", index_col="contig")
     for fpath in [coverage, gc_content, taxonomy]:
         df = pd.read_csv(fpath, sep="\t", index_col="contig")
-        master = pd.merge(master, df, how="left", right_index=True, left_index=True)
-    master = master.convert_dtypes()
-    return master
+        main_df = pd.merge(main_df, df, how="left", right_index=True, left_index=True)
+    main_df = main_df.convert_dtypes()
+    return main_df
 
 
 @pytest.mark.parametrize("usetaxonomy", [True, False])
 @pytest.mark.parametrize("method", ["dbscan", "hdbscan"])
-def test_binning(master, markers, usetaxonomy, method):
-    num_contigs = master.shape[0]
+def test_binning(main_df, markers, usetaxonomy, method):
+    num_contigs = main_df.shape[0]
     df = recursive_dbscan.binning(
-        master=master,
+        main=main_df,
         markers=markers,
         taxonomy=usetaxonomy,
         starting_rank="superkingdom",
@@ -127,10 +143,10 @@ def test_binning(master, markers, usetaxonomy, method):
     assert df.shape[0] == num_contigs
 
 
-def test_binning_invalid_clustering_method(master, markers):
+def test_binning_invalid_clustering_method(main_df, markers):
     with pytest.raises(ValueError):
         recursive_dbscan.binning(
-            master=master,
+            main=main_df,
             markers=markers,
             taxonomy=False,
             starting_rank="superkingdom",
@@ -143,7 +159,7 @@ def test_binning_invalid_clustering_method(master, markers):
         )
 
 
-def test_binning_empty_markers_table(master):
+def test_binning_empty_markers_table(main_df):
     invalid_dict = {
         "contig": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
         "markers": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
@@ -151,7 +167,7 @@ def test_binning_empty_markers_table(master):
     df = pd.DataFrame(invalid_dict)
     with pytest.raises(TableFormatError):
         recursive_dbscan.binning(
-            master=master,
+            main=main_df,
             markers=df,
             domain="bacteria",
             method="hdbscan",
@@ -161,16 +177,10 @@ def test_binning_empty_markers_table(master):
 
 @pytest.mark.entrypoint
 def test_recursive_dbscan_main(
-    monkeypatch,
-    kmers,
-    coverage,
-    gc_content,
-    markers_fpath,
-    embedded_kmers,
-    taxonomy,
-    tmp_path,
+    monkeypatch, kmers, coverage, gc_content, markers_fpath, taxonomy, tmp_path,
 ):
-    out = tmp_path / "binning.tsv"
+    output_binning = tmp_path / "binning.tsv"
+    output_main = tmp_path / "binning_main.tsv"
 
     class MockArgs:
         def __init__(self):
@@ -179,9 +189,8 @@ def test_recursive_dbscan_main(
             self.coverages = coverage
             self.gc_content = gc_content
             self.markers = markers_fpath
-            self.output = out
-            self.embedded_kmers = embedded_kmers
-            self.embedding_method = "bhsne"
+            self.output_binning = output_binning
+            self.output_main = output_main
             self.clustering_method = "dbscan"
             self.completeness = 20.0
             self.purity = 95.0
@@ -204,7 +213,7 @@ def test_recursive_dbscan_main(
 
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
     recursive_dbscan.main()
-    assert out.exists()
-    df = pd.read_csv(out, sep="\t")
+    assert output_binning.exists()
+    df = pd.read_csv(output_binning, sep="\t")
     assert "contig" in df.columns
     assert "cluster" in df.columns

@@ -1,0 +1,22 @@
+# Ignore some root directory files unnecessarily expanding image (and context) size
+.git
+docs
+autometa.mf
+MANIFEST.in
+LICENSE.txt
+meta.yaml
+# Ignore tests related files
+pytest.ini
+tests
+make_test_data.py
+# Ignore nextflow related files
+autometa.nf
+nextflow
+nextflow.config
+pipeline_info
+# Ignore any files/directories built from source
+dist
+Autometa.egg-info
+# Ignore databases
+autometa/databases
+!autometa/databases/markers

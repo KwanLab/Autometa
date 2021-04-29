@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-COPYRIGHT Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth
+COPYRIGHT Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth
 Uppal, Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -423,7 +423,7 @@ def filter_contaminating_predictions(
         classifier predictions, index=contig, col='cluster'
 
     markers : pd.DataFrame
-        markers retrieved from autometa.common.markers.load(fpath, format='wide')
+        markers retrieved from :meth:`autometa.common.markers.load(fpath, format='wide')`
 
     binning : pd.DataFrame
         Binning dataframe with which to compare classifications.
@@ -492,19 +492,31 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Recruit unclustered contigs given metagenome annotations and Autometa binning results."
-        " Note: All tables must contain a 'contig' column to be used as the unique table index)",
+        " Note: All tables must contain a 'contig' column to be used as the unique table index",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("kmers", help="Path to normalized kmer frequencies table.")
-    parser.add_argument("coverage", help="Path to coverage table.")
     parser.add_argument(
-        "assignments",
-        help="Path to contig to genome bin assignments."
-        "(May be autometa binning output [col='cluster']"
-        "or ground truth bin assignments [col='reference_genome'])",
+        "--kmers", help="Path to normalized kmer frequencies table.", required=True
     )
-    parser.add_argument("markers", help="Path to domain-specific markers table.")
-    parser.add_argument("out", help="Path to output unclustered recruitment table.")
+    parser.add_argument("--coverage", help="Path to coverage table.", required=True)
+    parser.add_argument(
+        "--binning",
+        help="Path to autometa binning output [will look for col='cluster']",
+        required=True,
+    )
+    parser.add_argument(
+        "--markers", help="Path to domain-specific markers table.", required=True
+    )
+    parser.add_argument(
+        "--output-binning",
+        help="Path to output unclustered recruitment table.",
+        required=True,
+    )
+    parser.add_argument(
+        "--output-main",
+        help="Path to write Autometa main table used during/after unclustered recruitment.",
+        required=False,
+    )
     parser.add_argument("--taxonomy", help="Path to taxonomy table.")
     parser.add_argument(
         "--taxa-dimensions",
@@ -558,7 +570,7 @@ def main():
         taxa_dimensions=args.taxa_dimensions,
     )
     bin_df = pd.read_csv(
-        args.assignments, sep="\t", index_col="contig", usecols=["contig", "cluster"]
+        args.binning, sep="\t", index_col="contig", usecols=["contig", "cluster"]
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     if not prev_num_unclustered:
@@ -586,22 +598,38 @@ def main():
             classifier=args.classifier,
             seed=args.seed,
         )
+        # Filter out any predictions that would reduce cluster purity
         predictions_df = filter_contaminating_predictions(
             predictions=predictions_df, markers=markers_df, binning=bin_df
         )
-
+        # Stop if no contigs are recruited to clusters
         if predictions_df.empty:
             break
 
         bin_df = add_predictions(binning=bin_df, predictions=predictions_df)
 
+    # Unclustered recruitment finished
+    # Determine the resulting number of unclustered contigs.
     now_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
 
     n_recruited = prev_num_unclustered - now_num_unclustered
     logger.info(
         f"unclustered {prev_num_unclustered} -> {now_num_unclustered} (recruited {n_recruited} contigs) in {n_runs} runs"
     )
-    bin_df.to_csv(args.out, sep="\t", index=True, header=True)
+    # Re-read in the binning dataframe to merge with the newly recruited contigs
+    prev_bin_df = pd.read_csv(
+        args.binning, sep="\t", index_col="contig", usecols=["contig", "cluster"]
+    )
+    bin_df.rename(columns={"cluster": "recruited_cluster"}, inplace=True)
+    main_df = pd.merge(
+        prev_bin_df, bin_df[["recruited_cluster"]], left_index=True, right_index=True
+    )
+    # Write unclustered recruitment results into main bin df
+    # index = 'contig', cols = [..., 'cluster', 'recruited_cluster', ...]
+    main_df.to_csv(args.output_binning, sep="\t", index=True, header=True)
+    if args.output_main:
+        # Outputs features matrix used as input to recruitment algorithm
+        features.to_csv(args.output_main, sep="\t", index=True, header=True)
 
 
 if __name__ == "__main__":

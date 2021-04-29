@@ -1,3 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+COPYRIGHT
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
+
+This file is part of Autometa.
+
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Script to test autometa/taxonomy/vote.py
+"""
+
 import argparse
 import pytest
 
@@ -79,7 +105,7 @@ def fixture_votes_fpath(votes, tmp_path_factory):
 
 def test_add_ranks(ncbi, votes, tmp_path):
     out = tmp_path / "taxonomy.ranks_added.tsv"
-    df = vote.add_ranks(df=votes, out=out, ncbi=ncbi)
+    df = vote.add_ranks(df=votes, ncbi=ncbi)
     assert df.shape == (2, 8)
     assert df.index.name == "contig"
     canonical_ranks = {rank for rank in ncbi.CANONICAL_RANKS if rank != "root"}
@@ -220,11 +246,10 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
 @pytest.mark.slow
 @pytest.mark.skip
 @pytest.mark.entrypoint
-def test_vote_main(monkeypatch, prot_orfs, blastp, ncbi_dir, tmp_path):
+def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
     outdir = tmp_path / "outdir"
     outdir.mkdir()
     taxonomy = outdir / "taxonomy.tsv"
-    nucls = outdir / "orfs.fna"
     assembly = outdir / "assembly.fna"
     assembly.write_text("records")
     lca_fpath = outdir / "lca.tsv"
@@ -232,23 +257,11 @@ def test_vote_main(monkeypatch, prot_orfs, blastp, ncbi_dir, tmp_path):
 
     class MockArgs:
         def __init__(self):
-            self.taxonomy = taxonomy
-            self.cache = outdir
+            self.votes = taxonomy
+            self.output = outdir
             self.assembly = assembly
-            self.nucl_orfs = nucls
-            self.prot_orfs = prot_orfs
             self.split_rank_and_write = "superkingdom"
-            self.method = "majority_vote"
-            self.kingdom = "bacteria"
             self.ncbi = ncbi_dir
-            self.usepickle = True
-            self.blast = blastp
-            self.hits = None
-            self.lca = lca_fpath
-            self.cpus = 0
-            self.parallel = False
-            self.force = False
-            self.verbose = True
 
     class MockParser:
         def add_argument(self, *args, **kwargs):

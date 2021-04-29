@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 COPYRIGHT
-Copyright 2020 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
@@ -32,10 +32,13 @@ import multiprocessing as mp
 import pandas as pd
 
 from autometa.common.external import hmmer
+from autometa.config.utilities import DEFAULT_CONFIG
 
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MARKERS_DIR = os.path.join(BASE_DIR, "databases", "markers")
+MARKERS_DIR = DEFAULT_CONFIG.get("databases", "markers")
+# For cases where autometa has not been configured, attempt to find the markers via source
+MARKERS_DIR = (
+    MARKERS_DIR if not "None" in MARKERS_DIR else MARKERS_DIR.replace("None", ".")
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +78,7 @@ def load(fpath, format="wide"):
     df = pd.read_csv(fpath, sep="\t", index_col="contig")
     grouped_df = df.groupby("contig")["sacc"]
     if format == "wide":
-        return grouped_df.value_counts().unstack()
+        return grouped_df.value_counts().unstack().convert_dtypes()
     elif format == "long":
         return grouped_df.value_counts().reset_index(level=1, name="count")
     elif format == "list":
@@ -146,14 +149,21 @@ def get(
     ValueError
         Why the exception is raised.
     """
-    orfs = os.path.realpath(orfs)
     kingdom = kingdom.lower()
     hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
     cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
     hmmscan_fname = ".".join([kingdom, "hmmscan.tsv"])
-    scans = os.path.join(os.path.dirname(orfs), hmmscan_fname) if not scans else scans
+    scans = (
+        os.path.join(os.path.dirname(os.path.abspath((orfs))), hmmscan_fname)
+        if not scans
+        else scans
+    )
     markers_fname = ".".join([kingdom, "markers.tsv"])
-    out = os.path.join(os.path.dirname(orfs), markers_fname) if not out else out
+    out = (
+        os.path.join(os.path.dirname(os.path.abspath((orfs))), markers_fname)
+        if not out
+        else out
+    )
     kingdom = kingdom.lower()
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
