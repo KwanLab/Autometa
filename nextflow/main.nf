@@ -1,9 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-  params.config_profile_description = false 
-  params.config_profile_contact = false 
-  params.config_profile_url = false 
+ 
 /*
 ========================================================================================
                          Autometa   
