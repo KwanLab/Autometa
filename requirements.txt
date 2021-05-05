@@ -9,7 +9,9 @@ hdbscan
 hmmer
 libiconv
 make
+markdown>=3.3.4
 nextflow>=20.10
+nf-core>=1.13.3
 numpy
 pandas>=1.1
 parallel
