@@ -26,7 +26,8 @@
                 "interim_dir": {
                     "type": "string",
                     "description": "Directory for intermediate files",
-                    "default": "null"
+                    "default": "null",
+                    "fa_icon": "fas fa-folder-open"
                 },
                 "outdir": {
                     "type": "string",
@@ -44,7 +45,8 @@
             "properties": {
                 "single_db_dir": {
                     "type": "string",
-                    "default": "/home/chase/temp/Autometa/nextflow/large_db"
+                    "default": "/home/chase/temp/Autometa/nextflow/large_db",
+                    "fa_icon": "fas fa-folder-open"
                 },
                 "length_cutoff": {
                     "type": "integer",
@@ -54,66 +56,72 @@
                 "norm_method": {
                     "type": "string",
                     "default": "am_clr",
-                    "description": "TODO:  fill description"
+                    "description": "kmer size to use"
                 },
                 "pca_dimensions": {
                     "type": "integer",
                     "default": 50,
-                    "description": "TODO:  fill description"
+                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix"
                 },
                 "embedding_method": {
                     "type": "string",
                     "default": "bhsne",
-                    "description": "TODO:  fill description"
+                    "description": "Choices are \"sksne\", \"bhsne\", \"umap\""
                 },
                 "embedding_dimensions": {
                     "type": "integer",
                     "default": 2,
-                    "description": "TODO:  fill description"
+                    "description": "Final dimensions of the kmer frequencies matrix"
                 },
                 "kmer_size": {
                     "type": "integer",
                     "default": 5,
-                    "description": "TODO:  fill description"
+                    "description": "kmer size to use"
                 },
                 "binning_starting_rank": {
                     "type": "string",
                     "default": "superkingdom",
-                    "description": "TODO:  fill description"
+                    "description": "Which taxonomic rank to start the binning from. Choices are \"superkingdom\", \"phylum\", \"class\", \"order\", \"family\", \"genus\", \"species\""
                 },
                 "clustering_method": {
                     "type": "string",
                     "default": "dbscan",
-                    "description": "TODO:  fill description"
+                    "description": "Cluster contigs using which clustering method. Choices are \"dbscan\" and \"hdbscan\""
                 },
                 "classification_method": {
                     "type": "string",
                     "default": "decision_tree",
-                    "description": "TODO:  fill description"
+                    "description": "Which clustering method to use for unclustered recruitment step. Choices are \"decision_tree\" and \"random_forest\""
                 },
                 "classification_kmer_pca_dimensions": {
                     "type": "integer",
                     "default": 50,
-                    "description": "TODO:  fill description"
+                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix"
                 },
                 "completeness": {
                     "type": "integer",
                     "default": 20,
-                    "description": "TODO:  fill description"
+                    "description": "Minimum completeness needed to keep a cluster (default is atleast 20% complete)"
                 },
                 "purity": {
                     "type": "integer",
-                    "default": 90,
-                    "description": "TODO:  fill description"
+                    "default": "95",
+                    "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
                 },
                 "kingdom": {
                     "type": "string",
                     "default": "bacteria",
-                    "description": "TODO:  fill description"
+                    "description": "Bin contigs belonging to this kingdom. Choices are \"bacteria\" and \"archaea\""
                 },
                 "gc_stddev_limit": {
                     "type": "integer",
-                    "default": 25
+                    "default": "5",
+                    "description": "Which clusters to keep depending on the GC% std.dev (default is 5%)"
+                },
+                "cov_stddev_limit": {
+                    "type": "integer",
+                    "default": "25",
+                    "description": "Which clusters to keep depending on the covergae std.dev (default is 25%)"
                 }
             }
         },
@@ -129,7 +137,8 @@
                     "description": "Email address for completion summary.",
                     "fa_icon": "fas fa-envelope",
                     "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
-                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+                    "hidden": true
                 },
                 "help": {
                     "type": "boolean",
@@ -163,19 +172,21 @@
                     "type": "string",
                     "description": "Directory to keep pipeline Nextflow logs and reports.",
                     "default": "${params.outdir}/pipeline_info",
-                    "fa_icon": "fas fa-cogs",
-                    "hidden": true
+                    "fa_icon": "fas fa-cogs"
                 },
                 "config_profile_url": {
                     "type": "string",
                     "description": "ssdsddsdsd",
-                    "default": "false"
+                    "default": "false",
+                    "hidden": true
                 },
                 "config_profile_description": {
-                    "type": "string"
+                    "type": "string",
+                    "hidden": true
                 },
                 "config_profile_contact": {
-                    "type": "string"
+                    "type": "string",
+                    "hidden": true
                 }
             }
         }
@@ -190,11 +201,5 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ],
-    "properties": {
-        "cov_stddev_limit": {
-            "type": "integer",
-            "default": 5
-        }
-    }
+    ]
 }
