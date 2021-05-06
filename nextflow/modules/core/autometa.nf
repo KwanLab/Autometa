@@ -13,15 +13,18 @@ workflow AUTOMETA {
   main:
     // Perform various annotations on provided metagenome
     LENGTH_FILTER(metagenome)
-
+    // Split metagenome into x-sized FASTA files
+    LENGTH_FILTER.out.fasta.splitFasta(file:true, by:params.max_cpus) //TODO: Add parameter for number of splits
+      .set{filtered_ch}
     // k-mer coverage vs. read coverage
     KMER_COVERAGE(LENGTH_FILTER.out.fasta)
     // READ_COVERAGE(LENGTH_FILTER.out.fasta, fwd_reads, rev_reads, se_reads)
-
-    ORFS(LENGTH_FILTER.out.fasta)
-    MARKERS(ORFS.out.prots)
+    ORFS(filtered_ch)
+    // Collect parallel output into single file
+    ORFS.out.prots.collectFile(cache:false).set{orf_prots_ch}
+    MARKERS(orf_prots_ch)
     // Perform taxon assignment with filtered metagenome
-    TAXON_ASSIGNMENT(LENGTH_FILTER.out.fasta, ORFS.out.prots)
+    TAXON_ASSIGNMENT(LENGTH_FILTER.out.fasta, orf_prots_ch)
     // Now perform binning with all of our annotations.
     KMERS(TAXON_ASSIGNMENT.out.bacteria)
     // KMERS(TAXON_ASSIGNMENT.out.archaea) ... for case of performing binning on archaea
