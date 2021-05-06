@@ -20,10 +20,10 @@ workflow TAXON_ASSIGNMENT {
       orfs
 
     main:
-      DIAMOND(orfs)
-      LCA(DIAMOND.out)
-      MAJORITY_VOTE(LCA.out)
-      SPLIT_KINGDOMS(MAJORITY_VOTE.out, assembly)
+      DIAMOND(orfs) // output '${orfs.simpleName}.blastp.tsv'; BLAST fmt 6 table
+      LCA(DIAMOND.out) // output '${blast.simpleName}.lca.tsv'
+      MAJORITY_VOTE(LCA.out) //output ${lca.simpleName}.votes.tsv
+      SPLIT_KINGDOMS(MAJORITY_VOTE.out, assembly) // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
 
     emit:
       taxonomy = SPLIT_KINGDOMS.out.taxonomy
