@@ -23,7 +23,7 @@ if (params.help) {
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
-
+validate_params=null
 ////////////////////////////////////////////////////
 /* --         VALIDATE PARAMETERS              -- */
 ////////////////////////////////////////////////////
