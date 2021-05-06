@@ -3,9 +3,11 @@ nextflow.enable.dsl=2
 
 
 process DIAMOND {
+  label 'process_high'
+  label 'process_long'
+  
   tag "diamond blastp on ${orfs.simpleName}"
   containerOptions = "-v ${params.single_db_dir}:/ncbi:ro"
-  cpus params.cpus
   publishDir params.interim_dir, pattern: "${orfs.simpleName}.blastp.tsv"
 
   input:

@@ -2,6 +2,8 @@
 nextflow.enable.dsl=2
 
 process SPLIT_KINGDOMS {
+  label 'process_medium'
+  
   tag "Splitting votes into kingdoms for ${assembly.simpleName}"
   containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${assembly.simpleName}.taxonomy.tsv"

@@ -2,6 +2,9 @@
 nextflow.enable.dsl=2
 
 process LCA {
+  label 'process_medium'
+  label 'process_long'
+  
   tag "Assigning LCA to ${blast.simpleName}"
   containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
   publishDir params.interim_dir, pattern: "${blast.simpleName}.lca.tsv"
