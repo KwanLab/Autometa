@@ -26,7 +26,7 @@
                 "interim_dir": {
                     "type": "string",
                     "description": "Directory for intermediate files",
-                    "default": "null",
+                    "default": "./work/interim_dir",
                     "fa_icon": "fas fa-folder-open",
                     "help_text": "Directory for storing files created during intermediate steps but which are interesting enough to keep for debugging or analyzing with other tools"
                 },
