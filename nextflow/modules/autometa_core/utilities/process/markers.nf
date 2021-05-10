@@ -3,7 +3,8 @@ nextflow.enable.dsl=2
 
 process MARKERS {
   tag "Finding markers for ${orfs.simpleName}"
-  cpus params.cpus
+  label "process_low"
+  
   // copying orfs via stageInMode is required to run hmmscan (does not handle symlinks)
   stageInMode 'copy'
   publishDir params.interim_dir, pattern: "${orfs.simpleName}.markers.tsv"

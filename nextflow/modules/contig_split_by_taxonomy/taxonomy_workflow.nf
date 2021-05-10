@@ -4,7 +4,6 @@ nextflow.enable.dsl=2
 
 params.interim_dir = "</path/to/store/user/interimediate/results>"
 params.outdir = "</path/to/store/user/final/results>"
-params.cpus = 2
 
 include { LCA } from './process/lca.nf'
 include { MAJORITY_VOTE } from './process/majority_vote.nf'

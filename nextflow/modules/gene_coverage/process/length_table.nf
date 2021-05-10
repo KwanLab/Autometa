@@ -3,7 +3,6 @@ nextflow.enable.dsl=2
 
 process LENGTH_TABLE {
   tag "length table for ${metagenome.simpleName}"
-  cpus params.cpus
 
   input:
     path metagenome

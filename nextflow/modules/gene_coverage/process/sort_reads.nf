@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 process SORT_READS {
   tag "Sorting reads to ${sam.simpleName}"
-  cpus params.cpus
+  label "process_high"
 
   input:
     path sam

@@ -3,7 +3,8 @@ nextflow.enable.dsl=2
 
 process KMER_COVERAGE {
   tag "Calculating k-mer coverage for ${metagenome.simpleName}"
-  cpus params.cpus
+  label "python_cpus"
+  
   publishDir params.interim_dir, pattern: "${metagenome.simpleName}.coverages.tsv"
 
   input:

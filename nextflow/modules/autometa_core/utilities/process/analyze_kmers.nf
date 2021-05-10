@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 process ANALYZE_KMERS {
   tag "counting kmers for ${metagenome.simpleName}"
-  cpus params.cpus
+  label "python_cpus"
   publishDir params.interim_dir, pattern: "*.kmers.*"
 
   input:

@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 
 process ALIGN_READS {
   tag "Aligning reads to ${metagenome.simpleName}"
-  cpus params.cpus
+  label "python_cpus"
 
   input:
     path metagenome
