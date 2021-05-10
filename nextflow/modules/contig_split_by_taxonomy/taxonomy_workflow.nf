@@ -13,12 +13,13 @@ include { SPLIT_KINGDOMS } from './process/split_kingdoms.nf'
 // Autometa taxon assignment workflow
 workflow TAXON_ASSIGNMENT {
     take:
+      metagenome
       blastp_table
 
     main:
       LCA(blastp_table) // output '${blast.simpleName}.lca.tsv'
       MAJORITY_VOTE(LCA.out) //output ${lca.simpleName}.votes.tsv
-      SPLIT_KINGDOMS(MAJORITY_VOTE.out, assembly) // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
+      SPLIT_KINGDOMS(MAJORITY_VOTE.out, metagenome) // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
 
     emit:
       taxonomy = SPLIT_KINGDOMS.out.taxonomy
