@@ -14,7 +14,7 @@ process DIAMOND {
     path orfs
 
   output:
-    path "${orfs.simpleName}.blastp.tsv"
+    path "${orfs.simpleName}.blastp.tsv", emit: diamond_blastp_table
 
   """
   diamond blastp \
