@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-process ORFS {
+process PRODIGAL_ORFS {
   tag "Calling orfs for ${metagenome.simpleName}"
   // Hardcoding cpus here b/c prodigal is limited to only using single core
   cpus 1
