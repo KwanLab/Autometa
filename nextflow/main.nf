@@ -64,6 +64,16 @@ if ( params.interim_dir = false ) {
     // TODO: Don't publish/create the copies of intermediate results
 }
 
+if ( params.taxonomy_aware = true ) {
+    if ( params.single_db_dir = null ) {
+        error """
+        When taxonomy_aware is set to true, You must specify a path to a database directory with --single_db_dir
+        """
+    }
+}
+
+
+
 
 ////////////////////////////////////////////////////
 /* --         STAGE REPORTING CONFIG           -- */
@@ -164,7 +174,7 @@ process output_documentation {
 /*
  * Retrieve the main 'AUTOMETA' worflow
  */
-include { AUTOMETA } from './modules/core/autometa.nf' addParams(single_db_dir: params.single_db_dir)
+include { AUTOMETA } from './modules/autometa.nf' addParams(single_db_dir: params.single_db_dir)
 // include { DOWNLOAD_DATABASES } from './modules/core/download-databases.nf' addParams(single_db_dir: params.single_db_dir)
 
 workflow {
