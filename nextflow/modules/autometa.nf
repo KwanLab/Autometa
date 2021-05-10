@@ -28,7 +28,7 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
     // Run Prodigal to obtain open reading frames
     // --------------------------------------------------------------------------------        
-    if ( params.parallel_prodigal ) {
+    if ( params.parallel_high_disk ) {
       
       LENGTH_FILTER.out.fasta.splitFasta(file:true, size:4.MB) //TODO: Add parameter for number of splits
         .set{filtered_ch}      
@@ -65,7 +65,7 @@ workflow AUTOMETA {
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------        
 
-    if ( params.parallel_prodigal ) {
+    if ( params.parallel_high_disk ) {
       orf_prots_ch.splitFasta(file:true, size:1.MB)
         .set{split_orfs}
       MARKERS(split_orfs)    
