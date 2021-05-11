@@ -17,15 +17,18 @@ nextflow.enable.dsl = 2
 ////////////////////////////////////////////////////
 /* --               PRINT HELP                 -- */
 ////////////////////////////////////////////////////
+
 def json_schema = "$projectDir/nextflow_schema.json"
 if (params.help) {
     def command = "nextflow run autometa --input 'input/path/sample.fna'" //TODO
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
+
 ////////////////////////////////////////////////////
 /* --         VALIDATE PARAMETERS              -- */
 ////////////////////////////////////////////////////
+
 if (params.validate_params) {
     NfcoreSchema.validateParameters(params, json_schema, log)
 }
@@ -38,17 +41,17 @@ if ( params.taxonomy_aware = true ) {
     }
 }
 
-
 ////////////////////////////////////////////////////
 /* --         STAGE REPORTING CONFIG           -- */
 ////////////////////////////////////////////////////
 // Stage config files for documentation/reporting
-ch_output_docs = file("$projectDir/docs/output.md", checkIfExists: true)
 
+ch_output_docs = file("$projectDir/docs/output.md", checkIfExists: true)
 
 ////////////////////////////////////////////////////
 /* --         PRINT PARAMETER SUMMARY          -- */
 ////////////////////////////////////////////////////
+
 log.info NfcoreSchema.params_summary_log(workflow, params, json_schema)
 
 // Header log info
@@ -73,9 +76,11 @@ if (params.email || params.email_on_fail) {
     summary['E-mail Address']    = params.email
     summary['E-mail on failure'] = params.email_on_fail
 }
+
 ////////////////////////////////////////////////////
 /* --         COLLECT SUMMARY FOR LOG          -- */
 ////////////////////////////////////////////////////
+
 Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
     .reduce { a, b -> return [a, b].join("\n            ") }
@@ -95,6 +100,7 @@ Channel.from(summary.collect{ [it.key, it.value] })
 ////////////////////////////////////////////////////
 /* --         COLLECT SOFTWARE VERSIONS        -- */
 ////////////////////////////////////////////////////
+
 process get_software_versions {
     publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode,
         saveAs: { filename ->
@@ -117,6 +123,7 @@ process get_software_versions {
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
+
 /*
 process output_documentation {
     publishDir "${params.outdir}/pipeline_info", mode: "${params.publish_dir_mode}"

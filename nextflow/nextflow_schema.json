@@ -172,6 +172,12 @@
                     "description": "Whether to use Nextflow parallelization",
                     "help_text": "This will (at least) double the amount of disk space that your decompressed metagenome occupies.\nUse the parameter --store_split_fasta_in_ram=true to use RAM and skip the storing intermediate split FASTA file on disk"
                 },
+                "fasta_split_size": {
+                    "type": "string",
+                    "default": "100 GB",
+                    "description": "Size of files to split FASTA input into for parallelization.",
+                    "help_text": " {value} should be approximately:\n\nmetagenome_file_size / {value} = available_cpus"
+                },
                 "max_cpus": {
                     "type": "integer",
                     "default": 2,
