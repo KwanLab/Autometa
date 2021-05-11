@@ -162,3 +162,6 @@ pipeline_info
 work/
 large_db/
 nf-params.json
+autometa_interim_dir/
+autometa_outdir/
+autometa_tracedir/
