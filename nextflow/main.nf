@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
- 
+
 /*
 ========================================================================================
                          Autometa   
@@ -23,45 +23,11 @@ if (params.help) {
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
-validate_params=null
 ////////////////////////////////////////////////////
 /* --         VALIDATE PARAMETERS              -- */
 ////////////////////////////////////////////////////
 if (params.validate_params) {
     NfcoreSchema.validateParameters(params, json_schema, log)
-}
-
-// Path of fna files used as input:
-if ( !params.input || params.input instanceof Boolean )
-error """
-You must supply the `input` parameter in the config or on the command line!
-For a single input use the path
-    nextflow run main.nf -c parameters.config --input "</path/to/your/metagenome.fna>"
-For multiple input files, glob patterns may be used:
-    nextflow run main.nf -c parameters.config --input "</path/to/your/metagenome_*.fna>"
-"""
-
-// Where to store final results:
-if ( !params.outdir || params.outdir instanceof Boolean )
-error """
-You must supply the `--outdir` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --outdir "</directory/path/to/final/results>"
-"""
-
-// Where to store intermediate results:
-if ( !params.interim_dir )
-error """
-You must supply the `--interim_dir` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --interim_dir "</directory/path/to/store/interimediate/results>"
-"""
-if ( params.interim_dir = true ) {
-    params.interim_dir = "${params.outdir}/interim_outputs"
-    println "Intermediate results will be saved to:\n${params.outdir}/interim_outputs"
-}
-if ( params.interim_dir = false ) {
-    // TODO: Don't publish/create the copies of intermediate results
 }
 
 if ( params.taxonomy_aware = true ) {
@@ -71,8 +37,6 @@ if ( params.taxonomy_aware = true ) {
         """
     }
 }
-
-
 
 
 ////////////////////////////////////////////////////
