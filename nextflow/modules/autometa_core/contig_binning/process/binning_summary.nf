@@ -14,8 +14,8 @@ process BINNING_SUMMARY {
 
   output:
     path 'metabin_stats.tsv', emit: stats
-    path 'metabin_taxonomy.tsv', emit: taxonomies
     path 'metabins', emit: metabins
+    path 'metabin_taxonomy.tsv', optional: true, emit: taxonomies
 
   script:
   """

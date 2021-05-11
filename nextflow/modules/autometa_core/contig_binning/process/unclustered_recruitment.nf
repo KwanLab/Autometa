@@ -10,23 +10,38 @@ process UNCLUSTERED_RECRUITMENT {
     path coverage
     path binning
     path markers
-    path taxonomy
+    val taxonomy
 
   output:
     path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz", emit: binning
     path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: main
-
-  """
-  autometa-unclustered-recruitment \
-    --classifier ${params.classification_method} \
-    --kmer-dimensions ${params.classification_kmer_pca_dimensions} \
-    --seed 42 \
-    --taxonomy $taxonomy \
-    --kmers $kmers \
-    --coverage $coverage \
-    --binning $binning \
-    --markers $markers \
-    --output-binning ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz \
-    --output-main ${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz
-  """
+  
+  script:
+  if (taxonomy == false) 
+      """
+      autometa-unclustered-recruitment \
+        --classifier ${params.classification_method} \
+        --kmer-dimensions ${params.classification_kmer_pca_dimensions} \
+        --seed 42 \
+        --kmers $kmers \
+        --coverage $coverage \
+        --binning $binning \
+        --markers $markers \
+        --output-binning ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz \
+        --output-main ${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz
+      """
+  else
+       """
+       autometa-unclustered-recruitment \
+         --classifier ${params.classification_method} \
+         --kmer-dimensions ${params.classification_kmer_pca_dimensions} \
+         --seed 42 \
+         --taxonomy $taxonomy \
+         --kmers $kmers \
+         --coverage $coverage \
+         --binning $binning \
+         --markers $markers \
+         --output-binning ${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz \
+         --output-main ${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz
+       """
 }
