@@ -163,14 +163,14 @@
             "description": "",
             "default": "",
             "properties": {
-                "store_split_fasta_in_ram": {
-                    "type": "boolean",
-                    "description": "Skip writing split FASTA to disk, use RAM"
-                },
                 "parallel_split_fasta": {
                     "type": "boolean",
                     "description": "Whether to use Nextflow parallelization",
                     "help_text": "This will (at least) double the amount of disk space that your decompressed metagenome occupies.\nUse the parameter --store_split_fasta_in_ram=true to use RAM and skip the storing intermediate split FASTA file on disk"
+                },
+                "store_split_fasta_in_ram": {
+                    "type": "boolean",
+                    "description": "Skip writing split FASTA to disk, use RAM"
                 },
                 "fasta_split_size": {
                     "type": "string",
