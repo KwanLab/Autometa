@@ -28,9 +28,9 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
     // Run Prodigal to obtain open reading frames
     // --------------------------------------------------------------------------------        
-    if ( params.parallel_high_disk ) {
+    if ( params.parallel_split_fasta ) {
       
-      LENGTH_FILTER.out.fasta.splitFasta(file:true, size:4.MB) //TODO: Add parameter for number of splits
+      LENGTH_FILTER.out.fasta.splitFasta(file:params.store_split_fasta_in_ram, size:4.MB) //TODO: Add parameter for number of splits
         .set{filtered_ch}      
       PRODIGAL_ORFS(filtered_ch)
       PRODIGAL_ORFS.out.prots.collectFile(cache:false)
@@ -58,15 +58,15 @@ workflow AUTOMETA {
       // TODO KMERS(TAXON_ASSIGNMENT.out.archaea) ... for case of performing binning on archaea
     } else {
     ANALYZE_KMERS(LENGTH_FILTER.out.fasta)   
-    taxonomy_results = Channel.value( 'false' )
+    taxonomy_results = Channel.value( false )
     }
 
     // --------------------------------------------------------------------------------
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------        
 
-    if ( params.parallel_high_disk ) {
-      orf_prots_ch.splitFasta(file:true, size:1.MB)
+    if ( params.parallel_split_fasta ) {
+      orf_prots_ch.splitFasta(file:params.store_split_fasta_in_ram, size:1.MB)
         .set{split_orfs}
       MARKERS(split_orfs)    
       MARKERS.out.collectFile(cache:true, keepHeader:true)
@@ -74,8 +74,8 @@ workflow AUTOMETA {
 
     }
     else {
-    MARKERS(orf_prots_ch).out
-      .set{markers_out_ch}
+    MARKERS(orf_prots_ch)
+    MARKERS.out.set{markers_out_ch}
   
     }
     // --------------------------------------------------------------------------------
