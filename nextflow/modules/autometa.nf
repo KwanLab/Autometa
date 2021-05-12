@@ -32,7 +32,12 @@ workflow AUTOMETA {
       
       LENGTH_FILTER.out.fasta.splitFasta(file:"${params.store_split_fasta_in_ram}", size:4.MB) //TODO: Add parameter for number of splits
         .set{filtered_ch}      
+      
       PRODIGAL_ORFS(filtered_ch)
+      
+      PRODIGAL_ORFS.out.prots
+        .set{orf_prots_parallel_ch}
+
       PRODIGAL_ORFS.out.prots.collectFile(cache:false)
         .set{orf_prots_ch}
 
@@ -66,9 +71,8 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------        
 
     if ( params.parallel_split_fasta ) {
-      orf_prots_ch.splitFasta(file:"${params.store_split_fasta_in_ram}", size:1.MB)
-        .set{split_orfs}
-      MARKERS(split_orfs)    
+
+      MARKERS(orf_prots_parallel_ch)    
       MARKERS.out.collectFile(cache:true, keepHeader:true)
         .set{markers_out_ch}
 
