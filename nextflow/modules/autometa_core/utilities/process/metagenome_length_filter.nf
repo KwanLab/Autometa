@@ -14,11 +14,22 @@ process LENGTH_FILTER {
     path "${metagenome.simpleName}.stats.tsv", emit: stats
     path "${metagenome.simpleName}.gc_content.tsv", emit: gc_content
 
+  script:
+  if ( "${metagenome.Name}" == "${metagenome.simpleName}.filtered.fna" )
   """
   autometa-length-filter \
     --assembly $metagenome \
     --cutoff ${params.length_cutoff} \
-    --output-fasta ${metagenome.simpleName}.filtered.fna \
+    --output-fasta "${metagenome.simpleName}.autometa_filtered.fna" \
+    --output-stats ${metagenome.simpleName}.stats.tsv \
+    --output-gc-content ${metagenome.simpleName}.gc_content.tsv
+  """
+  else 
+  """
+  autometa-length-filter \
+    --assembly $metagenome \
+    --cutoff ${params.length_cutoff} \
+    --output-fasta "${metagenome.simpleName}.filtered.fna" \
     --output-stats ${metagenome.simpleName}.stats.tsv \
     --output-gc-content ${metagenome.simpleName}.gc_content.tsv
   """
