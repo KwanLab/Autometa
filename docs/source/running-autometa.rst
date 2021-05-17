@@ -24,37 +24,99 @@ Nextflow walkthrough
 Why nextflow
 ------------
 
-.. todo::
-    Mention some advantages of using nextflow
+Nextflow helps Autometa produce reproducible results while allowing the pipeline to scale across different platforms and hardware.
 
-Set autometa parameters
------------------------
 
-Before we start running the pipeline we first need to alter some of the default parameters in ``parameters.config``. A pre-made template is available on our `Autometa GitHub repository <https://github.com/KwanLab/Autometa>`_ which you can edit and customize as per your needs. You can access the ``parameters.config`` file template from `here <https://github.com/WiscEvan/Autometa/blob/4b4e3c60e076706e28deae4ae4d45f26b5df7dee/nextflow/parameters.config>`_. Go ahead and copy the file to the location of your choice and open it in your favorite text editor (vim, nano, vscode, etc).
+System Requirements
+-------------------
 
-.. todo::
-    Need to alter the url for ``parameters.config`` after the merge is done.
+Nextflow 
 
-Data Inputs
-^^^^^^^^^^^
+Currently the nextflow pipeline only works with Docker so Docker must be installed on your system `Get Docker <https://docs.docker.com/get-docker>`_. We do plan on removing this Docker dependency.
 
-.. note::
-    Data inputs must be wrapped in 'single quotes' or "double quotes"
+Nextflow runs on any Linux compatible system or MacOS with Java installed. 
 
-The first and the most important thing that you need to alter is the paths to various input and output files.
 
-*params.metagenome* : Change this to point to your metagenome assembly. Eg. ``"$HOME/tutorial/test_data/78mbp_metagenome.fna"``
+Quick Start
+------------
 
-*params.interim* : Change this to point to where you want the interim results to be stored. Eg. ``"$HOME/tutorial/interim/"``. Nextflow_ will create a new directory if absent.
 
-*params.processed* : Change this to point to where you want the final results to be stored. Eg. ``"$HOME/tutorial/processed/"``. Nextflow_ will create a new directory if absent.
+Installation
+^^^^^^^^^^^^
+Using `conda <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_ install nf-core and nextflow into an environment (here called 'autometa-nf')
 
 .. code-block:: bash
 
-    // Find this section of code in parameters.config
-    params.metagenome = "$HOME/tutorial/test_data/78mbp_metagenome.fna" 
-    params.interim = "$HOME/tutorial/interim/" 
-    params.processed = "$HOME/tutorial/processed/"
+    conda create -c conda-forge -c bioconda --name autometa-nf python=3 nf-core nextflow -y
+
+
+Once it finishes installing be sure to active the environment:
+
+.. code-block:: bash
+
+    conda activate autometa-nf
+
+Lastly, download the pipeline from GitHub using nextflow
+
+.. code-block:: bash
+
+    nextflow pull https://github.com/KwanLab/Autometa -r main
+
+
+
+Launching Autometa
+^^^^^^^^^^^^^^^^^^
+
+Run the pipeline using the command below. 
+
+Note: Unless specified using the parameters (:code:`--interim_dir`, :code:`--outdir`, and :code:`--tracedir`), intermediate and temporary files will be created relative to the directory this is executed from. 
+
+.. code-block:: bash
+
+    nf-core launch KwanLab/Autometa
+
+You will then be provided two "launch method" options: "Web based" or "Command line". While it is possible to use the command line version, it is preferred and easier to use the Web based GUI.
+Use the arrow keys to select one or the other and then press return/enter.
+
+
+Note: You can use `tmux <https://github.com/tmux/tmux/wiki>`_ or `screen <https://www.gnu.org/software/screen/>`_ in case you want to exit the window or disconnect from the server.
+
+Set autometa parameters with web based GUI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The GUI will present all available parameters, though some extra parameters may be hidden. Toggle "Show hidden params" on the right side of the page to reveal hidden parameters.
+
+The only mandatory parameters are :code:`--input` which is the path to your input metagenome's nucleotide FASTA file, and :code:`-profile`.
+
+Currently the availble options for :code:`-profile` are 
+
+* **standard**: runs all process jobs locally. If you use slurm, don't use this.
+* **basic_slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm:` before using
+* **docker**: is currently required
+
+An example input for locally-executed jobs would be 
+
+:code:`-profile`: standard,docker
+
+An example input for slurm-executed jobs would be 
+
+:code:`-profile`: basic_slurm,docker
+
+
+Running the pipeline
+^^^^^^^^^^^^^^^^^^^^
+
+After you are finished double-checking your parameter settings, click "Launch" at the top right of web based GUI page, or "Launch workflow" at the bottom of the page.
+
+
+
+
+Advanced Nextflow
+-----------------
+
+
+Multiple Inputs
+^^^^^^^^^^^^^^^
 
 You can also input multiple asseblies at once with the help of wildcards. In the below example all the files with extension "fasta" would be taken as input by nextflow_.
 
@@ -71,6 +133,8 @@ You can also input multiple asseblies at once with the help of wildcards. In the
 
 Database directory
 ^^^^^^^^^^^^^^^^^^
+
+.. todo::
 
 Autometa uses the following NCBI databses throughout its pipeline:
 
@@ -90,21 +154,54 @@ In your ``parameters.config`` file you also need to specify the directory where 
 
     // Find this section of code in parameters.config
     // Update this path to folder with all NCBI databases
-    params.ncbi_database = "/Autometa/autometa/databases/ncbi"
+    params.single_db_dir = "/Autometa/autometa/databases/ncbi"
 
-Runtime parameteres
-^^^^^^^^^^^^^^^^^^^
+CPUs, Memory, Disk
+^^^^^^^^^^^^^^^^^^
 
-You can configure the number of CPUs that each job should use.
+Like nf-core pipelines, we have set some automatic defaults for Autometa's processes. These are dynamic and each process will try a second attempt using more resources if the first fails due to resources. Resources are always capped by the parameters (show with defaults):
+ - :code:`-max_cpus = 2` 
+ - :code:`-max_memory = 6.GB`
+ - :code:`-max_time = 48.h`
+
+The best practice to change the resources is to create a new config file and point to it at runtime by adding the flag :code:`-c path/to/config_file`
+
+
+For example, to give all resource-intensive jobs more memory, create a file called :code:`overwrite_config.config` and insert
 
 .. code-block:: bash
+    
+    process {
+      withLabel:process_high {
+        memory = 200.GB
+      }
+    }
 
-    // Find this section of code in parameters.config
-    // Change the number of CPUs you want each job to use
-    params.cpus = 2
+Then your command to run the pipeline (assuming you've already run :code:`nf-core launch KwanLab/Autometa` which created a :code:`nf-params.json` file) would look something like:
+
+.. code-block:: bash
+    
+    nextflow run KwanLab/Autometa -params-file nf-params.json -c overwrite_config.config
+
+
+
+For addtional information and examples see "Tuning workflow resources" `here <https://nf-co.re/usage/configuration#running-nextflow-on-your-system>`_
+
+
 
 Additional autometa parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Up to date descriptions and default values of Autometa's nextflow parameters can be viewed using the following command: 
+
+.. code-block:: bash
+
+    nextflow run KwanLab/Autometa -r main --help
+
+
+
+
+
 
 You can also adjust other pipeline parameters that ultimately control how the binning is performed.
 
@@ -136,75 +233,41 @@ You can also adjust other pipeline parameters that ultimately control how the bi
 
 *params.gc_stddev_limit* : Which clusters to keep depending on the GC% std.dev (default is 5%). See :ref:`advanced-usage-binning` section for deails
 
-Running the pipeline
---------------------
 
-You can run autometa using nextflow_ in multiple ways. You can install nexflow using conda by doing ``conda install -c conda-forge nextflow`` or you can also install from source using the instructions mentioned in their `documentation <https://www.nextflow.io/docs/latest/getstarted.html#installation>`_
+Customizing Autometa's Scripts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
-    1. Run the following commands directly in ``bash``. Nexflow will automatically submit jobs to SLURM or any other sheduling system.
-    2. You can use `tmux <https://github.com/tmux/tmux/wiki>`_ or `screen <https://www.gnu.org/software/screen/>`_ in case you want to exit the window or disconnect from the server.
 
-With docker (Simplest)
-^^^^^^^^^^^^^^^^^^^^^^
-
-Make sure that you have Docker_ and nextflow_ installed. You can run autometa pipeline using ``nextflow run KwanLab/Autometa -c parameters.config``
-
-In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone the repository and then run autometa using ``main.nf``. 
-
+In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone the repository and then run nextflow directly from the scripts as below:
 .. code-block:: bash
 
-    # Clone the autometa repository
-    git clone git@github.com:KwanLab/Autometa.git $HOME/Autometa
-    # Run nextflow
-    nextflow run $HOME/Autometa/main.nf
+    # Clone the autometa repository into current directory
+    git clone git@github.com:KwanLab/Autometa.git 
+    # Modify some code
+    # Then run nextflow
+    nextflow run $HOME/Autometa/nextflow
 
 Without docker
 ^^^^^^^^^^^^^^
 
-By default autometa's implementation using nextflow_ makes use of Docker_. You can disable it in either your ``nextflow.config`` file or the ``parameters.config`` file.
-
-Editing ``nextflow.config``:
-
-.. code-block:: groovy
-
-    // Find this section of code in nextflow.config
-    docker {
-    enabled = false // <-- change to this
-    // Nextflow will run using the local autometa installation
-    // rather than the docker image specified.
-    fixOwnership = true
-    }
-
-Editing ``parameters.config``:
-
-.. code-block:: groovy
-
-    // Add this section of code in parameters.config
-    docker.enabled = false // override use of docker to use local Autometa installation
-
-Now install autometa using one of the three install methods specified in :ref:`Install` (Directly using conda or from source). After the install you can run autometa using ``nextflow run KwanLab/Autometa -c parameters.config``. Nextflow_ would use the entrypoints created during the install to run autometa. Make sure to actiavte your conda environment before running incase you have installed using conda.
+.. todo::
 
 Useful options
 ^^^^^^^^^^^^^^
 
 ``-c`` : In case you have configured nextflow_ with your executor (see :ref:`Configure nextflow with your 'executor'`) and have made other modifications on how to run nextflow_ using your ``nexflow.config`` file, you can specify that file using the ``-c`` flag
 
-``-w`` : By default nextflow_ will create a ``work`` directory in the current directory to store all temporary files and nextflow related files. You can change this work directory using the ``-w`` flag
-
-``-profile`` : You can specify the profile to use using ``-profile`` flag. For details on profiles see :ref:`Configure nextflow with your 'executor'`
-
 To see all of the command line options available you can refer to `nexflow CLI documentation <https://www.nextflow.io/docs/latest/cli.html#command-line-interface-cli>`_
 
 Resuming the workflow
 ^^^^^^^^^^^^^^^^^^^^^
 
-One of the most powerful features of nextflow_ is resuming the workflow from the last completed process. If your pipeline was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``). Eg, ``nextflow run KwanLab/Autometa -c parameters.config -resume``
+One of the most powerful features of nextflow_ is resuming the workflow from the last completed process. If your pipeline was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``). Eg, ``nextflow run KwanLab/Autometa -params-file nf-params.json -c my_other_parameters.config -resume``
 
 Execution Report
 ^^^^^^^^^^^^^^^^
 
-After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report automatically for you in the ``pipeline_info`` directory. You can read more about these execution reports `here <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
+After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report automatically for you in the ``"${params.tracedir}/pipeline_info`` directory (``"${params.tracedir}`` defaults to ``autometa_tracedir``). You can read more about these execution reports `here <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
 
 Workflow Visualized
 ^^^^^^^^^^^^^^^^^^^
@@ -214,9 +277,14 @@ You can also visualize the entire workflow ie. create the DAG from the written D
 Configure nextflow with your 'executor'
 ---------------------------------------
 
+.. todo::
+
 For nextflow_ to run the Autometa pipeline through a job scheduler you will need to update the respective 'profile' section in nextflow's config file. Each 'profile' may be configured with any available scheduler as noted in the `nextflow executors docs <https://www.nextflow.io/docs/latest/executor.html>`_. By default nextflow_ will use your local computer as the 'executor'. The next section briefly walks through nextflow_ executor configuration to run with the slurm job scheduler.
 
 We have prepared a template for ``nextflow.config`` which you can access from our GitHub repository using this `link <https://github.com/WiscEvan/Autometa/blob/4b4e3c60e076706e28deae4ae4d45f26b5df7dee/nextflow.config>`_. Go ahead and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
+
+
+.. _using-slurm:
 
 SLURM
 ^^^^^
@@ -264,6 +332,20 @@ More parameters that are available for the htcondor executor are listed in the n
 .. note::
     1. The pipeline must be launched from a node where the ``condor_submit`` command is available, that is, in a common usage scenario, the cluster head node.
     2. The HTCondor executor for Nextflow_ does not support at this time the HTCondor ability to transfer input/output data to the corresponding job computing node. Therefore the data needs to be made accessible to the computing nodes using a shared file system directory from where the Nextflow_ workflow has to be executed (or specified via the -w option).
+
+
+
+
+
+
+
+
+
+
+
+.. todo:: Below python specific maybe there should be two "running..." files, one for nextflow and one for python?
+
+
 
 Running modules
 ===============
