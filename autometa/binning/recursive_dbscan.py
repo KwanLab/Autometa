@@ -822,7 +822,6 @@ def binning(
         )
 
     # Use taxonomy method
-
     # Set taxonomy canonical rank iteration order for more-to-less specific or less-to-more specific
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
@@ -831,12 +830,10 @@ def binning(
         # superkingdom, phylum, class, order, family, genus, species
         ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
     ranks.remove("root")
-
     # Subset ranks by provided starting rank
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")
-
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
@@ -999,6 +996,39 @@ def binning(
     unclustered_df = main.loc[~main.index.isin(clustered_df.index)]
     unclustered_df["cluster"] = pd.NA
     return pd.concat([clustered_df, unclustered_df], sort=True)
+
+
+def write_results(
+    results: pd.DataFrame, binning_output: str, full_output: str = None
+) -> None:
+    # Write out binning results with their respective binning metrics
+    outcols = [
+        "cluster",
+        "completeness",
+        "purity",
+        "coverage_stddev",
+        "gc_content_stddev",
+    ]
+    results[outcols].to_csv(binning_output, sep="\t", index=True, header=True)
+    logger.info(f"Wrote binning results to {binning_output}")
+    if full_output:
+        # First after binning relevant assignments/metrics place contig physical annotations
+        annotation_cols = ["coverage", "gc_content", "length"]
+        outcols.extend(annotation_cols)
+        # Add in taxonomy columns if taxa are present
+        # superkingdom, phylum, class, order, family, genus, species
+        taxa_cols = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
+        taxa_cols.append("taxid")
+        # superkingdom, phylum, class, order, family, genus, species, taxid
+        for taxa_col in taxa_cols:
+            if taxa_col in results.columns:
+                outcols.append(taxa_col)
+        # Finally place kmer embeddings at end
+        kmer_cols = [col for col in results.columns if "x_" in col]
+        outcols.extend(kmer_cols)
+        # Now write out table with columns sorted using outcols list
+        results[outcols].to_csv(full_output, sep="\t", index=True, header=True)
+        logger.info(f"Wrote main table to {full_output}")
 
 
 def write_results(
