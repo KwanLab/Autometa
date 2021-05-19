@@ -379,9 +379,7 @@ def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
         Columns have been transformed by CLR normalization.
     """
     # steps in 1: data cleaning
-    df.dropna(axis="columns", how="all", inplace=True)
-    df.dropna(axis="index", how="all", inplace=True)
-    df.fillna(0, inplace=True)
+    df = df.dropna(axis="columns", how="all").dropna(axis="index", how="all").fillna(0)
     # steps in 2 and 3: normalization and CLR transformation
     step_2a = lambda x: (x + 1) / x.sum()
     step_2b = lambda x: np.log(x / gmean(x))
@@ -537,9 +535,7 @@ def embed(
     # PCA
     n_samples, n_components = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
-    df.dropna(axis="index", how="all", inplace=True)
-    df.fillna(0, inplace=True)
-    X = df.to_numpy()
+    X = df.dropna(axis="index", how="all").fillna(0).to_numpy()
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
 

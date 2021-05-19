@@ -25,9 +25,10 @@ Cluster contigs recursively searching for bins with highest completeness and pur
 """
 
 import logging
+import os
 import shutil
 import tempfile
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 import pandas as pd
 import numpy as np
@@ -45,6 +46,33 @@ pd.set_option("mode.chained_assignment", None)
 
 
 logger = logging.getLogger(__name__)
+
+
+def read_annotations(annotations: Iterable, how: str = "inner") -> pd.DataFrame:
+    df = pd.concat(
+        [
+            pd.read_csv(annotation, sep="\t", index_col="contig")
+            for annotation in annotations
+        ],
+        axis="columns",
+        join="inner",
+    ).convert_dtypes()
+    logger.debug(f"merged annotations shape: {df.shape}")
+    return df
+
+
+def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
+    for canonical_rank in NCBI.CANONICAL_RANKS:
+        if canonical_rank not in df.columns:
+            continue
+        df[canonical_rank] = df[canonical_rank].map(lambda name: name.lower())
+    if rank not in df.columns:
+        raise KeyError(f"{rank} not in taxonomy columns: {df.columns}")
+    filtered_df = df[df[rank] == name]
+    if filtered_df.empty:
+        raise ValueError(f"Provided name: {name} not found in {rank} column")
+    logger.debug(f"filtered taxonomy shape: {filtered_df.shape}")
+    return filtered_df
 
 
 def add_metrics(
@@ -649,18 +677,58 @@ def get_clusters(
     return df
 
 
+def get_rank_embedding(
+    counts: pd.DataFrame,
+    cache_fpath: str,
+    norm_method: str,
+    pca_dimensions: int,
+    embed_dimensions: int,
+    embed_method: str,
+) -> pd.DataFrame:
+    # No cache dir provided so we perform normalization and embedding then return
+    if not cache_fpath:
+        return kmers.embed(
+            kmers=kmers.normalize(counts, method=norm_method),
+            embed_dimensions=embed_dimensions,
+            pca_dimensions=pca_dimensions,
+            method=embed_method,
+        )
+    # Cache was provided so we are going to first try to retrieve the cached embedding
+    if os.path.exists(cache_fpath) and os.path.getsize(cache_fpath):
+        # Retrieve embedding if it has already been cached and we are trying to resume.
+        logger.debug(f"Found cached embeddings {cache_fpath}. Reading...")
+        return pd.read_csv(cache_fpath, sep="\t", index_col="contig")
+    # Cache does not exist, so we perform embedding on rank then cache
+    rank_embedding = kmers.embed(
+        kmers=kmers.normalize(counts, method=norm_method),
+        embed_dimensions=embed_dimensions,
+        pca_dimensions=pca_dimensions,
+        method=embed_method,
+    )
+    rank_embedding.to_csv(cache_fpath, sep="\t", index=True, header=True)
+    logger.debug(f"Cached embeddings to {cache_fpath}")
+    return rank_embedding
+
+
 def binning(
     main: pd.DataFrame,
+    counts: pd.DataFrame,
     markers: pd.DataFrame,
+    norm_method: str = "am_clr",
+    pca_dimensions: int = 50,
+    embed_dimensions: int = 2,
+    embed_method: str = "umap",
+    max_partition_size: int = 10000,
     domain: str = "bacteria",
     completeness: float = 20.0,
     purity: float = 95.0,
     coverage_stddev: float = 25.0,
     gc_content_stddev: float = 5.0,
-    taxonomy: bool = True,
+    use_taxonomy: bool = True,
     starting_rank: str = "superkingdom",
     method: str = "dbscan",
     reverse_ranks: bool = False,
+    cache: str = None,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
@@ -671,9 +739,13 @@ def binning(
     ----------
     main : pd.DataFrame
         index=contig,
-        cols=['x','y', 'coverage', 'gc_content']
+        cols=['coverage', 'gc_content']
         taxa cols should be present if `taxonomy` is True.
         i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
+
+    counts : pd.DataFrame
+        contig kmer counts -> index_col='contig', cols=['AAAAA', 'AAAAT', ...]
+        NOTE: columns will correspond to the selected k-mer count size. e.g. 3-mers would be ['AAA','AAT', ...]
 
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
@@ -711,6 +783,9 @@ def binning(
         False - [superkingdom,phylum,class,order,family,genus,species] (Default)
         True - [species,genus,family,order,class,phylum,superkingdom]
 
+    cache : str, optional
+        Directory to cache intermediate results
+
     verbose : bool, optional
         log stats for each recursive_dbscan clustering iteration
 
@@ -724,7 +799,7 @@ def binning(
     TableFormatError
         No marker information is availble for contigs to be binned.
     """
-    # First check needs to ensure we have markers available to check binning quality...
+    # First ensure we have marker-containing contigs available to check binning quality...
     if main.loc[main.index.isin(markers.index)].empty:
         raise TableFormatError(
             "No markers for contigs in table. Unable to assess binning quality"
@@ -732,8 +807,8 @@ def binning(
     if main.shape[0] <= 1:
         raise BinningError("Not enough contigs in table for binning")
 
-    logger.info(f"Using {method} clustering method")
-    if not taxonomy:
+    logger.info(f"Selected clustering method: {method}")
+    if not use_taxonomy:
         return get_clusters(
             main=main,
             markers_df=markers,
@@ -747,6 +822,8 @@ def binning(
         )
 
     # Use taxonomy method
+
+    # Set taxonomy canonical rank iteration order for more-to-less specific or less-to-more specific
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in NCBI.CANONICAL_RANKS]
@@ -754,37 +831,132 @@ def binning(
         # superkingdom, phylum, class, order, family, genus, species
         ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
     ranks.remove("root")
+
+    # Subset ranks by provided starting rank
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")
+
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
+    rank_embeddings = {}
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
         unclassified_filter = main[rank] != "unclassified"
-        main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
-        taxa_counts = main_grouped_by_rank[rank].count()
-        n_contigs_in_taxa = taxa_counts.sum()
-        n_taxa = taxa_counts.index.nunique()
+        # group 'classified' contigs by rank
+        n_taxa_in_rank = main.loc[unclassified_filter, rank].nunique()
+        n_classified_contigs_in_rank = main.loc[unclassified_filter, rank].shape[0]
         logger.info(
-            f"Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)"
+            f"Examining {rank}: {n_taxa_in_rank:,} unique taxa ({n_classified_contigs_in_rank:,} contigs)"
         )
-        # Group contigs by rank and find best clusters within subset
+        # Subset counts by filtering out any unclassified according to current canonical rank and that exist in main df
+        rank_counts = counts.loc[counts.index.isin(main.loc[unclassified_filter].index)]
+        # cache dir structured with sub-directories corresponding to each canonical rank.
+        cache_fpath = (
+            os.path.join(
+                cache,
+                rank,
+                f"{rank}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
+            )
+            if cache
+            else None
+        )
+        if cache_fpath and not os.path.isdir(os.path.join(cache, rank)):
+            os.makedirs(os.path.join(cache, rank))
+        rank_embedding = get_rank_embedding(
+            rank_counts,
+            cache_fpath=cache_fpath,
+            norm_method=norm_method,
+            pca_dimensions=pca_dimensions,
+            embed_dimensions=embed_dimensions,
+            embed_method=embed_method,
+        )
+        # Store canonical rank embedding for later lookup at lower canonical ranks
+        rank_embeddings[rank] = rank_embedding
+        # Now group by canonical rank and try embeddings specific to each name in this canonical rank
+        main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
+        # Find best clusters within each rank name for the canonical rank subset
         for rank_name_txt, dff in main_grouped_by_rank:
+            # Skip contig set if no contigs are classified with this rank name for this rank.
             if dff.empty:
                 continue
-            # Only cluster contigs that have not already been assigned a bin.
-            # First filter with 'cluster' column
+            # Only cluster contigs that have not already been assigned a bin. (i.e. 'cluster' column value is pd.NA)
             rank_df = (
                 dff.loc[dff["cluster"].isna()] if "cluster" in dff.columns else dff
             )
-            # Second filter with previous clustering rounds' clustered contigs
+            # Second cluster filter with set membership to global set of clustered contigs
             if clustered_contigs:
                 rank_df = rank_df.loc[~rank_df.index.isin(clustered_contigs)]
-            # After all of the filters, are there multiple contigs to cluster?
+            # Post-filtering are there multiple contigs to cluster?
             if rank_df.empty:
                 continue
+
+            # First subset counts by rank_name_txt
+            rank_name_txt_counts = counts.loc[counts.index.isin(rank_df.index)]
+            cache_fpath = (
+                os.path.join(
+                    cache,
+                    rank,
+                    f"{rank_name_txt}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
+                )
+                if cache
+                else None
+            )
+            # Now check num. contigs for kmer embedding retrieval
+            # We are accounting for three cases.
+            # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
+            #   Action 1: embed these contigs then continue to recurse s.t. their higher canonical rank coords.
+            #   may be looked up at the lower canonical rank (See Case 2)
+            # Case 2: num. contigs in rank_df is less than max partition size and greater than min contigs
+            #   Action 2: perform normalization and embedding on counts for specific ranks' contigs
+            # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
+            #   Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
+            min_contigs = max([pca_dimensions + 1, embed_dimensions + 1])
+            n_contigs_in_rank = rank_df.shape[0]
+            # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
+            if n_contigs_in_rank > max_partition_size:
+                # Action 1: embed these contigs then continue to recurse s.t. their higher canonical rank coords.
+                #   may be looked up at the lower canonical rank (See Case 2)
+                # TODO: Some logic seems to be missing here. We probably want to keep this grouping for later lookup
+                # but how do we look up this grouping at a lower rank?... May have to retrieve multiple groupings? Or maybe this is not necessary....
+                # Keeping for now but this embedding may be commented out/discarded later.
+                rank_name_embedding = get_rank_embedding(
+                    rank_name_txt_counts,
+                    cache_fpath=cache_fpath,
+                    norm_method=norm_method,
+                    pca_dimensions=pca_dimensions,
+                    embed_dimensions=embed_dimensions,
+                    embed_method=embed_method,
+                )
+                rank_embeddings[rank_name_txt] = rank_name_embedding
+                continue
+            # Case 2: num. contigs in rank_df is less than max partition size and greater than min contigs
+            elif min_contigs <= n_contigs_in_rank <= max_partition_size:
+                # Action 2: perform normalization and embedding on counts for specific ranks' contigs
+                # i.e. contigs are in range to perform embedding on subset
+                rank_name_embedding = get_rank_embedding(
+                    rank_name_txt_counts,
+                    cache_fpath=cache_fpath,
+                    norm_method=norm_method,
+                    pca_dimensions=pca_dimensions,
+                    embed_dimensions=embed_dimensions,
+                    embed_method=embed_method,
+                )
+            else:
+                # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
+                # Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
+                rank_name_embedding = rank_embedding.loc[
+                    rank_embedding.index.isin(rank_df.index)
+                ]
+            # Add kmer embeddings into rank dataframe to use for clustering
+            rank_df = pd.merge(
+                rank_df,
+                rank_name_embedding,
+                how="left",
+                left_index=True,
+                right_index=True,
+            )
             # Find best clusters
             logger.debug(
                 f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
@@ -823,10 +995,43 @@ def binning(
     # At this point we've went through all ranks and have clusters for each canonical-rank
     # We place these into one table and then...
     clustered_df = pd.concat(clusters, sort=True)
-    # create a dataframe for any contigs *not* in the clustered dataframe
+    # ...create a dataframe for any contigs *not* in the clustered dataframe
     unclustered_df = main.loc[~main.index.isin(clustered_df.index)]
     unclustered_df["cluster"] = pd.NA
     return pd.concat([clustered_df, unclustered_df], sort=True)
+
+
+def write_results(
+    results: pd.DataFrame, binning_output: str, full_output: str = None
+) -> None:
+    # Write out binning results with their respective binning metrics
+    outcols = [
+        "cluster",
+        "completeness",
+        "purity",
+        "coverage_stddev",
+        "gc_content_stddev",
+    ]
+    results[outcols].to_csv(binning_output, sep="\t", index=True, header=True)
+    logger.info(f"Wrote binning results to {binning_output}")
+    if full_output:
+        # First after binning relevant assignments/metrics place contig physical annotations
+        annotation_cols = ["coverage", "gc_content", "length"]
+        outcols.extend(annotation_cols)
+        # Add in taxonomy columns if taxa are present
+        # superkingdom, phylum, class, order, family, genus, species
+        taxa_cols = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
+        taxa_cols.append("taxid")
+        # superkingdom, phylum, class, order, family, genus, species, taxid
+        for taxa_col in taxa_cols:
+            if taxa_col in results.columns:
+                outcols.append(taxa_col)
+        # Finally place kmer embeddings at end
+        kmer_cols = [col for col in results.columns if "x_" in col]
+        outcols.extend(kmer_cols)
+        # Now write out table with columns sorted using outcols list
+        results[outcols].to_csv(full_output, sep="\t", index=True, header=True)
+        logger.info(f"Wrote main table to {full_output}")
 
 
 def main():
@@ -845,10 +1050,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers",
-        help="Path to embedded k-mer frequencies table",
-        metavar="filepath",
-        required=True,
+        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -922,6 +1124,36 @@ def main():
         help="Path to Autometa assigned taxonomies table",
     )
     parser.add_argument(
+        "--norm-method",
+        help="kmer normalization method to use on kmer counts",
+        default="am_clr",
+        choices=["am_clr", "ilr", "clr",],
+    )
+    parser.add_argument(
+        "--pca-dims",
+        help="PCA dimensions to reduce normalized kmer frequencies prior to embedding",
+        default=50,
+        metavar="int",
+    )
+    parser.add_argument(
+        "--embed-method",
+        help="kmer embedding method to use on normalized kmer frequencies",
+        default="bhsne",
+        choices=["bhsne", "umap", "sksne",],
+    )
+    parser.add_argument(
+        "--embed-dims",
+        help="Embedding dimensions to reduce normalized kmers table after PCA.",
+        default=2,
+        metavar="int",
+    )
+    parser.add_argument(
+        "--max-partition-size",
+        help="Maximum number of contigs to consider for a recursive binning batch.",
+        default=10000,
+        metavar="int",
+    )
+    parser.add_argument(
         "--starting-rank",
         help="Canonical rank at which to begin subsetting taxonomy",
         default="superkingdom",
@@ -944,69 +1176,48 @@ def main():
         " species, genus, family, order, class, phylum, superkingdom.",
     )
     parser.add_argument(
-        "--domain",
-        help="Kingdom to consider",
-        choices=["bacteria", "archaea"],
+        "--rank-filter",
+        help="Taxonomy column canonical rank to subset by provided value of `--rank-name-filter`",
+        default="superkingdom",
+        choices=[rank for rank in NCBI.CANONICAL_RANKS if rank != "root"],
+    )
+    parser.add_argument(
+        "--rank-name-filter",
+        help="Only retrieve contigs with this name corresponding to `--rank-filter` column",
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="log debug information",
+        "--verbose", action="store_true", default=False, help="log debug information",
     )
     args = parser.parse_args()
-    # First merge all annotations
-    kmers_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
-    cov_df = pd.read_csv(args.coverages, sep="\t", index_col="contig")
-    main_df = pd.merge(
-        kmers_df,
-        cov_df[["coverage"]],
-        how="left",
-        left_index=True,
-        right_index=True,
-    )
-    gc_content_df = pd.read_csv(args.gc_content, sep="\t", index_col="contig")
-    main_df = pd.merge(
-        main_df,
-        gc_content_df,
-        how="left",
-        left_index=True,
-        right_index=True,
-    )
-    # Now read in markers for completeness and purity calculations
-    markers_df = load_markers(args.markers)
-
     if args.taxonomy:
-        taxa_df = pd.read_csv(args.taxonomy, sep="\t", index_col="contig")
-        # Standardize naming (lower all rank names across taxonomy columns)
-        for rank in NCBI.CANONICAL_RANKS:
-            if rank not in taxa_df.columns:
-                continue
-            taxa_df[rank] = taxa_df[rank].map(lambda name: name.lower())
-        # Now we are ready to filter by superkingdom
-        taxa_df = taxa_df[taxa_df.superkingdom == args.domain]
-        # merge taxa annotations with other annotations
-        main_df = pd.merge(
-            left=main_df,
-            right=taxa_df,
-            how="inner",
-            left_index=True,
-            right_index=True,
+        main_df = read_annotations([args.coverages, args.gc_content, args.taxonomy])
+        main_df = filter_taxonomy(
+            df=main_df, rank=args.rank_filter, name=args.rank_name_filter
         )
+    else:
+        main_df = read_annotations([args.coverages, args.gc_content])
 
-    taxa_present = True if "taxid" in main_df else False
-    main_df = main_df.convert_dtypes()
-    # Sanity checks
-    logger.debug(f"main_df shape: {main_df.shape}")
+    markers_df = load_markers(args.markers, format="wide")
+
+    counts_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+
+    # Now perform binning with our features dataframe
+    use_taxonomy = args.rank_filter in main_df.columns
 
     main_out = binning(
         main=main_df,
+        counts=counts_df,
         markers=markers_df,
-        taxonomy=taxa_present,
+        norm_method=args.norm_method,
+        pca_dimensions=args.pca_dims,
+        embed_dimensions=args.embed_dims,
+        embed_method=args.embed_method,
+        max_partition_size=args.max_partition_size,
+        use_taxonomy=use_taxonomy,
         starting_rank=args.starting_rank,
         reverse_ranks=args.reverse_ranks,
-        domain=args.domain,
+        domain=args.rank_name_filter,
         completeness=args.completeness,
         purity=args.purity,
         coverage_stddev=args.cov_stddev_limit,
@@ -1015,35 +1226,11 @@ def main():
         verbose=args.verbose,
     )
 
-    # Write out binning results with their respective binning metrics
-    outcols = [
-        "cluster",
-        "completeness",
-        "purity",
-        "coverage_stddev",
-        "gc_content_stddev",
-    ]
-    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
-    logger.info(f"Wrote binning results to {args.output_binning}")
-    if args.output_main:
-        # First after binning relevant assignments/metrics place contig physical annotations
-        annotation_cols = ["coverage", "gc_content", "length"]
-        outcols.extend(annotation_cols)
-        if args.taxonomy:
-            # Add in taxonomy columns if taxa are present
-            # superkingdom, phylum, class, order, family, genus, species
-            taxa_cols = [
-                rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
-            ]
-            taxa_cols.append("taxid")
-            # superkingdom, phylum, class, order, family, genus, species, taxid
-            outcols.extend(taxa_cols)
-        # Finally place kmer embeddings at end
-        kmer_cols = [col for col in main_out.columns if "x_" in col]
-        outcols.extend(kmer_cols)
-        # Now write out table with columns sorted using outcols list
-        main_out[outcols].to_csv(args.output_main, sep="\t", index=True, header=True)
-        logger.info(f"Wrote main table to {args.output_main}")
+    write_results(
+        results=main_out,
+        binning_output=args.output_binning,
+        full_output=args.output_main,
+    )
 
 
 if __name__ == "__main__":
