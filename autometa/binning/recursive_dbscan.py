@@ -1206,6 +1206,11 @@ def main():
         " species, genus, family, order, class, phylum, superkingdom.",
     )
     parser.add_argument(
+        "--cache",
+        help="Directory to store intermediate kmer embeddings during binning.",
+        metavar="dirpath",
+    )
+    parser.add_argument(
         "--rank-filter",
         help="Taxonomy column canonical rank to subset by provided value of `--rank-name-filter`",
         default="superkingdom",
@@ -1247,6 +1252,7 @@ def main():
         use_taxonomy=use_taxonomy,
         starting_rank=args.starting_rank,
         reverse_ranks=args.reverse_ranks,
+        cache=args.cache,
         domain=args.rank_name_filter,
         completeness=args.completeness,
         purity=args.purity,
