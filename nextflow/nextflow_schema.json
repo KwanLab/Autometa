@@ -24,20 +24,20 @@
                 "interim_dir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory for intermediate files",
-                    "default": "deafult = where/pipeline/is/launched/autometa_interim_dir",
+                    "default": "~/where/pipeline/is/launched/autometa_interim_dir",
                     "fa_icon": "fas fa-folder-open",
                     "help_text": "Directory for storing files created during intermediate steps but which are interesting enough to keep for debugging or analyzing with other tools"
                 },
                 "outdir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory where the results will be saved.",
-                    "default": "deafult = where/pipeline/is/launched/autometa_outdir",
+                    "default": "~/where/pipeline/is/launched/autometa_outdir",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "tracedir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory to keep pipeline Nextflow logs and reports.",
-                    "default": "deafult = where/pipeline/is/launched/autometa_tracedir",
+                    "default": "~/where/pipeline/is/launched/autometa_tracedir",
                     "fa_icon": "fas fa-cogs"
                 }
             }
