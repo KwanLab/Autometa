@@ -18,7 +18,8 @@ nextflow.enable.dsl = 2
 /* --               PRINT HELP                 -- */
 ////////////////////////////////////////////////////
 
-def json_schema = "$projectDir/nextflow_schema.json"
+
+def json_schema = file("$projectDir").getParent().toString() + "/nextflow_schema.json"
 if (params.help) {
     def command = "nextflow run autometa --input 'input/path/sample.fna'" //TODO
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
