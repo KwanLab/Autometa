@@ -94,22 +94,22 @@
                 },
                 "completeness": {
                     "type": "number",
-                    "default": 20,
+                    "default": 20.0,
                     "description": "Minimum completeness needed to keep a cluster (default is atleast 20% complete)"
                 },
                 "purity": {
                     "type": "number",
-                    "default": 95,
+                    "default": 95.0,
                     "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
                 },
                 "gc_stddev_limit": {
                     "type": "number",
-                    "default": 5,
+                    "default": 5.0,
                     "description": "Which clusters to keep depending on the GC% std.dev (default is 5%)"
                 },
                 "cov_stddev_limit": {
                     "type": "number",
-                    "default": 25,
+                    "default": 25.0,
                     "description": "Which clusters to keep depending on the covergae std.dev (default is 25%)"
                 }
             },
