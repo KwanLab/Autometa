@@ -1,3 +1,4 @@
+# For details see: https://nf-co.re/tools-docs/lint_tests/index.html
 nextflow_config: false # specific to nf-core hosted pipelines
 files_unchanged: false # wants nf-core/ prepended to autometa
 actions_awsfulltest: false
