@@ -62,8 +62,8 @@ workflow AUTOMETA {
 
       // TODO KMERS(TAXON_ASSIGNMENT.out.archaea) ... for case of performing binning on archaea
     } else {
-    ANALYZE_KMERS(LENGTH_FILTER.out.fasta)   
-    taxonomy_results = Channel.value( false )
+      ANALYZE_KMERS(LENGTH_FILTER.out.fasta)   
+      taxonomy_results = Channel.value( false )
     }
 
     // --------------------------------------------------------------------------------
@@ -78,8 +78,8 @@ workflow AUTOMETA {
 
     }
     else {
-    MARKERS(orf_prots_ch)
-    MARKERS.out.set{markers_out_ch}
+      MARKERS(orf_prots_ch)
+      MARKERS.out.set{markers_out_ch}
   
     }
     // --------------------------------------------------------------------------------
