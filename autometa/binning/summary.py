@@ -176,7 +176,7 @@ def get_metabin_stats(
                 "num_single_copy_markers": num_single_copy_markers,
             }
         )
-    return pd.DataFrame(stats).set_index(cluster_col).convert_dtypes()
+    return pd.DataFrame(stats).set_index("cluster").convert_dtypes()
 
 
 def get_metabin_taxonomies(

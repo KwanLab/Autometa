@@ -1,11 +1,10 @@
-exclude: "^autometa/validation"
 repos:
   - repo: https://github.com/psf/black
-    rev: stable
+    rev: 21.5b1
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.1.0 # Use the ref you want to point at
+    rev: v4.0.1 # Use the ref you want to point at
     hooks:
       - id: trailing-whitespace
       - id: check-executables-have-shebangs
