@@ -17,7 +17,7 @@ process UNCLUSTERED_RECRUITMENT {
     path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: main
   
   script:
-  if (taxonomy == false) 
+  if (!params.taxonomy_aware) 
       """
       autometa-unclustered-recruitment \
         --classifier ${params.classification_method} \

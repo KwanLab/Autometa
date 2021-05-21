@@ -18,7 +18,7 @@ process BINNING {
     path "${coverage.simpleName}.${params.kingdom}.main.tsv.gz", emit: main
 
   script:
-  if (taxonomy == false) 
+  if (!params.taxonomy_aware) 
       """
       autometa-binning \
         --kmers $kmers \

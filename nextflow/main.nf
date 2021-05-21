@@ -64,8 +64,8 @@ if (params.validate_params) {
     NfcoreSchema.validateParameters(params, json_schema, log)
 }
 
-if ( params.taxonomy_aware = true ) {
-    if ( params.single_db_dir = null ) {
+if (params.taxonomy_aware) {
+    if (params.single_db_dir == null) {
         error """
         When taxonomy_aware is set to true, You must specify a path to a database directory with --single_db_dir
         """
@@ -186,4 +186,3 @@ workflow {
   //DOWNLOAD_DATABASES()
   AUTOMETA(unfiltered_metagenome_ch)
 }
-

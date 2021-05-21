@@ -52,7 +52,7 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
     // OPTIONAL: Run Diamond BLASTp and split data by taxonomy
     // --------------------------------------------------------------------------------        
-    if ( params.taxonomy_aware == true ) {    
+    if (params.taxonomy_aware) {    
       SEARCH_TAXONOMY(orf_prots_ch)
       TAXON_ASSIGNMENT(LENGTH_FILTER.out.fasta, SEARCH_TAXONOMY.out.blastp_table)
       
