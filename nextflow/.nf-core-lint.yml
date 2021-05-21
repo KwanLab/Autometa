@@ -4,3 +4,4 @@ files_unchanged: false # wants nf-core/ prepended to autometa
 actions_awsfulltest: false
 actions_awstest: false
 files_exist: false # gets really mad because no .github files, code of conduct, etc.
+
