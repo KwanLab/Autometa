@@ -51,7 +51,7 @@ Code in this file is modified nf-core template code which falls under the follow
 
 def json_schema = file("$projectDir").getParent().toString() + "/nextflow_schema.json"
 if (params.help) {
-    def command = "nextflow run autometa --input 'input/path/sample.fna'" //TODO
+    def command = "nextflow run autometa --input 'input/path/sample.fna' -profile standard,docker"
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
