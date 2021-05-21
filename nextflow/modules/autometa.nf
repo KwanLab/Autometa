@@ -21,7 +21,7 @@ workflow AUTOMETA {
     // Perform various annotations on provided metagenome
     LENGTH_FILTER(metagenome)
     // --------------------------------------------------------------------------------
-    // k-mer coverage vs. read coverage
+    // contig k-mer coverage vs. contig read coverage
     // --------------------------------------------------------------------------------    
     KMER_COVERAGE(LENGTH_FILTER.out.fasta)
     
