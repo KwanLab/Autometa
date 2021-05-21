@@ -156,6 +156,7 @@ process get_software_versions {
 }
 
 /*
+// nf-core template for html output- not yet implemented
 process output_documentation {
     publishDir "${params.outdir}/pipeline_info", mode: "${params.publish_dir_mode}"
 
@@ -170,8 +171,6 @@ process output_documentation {
     markdown_to_html.py $output_docs -o results_description.html
     """
  */
-
-//log.info summary
 
 /*
  * Retrieve the main 'AUTOMETA' worflow
