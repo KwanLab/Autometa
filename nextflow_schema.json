@@ -17,7 +17,7 @@
                 "input": {
                     "type": "string",
                     "fa_icon": "fas fa-dna",
-                    "description": "Absolute (full) path of FASTA (.fna) file(s)",
+                    "description": "Absolute (full) path of the metageome assembly FASTA (.fna) file(s)",
                     "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
                     "default": "null"
                 },
