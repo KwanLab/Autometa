@@ -250,19 +250,19 @@
                 },
                 "config_profile_url": {
                     "type": "string",
-                    "description": "TODO",
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information",
                     "default": "false",
                     "hidden": true
                 },
                 "config_profile_description": {
                     "type": "string",
                     "hidden": true,
-                    "description": "TODO"
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information"
                 },
                 "config_profile_contact": {
                     "type": "string",
                     "hidden": true,
-                    "description": "TODO"
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information"
                 }
             },
             "required": [
