@@ -191,7 +191,7 @@
                 "max_time": {
                     "type": "string",
                     "default": "2d",
-                    "description": "Max time a *single* process is allowed run"
+                    "description": "Max time a *single* process is allowed to run"
                 }
             },
             "required": [
@@ -210,7 +210,7 @@
                 "validate_params": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether to validate parameters on intitiation"
+                    "description": "Whether to validate parameters on initiation"
                 },
                 "email": {
                     "type": "string",
