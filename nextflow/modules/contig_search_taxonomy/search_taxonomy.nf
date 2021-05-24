@@ -6,7 +6,7 @@ nextflow.enable.dsl=2
 // This workflow is used instead DIAMOND_BLASTP directly to provide flexibility
 // in possibly using other programs in the future 
 
-include { DIAMOND_BLASTP } from './diamond_blastp_workflow.nf'
+include { DIAMOND as DIAMOND_BLASTP } from './process/diamond.nf'
 
 workflow SEARCH_TAXONOMY {
     take:
@@ -18,4 +18,3 @@ workflow SEARCH_TAXONOMY {
     emit:
       blastp_table = DIAMOND_BLASTP.out.blastp_table // output '${orfs.simpleName}.blastp.tsv'; BLAST fmt 6 table
 }
-
