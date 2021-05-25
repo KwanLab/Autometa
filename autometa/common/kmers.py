@@ -538,7 +538,13 @@ def embed(
     X = df.dropna(axis="index", how="all").fillna(0).to_numpy()
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
-
+    if isinstance(pca_dimensions, str):
+        try:
+            int(pca_dimensions)
+        except Exception as e:
+            raise TypeError(
+                f"pca_dimensions must be an integer! given: {pca_dimensions}"
+            )
     if n_components > pca_dimensions and pca_dimensions != 0:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"

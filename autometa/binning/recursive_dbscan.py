@@ -1080,7 +1080,10 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
+        "--kmers",
+        help="Path to k-mer counts table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -1157,31 +1160,42 @@ def main():
         "--norm-method",
         help="kmer normalization method to use on kmer counts",
         default="am_clr",
-        choices=["am_clr", "ilr", "clr",],
+        choices=[
+            "am_clr",
+            "ilr",
+            "clr",
+        ],
     )
     parser.add_argument(
         "--pca-dims",
         help="PCA dimensions to reduce normalized kmer frequencies prior to embedding",
         default=50,
         metavar="int",
+        type=int,
     )
     parser.add_argument(
         "--embed-method",
         help="kmer embedding method to use on normalized kmer frequencies",
         default="bhsne",
-        choices=["bhsne", "umap", "sksne",],
+        choices=[
+            "bhsne",
+            "umap",
+            "sksne",
+        ],
     )
     parser.add_argument(
         "--embed-dims",
         help="Embedding dimensions to reduce normalized kmers table after PCA.",
         default=2,
         metavar="int",
+        type=int,
     )
     parser.add_argument(
         "--max-partition-size",
         help="Maximum number of contigs to consider for a recursive binning batch.",
         default=10000,
         metavar="int",
+        type=int,
     )
     parser.add_argument(
         "--starting-rank",
@@ -1222,7 +1236,10 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose", action="store_true", default=False, help="log debug information",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="log debug information",
     )
     args = parser.parse_args()
     if args.taxonomy:
