@@ -26,12 +26,13 @@ pulling data from google drive folder with simulated or synthetic communities
 
 
 import gdown
+import os
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def download_dataset(dataset, outfpath):
+def download_dataset(dataset, out_dirpath):
     # provide list of database options as a dictionary with file_ids from google
     simulated = {
         "test": "1fy3M7RnS_HGSQVKidCy-rAwXuxldyOOv",
@@ -48,9 +49,11 @@ def download_dataset(dataset, outfpath):
     # construct file id into a url to put into gdown
     file_id = simulated[dataset]
     url = f"https://drive.google.com/uc?id={file_id}"
+    filename = f"{dataset}_metagenome.fna.gz"
+    out_fpath = os.path.join(out_dirpath, filename)
 
     # download the specified file with gdown
-    gdown.download(url, outfpath)
+    gdown.download(url, out_fpath)
 
 
 def main():
@@ -69,16 +72,16 @@ def main():
     )
     parser.add_argument(
         "--dataset",
-        help="specify a size of simulated community in MB",
+        help="specify a size of simulated community in megabase pairs",
         choices=["78", "156", "312", "625", "1250", "2500", "5000", "10000", "test"],
         required=True,
     )
     parser.add_argument(
-        "--outfpath", help="specify the directory to download the file", required=True
+        "--out_dirpath", help="specify the directory to download the file", required=True
     )
     args = parser.parse_args()
 
-    download_dataset(args.dataset, args.outfpath)
+    download_dataset(args.dataset, args.out_dirpath)
 
 
 if __name__ == "__main__":
