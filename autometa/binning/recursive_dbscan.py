@@ -49,26 +49,33 @@ logger = logging.getLogger(__name__)
 
 
 def read_annotations(annotations: Iterable, how: str = "inner") -> pd.DataFrame:
+    # Read in tables and concatenate along annotations axis
     df = pd.concat(
         [
             pd.read_csv(annotation, sep="\t", index_col="contig")
             for annotation in annotations
         ],
         axis="columns",
-        join="inner",
+        join=how,
     ).convert_dtypes()
     logger.debug(f"merged annotations shape: {df.shape}")
     return df
 
 
 def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
+    # First clean the assigned taxa by broadcasting lowercase and replacing any whitespace with underscores
     for canonical_rank in NCBI.CANONICAL_RANKS:
         if canonical_rank not in df.columns:
             continue
-        df[canonical_rank] = df[canonical_rank].map(lambda name: name.lower())
+        df[canonical_rank] = df[canonical_rank].map(
+            lambda name: name.lower().replace(" ", "_")
+        )
+    # Now check that the provided rank is in our dataframe
     if rank not in df.columns:
         raise KeyError(f"{rank} not in taxonomy columns: {df.columns}")
+    # Perform rank filter
     filtered_df = df[df[rank] == name]
+    # Check that we still have some contigs left
     if filtered_df.empty:
         raise ValueError(f"Provided name: {name} not found in {rank} column")
     logger.debug(f"filtered taxonomy shape: {filtered_df.shape}")
@@ -918,6 +925,9 @@ def binning(
                 # TODO: Some logic seems to be missing here. We probably want to keep this grouping for later lookup
                 # but how do we look up this grouping at a lower rank?... May have to retrieve multiple groupings? Or maybe this is not necessary....
                 # Keeping for now but this embedding may be commented out/discarded later.
+                logger.debug(
+                    f"{rank_name_txt} > max_partition_size ({n_contigs_in_rank:,}>{max_partition_size:,}). skipping [and caching embedding]"
+                )
                 rank_name_embedding = get_rank_embedding(
                     rank_name_txt_counts,
                     cache_fpath=cache_fpath,
@@ -940,12 +950,16 @@ def binning(
                     embed_dimensions=embed_dimensions,
                     embed_method=embed_method,
                 )
+                logger.debug(f"{rank_name_txt} shape={rank_name_embedding.shape}")
             else:
                 # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
                 # Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
                 rank_name_embedding = rank_embedding.loc[
                     rank_embedding.index.isin(rank_df.index)
                 ]
+                logger.debug(
+                    f"using {rank} embedding for {rank_name_txt}. shape={rank_name_embedding.shape}"
+                )
             # Add kmer embeddings into rank dataframe to use for clustering
             rank_df = pd.merge(
                 rank_df,
