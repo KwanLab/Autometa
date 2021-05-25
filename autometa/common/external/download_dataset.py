@@ -77,7 +77,9 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--out_dirpath", help="specify the directory to download the file", required=True
+        "--out_dirpath",
+        help="specify the directory to download the file",
+        required=True,
     )
     args = parser.parse_args()
 
