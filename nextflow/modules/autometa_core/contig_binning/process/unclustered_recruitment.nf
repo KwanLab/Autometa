@@ -13,8 +13,8 @@ process UNCLUSTERED_RECRUITMENT {
     val taxonomy
 
   output:
-    path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz", emit: binning
-    path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: main
+    path "${coverage.simpleName}.${params.kingdom}.recruitment.tsv.gz", emit: binning, optional: true 
+    path "${coverage.simpleName}.${params.kingdom}.recruitment.main.tsv.gz", emit: main, optional: true 
   
   script:
   if (!params.taxonomy_aware) 

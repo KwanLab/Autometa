@@ -50,6 +50,7 @@ import logging
 import warnings
 import numpy as np
 import pandas as pd
+import sys
 
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -572,7 +573,8 @@ def main():
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     if not prev_num_unclustered:
-        raise BinningError("No unclustered contigs are available to recruit!")
+        logger.warning("No unclustered contigs are available to recruit!")
+        sys.exit(0)
     markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(
