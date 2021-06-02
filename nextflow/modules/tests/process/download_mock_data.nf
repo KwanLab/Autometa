@@ -48,10 +48,7 @@ process DOWNLOAD_MOCK_DATA {
     """
 }
 
-
-
-
-process WRITE_FILE {
+process WRITE_FILE_APPEND_COV {
     publishDir params.outdir, mode: 'copy'
 
     input:
@@ -62,7 +59,7 @@ process WRITE_FILE {
         path "${y}"
 
     """
-    cat "${x}" > "${y}"
+    cat "${x}" | awk '/^>/ {\$0=\$1} 1' | sed 's/>.*/&_length_1_cov_1/' > "${y}"
     """
 
 

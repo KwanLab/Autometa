@@ -6,7 +6,7 @@ nextflow.enable.dsl = 2
 include { GET_ASSEMBLY_SUMMARY } from './process/download_mock_data.nf'
 include { GET_FTP_DIRS } from './process/download_mock_data.nf'
 include { DOWNLOAD_MOCK_DATA } from './process/download_mock_data.nf'
-include { WRITE_FILE } from './process/download_mock_data.nf'
+include { WRITE_FILE_APPEND_COV } from './process/download_mock_data.nf'
 
 
 include { CREATE_DIAMOND_DB } from './process/create_blast_db.nf'
@@ -32,7 +32,7 @@ workflow DL {
         )
     DOWNLOAD_MOCK_DATA(GET_FTP_DIRS.out)
     CREATE_DIAMOND_DB( DOWNLOAD_MOCK_DATA.out.protein.splitFasta(by:1).collectFile() )
-    WRITE_FILE(
+    WRITE_FILE_APPEND_COV(
         DOWNLOAD_MOCK_DATA.out.nucleotide.splitFasta(by:1).collectFile(),
         "mock_metagenome.fna"
     )
