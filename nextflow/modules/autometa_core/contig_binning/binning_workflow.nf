@@ -12,17 +12,17 @@ workflow BIN_CONTIGS {
     metagenome
     kmers_embedded
     kmers_normalized
-    kmer_coverage_results
+    coverage
     gc_content
-    markers_results
-    taxon_assignment_results
+    markers
+    taxon_assignments
     binning_column
     
 
     main: 
-        BINNING(kmers_embedded, kmer_coverage_results, gc_content, markers_results, taxon_assignment_results)
-        UNCLUSTERED_RECRUITMENT(kmers_normalized, kmer_coverage_results, BINNING.out.binning, markers_results, taxon_assignment_results)
-        BINNING_SUMMARY(BINNING.out.main, markers_results, metagenome, binning_column)
+        BINNING(kmers_embedded, coverage, gc_content, markers, taxon_assignments)
+        UNCLUSTERED_RECRUITMENT(kmers_normalized, coverage, BINNING.out.binning, markers, taxon_assignments)
+        BINNING_SUMMARY(BINNING.out.main, markers, metagenome, binning_column)
   
     emit:
         binning = BINNING.out.binning
