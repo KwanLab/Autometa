@@ -85,5 +85,5 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
     // Bin contigs
     // --------------------------------------------------------------------------------  
-    BIN_CONTIGS(LENGTH_FILTER.out.fasta, ANALYZE_KMERS.out.embedded, ANALYZE_KMERS.out.normalized, KMER_COVERAGE.out, LENGTH_FILTER.out.gc_content, markers_out_ch, taxonomy_results, "cluster")
+    BIN_CONTIGS(LENGTH_FILTER.out.fasta, ANALYZE_KMERS.out.embedded, ANALYZE_KMERS.out.normalized, SPADES_KMER_COVERAGE.out, LENGTH_FILTER.out.gc_content, markers_out_ch, taxonomy_results, "cluster")
 }
