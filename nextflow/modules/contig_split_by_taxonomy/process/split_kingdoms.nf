@@ -16,7 +16,7 @@ process SPLIT_KINGDOMS {
   output:
     path "${assembly.simpleName}.taxonomy.tsv", emit: taxonomy
     path "${assembly.simpleName}.bacteria.fna", emit: bacteria
-    path "${assembly.simpleName}.archaea.fna", emit: archaea
+    path "${assembly.simpleName}.archaea.fna", emit: archaea, optional:true
 
   """
   autometa-taxonomy \
@@ -26,9 +26,5 @@ process SPLIT_KINGDOMS {
     --split-rank-and-write superkingdom \
     --assembly ${assembly} \
     --ncbi /ncbi
-  # Handling case where no archaea were recovered...
-  if [[ ! -f ${assembly.simpleName}.archaea.fna ]]
-  then touch ${assembly.simpleName}.archaea.fna
-  fi
   """
 }
