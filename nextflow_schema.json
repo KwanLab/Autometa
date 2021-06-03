@@ -137,6 +137,7 @@
             "properties": {
                 "taxonomy_aware": {
                     "type": "boolean",
+                    "default": "false",
                     "description": "Turn taxonomy-aware clustering on/off"
                 },
                 "single_db_dir": {
