@@ -5,7 +5,7 @@ nextflow.enable.dsl = 2
 
 include { LENGTH_FILTER } from './autometa_core/utilities/process/metagenome_length_filter.nf'
 include { ANALYZE_KMERS } from './autometa_core/utilities/process/analyze_kmers.nf'
-include { KMER_COVERAGE } from './autometa_core/utilities/process/kmer_coverage.nf'
+include { SPADES_KMER_COVERAGE } from './autometa_core/utilities/process/kmer_coverage.nf'
 include { PRODIGAL_ORFS } from './autometa_core/utilities/process/orf_calling.nf'
 include { MARKERS } from './autometa_core/utilities/process/markers.nf'
 include { TAXON_ASSIGNMENT } from './contig_split_by_taxonomy/taxonomy_workflow.nf'
@@ -23,7 +23,7 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
     // contig k-mer coverage vs. contig read coverage
     // --------------------------------------------------------------------------------    
-    KMER_COVERAGE(LENGTH_FILTER.out.fasta)
+    SPADES_KMER_COVERAGE(LENGTH_FILTER.out.fasta)
     
     // --------------------------------------------------------------------------------
     // Run Prodigal to obtain open reading frames
