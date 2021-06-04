@@ -32,7 +32,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def download_dataset(dataset, out_dirpath):
+def download(dataset: str, out_dirpath: str) -> None:
     # provide list of database options as a dictionary with file_ids from google
     simulated = {
         "test": "1fy3M7RnS_HGSQVKidCy-rAwXuxldyOOv",
@@ -83,7 +83,7 @@ def main():
     )
     args = parser.parse_args()
 
-    download_dataset(args.dataset, args.out_dirpath)
+    download(args.dataset, args.out_dirpath)
 
 
 if __name__ == "__main__":
