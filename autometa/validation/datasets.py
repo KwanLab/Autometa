@@ -28,33 +28,78 @@ pulling data from google drive folder with simulated or synthetic communities
 import gdown
 import os
 import logging
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# add function to get the file ids from the user input
+def fetchIDs(folder: str, file: str):
+    """
+    Parameters
+    ----------
+    folder : str
+        specifies the folder that the user would like to download from, if any
+    file : str
+        specifies the file that the user would like to download, if any
 
-def download(dataset: str, out_dirpath: str) -> None:
-    # provide list of database options as a dictionary with file_ids from google
-    simulated = {
-        "test": "1fy3M7RnS_HGSQVKidCy-rAwXuxldyOOv",
-        "78": "15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y",
-        "156": "13bkwFBIUhdWVWlAmVCimDODWF-7tRxgI",
-        "312": "1qyAu-m6NCNuVlDFFC10waOD28j15yfV-",
-        "625": "1FgMXSD50ggu0UJbZd1PM_AvLt-E7gJix",
-        "1250": "1KoxwxBAYcz8Xz9H2v17N9CHOZ-WXWS5m",
-        "2500": "1wKZytjC4zjTuhHdNUyAT6wVbuDDIwk2m",
-        "5000": "1IX6vLfBptPxhL44dLa6jePs-GRw2XJ3S",
-        "10000": "1ON2vxEWC5FHyyPqlfZ0znMgnQ1fTirqG",
-    }
+    Returns
+    -------
+    dict
+        nested dictionary with the user's specified files' folder, file, and file_id
+        format: {'folder': {<index>: <folder>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
 
-    # construct file id into a url to put into gdown
-    file_id = simulated[dataset]
-    url = f"https://drive.google.com/uc?id={file_id}"
-    filename = f"{dataset}_metagenome.fna.gz"
-    out_fpath = os.path.join(out_dirpath, filename)
+    """
+    # create the dataframe here
+    index = pd.read_csv("gdown_fileIDs.csv", dtype = str)
 
-    # download the specified file with gdown
-    gdown.download(url, out_fpath)
+    # retrieve only the entries that the user wants
+    if folder == None:
+        target_folder = index
+    else:
+        target_folder = index.query(f'folder == "{folder}"')
 
+    if file == None:
+        target_files = target_folder
+    else:
+        target_files = target_folder.query(f'file == "{file}"')
+
+    targets_dict = target_files.to_dict()
+    return targets_dict
+
+def download(targets_dict, out_dirpath: str) -> None: 
+    
+    """Downloads the files specified in a dictionary.
+
+    Parameters
+    ----------
+    targets_dict : dict
+        nested dictionary with the user's specified files' folder, file, and file_id
+        format: {'folder': {<index>: <folder>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
+    out_dirpath : str
+        directory path where the user wants to download the file(s)
+
+    Returns
+    -------
+    None
+        download is completed through gdown
+
+    """
+    
+    key_list = [*targets_dict['file']]
+    for key in key_list:
+        # retrieve values from targets_dict
+        file = targets_dict['file'][key]
+        folder = targets_dict['folder'][key]
+        file_id = targets_dict['file_id'][key]
+
+        # construct file id into a url to put into gdown
+        url = f"https://drive.google.com/uc?id={file_id}"
+        filename = f"{folder}_{file}"
+        out_fpath = os.path.join(out_dirpath, filename) # this returns an error when relative file paths get used, eg "~/download"
+
+        # download the specified file with gdown
+        gdown.download(url, out_fpath)
+        
 
 def main():
     import argparse
@@ -71,19 +116,23 @@ def main():
         description="Download a simulated community file from google drive to a specified directory",
     )
     parser.add_argument(
-        "--dataset",
-        help="specify a size of simulated community in megabase pairs",
-        choices=["78", "156", "312", "625", "1250", "2500", "5000", "10000", "test"],
-        required=True,
+        "--folder",
+        help="specify a simulated community size to download from (leave blank to download all)",
+        choices=["78.125Mbp", "156.25Mbp", "312.5Mbp", "625Mbp", "1250Mbp", "2500Mbp", "5000Mbp", "10000Mbp"]
+    )
+    parser.add_argument(
+        "--file",
+        help="specify a file to download (or leave blank to download all)",
+        choices=['all', 'README.md', 'reference_assignments.tsv.gz', 'metagenome.fna.gz', 'master.tsv.gz', 'control_reads.tsv.gz', 'control_contigs.tsv.gz', 'unclustered_recruitment.tsv.gz', 'binning.tsv.gz', 'taxonomy.tsv.gz', 'lengths.tsv.gz', 'coverages.tsv.gz', 'gc_content.tsv.gz', 'kmers.embedded.tsv.gz', 'kmers.tsv.gz', 'markers.tsv.gz', 'Bacteria.fna.gz', 'orfs.faa.gz', 'metagenome.filtered.fna.gz', 'hmmscan.tsv.gz', 'forward_reads.fastq.gz', 'reverse_reads.fastq.gz'],
     )
     parser.add_argument(
         "--out_dirpath",
-        help="specify the directory to download the file",
+        help="specify the directory to download the file(s)",
         required=True,
     )
     args = parser.parse_args()
 
-    download(args.dataset, args.out_dirpath)
+    download(fetchIDs(args.folder, args.file), args.out_dirpath)
 
 
 if __name__ == "__main__":
