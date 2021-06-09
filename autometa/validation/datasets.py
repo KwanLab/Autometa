@@ -50,7 +50,7 @@ def fetchIDs(folder: str, file: str):
 
     """
     # create the dataframe here
-    index = pd.read_csv("gdown_fileIDs.csv", dtype = str)
+    index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
     # retrieve only the entries that the user wants
     if folder == None:
@@ -66,8 +66,9 @@ def fetchIDs(folder: str, file: str):
     targets_dict = target_files.to_dict()
     return targets_dict
 
-def download(targets_dict, out_dirpath: str) -> None: 
-    
+
+def download(targets_dict, out_dirpath: str) -> None:
+
     """Downloads the files specified in a dictionary.
 
     Parameters
@@ -84,22 +85,24 @@ def download(targets_dict, out_dirpath: str) -> None:
         download is completed through gdown
 
     """
-    
-    key_list = [*targets_dict['file']]
+
+    key_list = [*targets_dict["file"]]
     for key in key_list:
         # retrieve values from targets_dict
-        file = targets_dict['file'][key]
-        folder = targets_dict['folder'][key]
-        file_id = targets_dict['file_id'][key]
+        file = targets_dict["file"][key]
+        folder = targets_dict["folder"][key]
+        file_id = targets_dict["file_id"][key]
 
         # construct file id into a url to put into gdown
         url = f"https://drive.google.com/uc?id={file_id}"
         filename = f"{folder}_{file}"
-        out_fpath = os.path.join(out_dirpath, filename) # this returns an error when relative file paths get used, eg "~/download"
+        out_fpath = os.path.join(
+            out_dirpath, filename
+        )  # this returns an error when relative file paths get used, eg "~/download"
 
         # download the specified file with gdown
         gdown.download(url, out_fpath)
-        
+
 
 def main():
     import argparse
@@ -118,12 +121,44 @@ def main():
     parser.add_argument(
         "--folder",
         help="specify a simulated community size to download from (leave blank to download all)",
-        choices=["78.125Mbp", "156.25Mbp", "312.5Mbp", "625Mbp", "1250Mbp", "2500Mbp", "5000Mbp", "10000Mbp"]
+        choices=[
+            "78.125Mbp",
+            "156.25Mbp",
+            "312.5Mbp",
+            "625Mbp",
+            "1250Mbp",
+            "2500Mbp",
+            "5000Mbp",
+            "10000Mbp",
+        ],
     )
     parser.add_argument(
         "--file",
         help="specify a file to download (or leave blank to download all)",
-        choices=['all', 'README.md', 'reference_assignments.tsv.gz', 'metagenome.fna.gz', 'master.tsv.gz', 'control_reads.tsv.gz', 'control_contigs.tsv.gz', 'unclustered_recruitment.tsv.gz', 'binning.tsv.gz', 'taxonomy.tsv.gz', 'lengths.tsv.gz', 'coverages.tsv.gz', 'gc_content.tsv.gz', 'kmers.embedded.tsv.gz', 'kmers.tsv.gz', 'markers.tsv.gz', 'Bacteria.fna.gz', 'orfs.faa.gz', 'metagenome.filtered.fna.gz', 'hmmscan.tsv.gz', 'forward_reads.fastq.gz', 'reverse_reads.fastq.gz'],
+        choices=[
+            "all",
+            "README.md",
+            "reference_assignments.tsv.gz",
+            "metagenome.fna.gz",
+            "master.tsv.gz",
+            "control_reads.tsv.gz",
+            "control_contigs.tsv.gz",
+            "unclustered_recruitment.tsv.gz",
+            "binning.tsv.gz",
+            "taxonomy.tsv.gz",
+            "lengths.tsv.gz",
+            "coverages.tsv.gz",
+            "gc_content.tsv.gz",
+            "kmers.embedded.tsv.gz",
+            "kmers.tsv.gz",
+            "markers.tsv.gz",
+            "Bacteria.fna.gz",
+            "orfs.faa.gz",
+            "metagenome.filtered.fna.gz",
+            "hmmscan.tsv.gz",
+            "forward_reads.fastq.gz",
+            "reverse_reads.fastq.gz",
+        ],
     )
     parser.add_argument(
         "--out_dirpath",
