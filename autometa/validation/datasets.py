@@ -63,17 +63,17 @@ def fetchIDs(folder: str, file: str):
     else:
         target_files = target_folder.query(f'file == "{file}"')
 
-    targets_dict = target_files.to_dict()
-    return targets_dict
+    targets = target_files.to_dict()
+    return targets
 
 
-def download(targets_dict, out_dirpath: str) -> None:
+def download(targets: dict, out_dirpath: str) -> None:
 
     """Downloads the files specified in a dictionary.
 
     Parameters
     ----------
-    targets_dict : dict
+    targets : dict
         nested dictionary with the user's specified files' folder, file, and file_id
         format: {'folder': {<index>: <folder>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
     out_dirpath : str
@@ -86,12 +86,12 @@ def download(targets_dict, out_dirpath: str) -> None:
 
     """
 
-    key_list = [*targets_dict["file"]]
+    key_list = [*targets["file"]]
     for key in key_list:
-        # retrieve values from targets_dict
-        file = targets_dict["file"][key]
-        folder = targets_dict["folder"][key]
-        file_id = targets_dict["file_id"][key]
+        # retrieve values from targets
+        file = targets["file"][key]
+        folder = targets["folder"][key]
+        file_id = targets["file_id"][key]
 
         # construct file id into a url to put into gdown
         url = f"https://drive.google.com/uc?id={file_id}"
