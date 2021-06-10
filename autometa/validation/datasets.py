@@ -21,7 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-pulling data from google drive folder with simulated or synthetic communities
+pulling data from google drive dataset with simulated or synthetic communities
 """
 
 
@@ -33,35 +33,35 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # add function to get the file ids from the user input
-def fetchIDs(folder: str, file: str):
+def fetchIDs(dataset: str, file: str):
     """
     Parameters
     ----------
-    folder : str
-        specifies the folder that the user would like to download from, if any
+    dataset : str
+        specifies the dataset that the user would like to download from, if any
     file : str
         specifies the file that the user would like to download, if any
 
     Returns
     -------
     dict
-        nested dictionary with the user's specified files' folder, file, and file_id
-        format: {'folder': {<index>: <folder>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
+        nested dictionary with the user's specified files' dataset, file, and file_id
+        format: {'dataset': {<index>: <dataset>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
 
     """
     # create the dataframe here
     index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
     # retrieve only the entries that the user wants
-    if folder == None:
-        target_folder = index
+    if dataset == None:
+        target_dataset = index
     else:
-        target_folder = index.query(f'folder == "{folder}"')
+        target_dataset = index.query(f'dataset == "{dataset}"')
 
     if file == None:
-        target_files = target_folder
+        target_files = target_dataset
     else:
-        target_files = target_folder.query(f'file == "{file}"')
+        target_files = target_dataset.query(f'file == "{file}"')
 
     targets = target_files.to_dict()
     return targets
@@ -74,8 +74,8 @@ def download(targets: dict, out_dirpath: str) -> None:
     Parameters
     ----------
     targets : dict
-        nested dictionary with the user's specified files' folder, file, and file_id
-        format: {'folder': {<index>: <folder>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
+        nested dictionary with the user's specified files' dataset, file, and file_id
+        format: {'dataset': {<index>: <dataset>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
     out_dirpath : str
         directory path where the user wants to download the file(s)
 
@@ -90,12 +90,12 @@ def download(targets: dict, out_dirpath: str) -> None:
     for key in key_list:
         # retrieve values from targets
         file = targets["file"][key]
-        folder = targets["folder"][key]
+        dataset = targets["dataset"][key]
         file_id = targets["file_id"][key]
 
         # construct file id into a url to put into gdown
         url = f"https://drive.google.com/uc?id={file_id}"
-        filename = f"{folder}_{file}"
+        filename = f"{dataset}_{file}"
         out_fpath = os.path.join(
             out_dirpath, filename
         )  # this returns an error when relative file paths get used, eg "~/download"
@@ -119,7 +119,7 @@ def main():
         description="Download a simulated community file from google drive to a specified directory",
     )
     parser.add_argument(
-        "--folder",
+        "--dataset",
         help="specify a simulated community size to download from (leave blank to download all)",
         choices=[
             "78.125Mbp",
@@ -167,7 +167,7 @@ def main():
     )
     args = parser.parse_args()
 
-    download(fetchIDs(args.folder, args.file), args.out_dirpath)
+    download(fetchIDs(args.dataset, args.file), args.out_dirpath)
 
 
 if __name__ == "__main__":
