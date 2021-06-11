@@ -32,24 +32,26 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# add function to get the file ids from the user input
-def fetchIDs(dataset: str, file: str):
-    """
+def download(dataset: str, file: str, out_dirpath: str) -> None:
+
+    """Downloads the files specified in a dictionary.
+
     Parameters
     ----------
     dataset : str
         specifies the dataset that the user would like to download from, if any
     file : str
         specifies the file that the user would like to download, if any
+    out_dirpath : str
+        directory path where the user wants to download the file(s)
 
     Returns
     -------
-    dict
-        nested dictionary with the user's specified files' dataset, file, and file_id
-        format: {'dataset': {<index>: <dataset>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
+    None
+        download is completed through gdown
 
     """
-    # create the dataframe here
+        # create the dataframe here
     index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
     # retrieve only the entries that the user wants
@@ -64,27 +66,6 @@ def fetchIDs(dataset: str, file: str):
         target_files = target_dataset.query(f'file == "{file}"')
 
     targets = target_files.to_dict()
-    return targets
-
-
-def download(targets: dict, out_dirpath: str) -> None:
-
-    """Downloads the files specified in a dictionary.
-
-    Parameters
-    ----------
-    targets : dict
-        nested dictionary with the user's specified files' dataset, file, and file_id
-        format: {'dataset': {<index>: <dataset>}, 'file': {<index>: <file>}, 'file_id': {<index>: <file_id>}}
-    out_dirpath : str
-        directory path where the user wants to download the file(s)
-
-    Returns
-    -------
-    None
-        download is completed through gdown
-
-    """
 
     key_list = [*targets["file"]]
     for key in key_list:
@@ -167,7 +148,7 @@ def main():
     )
     args = parser.parse_args()
 
-    download(fetchIDs(args.dataset, args.file), args.out_dirpath)
+    download(args.dataset, args.file, args.out_dirpath)
 
 
 if __name__ == "__main__":
