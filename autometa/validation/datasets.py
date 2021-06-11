@@ -32,7 +32,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-def download(dataset: str, file: str, out_dirpath: str) -> None:
+def download(dataset: str, file: str, out: str) -> None:
 
     """Downloads the files specified in a dictionary.
 
@@ -54,13 +54,10 @@ def download(dataset: str, file: str, out_dirpath: str) -> None:
         # create the dataframe here
     index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
-    # retrieve only the entries that the user wants
-    if dataset == None:
-        target_dataset = index
-    else:
-        target_dataset = index.query(f'dataset == "{dataset}"')
+    # retrieve only the community that the user wants (user must specify a community)
+    target_dataset = index.query(f'dataset == "{dataset}"')
 
-    if file == None:
+    if file == 'all':
         target_files = target_dataset
     else:
         target_files = target_dataset.query(f'file == "{file}"')
@@ -76,13 +73,9 @@ def download(dataset: str, file: str, out_dirpath: str) -> None:
 
         # construct file id into a url to put into gdown
         url = f"https://drive.google.com/uc?id={file_id}"
-        filename = f"{dataset}_{file}"
-        out_fpath = os.path.join(
-            out_dirpath, filename
-        )  # this returns an error when relative file paths get used, eg "~/download"
 
         # download the specified file with gdown
-        gdown.download(url, out_fpath)
+        gdown.download(url, out)
 
 
 def main():
@@ -92,16 +85,15 @@ def main():
     logger.basicConfig(
         format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG,
+        level=logger.DEBUG
     )
 
     parser = argparse.ArgumentParser(
-        prog="autometa-download-dataset",
-        description="Download a simulated community file from google drive to a specified directory",
+        description="Download a simulated community file from google drive to a specified directory"
     )
     parser.add_argument(
-        "--dataset",
-        help="specify a simulated community size to download from (leave blank to download all)",
+        "--community",
+        help="specify a simulated community size to download from",
         choices=[
             "78.125Mbp",
             "156.25Mbp",
@@ -111,11 +103,11 @@ def main():
             "2500Mbp",
             "5000Mbp",
             "10000Mbp",
-        ],
+        ]
     )
     parser.add_argument(
         "--file",
-        help="specify a file to download (or leave blank to download all)",
+        help="specify a file to download",
         choices=[
             "all",
             "README.md",
@@ -140,15 +132,23 @@ def main():
             "forward_reads.fastq.gz",
             "reverse_reads.fastq.gz",
         ],
+        nargs='+',
+        required=True
     )
     parser.add_argument(
         "--out_dirpath",
         help="specify the directory to download the file(s)",
         required=True,
+        nargs='+'
     )
     args = parser.parse_args()
 
-    download(args.dataset, args.file, args.out_dirpath)
+    community = args.community
+    filetypes = args.file
+    filepaths = args.out_dirpath
+    
+    for filetype, filepath in zip(filetypes, filepaths):
+        download(dataset=community, file=filetype, out=filepath)
 
 
 if __name__ == "__main__":
