@@ -32,6 +32,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
 def download(dataset: str, file: str, out: str) -> None:
 
     """Downloads the files specified in a dictionary.
@@ -42,7 +43,7 @@ def download(dataset: str, file: str, out: str) -> None:
         specifies the dataset that the user would like to download from, if any
     file : str
         specifies the file that the user would like to download, if any
-    out_dirpath : str
+    output : str
         directory path where the user wants to download the file(s)
 
     Returns
@@ -51,24 +52,19 @@ def download(dataset: str, file: str, out: str) -> None:
         download is completed through gdown
 
     """
-        # create the dataframe here
+    # create the dataframe here
     index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
     # retrieve only the community that the user wants (user must specify a community)
     target_dataset = index.query(f'dataset == "{dataset}"')
 
-    if file == 'all':
-        target_files = target_dataset
-    else:
-        target_files = target_dataset.query(f'file == "{file}"')
+    target_files = target_dataset.query(f'file == "{file}"')
 
     targets = target_files.to_dict()
 
     key_list = [*targets["file"]]
     for key in key_list:
-        # retrieve values from targets
-        file = targets["file"][key]
-        dataset = targets["dataset"][key]
+        # retrieve file ids from targets
         file_id = targets["file_id"][key]
 
         # construct file id into a url to put into gdown
@@ -85,7 +81,7 @@ def main():
     logger.basicConfig(
         format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
         datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG
+        level=logger.DEBUG,
     )
 
     parser = argparse.ArgumentParser(
@@ -103,13 +99,13 @@ def main():
             "2500Mbp",
             "5000Mbp",
             "10000Mbp",
-        ]
+        ],
+        required=True,
     )
     parser.add_argument(
         "--file",
         help="specify a file to download",
         choices=[
-            "all",
             "README.md",
             "reference_assignments.tsv.gz",
             "metagenome.fna.gz",
@@ -132,22 +128,35 @@ def main():
             "forward_reads.fastq.gz",
             "reverse_reads.fastq.gz",
         ],
-        nargs='+',
-        required=True
+        nargs="+",
+        required=True,
     )
     parser.add_argument(
-        "--out_dirpath",
-        help="specify the directory to download the file(s)",
+        "--output",
+        help="specify the full filepath for your downloaded file (including filename)",
         required=True,
-        nargs='+'
+        nargs="+",
     )
     args = parser.parse_args()
 
+    # if I add in "all" functionality, add it here
+
     community = args.community
     filetypes = args.file
-    filepaths = args.out_dirpath
-    
+    filepaths = args.output
+
+    if len(filetypes) != len(filepaths):
+        logger.warning(
+            "The number of files specified and the number of output paths specified do not match. The program will use the shorter list. You might not get all the files you wanted."
+        )
     for filetype, filepath in zip(filetypes, filepaths):
+        if (
+            os.path.splitext(filetype)[-1].lower()
+            != os.path.splitext(filepath)[-1].lower()
+        ):
+            logger.warning(
+                "The file extension doesn't match on the file and the output. The file will still be saved under the user-specified output, but it might be difficult to open."
+            )
         download(dataset=community, file=filetype, out=filepath)
 
 
