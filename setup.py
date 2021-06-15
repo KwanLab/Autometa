@@ -37,6 +37,7 @@ setup(
             "autometa-binning = autometa.binning.recursive_dbscan:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
             "autometa-binning-summary = autometa.binning.summary:main",
+            "autometa-download-dataset = autometa.validation.datasets:main",
         ]
     },
     author="Jason C. Kwan",
