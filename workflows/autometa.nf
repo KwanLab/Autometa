@@ -52,7 +52,7 @@ include { PRODIGAL } from './../modules/nf-core/software/prodigal/main'
 //
 include { ANALYZE_KMERS } from './../modules/local/analyze_kmers' addParams( options: modules['analyze_kmers'] )
 include { TAXON_ASSIGNMENT } from './../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'] )
-include { SEARCH_TAXONOMY } from './../subworkflows/local/search_taxonomy' addParams( options: modules['search_taxonomy'] )
+include { SEARCH_TAXONOMY } from './../subworkflows/local/search_taxonomy' addParams( fix_diamond_options: modules['search_taxonomy'] )
 
 include { SPADES_KMER_COVERAGE } from './../modules/local/spades_kmer_coverage' addParams( options: modules['spades_kmer_coverage'] )
 

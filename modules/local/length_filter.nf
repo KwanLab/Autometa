@@ -8,7 +8,7 @@ process LENGTH_FILTER {
     tag "Removing ${meta.id} contigs less than ${params.length_cutoff}"
     label 'process_medium'
    
-    publishDir "${params.outdir}",
+    publishDir "${params.interim_dir}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), publish_id:meta.id) }
     

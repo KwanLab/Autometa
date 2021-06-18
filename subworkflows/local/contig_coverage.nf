@@ -5,10 +5,15 @@ nextflow.enable.dsl=2
 params.rev_reads = null
 params.fwd_reads = null
 
-include { LENGTH_TABLE } from './../../modules/local/length_table.nf'
-include { ALIGN_READS } from './../../modules/local/align_reads.nf'
-include { SORT_READS} from './../../modules/local/sort_reads.nf'
-include { GENOMECOV} from './../../modules/local/genome_coverage.nf'
+params.length_table_options      = [:]
+params.align_reads_options      = [:]
+params.sort_reads_options      = [:]
+params.genome_coverage_options      = [:]
+
+include { LENGTH_TABLE } from './../../modules/local/fix_length_table.nf' addParams( options: params.length_table_options )
+include { ALIGN_READS } from './../../modules/local/align_reads.nf' addParams( options: params.align_reads_options )
+include { SORT_READS} from './../../modules/local/sort_reads.nf' addParams( options: params.sort_reads_options )
+include { GENOMECOV} from './../../modules/local/genome_coverage.nf' addParams( options: params.genome_coverage_options )
 
 
 workflow READ_COVERAGE {

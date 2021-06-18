@@ -1,12 +1,10 @@
-#!/usr/bin/env nextflow
 
-nextflow.enable.dsl=2
+params.fix_diamond_options      = [:]
 
-
-// This workflow is used instead DIAMOND_BLASTP directly to provide flexibility
+// This workflow is used instead of DIAMOND_BLASTP directly to provide flexibility
 // in possibly using other programs in the future 
 
-include { DIAMOND as DIAMOND_BLASTP } from './../../modules/local/fix_diamond.nf'
+include { DIAMOND as DIAMOND_BLASTP } from './../../modules/local/fix_diamond.nf' addParams( options: params.fix_diamond_options )
 
 workflow SEARCH_TAXONOMY {
     take:
