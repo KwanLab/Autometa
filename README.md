@@ -1,4 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/autometa/badge/?version=latest)](https://autometa.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.com/KwanLab/Autometa.svg?branch=dev)](https://travis-ci.com/KwanLab/Autometa)
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 
 Autometa
 =========
