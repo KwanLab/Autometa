@@ -156,8 +156,7 @@ tests/data/*
 .DS_Store
 
 # nextflow
-.nextflow
-.nextflow.log*
+.nextflow*
 pipeline_info
 work/
 large_db/
