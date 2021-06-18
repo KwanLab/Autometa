@@ -3,6 +3,8 @@ name: autometa
 channels:
   - conda-forge
   - bioconda
+  - defaults
+
 dependencies:
   - attrs
   - bedtools
