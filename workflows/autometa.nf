@@ -38,43 +38,17 @@ if (params.taxonomy_aware) {
 }
 
 
-
-
-include { GET_SOFTWARE_VERSIONS                               } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']] )
-
-include { INPUT_READS         } from '../subworkflows/local/input_check'
-include { INPUT_CONTIGS         } from '../subworkflows/local/input_check'
-
-include { LENGTH_FILTER } from './../modules/local/length_filter' addParams( options: [publish_files : ['*':'']] )
-include { PRODIGAL } from './../modules/nf-core/software/prodigal/main'
-
-
-//
-include { ANALYZE_KMERS } from './../modules/local/analyze_kmers' addParams( options: modules['analyze_kmers'] )
-include { TAXON_ASSIGNMENT } from './../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'] )
-include { SEARCH_TAXONOMY } from './../subworkflows/local/search_taxonomy' addParams( fix_diamond_options: modules['search_taxonomy'] )
-
-include { SPADES_KMER_COVERAGE } from './../modules/local/spades_kmer_coverage' addParams( options: modules['spades_kmer_coverage'] )
-
-include { MARKERS } from './../modules/local/markers' addParams( options: modules['markers'] )
-
-include { BIN_CONTIGS } from './../subworkflows/local/bin_contigs.nf' addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options']   )                                                
-
-
-
-// if (params.gtdb) {
-//     Channel
-//         .value(file( "${params.gtdb}" ))
-//         .set { ch_gtdb }
-// } else {
-//     ch_gtdb = Channel.empty()
-// }
-
-
-//def busco_failed_bins = [:]
-
-
-metagenome_ch = ''
+include { GET_SOFTWARE_VERSIONS   } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]                      )
+include { INPUT_READS             } from '../subworkflows/local/input_check'
+include { INPUT_CONTIGS           } from '../subworkflows/local/input_check'
+include { LENGTH_FILTER           } from './../modules/local/length_filter'             addParams( options: [publish_files : ['*':'']]                        )
+include { PRODIGAL                } from './../modules/nf-core/software/prodigal/main'
+include { ANALYZE_KMERS           } from './../modules/local/analyze_kmers'             addParams( options: modules['analyze_kmers']                          )  
+include { TAXON_ASSIGNMENT        } from './../subworkflows/local/taxon_assignment'     addParams( options: modules['taxon_assignment']                       )
+include { SEARCH_TAXONOMY         } from './../subworkflows/local/search_taxonomy'      addParams( diamond_blastp_options: modules['diamond_blastp_options']  )
+include { SPADES_KMER_COVERAGE    } from './../modules/local/spades_kmer_coverage'      addParams( options: modules['spades_kmer_coverage']                   )
+include { MARKERS                 } from './../modules/local/markers'                   addParams( options: modules['markers']                                )
+include { BIN_CONTIGS             } from './../subworkflows/local/bin_contigs.nf'       addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options']   )                                                
 
 
 workflow AUTOMETA {
@@ -137,24 +111,23 @@ workflow AUTOMETA {
     if ( params.parallel_split_fasta ) {
 
       MARKERS(
-        orf_prots_parallel_ch
-        )    
+          orf_prots_parallel_ch
+      )    
       
       MARKERS.out.groupTuple().view()
       .collectFile(
-        cache:true,
-        keepHeader:true
-        )
-        .view()
-        .map { meta, reads -> [ meta.id, meta, reads ] }
-        .set{
-          markers_out_ch
+          cache:true,
+          keepHeader:true
+      )
+      .map { meta, reads -> [ meta.id, meta, reads ] }
+      .set{
+            markers_out_ch
           }
 
     }
     else {
-      MARKERS(orf_prots_ch)
-      MARKERS.out.set{markers_out_ch}
+        MARKERS(orf_prots_ch)
+        MARKERS.out.set{markers_out_ch}
   
     }
 
@@ -163,17 +136,14 @@ workflow AUTOMETA {
     // Bin contigs
     // --------------------------------------------------------------------------------  
 
- 
-
     BIN_CONTIGS(
-      LENGTH_FILTER.out.fasta,
-      ANALYZE_KMERS.out.embedded,
-      ANALYZE_KMERS.out.normalized,
-      SPADES_KMER_COVERAGE.out,
-      LENGTH_FILTER.out.gc_content,
-      markers_out_ch,
-      taxonomy_results,
-      "cluster"
+        LENGTH_FILTER.out.fasta,
+        ANALYZE_KMERS.out.embedded,
+        ANALYZE_KMERS.out.normalized,
+        SPADES_KMER_COVERAGE.out,
+        LENGTH_FILTER.out.gc_content,
+        markers_out_ch,
+        taxonomy_results,
+        "cluster"
     )
-
 }
