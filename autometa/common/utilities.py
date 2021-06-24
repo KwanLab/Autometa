@@ -29,6 +29,7 @@ import hashlib
 import logging
 import os
 import pickle
+import socket
 import sys
 import tarfile
 import time
@@ -442,6 +443,18 @@ def timeit(func: FunctionType) -> FunctionType:
         return obj
 
     return wrapper
+
+
+def internet_is_connected(
+    host: str = "8.8.8.8", port: int = 53, timeout: int = 2
+) -> bool:
+    # google.com
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error:
+        return False
 
 
 if __name__ == "__main__":
