@@ -30,6 +30,8 @@ import os
 import logging
 import pandas as pd
 
+from autometa.common.utilities import internet_is_connected
+
 logger = logging.getLogger(__name__)
 
 
@@ -144,6 +146,11 @@ def main():
     community = args.community
     filetypes = args.file
     filepaths = args.output
+
+    if not internet_is_connected():
+        logger.error(
+            "No internet connection detected. Please confirm connection and try again. Downloader will still attempt to run."
+        )
 
     if len(filetypes) != len(filepaths):
         logger.warning(
