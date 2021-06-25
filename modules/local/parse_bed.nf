@@ -36,6 +36,5 @@ process PARSE_BED {
         --bed $bed_out \
         --output ${meta.id}.coverage.tsv
 
-    # bedtools --version | sed -e "s/bedtools v//g" > ${software}.version.txt
     """
 }

@@ -73,9 +73,16 @@ workflow AUTOMETA {
            PRODIGAL.out.amino_acid_fasta
              .set{orf_prots_parallel_ch}
 
-           PRODIGAL.out.amino_acid_fasta.collectFile(cache:false)
-             .set{orf_prots_ch}
-
+ 
+// TODO: there's definitely a better way to do this but I'm tired
+// and not sure how to get the meta map through the other side of collectFile  
+      PRODIGAL.out.amino_acid_fasta
+        .collectFile()
+        .map{[it.simpleName, it]}.view()
+      .set{
+            orf_prots_ch
+          }
+        //  orf_prots_ch.view()
     } else {
        
            PRODIGAL(LENGTH_FILTER.out.fasta, "gbk")
@@ -114,28 +121,24 @@ workflow AUTOMETA {
           orf_prots_parallel_ch
       )    
       
-      MARKERS.out.groupTuple().view()
-      .collectFile(
-          cache:true,
-          keepHeader:true
-      )
-      .map { meta, reads -> [ meta.id, meta, reads ] }
+// TODO: there's definitely a better way to do this but I'm tired
+// and not sure how to get the meta map through the other side of collectFile  
+      MARKERS.out.groupTuple()
+      .map{ met, file -> 
+        [met, file.collectFile()]
+      }
       .set{
             markers_out_ch
           }
-
+          
+markers_out_ch.view()
     }
     else {
         MARKERS(orf_prots_ch)
         MARKERS.out.set{markers_out_ch}
   
+  
     }
-
-
-    // --------------------------------------------------------------------------------
-    // Bin contigs
-    // --------------------------------------------------------------------------------  
-
     BIN_CONTIGS(
         LENGTH_FILTER.out.fasta,
         ANALYZE_KMERS.out.embedded,
@@ -146,4 +149,20 @@ workflow AUTOMETA {
         taxonomy_results,
         "cluster"
     )
+
+    // --------------------------------------------------------------------------------
+    // Bin contigs
+    // --------------------------------------------------------------------------------  
+
+        //LENGTH_FILTER.out.fasta.view()
+       // ANALYZE_KMERS.out.embedded.view()
+       // ANALYZE_KMERS.out.normalized.view()
+       // SPADES_KMER_COVERAGE.out.view()
+       // LENGTH_FILTER.out.gc_content.view()
+       // markers_out_ch.view()
+       // taxonomy_results.view()
+
+
+
+
 }

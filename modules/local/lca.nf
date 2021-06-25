@@ -1,21 +1,36 @@
-#!/usr/bin/env nextflow
-nextflow.enable.dsl=2
+// Import generic module functions
+include { initOptions; saveFiles; getSoftwareName } from './functions'
+
+params.options = [:]
+options        = initOptions(params.options)
 
 process LCA {
-  label 'process_medium'
-  label 'process_long'
-  
-  tag "Assigning LCA to ${blast.simpleName}"
-  containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
-  publishDir params.interim_dir, pattern: "${blast.simpleName}.lca.tsv"
+    tag "Finding LCA for ${meta.id}"
+    label 'process_low'
+    publishDir "${params.outdir}",
+        mode: params.publish_dir_mode,
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
-  input:
-    path blast
+    conda (params.enable_conda ? "bioconda::autometa" : null)
+    
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+    } else {
+         container "jason-c-kwan/autometa:nfcore"
+    }
 
-  output:
-    path "${blast.simpleName}.lca.tsv"
+    input:
+        tuple val(meta), path(blast)
 
-  """
-  autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${blast.simpleName}.lca.tsv
-  """
+    output:
+    tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
+
+
+    script:
+    def software = getSoftwareName(task.process)
+    
+
+    """
+      autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${meta.id}.lca.tsv
+    """
 }

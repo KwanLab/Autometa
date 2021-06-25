@@ -26,13 +26,13 @@ process MARKERS {
         tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
   
     """
-    autometa-markers \
-      --orfs $orfs \
-      --hmmscan ${meta.id}.hmmscan.tsv \
-      --out ${meta.id}.markers.tsv \
-      --kingdom ${params.kingdom} \
-      --parallel \
-      --cpus ${task.cpus} \
-      --seed 42
+    autometa-markers \\
+        --orfs $orfs \\
+        --hmmscan ${meta.id}.hmmscan.tsv \\
+        --out ${meta.id}.markers.tsv \\
+        --kingdom ${params.kingdom} \\
+        --parallel \\
+        --cpus ${task.cpus} \\
+        --seed 42
     """
 }

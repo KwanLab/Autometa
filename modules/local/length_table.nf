@@ -15,7 +15,7 @@ process LENGTH_TABLE {
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").
     //               For Conda, the build (i.e. "h9402c20_2") must be EXCLUDED to support installation on different operating systems.
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
-    conda (params.enable_conda ? "autometa" : null)
+    conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -35,7 +35,7 @@ process LENGTH_TABLE {
     from Bio import SeqIO
     import pandas as pd
 
-    seqs = {record.id: len(record) for record in SeqIO.parse(${meta.id}, "fasta")}
+    seqs = {record.id: len(record) for record in SeqIO.parse(${metagenome}, "fasta")}
     lengths = pd.Series(seqs, name="length")
     lengths.index.name = "contig"
     lengths.to_csv(${meta.id}.lengths.tsv, sep="\t", index=True, header=True)

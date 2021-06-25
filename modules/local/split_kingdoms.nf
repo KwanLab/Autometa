@@ -1,30 +1,40 @@
-#!/usr/bin/env nextflow
-nextflow.enable.dsl=2
+// Import generic module functions
+include { initOptions; saveFiles; getSoftwareName } from './functions'
+
+params.options = [:]
+options        = initOptions(params.options)
 
 process SPLIT_KINGDOMS {
-  label 'process_medium'
-  
-  tag "Splitting votes into kingdoms for ${assembly.simpleName}"
-  containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
-  publishDir params.interim_dir, pattern: "${assembly.simpleName}.taxonomy.tsv"
-  publishDir params.interim_dir, pattern: '*.{bacteria,archaea}.fna'
+    tag "Splitting votes into kingdoms for ${meta.id}"
+    label 'process_medium'
+    
+    publishDir "${params.interim_dir}",
+        mode: params.publish_dir_mode,
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 
-  input:
-    path votes
-    path assembly
+    conda (params.enable_conda ? "bioconda::autometa" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/TODO"
+    } else {
+         container "jason-c-kwan/autometa:nfcore"
+         containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
+    }
 
-  output:
-    path "${assembly.simpleName}.taxonomy.tsv", emit: taxonomy
-    path "${assembly.simpleName}.bacteria.fna", emit: bacteria
-    path "${assembly.simpleName}.archaea.fna", emit: archaea, optional:true
+    input:
+      tuple val(meta), path(votes), path(assembly)
 
-  """
-  autometa-taxonomy \
-    --votes ${votes} \
-    --output . \
-    --prefix ${assembly.simpleName} \
-    --split-rank-and-write superkingdom \
-    --assembly ${assembly} \
-    --ncbi /ncbi
-  """
+    output:
+      path "${meta.id}.taxonomy.tsv", emit: taxonomy
+      path "${meta.id}.bacteria.fna", emit: bacteria
+      path "${meta.id}.archaea.fna", emit: archaea, optional:true
+
+    """
+    autometa-taxonomy \
+      --votes ${votes} \
+      --output . \
+      --prefix ${meta.id} \
+      --split-rank-and-write superkingdom \
+      --assembly ${assembly} \
+      --ncbi /ncbi
+    """
 }
