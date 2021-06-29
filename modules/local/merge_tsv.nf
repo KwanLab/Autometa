@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process MERGE_TSV_WITH_HEADERS {
     tag "Merging files from parallel split for ${meta.id}"
     label 'process_low'
-    publishDir "${params.outdir}",
+    publishDir "${params.interim_dir}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
@@ -21,9 +21,10 @@ process MERGE_TSV_WITH_HEADERS {
 
     input:
         tuple val(meta), path("?.tsv")
+        val extension
 
     output:
-    tuple val(meta), path("merged"), emit: merged_tsv
+    tuple val(meta), path("${meta.id}.${extension}"), emit: merged_tsv
 
 
     script:
@@ -31,6 +32,6 @@ process MERGE_TSV_WITH_HEADERS {
     
 
     """
-      awk 'FNR==1 && NR!=1{next;}{print}' *.tsv > merged
+      awk 'FNR==1 && NR!=1{next;}{print}' *.tsv > "${meta.id}.${extension}"
     """
 }
