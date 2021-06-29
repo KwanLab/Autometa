@@ -30,6 +30,7 @@ setup(
             "autometa-parse-bed = autometa.common.external.bedtools:main",
             "autometa-orfs = autometa.common.external.prodigal:main",
             "autometa-markers = autometa.common.markers:main",
+            "autometa-markerfilter = autometa.common.filter_hmmsearch:main",
             "autometa-length-filter = autometa.common.metagenome:main",
             "autometa-taxonomy = autometa.taxonomy.vote:main",
             "autometa-taxonomy-lca = autometa.taxonomy.lca:main",
