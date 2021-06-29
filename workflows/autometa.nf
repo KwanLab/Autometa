@@ -39,9 +39,8 @@ include { HMMER_HMMSEARCH_FILTER                                } from './../mod
 include { INPUT_READS                                           } from '../subworkflows/local/input_check'
 include { INPUT_CONTIGS                                         } from '../subworkflows/local/input_check'
 include { LENGTH_FILTER                                         } from './../modules/local/length_filter'               addParams( options: [publish_files : ['*':'']]                          )
-include { MARKERS                                               } from './../modules/local/markers'                     addParams( options: modules['markers']                                  )
 include { MERGE_TSV_WITH_HEADERS as MERGE_SPADES_COVERAGE_TSV   } from './../modules/local/merge_tsv.nf'                addParams( options: modules['seqkit_split_options']                     )                                                
-include { MERGE_TSV_WITH_HEADERS as MERGE_MARKERS_TSV           } from './../modules/local/merge_tsv.nf'                addParams( options: modules['seqkit_split_options']                     )                                                
+include { MERGE_TSV_WITH_HEADERS as MERGE_MARKERS_TSV           } from './../modules/local/merge_tsv.nf'                addParams( options: modules['merge_markers_options']                     )                                                
 include { MERGE_TSV_WITH_HEADERS as MERGE_KMERS_EMBEDDED_TSV    } from './../modules/local/merge_tsv.nf'                addParams( options: modules['seqkit_split_options']                     )                                                
 include { MERGE_TSV_WITH_HEADERS as MERGE_KMERS_NORMALIZED_TSV  } from './../modules/local/merge_tsv.nf'                addParams( options: modules['seqkit_split_options']                     )                                                
 include { PRODIGAL                                              } from './../modules/nf-core/software/prodigal/main'    addParams( options: modules['prodigal_options']                         )
@@ -101,22 +100,22 @@ workflow AUTOMETA {
 
     // Before binning we need to merge back everything that was run in parallel
     if ( params.parallel_split_fasta ) {
-        MERGE_SPADES_COVERAGE_TSV(SPADES_KMER_COVERAGE.out.coverages.groupTuple())
+        MERGE_SPADES_COVERAGE_TSV(SPADES_KMER_COVERAGE.out.coverages.groupTuple(),"coverage")
     
         MERGE_SPADES_COVERAGE_TSV.out.merged_tsv
             .set{spades_coverage_merged_tsv_ch}
 
-        MERGE_MARKERS_TSV(HMMER_HMMSEARCH_FILTER.out.markers_tsv.groupTuple())
+        MERGE_MARKERS_TSV(HMMER_HMMSEARCH_FILTER.out.markers_tsv.groupTuple(),"markers.tsv")
     
         MERGE_MARKERS_TSV.out.merged_tsv
             .set{markers_tsv_merged_tsv_ch}
  
-        MERGE_KMERS_EMBEDDED_TSV(ANALYZE_KMERS.out.embedded.groupTuple())
+        MERGE_KMERS_EMBEDDED_TSV(ANALYZE_KMERS.out.embedded.groupTuple(),"kmers.embedded.tsv")
     
         MERGE_KMERS_EMBEDDED_TSV.out.merged_tsv
             .set{kmers_embedded_merged_tsv_ch}
              
-        MERGE_KMERS_NORMALIZED_TSV(ANALYZE_KMERS.out.normalized.groupTuple())
+        MERGE_KMERS_NORMALIZED_TSV(ANALYZE_KMERS.out.normalized.groupTuple(),"kmers.normalized.tsv")
     
         MERGE_KMERS_NORMALIZED_TSV.out.merged_tsv
             .set{kmers_normalized_tsv_ch}
