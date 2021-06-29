@@ -20,7 +20,7 @@ process UNCLUSTERED_RECRUITMENT {
     }
 
     input:
-        tuple val(meta), path(kmers), path(coverage), path(binning), path(markers)
+        tuple val(meta),path("?.kmers"), path("?.coverage"), path(binning), path("?.markers")
         val(taxonomy)
 
   output:
@@ -34,10 +34,10 @@ process UNCLUSTERED_RECRUITMENT {
         --classifier ${params.classification_method} \
         --kmer-dimensions ${params.classification_kmer_pca_dimensions} \
         --seed 42 \
-        --kmers $kmers \
-        --coverage $coverage \
+        --kmers ?.kmers \
+        --coverage ?.coverage \
         --binning $binning \
-        --markers $markers \
+        --markers ?.markers \
         --output-binning ${meta.id}.${params.kingdom}.recruitment.tsv.gz \
         --output-main ${meta.id}.${params.kingdom}.recruitment.main.tsv.gz
       """

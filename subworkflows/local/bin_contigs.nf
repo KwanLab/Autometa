@@ -32,7 +32,7 @@ workflow BIN_CONTIGS {
             markers
         )
         .set{binning_ch}
-   
+  
         BINNING(binning_ch, taxon_assignments)
     
         kmers_normalized.join(

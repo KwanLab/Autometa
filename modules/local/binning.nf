@@ -12,15 +12,15 @@ process BINNING {
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), publish_id:meta.id) }
    
-  //  conda (params.enable_conda ? "bioconda::autometa" : null)
-  //  if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-  //      container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-  //  } else {
-  //      container "jason-c-kwan/autometa:nfcore"
-  //  }
+    conda (params.enable_conda ? "bioconda::autometa" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+    } else {
+        container "jason-c-kwan/autometa:nfcore"
+    }
     
     input:
-        tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers)
+        tuple val(meta), path("?.kmers"), path("?.coverage"), path("?.gc_content"), path("?.markers")
         val(taxonomy)
   
     output:
@@ -31,10 +31,10 @@ process BINNING {
     if (!params.taxonomy_aware) 
         """
         autometa-binning \
-            --kmers $kmers \
-            --coverages $coverage \
-            --gc-content $gc_content \
-            --markers $markers \
+            --kmers ?.kmers \
+            --coverages ?.coverage \
+            --gc-content ?.gc_content \
+            --markers ?.markers \
             --output-binning ${meta.id}.${params.kingdom}.binning.tsv.gz \
             --output-main ${meta.id}.${params.kingdom}.main.tsv.gz \
             --clustering-method ${params.clustering_method} \
@@ -48,10 +48,10 @@ process BINNING {
     else
         """
         autometa-binning \
-            --kmers $kmers \
-            --coverages $coverage \
-            --gc-content $gc_content \
-            --markers $markers \
+            --kmers ?.kmers \
+            --coverages ?.coverage \
+            --gc-content ?.gc_content \
+            --markers ?.markers \
             --output-binning ${meta.id}.${params.kingdom}.binning.tsv.gz \
             --output-main ${meta.id}.${params.kingdom}.main.tsv.gz \
             --clustering-method ${params.clustering_method} \

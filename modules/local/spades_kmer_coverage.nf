@@ -24,7 +24,7 @@ process SPADES_KMER_COVERAGE {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("${meta.id}.coverages.tsv")
+        tuple val(meta), path("${meta.id}.coverages.tsv"), emit: coverages
   
     """
     autometa-coverage \
