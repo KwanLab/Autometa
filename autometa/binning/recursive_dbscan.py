@@ -79,7 +79,6 @@ def add_metrics(
     if domain not in marker_sets:
         raise KeyError(f"{domain} is not bacteria or archaea!")
     expected_number = marker_sets[domain]
-    metrics = []
     if "cluster" in df.columns:
         # join cluster and marker data, group by cluster
         temp = df.join(markers_df, how='outer').groupby("cluster")
