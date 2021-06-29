@@ -626,10 +626,10 @@ def main():
     )
     # Write unclustered recruitment results into main bin df
     # index = 'contig', cols = [..., 'cluster', 'recruited_cluster', ...]
-    main_df.to_csv(args.output_binning, sep="\t", index=True, header=True)
+    main_df.to_csv(args.output_binning, sep="\t", index=True, header=True, float_format='%.5f')
     if args.output_main:
         # Outputs features matrix used as input to recruitment algorithm
-        features.to_csv(args.output_main, sep="\t", index=True, header=True)
+        features.to_csv(args.output_main, sep="\t", index=True, header=True, float_format='%.5f')
 
 
 if __name__ == "__main__":

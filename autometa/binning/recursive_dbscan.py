@@ -1009,7 +1009,7 @@ def main():
         "coverage_stddev",
         "gc_content_stddev",
     ]
-    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
+    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True, float_format='%.5f')
     logger.info(f"Wrote binning results to {args.output_binning}")
     if args.output_main:
         # First after binning relevant assignments/metrics place contig physical annotations
