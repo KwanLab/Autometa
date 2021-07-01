@@ -198,7 +198,7 @@ def write_usage(fpath, rst_dirpath, wrapped_lines):
     rst_fname = fname + ".rst"  # make it kmers.rst
     rst_fpath = os.path.join(rst_dirpath, rst_fname)
     frmt_header = "=" * len(basename)
-    header = f"{frmt_header}\n{basename}\n{frmt_header}\n\n.. code-block:: shell\n"
+    header = f"{frmt_header}\n{basename}\n{frmt_header}\n\n.. code-block:: bash\n"
     with open(rst_fpath, "w") as fh_rst:
         fh_rst.write(f"{header}\n{wrapped_lines}")
 
