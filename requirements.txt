@@ -1,4 +1,5 @@
 # For information on available operators see https://pip.pypa.io/en/stable/user_guide/#fixing-conflicting-dependencies
+python-annoy>=1.11
 attrs
 bedtools
 biopython
@@ -9,7 +10,8 @@ hdbscan
 hmmer
 make
 nextflow>=20.10
-numpy
+numba>=0.34
+numpy>=1.13
 pandas>=1.1
 parallel
 prodigal
@@ -17,7 +19,7 @@ requests
 rsync
 samtools==1.11
 scikit-bio
-scikit-learn
+scikit-learn>=0.18
 tqdm
 tsne
 umap-learn

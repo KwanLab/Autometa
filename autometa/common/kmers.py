@@ -42,8 +42,10 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from tsne import bh_sne
 from umap import UMAP
+import trimap
 
 # import densne # TODO: this import should be available after installation of denSNE
+
 
 from autometa.common import utilities
 from autometa.common.exceptions import TableFormatError
@@ -469,6 +471,7 @@ def embed(
         * `tsne.bh_sne <https://pypi.org/project/tsne/>`_
         * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
         * `densMAP <https://github.com/hhcho/densvis/tree/master/densmap>`_
+        * `TriMap <https://github.com/eamid/trimap>`_
 
     Parameters
     ----------
@@ -485,7 +488,7 @@ def embed(
         If zero, will skip this step.
     method : str, optional
         embedding method to use (the default is 'bhsne').
-        choices include sksne, bhsne, umap and densmap.
+        choices include sksne, bhsne, umap, trimap and densmap.
     perplexity : float, optional
         hyperparameter used to tune sksne and bhsne (the default is 30.0).
     seed: int, optional
@@ -532,7 +535,7 @@ def embed(
         raise FileNotFoundError(f"{kmers_desc} {embed_desc} {requirements}")
 
     method = method.lower()
-    choices = {"umap", "sksne", "bhsne", "densmap"}
+    choices = {"umap", "sksne", "bhsne", "densmap", "trimap"}
     if method not in choices:
         raise ValueError(
             f"{method} not in embedding methods. Choices: {', '.join(choices)}"
@@ -590,12 +593,16 @@ def embed(
             densmap=method_is_densmap,
         ).fit_transform(X)
 
+    def do_trimap():
+        return trimap.TRIMAP(n_dims=embed_dimensions, verbose=False).fit_transform(X)
+
     # TODO: Add "densne":do_densne() to dispatcher when easy install of densne is available.
     dispatcher = {
         "sksne": do_sksne,
         "bhsne": do_bhsne,
         "umap": do_UMAP,
         "densmap": do_UMAP,
+        "trimap": do_trimap,
     }
     logger.debug(f"Performing embedding with {method} (seed {seed})")
     try:
@@ -679,7 +686,7 @@ def main():
     parser.add_argument(
         "--embedding-method",
         help="embedding method [sk,bh]sne are corresponding implementations from scikit-learn and tsne, respectively.",
-        choices=["sksne", "bhsne", "umap", "densmap"],
+        choices=["sksne", "bhsne", "umap", "densmap", "trimap"],
         default="bhsne",
     )
     parser.add_argument(

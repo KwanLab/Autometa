@@ -155,7 +155,7 @@ def test_normalize_wrong_method(counts, tmp_path):
         kmers.normalize(df=counts, method="am_ilr", out=out, force=False)
 
 
-@pytest.mark.parametrize("method", ["bhsne", "sksne", "umap", "densmap"])
+@pytest.mark.parametrize("method", ["bhsne", "sksne", "umap", "densmap", "trimap"])
 def test_embed_methods(norm_df, method, tmp_path):
     seed = 42
     out = tmp_path / "kmers.embed.tsv"
