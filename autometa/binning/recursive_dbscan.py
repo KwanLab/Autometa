@@ -28,7 +28,7 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
 import pandas as pd
 import numpy as np
@@ -41,6 +41,14 @@ from autometa.common import kmers
 
 from autometa.common.exceptions import TableFormatError, BinningError
 from autometa.taxonomy.ncbi import NCBI
+from autometa.binning.utilities import (
+    write_results,
+    read_annotations,
+    add_metrics,
+    apply_binning_metrics_filter,
+    reindex_bin_names,
+    zero_pad_bin_names,
+)
 
 pd.set_option("mode.chained_assignment", None)
 
@@ -48,27 +56,44 @@ pd.set_option("mode.chained_assignment", None)
 logger = logging.getLogger(__name__)
 
 
-def read_annotations(annotations: Iterable, how: str = "inner") -> pd.DataFrame:
-    # Read in tables and concatenate along annotations axis
-    df = pd.concat(
-        [
-            pd.read_csv(annotation, sep="\t", index_col="contig")
-            for annotation in annotations
-        ],
-        axis="columns",
-        join=how,
-    ).convert_dtypes()
-    logger.debug(f"merged annotations shape: {df.shape}")
-    return df
-
-
 def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
+    """Clean taxon names (by broadcasting lowercase and replacing whitespace)
+    then subset by all contigs under `rank` that are equal to `name`.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe containing columns of canonical ranks.
+
+    rank : str
+        Canonical rank on which to apply filtering.
+
+    name : str
+        Taxon in `rank` to retrieve.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame subset by `df[rank] == name`
+
+    Raises
+    ------
+    KeyError
+        `rank` not in taxonomy columns.
+
+    ValueError
+        Provided `name` not found in `rank` column.
+    """
     # First clean the assigned taxa by broadcasting lowercase and replacing any whitespace with underscores
     for canonical_rank in NCBI.CANONICAL_RANKS:
         if canonical_rank not in df.columns:
             continue
         df[canonical_rank] = df[canonical_rank].map(
-            lambda name: name.lower().replace(" ", "_")
+            lambda name: name.lower()
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("(", "_")
+            .replace(")", "_")
         )
     # Now check that the provided rank is in our dataframe
     if rank not in df.columns:
@@ -78,96 +103,8 @@ def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
     # Check that we still have some contigs left
     if filtered_df.empty:
         raise ValueError(f"Provided name: {name} not found in {rank} column")
-    logger.debug(f"filtered taxonomy shape: {filtered_df.shape}")
+    logger.debug(f"{rank} filtered to {name} taxonomy. shape: {filtered_df.shape}")
     return filtered_df
-
-
-def add_metrics(
-    df: pd.DataFrame, markers_df: pd.DataFrame, domain: str = "bacteria"
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Adds the completeness and purity metrics to each respective contig in df.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        index='contig' cols=['x','y','coverage','gc_content','cluster']
-    markers_df : pd.DataFrame
-        wide format, i.e. index=contig cols=[marker,marker,...]
-    domain : str, optional
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
-
-    Returns
-    -------
-    2-tuple
-        `df` with added cols=['completeness', 'purity']
-        pd.DataFrame(index=clusters,  cols=['completeness', 'purity'])
-
-    Raises
-    -------
-    KeyError
-        `domain` is not "bacteria" or "archaea"
-
-    """
-    domain = domain.lower()
-    marker_sets = {"bacteria": 139.0, "archaea": 162.0}
-    if domain not in marker_sets:
-        raise KeyError(f"{domain} is not bacteria or archaea!")
-    expected_number = marker_sets[domain]
-    metrics = []
-    if "cluster" in df.columns:
-        clusters = dict(list(df.groupby("cluster")))
-        for cluster, dff in clusters.items():
-            pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
-            is_present = pfam_counts >= 1
-            is_single_copy = pfam_counts == 1
-            nunique_markers = pfam_counts[is_present].count()
-            num_single_copy_markers = pfam_counts[is_single_copy].count()
-            completeness = nunique_markers / expected_number * 100
-            # Protect from divide by zero
-            if nunique_markers == 0:
-                purity = pd.NA
-            else:
-                purity = num_single_copy_markers / nunique_markers * 100
-            if dff.shape[0] <= 1:
-                coverage_stddev = 0.0
-                gc_content_stddev = 0.0
-            else:
-                coverage_stddev = dff.coverage.std()
-                gc_content_stddev = dff.gc_content.std()
-            metrics.append(
-                {
-                    "cluster": cluster,
-                    "completeness": completeness,
-                    "purity": purity,
-                    "coverage_stddev": coverage_stddev,
-                    "gc_content_stddev": gc_content_stddev,
-                }
-            )
-    # Account for exceptions where clusters were not recovered
-    if not metrics or "cluster" not in df.columns:
-        metrics_df = pd.DataFrame(
-            [
-                {
-                    "contig": contig,
-                    "cluster": pd.NA,
-                    "completeness": pd.NA,
-                    "purity": pd.NA,
-                    "coverage_stddev": pd.NA,
-                    "gc_content_stddev": pd.NA,
-                }
-                for contig in df.index
-            ]
-        )
-        metric_cols = ["completeness", "purity", "coverage_stddev", "gc_content_stddev"]
-        merged_df = df.copy()
-        for metric in metric_cols:
-            merged_df[metric] = pd.NA
-
-    else:
-        metrics_df = pd.DataFrame(metrics).set_index("cluster")
-        merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
-    return merged_df, metrics_df
 
 
 def run_dbscan(
@@ -193,15 +130,17 @@ def run_dbscan(
     ----------
     df : pd.DataFrame
         Contigs with embedded k-mer frequencies as ['x_1','x_2',..., 'x_ndims'] columns and 'coverage' column
+
     eps : float
         The maximum distance between two samples for one to be considered
         as in the neighborhood of the other. This is not a maximum bound
         on the distances of points within a cluster. This is the most
         important DBSCAN parameter to choose appropriately for your data set
         and distance function. See `DBSCAN docs <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_ for more details.
+
     dropcols : list, optional
         Drop columns in list from `df`
-        (the default is ['cluster','purity','completeness']).
+        (the default is ['cluster','purity','completeness','coverage_stddev','gc_content_stddev']).
 
     Returns
     -------
@@ -211,8 +150,7 @@ def run_dbscan(
     Raises
     -------
     BinningError
-    ------------
-    Dataframe is missing kmer/coverage annotations
+        Dataframe is missing kmer/coverage annotations
 
     """
     # Ignore any errors raised from trying to drop columns that do not exist in our df.
@@ -291,8 +229,7 @@ def recursive_dbscan(
     -------
     2-tuple
         (pd.DataFrame(<passed cutoffs>), pd.DataFrame(<failed cutoffs>))
-        DataFrames consisting of contigs that passed/failed clustering
-        cutoffs, respectively.
+        DataFrames consisting of contigs that passed/failed clustering cutoffs, respectively.
 
         DataFrame:
             index = contig
@@ -307,13 +244,13 @@ def recursive_dbscan(
     while n_clusters > 1:
         binned_df = run_dbscan(table, eps)
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
-        completeness_filter = metrics_df["completeness"] >= completeness_cutoff
-        purity_filter = metrics_df["purity"] >= purity_cutoff
-        coverage_filter = metrics_df["coverage_stddev"] <= coverage_stddev_cutoff
-        gc_content_filter = metrics_df["gc_content_stddev"] <= gc_content_stddev_cutoff
-        filtered_df = metrics_df[
-            completeness_filter & purity_filter & coverage_filter & gc_content_filter
-        ]
+        filtered_df = apply_binning_metrics_filter(
+            df=metrics_df,
+            completeness_cutoff=completeness_cutoff,
+            purity_cutoff=purity_cutoff,
+            coverage_stddev_cutoff=coverage_stddev_cutoff,
+            gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+        )
         median_completeness = filtered_df.completeness.median()
         if median_completeness >= best_median:
             best_median = median_completeness
@@ -342,13 +279,13 @@ def recursive_dbscan(
             logger.debug("No complete or pure clusters found")
         return pd.DataFrame(), table
 
-    completeness_filter = best_df["completeness"] >= completeness_cutoff
-    purity_filter = best_df["purity"] >= purity_cutoff
-    coverage_filter = best_df["coverage_stddev"] <= coverage_stddev_cutoff
-    gc_content_filter = best_df["gc_content_stddev"] <= gc_content_stddev_cutoff
-    clustered_df = best_df[
-        completeness_filter & purity_filter & coverage_filter & gc_content_filter
-    ]
+    clustered_df = apply_binning_metrics_filter(
+        df=best_df,
+        completeness_cutoff=completeness_cutoff,
+        purity_cutoff=purity_cutoff,
+        coverage_stddev_cutoff=coverage_stddev_cutoff,
+        gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+    )
     unclustered_df = best_df.loc[~best_df.index.isin(clustered_df.index)]
     if verbose:
         logger.debug(f"Best completeness median: {best_median:4.2f}")
@@ -468,19 +405,19 @@ def recursive_hdbscan(
         choices=['bacteria','archaea']
 
     completeness_cutoff : float
-        `completeness_cutoff` threshold to retain cluster (the default is 20.0).
+        `completeness_cutoff` threshold to retain cluster.
         e.g. cluster completeness >= completeness_cutoff
 
     purity_cutoff : float
-        `purity_cutoff` threshold to retain cluster (the default is 95.00).
+        `purity_cutoff` threshold to retain cluster.
         e.g. cluster purity >= purity_cutoff
 
     coverage_stddev_cutoff : float
-        `coverage_stddev_cutoff` threshold to retain cluster (the default is 25.0).
+        `coverage_stddev_cutoff` threshold to retain cluster.
         e.g. cluster coverage std.dev. <= coverage_stddev_cutoff
 
     gc_content_stddev_cutoff : float
-        `gc_content_stddev_cutoff` threshold to retain cluster (the default is 5.0).
+        `gc_content_stddev_cutoff` threshold to retain cluster.
         e.g. cluster gc_content std.dev. <= gc_content_stddev_cutoff
 
     verbose : bool
@@ -513,13 +450,13 @@ def recursive_hdbscan(
             cache_dir=cache_dir,
         )
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
-        completeness_filter = metrics_df["completeness"] >= completeness_cutoff
-        purity_filter = metrics_df["purity"] >= purity_cutoff
-        coverage_filter = metrics_df["coverage_stddev"] <= coverage_stddev_cutoff
-        gc_content_filter = metrics_df["gc_content_stddev"] <= gc_content_stddev_cutoff
-        filtered_df = metrics_df[
-            completeness_filter & purity_filter & coverage_filter & gc_content_filter
-        ]
+        filtered_df = apply_binning_metrics_filter(
+            df=metrics_df,
+            completeness_cutoff=completeness_cutoff,
+            purity_cutoff=purity_cutoff,
+            coverage_stddev_cutoff=coverage_stddev_cutoff,
+            gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+        )
         median_completeness = filtered_df.completeness.median()
         if median_completeness >= best_median:
             best_median = median_completeness
@@ -541,26 +478,30 @@ def recursive_hdbscan(
         else:
             min_cluster_size += 10
 
-        if metrics_df[completeness_filter & purity_filter].empty:
+        if filtered_df.empty:
             min_cluster_size += 100
 
         if min_samples >= max_min_samples:
             max_min_cluster_size *= 2
 
+    # clean up cache now that we are out of while loop
     shutil.rmtree(cache_dir)
-
+    # Check our df is not empty from while loop
     if best_df.empty:
         if verbose:
             logger.debug("No complete or pure clusters found")
         return pd.DataFrame(), table
 
-    completeness_filter = best_df["completeness"] >= completeness_cutoff
-    purity_filter = best_df["purity"] >= purity_cutoff
-    coverage_filter = best_df["coverage_stddev"] <= coverage_stddev_cutoff
-    gc_content_filter = best_df["gc_content_stddev"] <= gc_content_stddev_cutoff
-    clustered_df = best_df[
-        completeness_filter & purity_filter & coverage_filter & gc_content_filter
-    ]
+    # Now split our clustered/unclustered contigs into two dataframes
+    # First keep only clusters passing all binning filters from clustering dataframe
+    clustered_df = apply_binning_metrics_filter(
+        df=best_df,
+        completeness_cutoff=completeness_cutoff,
+        purity_cutoff=purity_cutoff,
+        coverage_stddev_cutoff=coverage_stddev_cutoff,
+        gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+    )
+    # Second, using the clustered contigs locate contigs that were *not* clustered (Note the use of the ~ operator)
     unclustered_df = best_df.loc[~best_df.index.isin(clustered_df.index)]
     if verbose:
         logger.debug(f"Best completeness median: {best_median:4.2f}")
@@ -581,7 +522,7 @@ def get_clusters(
     method: str,
     verbose: bool = False,
 ) -> pd.DataFrame:
-    """Find best clusters retained after applying `completeness` and `purity` filters.
+    """Find best clusters retained after applying metrics filters.
 
     Parameters
     ----------
@@ -622,13 +563,16 @@ def get_clusters(
     Returns
     -------
     pd.DataFrame
-        `main` with ['cluster','completeness','purity'] columns added
+        `main` with ['cluster','completeness','purity','coverage_stddev','gc_content_stddev'] columns added
+
     """
     num_clusters = 0
     clusters = []
     recursive_clusterers = {"dbscan": recursive_dbscan, "hdbscan": recursive_hdbscan}
     if method not in recursive_clusterers:
-        raise ValueError(f"Method: {method} not a choice. choose b/w dbscan & hdbscan")
+        raise ValueError(
+            f"Method: {method} not a choice. choose between {recursive_clusterers.keys()}"
+        )
     clusterer = recursive_clusterers[method]
 
     # Continue while unclustered are remaining
@@ -651,15 +595,7 @@ def get_clusters(
             clusters.append(unclustered_df)
             break
 
-        translation = {
-            c: f"bin_{1+i+num_clusters:04d}"
-            for i, c in enumerate(clustered_df.cluster.unique())
-        }
-
-        def rename_cluster(c):
-            return translation[c]
-
-        clustered_df.cluster = clustered_df.cluster.map(rename_cluster)
+        clustered_df = reindex_bin_names(df=clustered_df, initial_index=num_clusters)
 
         # All contigs have now been clustered, add the final df of (clustered) contigs
         if unclustered_df.empty:
@@ -670,6 +606,7 @@ def get_clusters(
         clusters.append(clustered_df)
         # continue with unclustered contigs
         main = unclustered_df
+    # concatenate all clustering rounds in clusters list and sort by bin number
     df = pd.concat(clusters, sort=True)
     for metric in [
         "purity",
@@ -681,10 +618,12 @@ def get_clusters(
         # i.e. cluster = pd.NA for all contigs
         if metric not in df.columns:
             df[metric] = pd.NA
+
+    df = zero_pad_bin_names(df)
     return df
 
 
-def get_rank_embedding(
+def get_kmer_embedding(
     counts: pd.DataFrame,
     cache_fpath: str,
     norm_method: str,
@@ -692,6 +631,34 @@ def get_rank_embedding(
     embed_dimensions: int,
     embed_method: str,
 ) -> pd.DataFrame:
+    """Retrieve kmer embeddings for provided counts by first performing kmer normalization with `norm_method`
+    then PCA down to `pca_dimensions` until the normalized kmer frequencies are embedded to `embed_dimensions` using `embed_method`.
+
+    Parameters
+    ----------
+    counts : pd.DataFrame
+        Kmer counts where index column is 'contig' and each column is a kmer count.
+
+    cache_fpath : str
+        Path to cache embedded kmers table for later look-up/inspection.
+
+    norm_method : str
+        normalization transformation to use on kmer counts. Choices include 'am_clr', 'ilr' and 'clr'. See :func:kmers.normalize for more details.
+
+    pca_dimensions : int
+        Number of dimensions by which to initially reduce normalized kmer frequencies (Must be greater than `embed_dimensions`).
+
+    embed_dimensions : int
+        Embedding dimensions by which to reduce normalized PCA-transformed kmer frequencies (Must be less than `pca_dimensions`).
+
+    embed_method : str
+        Embedding method to use on normalized, PCA-transformed kmer frequencies. Choices include 'bhsne', 'sksne' and 'umap'. See :func:kmers.embed for more details.
+
+    Returns
+    -------
+    pd.DataFrame
+        [description]
+    """
     # No cache dir provided so we perform normalization and embedding then return
     if not cache_fpath:
         return kmers.embed(
@@ -717,7 +684,7 @@ def get_rank_embedding(
     return rank_embedding
 
 
-def binning(
+def cluster_by_taxon_partitioning(
     main: pd.DataFrame,
     counts: pd.DataFrame,
     markers: pd.DataFrame,
@@ -731,7 +698,6 @@ def binning(
     purity: float = 95.0,
     coverage_stddev: float = 25.0,
     gc_content_stddev: float = 5.0,
-    use_taxonomy: bool = True,
     starting_rank: str = "superkingdom",
     method: str = "dbscan",
     reverse_ranks: bool = False,
@@ -806,30 +772,27 @@ def binning(
     TableFormatError
         No marker information is availble for contigs to be binned.
     """
-    # First ensure we have marker-containing contigs available to check binning quality...
-    if main.loc[main.index.isin(markers.index)].empty:
-        raise TableFormatError(
-            "No markers for contigs in table. Unable to assess binning quality"
-        )
-    if main.shape[0] <= 1:
-        raise BinningError("Not enough contigs in table for binning")
-
-    logger.info(f"Selected clustering method: {method}")
-    if not use_taxonomy:
-        return get_clusters(
-            main=main,
-            markers_df=markers,
-            domain=domain,
-            completeness=completeness,
-            purity=purity,
-            coverage_stddev=coverage_stddev,
-            gc_content_stddev=gc_content_stddev,
-            method=method,
-            verbose=verbose,
-        )
-
-    # Use taxonomy method
     # Set taxonomy canonical rank iteration order for more-to-less specific or less-to-more specific
+    # TODO: Add cache_binning behavior... How
+    # How does one cache the binning and resume at the exact stage#
+    # Cached binning file is binning of contigs and a header comment of all function parameters...?
+    # cache_binning_fpath = ...
+    # if cache_binning_fpath and os.path.exists(cache_binning_fpath) and os.path.getsize(cache_binning_fpath):
+    #
+
+    ### PSEUDOCODE ###
+    # 1. if cache and not cache exists:
+    # cache binning parameters
+    # Set boolean to checkpoint binning run
+    # At what stage should the binning be checkpointed?
+    # After clusters are retrieved...
+    # See #COMBAK for location
+    # 2. if cache and cache exists:
+    # read cached binning params and retrieve (main)
+    # implement logic to continue from rank that the previous binning run was on...
+    # 3. continue without worrying about cache
+    #
+
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in NCBI.CANONICAL_RANKS]
@@ -838,6 +801,8 @@ def binning(
         ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
     ranks.remove("root")
     # Subset ranks by provided starting rank
+    # if stage is cached then we can first look to the cache before we begin subsetting main...
+    # COMBAK :if not cached_canonical_rank: ... will need to set this as the start...
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")
@@ -857,7 +822,7 @@ def binning(
         # Subset counts by filtering out any unclassified according to current canonical rank and that exist in main df
         rank_counts = counts.loc[counts.index.isin(main.loc[unclassified_filter].index)]
         # cache dir structured with sub-directories corresponding to each canonical rank.
-        cache_fpath = (
+        cache_embedding_fpath = (
             os.path.join(
                 cache,
                 rank,
@@ -866,11 +831,12 @@ def binning(
             if cache
             else None
         )
-        if cache_fpath and not os.path.isdir(os.path.join(cache, rank)):
+
+        if cache_embedding_fpath and not os.path.isdir(os.path.join(cache, rank)):
             os.makedirs(os.path.join(cache, rank))
-        rank_embedding = get_rank_embedding(
+        rank_embedding = get_kmer_embedding(
             rank_counts,
-            cache_fpath=cache_fpath,
+            cache_fpath=cache_embedding_fpath,
             norm_method=norm_method,
             pca_dimensions=pca_dimensions,
             embed_dimensions=embed_dimensions,
@@ -882,6 +848,9 @@ def binning(
         main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
         # Find best clusters within each rank name for the canonical rank subset
         for rank_name_txt, dff in main_grouped_by_rank:
+            # COMBAK: If we know the particular rank_name that was cached
+            # we need to get to the starting taxon within this grouped ranking...
+
             # Skip contig set if no contigs are classified with this rank name for this rank.
             if dff.empty:
                 continue
@@ -895,10 +864,9 @@ def binning(
             # Post-filtering are there multiple contigs to cluster?
             if rank_df.empty:
                 continue
-
             # First subset counts by rank_name_txt
             rank_name_txt_counts = counts.loc[counts.index.isin(rank_df.index)]
-            cache_fpath = (
+            cache_embedding_fpath = (
                 os.path.join(
                     cache,
                     rank,
@@ -928,9 +896,9 @@ def binning(
                 logger.debug(
                     f"{rank_name_txt} > max_partition_size ({n_contigs_in_rank:,}>{max_partition_size:,}). skipping [and caching embedding]"
                 )
-                rank_name_embedding = get_rank_embedding(
+                rank_name_embedding = get_kmer_embedding(
                     rank_name_txt_counts,
-                    cache_fpath=cache_fpath,
+                    cache_fpath=cache_embedding_fpath,
                     norm_method=norm_method,
                     pca_dimensions=pca_dimensions,
                     embed_dimensions=embed_dimensions,
@@ -942,9 +910,9 @@ def binning(
             elif min_contigs <= n_contigs_in_rank <= max_partition_size:
                 # Action 2: perform normalization and embedding on counts for specific ranks' contigs
                 # i.e. contigs are in range to perform embedding on subset
-                rank_name_embedding = get_rank_embedding(
+                rank_name_embedding = get_kmer_embedding(
                     rank_name_txt_counts,
-                    cache_fpath=cache_fpath,
+                    cache_fpath=cache_embedding_fpath,
                     norm_method=norm_method,
                     pca_dimensions=pca_dimensions,
                     embed_dimensions=embed_dimensions,
@@ -989,15 +957,7 @@ def binning(
             if clustered.empty:
                 continue
             clustered_contigs.update({contig for contig in clustered.index})
-            translation = {
-                c: f"bin_{1+i+num_clusters:04d}"
-                for i, c in enumerate(clustered.cluster.unique())
-            }
-
-            def rename_cluster(c):
-                return translation[c]
-
-            clustered.cluster = clustered.cluster.map(rename_cluster)
+            clustered = reindex_bin_names(df=clustered, initial_index=num_clusters)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
 
@@ -1009,73 +969,9 @@ def binning(
     # ...create a dataframe for any contigs *not* in the clustered dataframe
     unclustered_df = main.loc[~main.index.isin(clustered_df.index)]
     unclustered_df["cluster"] = pd.NA
-    return pd.concat([clustered_df, unclustered_df], sort=True)
-
-
-def write_results(
-    results: pd.DataFrame, binning_output: str, full_output: str = None
-) -> None:
-    # Write out binning results with their respective binning metrics
-    outcols = [
-        "cluster",
-        "completeness",
-        "purity",
-        "coverage_stddev",
-        "gc_content_stddev",
-    ]
-    results[outcols].to_csv(binning_output, sep="\t", index=True, header=True)
-    logger.info(f"Wrote binning results to {binning_output}")
-    if full_output:
-        # First after binning relevant assignments/metrics place contig physical annotations
-        annotation_cols = ["coverage", "gc_content", "length"]
-        outcols.extend(annotation_cols)
-        # Add in taxonomy columns if taxa are present
-        # superkingdom, phylum, class, order, family, genus, species
-        taxa_cols = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
-        taxa_cols.append("taxid")
-        # superkingdom, phylum, class, order, family, genus, species, taxid
-        for taxa_col in taxa_cols:
-            if taxa_col in results.columns:
-                outcols.append(taxa_col)
-        # Finally place kmer embeddings at end
-        kmer_cols = [col for col in results.columns if "x_" in col]
-        outcols.extend(kmer_cols)
-        # Now write out table with columns sorted using outcols list
-        results[outcols].to_csv(full_output, sep="\t", index=True, header=True)
-        logger.info(f"Wrote main table to {full_output}")
-
-
-def write_results(
-    results: pd.DataFrame, binning_output: str, full_output: str = None
-) -> None:
-    # Write out binning results with their respective binning metrics
-    outcols = [
-        "cluster",
-        "completeness",
-        "purity",
-        "coverage_stddev",
-        "gc_content_stddev",
-    ]
-    results[outcols].to_csv(binning_output, sep="\t", index=True, header=True)
-    logger.info(f"Wrote binning results to {binning_output}")
-    if full_output:
-        # First after binning relevant assignments/metrics place contig physical annotations
-        annotation_cols = ["coverage", "gc_content", "length"]
-        outcols.extend(annotation_cols)
-        # Add in taxonomy columns if taxa are present
-        # superkingdom, phylum, class, order, family, genus, species
-        taxa_cols = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
-        taxa_cols.append("taxid")
-        # superkingdom, phylum, class, order, family, genus, species, taxid
-        for taxa_col in taxa_cols:
-            if taxa_col in results.columns:
-                outcols.append(taxa_col)
-        # Finally place kmer embeddings at end
-        kmer_cols = [col for col in results.columns if "x_" in col]
-        outcols.extend(kmer_cols)
-        # Now write out table with columns sorted using outcols list
-        results[outcols].to_csv(full_output, sep="\t", index=True, header=True)
-        logger.info(f"Wrote main table to {full_output}")
+    df = pd.concat([clustered_df, unclustered_df], sort=True)
+    df = zero_pad_bin_names(df)
+    return df
 
 
 def main():
@@ -1235,7 +1131,9 @@ def main():
     )
     parser.add_argument(
         "--cache",
-        help="Directory to store intermediate kmer embeddings during binning.",
+        help="Directory to store itermediate checkpoint files during binning"
+        " (If this is provided and the job fails, the script will attempt to"
+        " begin from the checkpoints in this cache directory).",
         metavar="dirpath",
     )
     parser.add_argument(
@@ -1256,6 +1154,9 @@ def main():
         help="log debug information",
     )
     args = parser.parse_args()
+
+    counts_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+    # First check if we are performing binning with taxonomic partitioning
     if args.taxonomy:
         main_df = read_annotations([args.coverages, args.gc_content, args.taxonomy])
         main_df = filter_taxonomy(
@@ -1263,35 +1164,67 @@ def main():
         )
     else:
         main_df = read_annotations([args.coverages, args.gc_content])
+        embed_df = get_kmer_embedding(
+            counts=counts_df,
+            norm_method=args.norm_method,
+            pca_dimensions=args.pca_dims,
+            embed_dimensions=args.embed_dims,
+            embed_method=args.embed_method,
+            cache_fpath=None,
+        )
+        main_df = pd.merge(
+            main_df, embed_df, how="left", left_index=True, right_index=True
+        )
 
+    # Prepare our markers dataframe
     markers_df = load_markers(args.markers, format="wide")
 
-    counts_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+    # Ensure we have marker-containing contigs available to check binning quality...
+    if main_df.loc[main_df.index.isin(markers_df.index)].empty:
+        raise TableFormatError(
+            "No markers for contigs in table. Unable to assess binning quality"
+        )
+    if main_df.shape[0] <= 1:
+        raise BinningError("Not enough contigs in table for binning")
 
-    # Now perform binning with our features dataframe
-    use_taxonomy = args.rank_filter in main_df.columns
+    logger.info(f"Selected clustering method: {args.clustering_method}")
 
-    main_out = binning(
-        main=main_df,
-        counts=counts_df,
-        markers=markers_df,
-        norm_method=args.norm_method,
-        pca_dimensions=args.pca_dims,
-        embed_dimensions=args.embed_dims,
-        embed_method=args.embed_method,
-        max_partition_size=args.max_partition_size,
-        use_taxonomy=use_taxonomy,
-        starting_rank=args.starting_rank,
-        reverse_ranks=args.reverse_ranks,
-        cache=args.cache,
-        domain=args.rank_name_filter,
-        completeness=args.completeness,
-        purity=args.purity,
-        coverage_stddev=args.cov_stddev_limit,
-        gc_content_stddev=args.gc_stddev_limit,
-        method=args.clustering_method,
-        verbose=args.verbose,
-    )
+    # Perform clustering w/o taxonomy
+    if not args.taxonomy:
+        main_out = get_clusters(
+            main=main_df,
+            markers_df=markers_df,
+            domain=args.rank_name_filter,
+            completeness=args.completeness,
+            purity=args.purity,
+            coverage_stddev=args.coverage_stddev,
+            gc_content_stddev=args.gc_content_stddev,
+            method=args.clustering_method,
+            verbose=args.verbose,
+        )
+    else:
+        main_out = cluster_by_taxon_partitioning(
+            main=main_df,
+            counts=counts_df,
+            markers=markers_df,
+            norm_method=args.norm_method,
+            pca_dimensions=args.pca_dims,
+            embed_dimensions=args.embed_dims,
+            embed_method=args.embed_method,
+            max_partition_size=args.max_partition_size,
+            domain=args.rank_name_filter,
+            completeness=args.completeness,
+            purity=args.purity,
+            coverage_stddev=args.cov_stddev_limit,
+            gc_content_stddev=args.gc_stddev_limit,
+            starting_rank=args.starting_rank,
+            method=args.clustering_method,
+            reverse_ranks=args.reverse_ranks,
+            cache=args.cache,
+            verbose=args.verbose,
+        )
+
+    # reindex_bin_names(df=, cluster_col=, initial_index=)
 
     write_results(
         results=main_out,
