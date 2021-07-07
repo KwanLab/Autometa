@@ -11,7 +11,7 @@ params.length_cutoff = 3000
 params.kmer_size = 5
 params.norm_method = "am_clr" // choices: "am_clr", "clr", "ilr"
 params.pca_dimensions = 50
-params.embedding_method = "bhsne" // choices: "sksne", "bhsne", "umap"
+params.embedding_method = "bhsne" // choices: "sksne", "bhsne", "umap", "densmap", "trimap"
 params.embedding_dimensions = 2
 // Marker annotation parameters
 params.kingdom = "bacteria"
