@@ -124,7 +124,8 @@ def parse(bed, out=None, force=False):
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"{out} written")
-    logger.debug(f"{os.path.basename(out)} shape: {dff.shape}")
+    msg = f"{os.path.basename(out)} shape: {dff.shape}" if out else f"shape: {dff.shape}"
+    logger.debug(msg)
     return dff[["coverage"]]
 
 
@@ -165,7 +166,7 @@ def main():
     )
     args = parser.parse_args()
     bed = genomecov(ibam=args.ibam, out=args.bed, force=args.force_bed)
-    parse(bed=bed, out=args.coverage, force=args.force_cov)
+    parse(bed=bed, out=args.output, force=args.force_cov)
 
 
 if __name__ == "__main__":
