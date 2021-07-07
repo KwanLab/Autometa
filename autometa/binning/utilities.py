@@ -33,6 +33,8 @@ import pandas as pd
 
 from typing import Iterable, Tuple
 
+from autometa.taxonomy.ncbi import NCBI
+
 
 logger = logging.getLogger(__name__)
 
@@ -360,22 +362,8 @@ def write_results(
         logger.info(f"Wrote main table to {full_output}")
 
 
-def main():
-    import argparse
-    import logging as logger
-
-    logger.basicConfig(
-        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logger.DEBUG,
-    )
-    parser = argparse.ArgumentParser(
-        description="Concise description of script.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument("positional", help="<help text of positional arg>")
-    args = parser.parse_args()
-
-
 if __name__ == "__main__":
-    main()
+    import sys
+
+    print("Utilities script for autometa binning. This should not be run directly!")
+    sys.exit(0)
