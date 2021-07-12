@@ -806,6 +806,7 @@ def cluster_by_taxon_partitioning(
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")
+    logger.debug(f"Max partition size set to: {max_partition_size}")
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
