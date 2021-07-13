@@ -27,6 +27,7 @@ pulling data from google drive dataset with simulated or synthetic communities
 
 import gdown
 import os
+import sys
 import logging
 import pandas as pd
 
@@ -35,18 +36,20 @@ from autometa.common.utilities import internet_is_connected
 logger = logging.getLogger(__name__)
 
 
-def download(dataset: str, file: str, out: str) -> None:
+def download(type: str, size: list, file_names: list, dir_path: str) -> None:
 
     """Downloads the files specified in a dictionary.
 
     Parameters
     ----------
-    dataset : str
-        specifies the dataset that the user would like to download from, if any
-    file : str
-        specifies the file that the user would like to download, if any
-    output : str
-        directory path where the user wants to download the file(s)
+    type : str
+        specifies the type of dataset that the user would like to download from
+    size : list
+        specifies the size of dataset that the user would like to download
+    file_names : list
+        specifies the file(s) that the user would like to download
+    dir_path : str
+        dir_path_size path where the user wants to download the file(s)
 
     Returns
     -------
@@ -54,26 +57,28 @@ def download(dataset: str, file: str, out: str) -> None:
         download is completed through gdown
 
     """
-    # create the dataframe here
-    index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
 
-    # retrieve only the community that the user wants (user must specify a community)
-    target_dataset = index.query(f'dataset == "{dataset}"')
+    if type == "synthetic" or type == "all":
+        sys.exit("Haven't implemented that yet")
 
-    target_files = target_dataset.query(f'file == "{file}"')
+    for community_size in size:
+        index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
+        index = index.query(f'dataset == "{community_size}"')
+        dir_path_size = ""
+        dir_path_size = os.path.join(dir_path, community_size)
+        # make a new directory
+        if not os.path.exists(dir_path_size):
+            os.mkdir(dir_path_size)
 
-    targets = target_files.to_dict()
+        for file_name in file_names:
+            file_id = ""
+            file_id = index.query(f'file == "{file_name}"')["file_id"].to_list()
+            file_id = file_id[0]
+            dir_path_final = ""
+            dir_path_final = os.path.join(dir_path_size, file_name)
+            url = f"https://drive.google.com/uc?id={file_id}"
 
-    key_list = [*targets["file"]]
-    for key in key_list:
-        # retrieve file ids from targets
-        file_id = targets["file_id"][key]
-
-        # construct file id into a url to put into gdown
-        url = f"https://drive.google.com/uc?id={file_id}"
-
-        # download the specified file with gdown
-        gdown.download(url, out)
+            gdown.download(url, dir_path_final)
 
 
 def main():
@@ -87,26 +92,38 @@ def main():
     )
 
     parser = argparse.ArgumentParser(
-        description="Download a simulated community file from google drive to a specified directory"
+        description="Download a simulated community file from google drive to a specified dir_path_size"
     )
     parser.add_argument(
-        "--community",
-        help="specify a simulated community size to download from",
+        "--community_type",
+        help="specify synthetic or simulated communities (currently only simulated is available)",
         choices=[
-            "78.125Mbp",
-            "156.25Mbp",
-            "312.5Mbp",
+            "synthetic",
+            "simulated",
+            "all",
+        ],
+        required=True,
+    )
+    parser.add_argument(
+        "--community_size",
+        help="specify a community size to download from",
+        choices=[
+            "78Mbp",
+            "156Mbp",
+            "312Mbp",
             "625Mbp",
             "1250Mbp",
             "2500Mbp",
             "5000Mbp",
             "10000Mbp",
+            "all",
         ],
         required=True,
+        nargs="+",
     )
     parser.add_argument(
-        "--file",
-        help="specify a file to download",
+        "--file_names",
+        help="specify a file name to download",
         choices=[
             "README.md",
             "reference_assignments.tsv.gz",
@@ -129,42 +146,66 @@ def main():
             "hmmscan.tsv.gz",
             "forward_reads.fastq.gz",
             "reverse_reads.fastq.gz",
+            "all",
         ],
         nargs="+",
         required=True,
     )
     parser.add_argument(
-        "--output",
-        help="specify the full filepath for your downloaded file (including filename)",
+        "--dir_path",
+        help="specify a folder to start the download (several directories will be generated within this folder)",
         required=True,
-        nargs="+",
     )
     args = parser.parse_args()
 
-    # if I add in "all" functionality, add it here
-
-    community = args.community
-    filetypes = args.file
-    filepaths = args.output
+    community_type = args.community_type
+    if "all" in args.community_size:
+        community_size = (
+            "78Mbp",
+            "156Mbp",
+            "312Mbp",
+            "625Mbp",
+            "1250Mbp",
+            "2500Mbp",
+            "5000Mbp",
+            "10000Mbp",
+        )
+    else:
+        community_size = args.community_size
+    if "all" in args.file_names:
+        file_names = (
+            "README.md",
+            "reference_assignments.tsv.gz",
+            "metagenome.fna.gz",
+            "master.tsv.gz",
+            "control_reads.tsv.gz",
+            "control_contigs.tsv.gz",
+            "unclustered_recruitment.tsv.gz",
+            "binning.tsv.gz",
+            "taxonomy.tsv.gz",
+            "lengths.tsv.gz",
+            "coverages.tsv.gz",
+            "gc_content.tsv.gz",
+            "kmers.embedded.tsv.gz",
+            "kmers.tsv.gz",
+            "markers.tsv.gz",
+            "Bacteria.fna.gz",
+            "orfs.faa.gz",
+            "metagenome.filtered.fna.gz",
+            "hmmscan.tsv.gz",
+            "forward_reads.fastq.gz",
+            "reverse_reads.fastq.gz",
+        )
+    else:
+        file_names = args.file_names
+    dir_path = args.dir_path
 
     if not internet_is_connected():
         logger.error(
             "No internet connection detected. Please confirm connection and try again. Downloader will still attempt to run."
         )
 
-    if len(filetypes) != len(filepaths):
-        logger.warning(
-            "The number of files specified and the number of output paths specified do not match. The program will use the shorter list. You might not get all the files you wanted."
-        )
-    for filetype, filepath in zip(filetypes, filepaths):
-        if (
-            os.path.splitext(filetype)[-1].lower()
-            != os.path.splitext(filepath)[-1].lower()
-        ):
-            logger.warning(
-                "The file extension doesn't match on the file and the output. The file will still be saved under the user-specified output, but it might be difficult to open."
-            )
-        download(dataset=community, file=filetype, out=filepath)
+    download(type=community_type, size=community_size, file_names=file_names, dir_path=dir_path)
 
 
 if __name__ == "__main__":
