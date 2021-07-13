@@ -36,7 +36,9 @@ from autometa.common.utilities import internet_is_connected
 logger = logging.getLogger(__name__)
 
 
-def download(community_type: str, community_size: list, file_names: list, dir_path: str) -> None:
+def download(
+    community_type: str, community_size: list, file_names: list, dir_path: str
+) -> None:
 
     """Downloads the files specified in a dictionary.
 
@@ -201,7 +203,18 @@ def main():
             "No internet connection detected. Please confirm connection and try again. Downloader will still attempt to run."
         )
 
-    download(type=community_type, size=community_size, file_names=file_names, dir_path=dir_path)
+    if not os.path.exists(dir_path):
+        logger.error(
+            "The dir_path you specified could not be found. Please select a folder that exists."
+        )
+        sys.exit("Specified path does not exist!")
+
+    download(
+        type=community_type,
+        size=community_size,
+        file_names=file_names,
+        dir_path=dir_path,
+    )
 
 
 if __name__ == "__main__":
