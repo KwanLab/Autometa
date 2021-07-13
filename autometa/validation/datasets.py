@@ -36,15 +36,15 @@ from autometa.common.utilities import internet_is_connected
 logger = logging.getLogger(__name__)
 
 
-def download(type: str, size: list, file_names: list, dir_path: str) -> None:
+def download(community_type: str, community_size: list, file_names: list, dir_path: str) -> None:
 
     """Downloads the files specified in a dictionary.
 
     Parameters
     ----------
-    type : str
+    community_type : str
         specifies the type of dataset that the user would like to download from
-    size : list
+    community_size : list
         specifies the size of dataset that the user would like to download
     file_names : list
         specifies the file(s) that the user would like to download
@@ -58,23 +58,19 @@ def download(type: str, size: list, file_names: list, dir_path: str) -> None:
 
     """
 
-    if type == "synthetic" or type == "all":
+    if community_type == "synthetic" or community_type == "all":
         sys.exit("Haven't implemented that yet")
 
-    for community_size in size:
-        index = pd.read_csv("gdown_fileIDs.csv", dtype=str)
-        index = index.query(f'dataset == "{community_size}"')
-        dir_path_size = ""
-        dir_path_size = os.path.join(dir_path, community_size)
+    for each_community_size in community_size:
+        df = pd.read_csv("gdown_fileIDs.csv", dtype=str)
+        df = df.query(f'dataset == "{each_community_size}"')
+        dir_path_size = os.path.join(dir_path, each_community_size)
         # make a new directory
         if not os.path.exists(dir_path_size):
             os.mkdir(dir_path_size)
 
         for file_name in file_names:
-            file_id = ""
-            file_id = index.query(f'file == "{file_name}"')["file_id"].to_list()
-            file_id = file_id[0]
-            dir_path_final = ""
+            file_id = df.query(f'file == "{file_name}"')["file_id"].to_list()[0]
             dir_path_final = os.path.join(dir_path_size, file_name)
             url = f"https://drive.google.com/uc?id={file_id}"
 
