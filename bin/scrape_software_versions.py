@@ -18,8 +18,7 @@
 # SOFTWARE.
 
 from __future__ import print_function
-from collections import OrderedDict
-import re
+import os
 
 # TODO nf-core: Add additional regexes for new tools in process get_software_versions
 regexes = {
@@ -29,6 +28,9 @@ regexes = {
 results = OrderedDict()
 results["autometa"] = '<span style="color:#999999;">N/A</span>'
 results["Nextflow"] = '<span style="color:#999999;">N/A</span>'
+results = {}
+version_files = [x for x in os.listdir(".") if x.endswith(".version.txt")]
+for version_file in version_files:
 
 
 # Search each file using its regex
@@ -41,11 +43,13 @@ for k, v in regexes.items():
                 results[k] = "v{}".format(match.group(1))
     except IOError:
         results[k] = False
+    software = version_file.replace(".version.txt", "")
+    if software == "pipeline":
+        software = "nf-core/autometa"
 
-# Remove software set to false in results
-for k in list(results):
-    if not results[k]:
-        del results[k]
+    with open(version_file) as fin:
+        version = fin.read().strip()
+    results[software] = version
 
 # Dump to YAML
 print(
@@ -59,11 +63,11 @@ data: |
     <dl class="dl-horizontal">
 """
 )
-for k, v in results.items():
+for k, v in sorted(results.items()):
     print("        <dt>{}</dt><dd><samp>{}</samp></dd>".format(k, v))
 print("    </dl>")
 
 # Write out regexes as csv file:
-with open("software_versions.csv", "w") as f:
-    for k, v in results.items():
+with open("software_versions.tsv", "w") as f:
+    for k, v in sorted(results.items()):
         f.write("{}\t{}\n".format(k, v))

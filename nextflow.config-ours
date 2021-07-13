@@ -1,0 +1,37 @@
+// *****************
+// Autometa Nextflow Configuration
+// Congigurations are broken up into files, see below
+// *****************
+
+manifest {
+    author = "Jason C. Kwan Lab"
+    defaultBranch = "main"
+    name = "autometa"
+    homePage = "https://github.com/KwanLab/Autometa"
+    description = "Autometa: Automated Extraction of Microbial Genomes from Shotgun Metagenomes"
+    mainScript = "main.nf"
+    doi = "https://doi.org/10.1093/nar/gkz148"
+    version = "2.0.0"
+    nextflowVersion = ">=21.04"
+}
+
+// Helper script
+includeConfig './conf/base.config'
+
+// Module configurations
+includeConfig './conf/modules.config'
+
+// Arguments required by the pipeline are defined, and can be modified, here:
+includeConfig './conf/00_input_output.config'
+
+// Optional Autometa arguments (e.g. "kmer_embed_method") are defined, and can be modified, here:
+includeConfig './conf/01_optional_autometa.config'
+
+// Hardware limits (e.g. max_cpu, max_ram, etc.) are defined, and can be modified, here:
+includeConfig './conf/02_hardware.config'
+
+// Environments (e.g. docker, condor, etc.) are defined, and can be modified, here:
+includeConfig './conf/03_environment_profiles.config'
+
+// Executor (e.g. local, slurm, etc.) are defined, and can be modified, here:
+includeConfig './conf/04_executor_profiles.config'
