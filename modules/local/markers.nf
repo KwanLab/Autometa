@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-
+//TODO REMOVE FILE, this has been replaced by hmmsearch
 process MARKERS {
     tag "Finding markers for ${meta.id}"
     label "process_low"

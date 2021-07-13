@@ -7,9 +7,9 @@ options        = initOptions(params.options)
 process MERGE_TSV_WITH_HEADERS {
     tag "Merging files from parallel split for ${meta.id}"
     label 'process_low'
-    publishDir "${params.interim_dir}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     

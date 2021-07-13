@@ -8,9 +8,9 @@ process LENGTH_FILTER {
     tag "Removing ${meta.id} contigs less than ${params.length_cutoff}"
     label 'process_high'
    
-    publishDir "${params.interim_dir}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), publish_id:meta.id) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
     
     
     conda (params.enable_conda ? "bioconda::seqkit=0.15.0" : null)

@@ -9,7 +9,7 @@ options        = initOptions(params.options)
 process BEDTOOLS_GENOMECOV {
     tag "$meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 
@@ -38,6 +38,6 @@ process BEDTOOLS_GENOMECOV {
         $options.args \\
         > ${prefix}.bed
 
-    bedtools --version | sed -e "s/bedtools v//g" > ${software}.version.txt
+    bedtools --version | sed -e "s/bedtools v//g" > bedtools.version.txt
     """
 }

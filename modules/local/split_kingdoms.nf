@@ -7,34 +7,35 @@ options        = initOptions(params.options)
 process SPLIT_KINGDOMS {
     tag "Splitting votes into kingdoms for ${meta.id}"
     label 'process_medium'
-    
-    publishDir "${params.interim_dir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+
+    publishDir "${params.interim_dir_internal}",
+          mode: params.publish_dir_mode,
+          saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }  
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
+
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/TODO"
+         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
          container "jason-c-kwan/autometa:nfcore"
-         containerOptions = "-v ${params.single_db_dir}:/ncbi:rw"
     }
 
     input:
-      tuple val(meta), path(votes), path(assembly)
+        tuple val(meta), path(assembly), path(votes)
+        path(ncbi_tax_dir)
 
     output:
-      path "${meta.id}.taxonomy.tsv", emit: taxonomy
-      path "${meta.id}.bacteria.fna", emit: bacteria
-      path "${meta.id}.archaea.fna", emit: archaea, optional:true
+        tuple val(meta), path("${meta.id}.taxonomy.tsv"), emit: taxonomy
+        tuple val(meta), path("${meta.id}.bacteria.fna"), emit: bacteria, optional: true
+        tuple val(meta), path("${meta.id}.archaea.fna"), emit: archaea, optional: true
 
     """
-    autometa-taxonomy \
-      --votes ${votes} \
-      --output . \
-      --prefix ${meta.id} \
-      --split-rank-and-write superkingdom \
-      --assembly ${assembly} \
-      --ncbi /ncbi
+    autometa-taxonomy \\
+      --votes "${votes}" \\
+      --output . \\
+      --prefix "${meta.id}" \\
+      --split-rank-and-write superkingdom \\
+      --assembly "${assembly}" \\
+      --ncbi "${ncbi_tax_dir}"
     """
 }

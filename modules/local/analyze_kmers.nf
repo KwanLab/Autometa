@@ -9,11 +9,12 @@ process ANALYZE_KMERS {
     tag "Counting kmers for ${meta.id}"
     label 'process_medium'
    
-    publishDir "${params.interim_dir}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), publish_id:meta.id) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
    
-   conda (params.enable_conda ? "autometa" : null)
+    conda (params.enable_conda ? "autometa" : null)
+ 
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

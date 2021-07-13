@@ -8,10 +8,7 @@ options        = initOptions(params.options)
 process HMMER_HMMSEARCH {
     tag "Annotating ORFs in $meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
-
+ 
     conda (params.enable_conda ? "bioconda::hmmer=3.3.2" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/hmmer:3.3.2--h1b792b2_1"
@@ -32,23 +29,15 @@ process HMMER_HMMSEARCH {
     def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
     def fastacmd = fasta.getExtension() == 'gz' ? "gunzip -c $fasta" : "cat $fasta"
     """
-  #      hmmsearch \\
-  #      $options.args \\
-  #      $hmm \\
-  #      - | gzip -c > ${meta.id}.sthlm.gz
+    hmmsearch \\
+        --domtblout "${meta.id}.domtblout" \\
+        --tblout "${meta.id}.tblout" \\
+        --pfamtblout "${meta.id}.pfamtblout" \\
+        --cpu 1 \\
+        --seed 42 \\
+        $hmm \\
+        $fasta > /dev/null 2>&1
 
-hmmsearch \\
-    --domtblout "${meta.id}.domtblout" \\
-    --tblout "${meta.id}.tblout" \\
-    --pfamtblout "${meta.id}.pfamtblout" \\
-    --cpu 1 \\
-    --seed 42 \\
-$hmm \\
-$fasta > /dev/null 2>&1
-
-
-
-
-    echo \$(hmmalign -h | grep -o '^# HMMER [0-9.]*') | sed 's/^# HMMER *//' > ${software}.version.txt
+    echo \$(hmmalign -h | grep -o '^# HMMER [0-9.]*') | sed 's/^# HMMER *//' > HMMER.version.txt
     """
 }

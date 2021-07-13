@@ -57,6 +57,21 @@ if (params.validate_params) {
     NfcoreSchema.validateParameters(params, json_schema, log)
 }
 
+
+
+
+
+params.interim_dir_internal = "${params.interim_dir}/autometeta_interim_dir/${workflow.sessionId}" // Intermediate results directory
+println "Intermediate results directory: $params.interim_dir_internal"
+
+params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.sessionId}"           // Final results directory
+println "Binning results directory: $params.outdir_internal"
+
+
+
+
+
+
 ////////////////////////////////////////////////////
 /* --         STAGE REPORTING CONFIG           -- */
 ////////////////////////////////////////////////////
@@ -83,6 +98,7 @@ summary['Output dir']       = params.outdir
 summary['Launch dir']       = workflow.launchDir
 summary['Working dir']      = workflow.workDir
 summary['Script dir']       = workflow.projectDir
+summary['Run identifier']   = workflow.sessionId
 summary['User']             = workflow.userName
 if (workflow.profile.contains('awsbatch')) {
     summary['AWS Region']   = params.awsregion

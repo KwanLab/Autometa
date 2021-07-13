@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 process SAMTOOLS_VIEW_AND_SORT {
     tag "$meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 

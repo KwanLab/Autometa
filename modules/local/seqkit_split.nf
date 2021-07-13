@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 params.num_splits = 20
 process SEQKIT_SPLIT {
-    tag "$meta.id"
+    tag "Splitting $meta.id for parallel processing"
     label 'process_medium'
     
     // no publishdir

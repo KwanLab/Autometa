@@ -6,11 +6,11 @@ options        = initOptions(params.options)
 
 process UNCLUSTERED_RECRUITMENT {
     tag "Performing Autometa unclustered recruitment on ${meta.id}"
-    label 'low'
+    label 'process_high'
    
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), publish_id:meta.id) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
    
    conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {

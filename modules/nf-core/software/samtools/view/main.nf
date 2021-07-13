@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process SAMTOOLS_VIEW {
     tag "$meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 

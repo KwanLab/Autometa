@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_low'
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
@@ -21,6 +21,7 @@ process LCA {
 
     input:
         tuple val(meta), path(blast)
+        path(blastdb_dir)
 
     output:
     tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
@@ -31,6 +32,6 @@ process LCA {
     
 
     """
-      autometa-taxonomy-lca --blast ${blast} --dbdir /ncbi --output ${meta.id}.lca.tsv
+      autometa-taxonomy-lca --blast ${blast} --dbdir "${blastdb_dir}" --output ${meta.id}.lca.tsv
     """
 }

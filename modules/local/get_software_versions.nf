@@ -31,7 +31,7 @@ params.options = [:]
  * Parse software version numbers
  */
 process GET_SOFTWARE_VERSIONS {
-    publishDir "${params.outdir}",
+    publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'pipeline_info', publish_id:'') }
 

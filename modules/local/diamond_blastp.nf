@@ -5,9 +5,9 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process DIAMOND_BLASTP {
-    tag '$bam'
+    tag "Annotating ORFS in ${meta.id}"
     label 'process_high'
-    publishDir "${params.outdir}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
@@ -25,13 +25,12 @@ process DIAMOND_BLASTP {
 
     input:
         tuple val(meta), path(protein_fasta)
-        path(diamond_database) //    /ncbi/nr.dmnd
-        val(outfmt)
-        val(block_size)
+        path(diamond_database)
 
 
     output:
     tuple val(meta), path("${meta.id}.blastp.tsv"), emit: diamond_results
+    path "*.version.txt"               , emit: version
 
 
     script:
@@ -39,13 +38,12 @@ process DIAMOND_BLASTP {
     
 
     """
-    diamond blastp $options.args \   
-    --query ${protein_fasta} \
-    --db ${diamond_database} \
-    --threads ${task.cpus} \
-    --outfmt ${outfmt} \
+    diamond blastp $options.args \\
+    --query ${protein_fasta} \\
+    --db ${diamond_database} \\
+    --threads ${task.cpus} \\
     --out ${meta.id}.blastp.tsv
 
-    diamond version | sed 's/^.*diamond version //' > ${software}.version.txt
+    diamond version | sed 's/^.*diamond version //' > diamond.version.txt
     """
 }

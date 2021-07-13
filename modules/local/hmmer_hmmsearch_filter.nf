@@ -8,9 +8,14 @@ options        = initOptions(params.options)
 process HMMER_HMMSEARCH_FILTER {
     tag "Filtering marker hmms in $meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}",
+
+    if (!params.parallel_split_fasta ) {
+        // if running in parallel, the results are published from the process
+        // that merges the individual results from this process
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+    }
 
 
     conda (params.enable_conda ? "autometa" : null)
@@ -32,7 +37,7 @@ process HMMER_HMMSEARCH_FILTER {
     def software = getSoftwareName(task.process)
     def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
     """
- autometa-markerfilter \\
+    autometa-markerfilter \\
         --infpath "$domtblout" \\
         --cutoffs  "/home/chase/Documents/github/Autometa/autometa/databases/markers/bacteria.single_copy.cutoffs" \\
         --markersout "${meta.id}.markers.tsv" \\

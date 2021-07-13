@@ -3,7 +3,7 @@
 """
 COPYRIGHT
 Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-Shaurya Chanana, Izaak Miller, Jason C. Kwan
+Shaurya Chanana, Iza1.3ak Miller, Jason C. Kwan
 
 This file is part of Autometa.
 
@@ -81,7 +81,7 @@ def add_metrics(
     expected_number = marker_sets[domain]
     if "cluster" in df.columns:
         # join cluster and marker data, group by cluster
-        temp = df.join(markers_df, how='outer').groupby("cluster")
+        temp = df.join(markers_df, how="outer").groupby("cluster")
         # count present
         nunique_markers = temp[list(markers_df.columns)].sum().ge(1).sum(axis=1)
         # count single copy
@@ -89,14 +89,21 @@ def add_metrics(
         # calculate completeness/purity
         completeness = nunique_markers / expected_number * 100
         purity = num_single_copy_markers / nunique_markers * 100
-        coverage_stddev = temp['coverage'].std()
-        gc_content_stddev = temp['gc_content'].std()
+        coverage_stddev = temp["coverage"].std()
+        gc_content_stddev = temp["gc_content"].std()
         completeness = completeness.to_frame()
         purity = purity.to_frame()
         coverage_stddev = coverage_stddev.to_frame()
         gc_content_stddev = gc_content_stddev.to_frame()
-        metrics_df = pd.concat([completeness,purity,coverage_stddev,gc_content_stddev], axis=1)
-        metrics_df.columns = ['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev']
+        metrics_df = pd.concat(
+            [completeness, purity, coverage_stddev, gc_content_stddev], axis=1
+        )
+        metrics_df.columns = [
+            "completeness",
+            "purity",
+            "coverage_stddev",
+            "gc_content_stddev",
+        ]
         merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
     # Account for exceptions where clusters were not recovered
     else:
@@ -116,7 +123,7 @@ def add_metrics(
         metric_cols = ["completeness", "purity", "coverage_stddev", "gc_content_stddev"]
         merged_df = df.copy()
         for metric in metric_cols:
-            merged_df[metric] = pd.NA       
+            merged_df[metric] = pd.NA
     return merged_df, metrics_df
 
 
@@ -1009,7 +1016,9 @@ def main():
         "coverage_stddev",
         "gc_content_stddev",
     ]
-    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True, float_format='%.5f')
+    main_out[outcols].to_csv(
+        args.output_binning, sep="\t", index=True, header=True, float_format="%.5f"
+    )
     logger.info(f"Wrote binning results to {args.output_binning}")
     if args.output_main:
         # First after binning relevant assignments/metrics place contig physical annotations
