@@ -200,7 +200,7 @@ def main():
 
     if not internet_is_connected():
         logger.error(
-            "No internet connection detected. Please confirm connection and try again. Downloader will still attempt to run."
+            "No internet connection detected. Please confirm connection. Downloader will still attempt to run. (Internet check may incorrectly fail where google.com is not reachable/ping-able (e.g. China))"
         )
 
     if not os.path.exists(dir_path):
