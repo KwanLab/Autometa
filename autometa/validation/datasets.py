@@ -65,14 +65,14 @@ def download(
 
     df = pd.read_csv("gdown_fileIDs.csv", dtype=str)
     for community_size in community_sizes:
-        df_size = df.query(f'dataset == "{community_size}"')
+        df_size = df[df.dataset == community_size]
         dir_path_size = os.path.join(dir_path, community_size)
         # make a new directory
         if not os.path.exists(dir_path_size):
             os.mkdir(dir_path_size)
 
         for file_name in file_names:
-            file_id = df_size.query(f'file == "{file_name}"')["file_id"].to_list()[0]
+            file_id = df_size[df_size.file == file_name]["file_id"].to_list()[0]
             dir_path_final = os.path.join(dir_path_size, file_name)
             url = f"https://drive.google.com/uc?id={file_id}"
 
