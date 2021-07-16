@@ -61,7 +61,7 @@ def download(
     """
 
     if community_type == "synthetic" or community_type == "all":
-        sys.exit("Haven't implemented that yet")
+        raise NotImplementedError
 
     for each_community_size in community_size:
         df = pd.read_csv("gdown_fileIDs.csv", dtype=str)
@@ -210,8 +210,8 @@ def main():
         sys.exit("Specified path does not exist!")
 
     download(
-        type=community_type,
-        size=community_size,
+        community_type=community_type,
+        community_size=community_size,
         file_names=file_names,
         dir_path=dir_path,
     )
