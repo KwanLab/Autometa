@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def download(
-    community_type: str, community_size: list, file_names: list, dir_path: str
+    community_type: str, community_sizes: list, file_names: list, dir_path: str
 ) -> None:
 
     """Downloads the files specified in a dictionary.
@@ -46,7 +46,7 @@ def download(
     ----------
     community_type : str
         specifies the type of dataset that the user would like to download from
-    community_size : list
+    community_sizes : list
         specifies the size of dataset that the user would like to download
     file_names : list
         specifies the file(s) that the user would like to download
@@ -63,16 +63,16 @@ def download(
     if community_type == "synthetic" or community_type == "all":
         raise NotImplementedError
 
-    for each_community_size in community_size:
-        df = pd.read_csv("gdown_fileIDs.csv", dtype=str)
-        df = df.query(f'dataset == "{each_community_size}"')
-        dir_path_size = os.path.join(dir_path, each_community_size)
+    df = pd.read_csv("gdown_fileIDs.csv", dtype=str)
+    for community_size in community_sizes:
+        df_size = df.query(f'dataset == "{community_size}"')
+        dir_path_size = os.path.join(dir_path, community_size)
         # make a new directory
         if not os.path.exists(dir_path_size):
             os.mkdir(dir_path_size)
 
         for file_name in file_names:
-            file_id = df.query(f'file == "{file_name}"')["file_id"].to_list()[0]
+            file_id = df_size.query(f'file == "{file_name}"')["file_id"].to_list()[0]
             dir_path_final = os.path.join(dir_path_size, file_name)
             url = f"https://drive.google.com/uc?id={file_id}"
 
@@ -103,7 +103,7 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--community_size",
+        "--community_sizes",
         help="specify a community size to download from",
         choices=[
             "78Mbp",
@@ -157,8 +157,8 @@ def main():
     args = parser.parse_args()
 
     community_type = args.community_type
-    if "all" in args.community_size:
-        community_size = (
+    if "all" in args.community_sizes:
+        community_sizes = (
             "78Mbp",
             "156Mbp",
             "312Mbp",
@@ -169,7 +169,7 @@ def main():
             "10000Mbp",
         )
     else:
-        community_size = args.community_size
+        community_sizes = args.community_sizes
     if "all" in args.file_names:
         file_names = (
             "README.md",
@@ -211,7 +211,7 @@ def main():
 
     download(
         community_type=community_type,
-        community_size=community_size,
+        community_sizes=community_sizes,
         file_names=file_names,
         dir_path=dir_path,
     )
