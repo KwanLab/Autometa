@@ -51,7 +51,7 @@ def download(
     file_names : list
         specifies the file(s) that the user would like to download
     dir_path : str
-        dir_path_size path where the user wants to download the file(s)
+        output path where the user wants to download the file(s)
 
     Returns
     -------
@@ -65,17 +65,17 @@ def download(
 
     df = pd.read_csv("gdown_fileIDs.csv", dtype=str, index_col=["dataset", "file"])
     for community_size in community_sizes:
-        dir_path_size = os.path.join(dir_path, community_size)
+        community_size_outdir = os.path.join(dir_path, community_size)
         # make a new directory
-        if not os.path.exists(dir_path_size):
-            os.mkdir(dir_path_size)
+        if not os.path.exists(community_size_outdir):
+            os.makedirs(community_size_outdir)
 
         for file_name in file_names:
             file_id = df.loc[(community_size, file_name), "file_id"]
-            dir_path_final = os.path.join(dir_path_size, file_name)
+            file_id_filepath = os.path.join(community_size_outdir, file_name)
             url = f"https://drive.google.com/uc?id={file_id}"
 
-            gdown.download(url, dir_path_final)
+            gdown.download(url, file_id_filepath)
 
 
 def main():
@@ -89,10 +89,10 @@ def main():
     )
 
     parser = argparse.ArgumentParser(
-        description="Download a simulated community file from google drive to a specified dir_path_size"
+        description="Download a simulated community file from google drive to a specified output directory"
     )
     parser.add_argument(
-        "--community_type",
+        "--community-type",
         help="specify synthetic or simulated communities (currently only simulated is available)",
         choices=[
             "synthetic",
@@ -102,7 +102,7 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--community_sizes",
+        "--community-sizes",
         help="specify a community size to download from",
         choices=[
             "78Mbp",
@@ -119,7 +119,7 @@ def main():
         nargs="+",
     )
     parser.add_argument(
-        "--file_names",
+        "--file-names",
         help="specify a file name to download",
         choices=[
             "README.md",
@@ -149,13 +149,13 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--dir_path",
+        "--dir-path",
         help="specify a folder to start the download (several directories will be generated within this folder)",
         required=True,
     )
     args = parser.parse_args()
 
-    community_type = args.community_type
+    
     if "all" in args.community_sizes:
         community_sizes = (
             "78Mbp",
@@ -195,24 +195,17 @@ def main():
         )
     else:
         file_names = args.file_names
-    dir_path = args.dir_path
 
     if not internet_is_connected():
         logger.error(
             "No internet connection detected. Please confirm connection. Downloader will still attempt to run. (Internet check may incorrectly fail where google.com is not reachable/ping-able (e.g. China))"
         )
 
-    if not os.path.exists(dir_path):
-        logger.error(
-            "The dir_path you specified could not be found. Please select a folder that exists."
-        )
-        sys.exit("Specified path does not exist!")
-
     download(
-        community_type=community_type,
+        community_type=args.community_type,
         community_sizes=community_sizes,
         file_names=file_names,
-        dir_path=dir_path,
+        dir_path=args.dir_path,
     )
 
 
