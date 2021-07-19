@@ -167,6 +167,7 @@ def get(
     kingdom = kingdom.lower()
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
+        logger.debug(f"Scanning {kingdom} for single-copy marker genes")
         scans = hmmer.hmmscan(
             orfs=orfs,
             hmmdb=hmmdb,
@@ -177,8 +178,9 @@ def get(
             gnu_parallel=gnu_parallel,
             seed=seed,
         )
-
+        logger.debug(f"{kingdom} marker scan finished")
     if not os.path.exists(out) or not os.path.getsize(out):
+        logger.debug(f"filtering {scans} for marker genes passing cutoffs")
         out = hmmer.filter_markers(
             infpath=scans,
             outfpath=out,
@@ -186,6 +188,7 @@ def get(
             orfs=orfs,
             force=force,
         )
+        logger.debug("marker gene cutoff filter finished")
     return load(fpath=out, format=format)
 
 
