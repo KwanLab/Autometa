@@ -188,7 +188,7 @@ def get(
             orfs=orfs,
             force=force,
         )
-        logger.debug("marker gene cutoff filter finished")
+        logger.debug(f"marker gene cutoff filter finished: {out}")
     return load(fpath=out, format=format)
 
 
