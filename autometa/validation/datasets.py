@@ -153,6 +153,11 @@ def main():
         help="specify a folder to start the download (several directories will be generated within this folder)",
         required=True,
     )
+    parser.add_argument(
+        "--host",
+        help="IP address to ping when checking internet connectivity. Note: Will attempt to connect to port 53 on host address (Default is google.com)",
+        default="8.8.8.8",
+    )
     args = parser.parse_args()
 
     
@@ -196,9 +201,9 @@ def main():
     else:
         file_names = args.file_names
 
-    if not internet_is_connected():
+    if not internet_is_connected(host=args.host):
         logger.error(
-            "No internet connection detected. Please confirm connection. Downloader will still attempt to run. (Internet check may incorrectly fail where google.com is not reachable/ping-able (e.g. China))"
+            "No internet connection detected. Please confirm connection. Downloader will still attempt to run. (Ping a custom IP address with --host argument)"
         )
 
     download(
