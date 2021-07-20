@@ -18,7 +18,7 @@ process DOWNLOAD_NR {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
          container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:nfcore"
+         container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     output:
@@ -51,7 +51,7 @@ process TEST_DOWNLOAD {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
          container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:nfcore"
+         container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     output:

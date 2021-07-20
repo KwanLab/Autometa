@@ -18,7 +18,7 @@ process ANALYZE_KMERS {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa"
     } else {
-        container "jason-c-kwan/autometa:nfcore"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     input:

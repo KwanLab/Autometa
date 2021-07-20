@@ -40,5 +40,5 @@ jobs:
         # For example: adding multiple test runs with different parameters
         # Remember that you can parallelise this by using strategy.matrix
         run: |
-          make image
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker
+          docker build . -t jason-c-kwan/autometa:test
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --autometa_image 'latest'

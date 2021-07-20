@@ -21,11 +21,12 @@ process HMMER_HMMSEARCH_FILTER {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-        container "jason-c-kwan/autometa:nfcore"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     input:
     tuple val(meta), path(domtblout), path(fasta)
+    path("bacteria.single_copy.cutoffs")
 
     output:
     tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv

@@ -237,6 +237,11 @@
                     "type": "boolean",
                     "description": "Run with minimal dataset",
                     "hidden": true
+                },
+                "autometa_image": {
+                    "type": "string",
+                    "default": "latest",
+                    "description": "CHange the version of the docker image"
                 }
             },
             "required": [
