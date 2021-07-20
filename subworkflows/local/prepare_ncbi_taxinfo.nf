@@ -1,4 +1,4 @@
-// this file probably needs to be reevaluated, but from a python-first 
+// this file probably needs to be reevaluated, but from a python-first
 // perspective since the python code assumes file/directory structure
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
@@ -46,7 +46,7 @@ process DOWNLOAD_ACESSION2TAXID {
     }
 
     output:
-    // hack nf-core options.args3 and use for output name 
+    // hack nf-core options.args3 and use for output name
     path "prot.accession2taxid" , emit: singlefile
     path  "*.version.txt"   , emit: version
 
@@ -55,7 +55,7 @@ process DOWNLOAD_ACESSION2TAXID {
         --quiet \
         'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz' 'prot.accession2taxid.gz'
         'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz.md5' 'prot.accession2taxid.gz.md5'
-        
+
     md5sum -c *.md5
     gunzip prot.accession2taxid.gz
     rsync --version | head -n1 > rsync.version.txt
@@ -76,7 +76,7 @@ process DOWNLOAD_TAXDUMP {
     }
 
     output:
-    // hack nf-core options.args3 and use for output name 
+    // hack nf-core options.args3 and use for output name
     path "*" , emit: singlefile
     path  "*.version.txt"   , emit: version
 
@@ -84,11 +84,11 @@ process DOWNLOAD_TAXDUMP {
     rsync -a \
         --quiet \
         'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz' 'taxdump.tar.gz'
-        
+
     rsync -a \
         --quiet \
         'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz.md5' 'taxdump.tar.gz.md5'
-        
+
     md5sum -c *.md5
    rm 'taxdump.tar.gz.md5'
    tar -xf taxdump.tar.gz
@@ -101,8 +101,8 @@ process DOWNLOAD_TAXDUMP {
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
-    
-         if (params.testdl){
+
+         if (params.debug){
             TEST_DOWNLOAD().singlefile
                 .set{prot_accession2taxid_ch}
         }
@@ -111,10 +111,10 @@ workflow PREPARE_TAXONOMY_DATABASES {
                 .set{prot_accession2taxid_ch}
         }
         DOWNLOAD_TAXDUMP()
-    
+
     emit:
         taxdump = DOWNLOAD_TAXDUMP.out.singlefile
         prot_accession2taxid = prot_accession2taxid_ch
-  
+
 }
 

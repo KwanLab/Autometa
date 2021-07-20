@@ -22,18 +22,18 @@ process DOWNLOAD_NR {
     }
 
     output:
-    // hack nf-core options.args3 and use for output name 
+    // hack nf-core options.args3 and use for output name
     path "nr.gz" , emit: singlefile
 
     """
     rsync -a \
         --quiet \
         'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz' 'nr.gz'
-        
+
     rsync -a \
         --quiet \
         'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz.md5' 'nr.gz.md5'
-        
+
     md5sum -c *.md5
    # rm 'taxdump.tar.gz.md5'
    # tar -xf taxdump.tar.gz
@@ -67,7 +67,7 @@ process TEST_DOWNLOAD {
 workflow PREPARE_NR_DB {
 
     main:
-        if (params.testdl){
+        if (params.debug){
             TEST_DOWNLOAD().singlefile
                 .set{nr_db_ch}
         }
@@ -88,8 +88,8 @@ workflow PREPARE_NR_DB {
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
         }
-        
-        
+
+
 
     emit:
         diamond_db = out_ch

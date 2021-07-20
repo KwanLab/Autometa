@@ -1,0 +1,21 @@
+lint:
+  files_exist:
+    - .github/workflows/branch.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+    - .travis.yml
+  files_unchanged:
+    - manifest
+    - .github/CONTRIBUTING.md
+    - .github/ISSUE_TEMPLATE/bug_report.md
+    - .github/ISSUE_TEMPLATE/feature_request.md
+    - .github/workflows/linting_comment.yml
+    - .github/workflows/linting.yml
+    - assets/email_template.html
+    - assets/email_template.txt
+    - bin/scrape_software_versions.py
+    - docs/README.md
+    - .gitignore
+    - LICENSE
+  template_strings: false
+  nextflow_config: false

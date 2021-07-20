@@ -1,23 +1,6 @@
-/*
- * This file holds several functions used to perform JSON parameter validation, help and summary rendering for the nf-core pipeline template.
- */
-// MIT License
-// Copyright (c) 2018 nf-core
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+//
+// This file holds several functions used to perform JSON parameter validation, help and summary rendering for the nf-core pipeline template.
+//
 
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
@@ -263,10 +246,10 @@ class NfcoreSchema {
         }
         workflow_summary['runName']      = workflow.runName
         if (workflow.containerEngine) {
-            workflow_summary['containerEngine'] = "$workflow.containerEngine"
+            workflow_summary['containerEngine'] = workflow.containerEngine
         }
         if (workflow.container) {
-            workflow_summary['container']       = "$workflow.container"
+            workflow_summary['container'] = workflow.container
         }
         workflow_summary['launchDir']    = workflow.launchDir
         workflow_summary['workDir']      = workflow.workDir
@@ -287,17 +270,7 @@ class NfcoreSchema {
                     def params_value = params.get(param)
                     def schema_value = group_params.get(param).default
                     def param_type   = group_params.get(param).type
-                    if (schema_value == null) {
-                        if (param_type == 'boolean') {
-                            schema_value = false
-                        }
-                        if (param_type == 'string') {
-                            schema_value = ''
-                        }
-                        if (param_type == 'integer') {
-                            schema_value = 0
-                        }
-                    } else {
+                    if (schema_value != null) {
                         if (param_type == 'string') {
                             if (schema_value.contains('$projectDir') || schema_value.contains('${projectDir}')) {
                                 def sub_string = schema_value.replace('\$projectDir', '')
@@ -316,8 +289,13 @@ class NfcoreSchema {
                         }
                     }
 
-                    if (params_value != schema_value) {
-                        sub_params.put("$param", params_value)
+                    // We have a default in the schema, and this isn't it
+                    if (schema_value != null && params_value != schema_value) {
+                        sub_params.put(param, params_value)
+                    }
+                    // No default in the schema, and this isn't empty
+                    else if (schema_value == null && params_value != "" && params_value != null && params_value != false) {
+                        sub_params.put(param, params_value)
                     }
                 }
             }
@@ -337,9 +315,9 @@ class NfcoreSchema {
         for (group in params_map.keySet()) {
             def group_params = params_map.get(group)  // This gets the parameters of that particular group
             if (group_params) {
-                output += group + '\n'
+                output += colors.bold + group + colors.reset + '\n'
                 for (param in group_params.keySet()) {
-                    output += "    \u001B[1m" +  param.padRight(max_chars) + ": \u001B[1m" + group_params.get(param) + '\n'
+                    output += "  " + colors.blue + param.padRight(max_chars) + ": " + colors.green +  group_params.get(param) + colors.reset + '\n'
                 }
                 output += '\n'
             }

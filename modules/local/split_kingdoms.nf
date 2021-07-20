@@ -10,7 +10,7 @@ process SPLIT_KINGDOMS {
 
     publishDir "${params.interim_dir_internal}",
           mode: params.publish_dir_mode,
-          saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }  
+          saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
 
@@ -27,8 +27,12 @@ process SPLIT_KINGDOMS {
     output:
         tuple val(meta), path("${meta.id}.taxonomy.tsv"), emit: taxonomy
         tuple val(meta), path("${meta.id}.bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("${meta.id}.archaea.fna"), emit: archaea, optional: true
+        tuple val(meta), path("${meta.id}.archaea.fna") , emit: archaea, optional: true
+        path  '*.version.txt'                           , emit: version
 
+    script:
+    // Add soft-links to original FastQs for consistent naming in pipeline
+    def software = getSoftwareName(task.process)
     """
     autometa-taxonomy \\
       --votes "${votes}" \\
@@ -37,5 +41,7 @@ process SPLIT_KINGDOMS {
       --split-rank-and-write superkingdom \\
       --assembly "${assembly}" \\
       --ncbi "${ncbi_tax_dir}"
+
+    echo "TODO" > autometa.version.txt
     """
 }

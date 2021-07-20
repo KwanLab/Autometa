@@ -8,15 +8,15 @@ options        = initOptions(params.options)
 process ANALYZE_KMERS {
     tag "Counting kmers for ${meta.id}"
     label 'process_medium'
-   
+
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
-   
+
     conda (params.enable_conda ? "autometa" : null)
- 
+
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/autometa"
     } else {
         container "jason-c-kwan/autometa:nfcore"
     }
@@ -25,10 +25,14 @@ process ANALYZE_KMERS {
         tuple val(meta), path(metagenome)
 
     output:
-       tuple val(meta), path("${meta.id}.kmers.tsv"), emit: counts
+       tuple val(meta), path("${meta.id}.kmers.tsv")           , emit: counts
        tuple val(meta), path("${meta.id}.kmers.normalized.tsv"), emit: normalized
-       tuple val(meta), path("${meta.id}.kmers.embedded.tsv"), emit: embedded
+       tuple val(meta), path("${meta.id}.kmers.embedded.tsv")  , emit: embedded
+       path  '*.version.txt'                                   , emit: version
 
+    script:
+    // Add soft-links to original FastQs for consistent naming in pipeline
+    def software = getSoftwareName(task.process)
     """
     autometa-kmers \
       --fasta $metagenome \
@@ -42,5 +46,14 @@ process ANALYZE_KMERS {
       --embedding-dimensions ${params.embedding_dimensions} \
       --cpus ${task.cpus} \
       --seed 42
-    """
+
+    echo "TODO" > autometa.version.txt
+   """
 }
+
+
+
+
+
+
+

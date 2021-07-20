@@ -1,7 +1,7 @@
 
 params.bedtools_genomecov_options      = [:]
 
-include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/software/bedtools/genomecov.nf' addParams( options: params.bedtools_genomecov_options )
+include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/modules/bedtools/genomecov.nf' addParams( options: params.bedtools_genomecov_options )
 
 workflow GENOME_COVERAGE {
     take:

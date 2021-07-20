@@ -17,21 +17,19 @@ process HMMER_HMMSEARCH_FILTER {
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
     }
 
-
     conda (params.enable_conda ? "autometa" : null)
-     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-     } else {
-         container "jason-c-kwan/autometa:nfcore"
-     }  
-   
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+    } else {
+        container "jason-c-kwan/autometa:nfcore"
+    }
 
     input:
     tuple val(meta), path(domtblout), path(fasta)
 
     output:
     tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
-    //path "*.version.txt"               , emit: version
+    path "*.version.txt"                           , emit: version
 
     script:
     def software = getSoftwareName(task.process)
@@ -43,6 +41,6 @@ process HMMER_HMMSEARCH_FILTER {
         --markersout "${meta.id}.markers.tsv" \\
         --orfs "$fasta"
 
-
+    echo "TODO" > autometa.version.txt
     """
 }

@@ -16,14 +16,14 @@ workflow TAXON_ASSIGNMENT {
 
     main:
       LCA(blastp_table, ncbi_tax_dir) // output '${blast.simpleName}.lca.tsv'
-      MAJORITY_VOTE(LCA.out, ncbi_tax_dir) //output ${lca.simpleName}.votes.tsv
-      
+      MAJORITY_VOTE(LCA.out.lca, ncbi_tax_dir) //output ${lca.simpleName}.votes.tsv
+
        metagenome.join(
           MAJORITY_VOTE.out.votes
       ).set{split_kingdoms_input}
 
 
-      SPLIT_KINGDOMS(split_kingdoms_input, ncbi_tax_dir) 
+      SPLIT_KINGDOMS(split_kingdoms_input, ncbi_tax_dir)
       // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
 
     emit:

@@ -1,9 +1,11 @@
 // Import generic module functions
-include { saveFiles } from './functions'
+include { initOptions; saveFiles; getSoftwareName } from './functions'
 
 params.options = [:]
+options        = initOptions(params.options)
 
 process GET_SOFTWARE_VERSIONS {
+    label 'process_low'
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'pipeline_info', meta:[:], publish_by_meta:[]) }
@@ -23,11 +25,17 @@ process GET_SOFTWARE_VERSIONS {
     output:
     path "software_versions.tsv"     , emit: tsv
     path 'software_versions_mqc.yaml', emit: yaml
+    path  '*.version.txt'                                   , emit: version
 
-    script: // This script is bundled with the pipeline, in nf-core/autometa/bin/
+
+    script:
+    // Add soft-links to original FastQs for consistent naming in pipeline
+    def software = getSoftwareName(task.process)
     """
     echo $workflow.manifest.version > pipeline.version.txt
     echo $workflow.nextflow.version > nextflow.version.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
+
+    echo "make linter happy" > autometa.version.txt
     """
 }

@@ -11,34 +11,41 @@
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
             "required": [
-                "input"
+                "input",
+                "publish_dir_mode"
             ],
             "properties": {
                 "input": {
                     "type": "string",
                     "fa_icon": "fas fa-dna",
-                    "description": "Absolute (full) path of the metageome assembly FASTA (.fna) file(s)",
+                    "description": "Absolute (full) path of the metagenome assembly FASTA (.fna) file(s)",
                     "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
                     "default": "null"
                 },
                 "interim_dir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory for intermediate files",
-                    "default": "~/where/pipeline/is/launched/autometa_interim_dir",
+                    "default": "~/where/pipeline/is/launched",
                     "fa_icon": "fas fa-folder-open",
                     "help_text": "Directory for storing files created during intermediate steps but which are interesting enough to keep for debugging or analyzing with other tools"
                 },
                 "outdir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory where the results will be saved.",
-                    "default": "~/where/pipeline/is/launched/autometa_outdir",
+                    "default": "~/where/pipeline/is/launched",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "tracedir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory to keep pipeline Nextflow logs and reports.",
-                    "default": "~/where/pipeline/is/launched/autometa_tracedir",
+                    "default": "~/where/pipeline/is/launched",
                     "fa_icon": "fas fa-cogs"
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "How should output files be stored?",
+                    "help_text": "\nImportant note: Using a linking method (anything ending in 'link') and then deleting the nextflow run's working/cache directory will result in the loss of all output files. Links will remain but will only point to non-existent file(s).\n\nUse one of the following\ncopy\n    Copies the output files into the published directory. (default)\nsymlink\n    Creates an absolute symbolic link in the published directory for each process output file.\nrellink\n    Creates a relative symbolic link in the published directory for each process output file.\nlink\n    Creates a hard link in the published directory for each process output file.\ncopyNoFollow\n    Copies the output files into the published directory without following symlinks ie. copies the links themselves.\nmove\n    Moves the output files into the published directory. Note: this is only supposed to be used for a terminating process i.e. a process whose output is not consumed by any other downstream process.\n\nFor more information see:\nhttps://www.nextflow.io/docs/latest/process.html#publishdir"
                 }
             }
         },
@@ -137,7 +144,6 @@
             "properties": {
                 "taxonomy_aware": {
                     "type": "boolean",
-                    "default": "false",
                     "description": "Turn taxonomy-aware clustering on/off"
                 },
                 "single_db_dir": {
@@ -145,6 +151,12 @@
                     "default": "null",
                     "fa_icon": "fas fa-folder-open",
                     "description": "Directory containing databases required for taxonomy assignment"
+                },
+                "nr_dmnd_dir": {
+                    "type": "string"
+                },
+                "prot_accession2taxid_gz_dir": {
+                    "type": "string"
                 },
                 "binning_starting_rank": {
                     "type": "string",
@@ -155,13 +167,17 @@
                     "type": "string",
                     "default": "bacteria",
                     "description": "Bin contigs belonging to this kingdom. Choices are \"bacteria\" and \"archaea\""
+                },
+                "large_downloads_permission": {
+                    "type": "boolean",
+                    "description": "Can Autometa download nr.gz? (It's >100Gb)"
                 }
             }
         },
         "autometa_nextflow_parameters": {
             "title": "Autometa Nextflow Parameters",
             "type": "object",
-            "description": "",
+            "description": "These paramters control how the pipeline is executed",
             "default": "",
             "properties": {
                 "parallel_split_fasta": {
@@ -171,7 +187,16 @@
                 },
                 "store_split_fasta_in_ram": {
                     "type": "boolean",
-                    "description": "Skip writing split FASTA to disk, use RAM"
+                    "description": "Skip writing split FASTA to disk, use RAM",
+                    "default": true
+                },
+                "taxdump_tar_gz_dir": {
+                    "type": "string"
+                },
+                "num_splits": {
+                    "type": "integer",
+                    "default": 24,
+                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss"
                 },
                 "fasta_split_size": {
                     "type": "string",
@@ -181,18 +206,32 @@
                 },
                 "max_cpus": {
                     "type": "integer",
-                    "default": 2,
+                    "default": 16,
                     "description": "Max cpus to use/request"
                 },
                 "max_memory": {
                     "type": "string",
-                    "default": "6 GB",
+                    "default": "16 GB",
                     "description": "Max RAM to use/request"
                 },
                 "max_time": {
                     "type": "string",
                     "default": "2d",
                     "description": "Max time a *single* process is allowed to run"
+                },
+                "enable_conda": {
+                    "type": "boolean",
+                    "description": "Use conda?"
+                },
+                "debug": {
+                    "type": "boolean",
+                    "description": "Run pipeline with small defaults (e.g. not the entire nr.gz download)",
+                    "hidden": true
+                },
+                "use_run_name": {
+                    "type": "boolean",
+                    "hidden": true,
+                    "description": "If TRUE, run-name will be used in the output directory structure"
                 }
             },
             "required": [
@@ -201,8 +240,8 @@
                 "max_time"
             ]
         },
-        "generic_options": {
-            "title": "Generic options",
+        "generic_nf_core_options": {
+            "title": "Generic nf-core options",
             "type": "object",
             "fa_icon": "fas fa-university",
             "description": "Parameters used to describe centralised config profiles. These should not be edited.",
@@ -211,7 +250,8 @@
                 "validate_params": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether to validate parameters on initiation"
+                    "description": "Whether to validate parameters on initiation",
+                    "hidden": true
                 },
                 "email": {
                     "type": "string",
@@ -226,6 +266,10 @@
                     "description": "Display help text.",
                     "hidden": true,
                     "fa_icon": "fas fa-users-cog"
+                },
+                "plaintext_email": {
+                    "type": "string",
+                    "hidden": true
                 },
                 "email_on_fail": {
                     "type": "string",
@@ -242,9 +286,8 @@
                 "monochrome_logs": {
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
-                    "fa_icon": "fas fa-palette",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                    "fa_icon": "fas fa-users-cog",
+                    "hidden": true
                 },
                 "config_profile_url": {
                     "type": "string",
@@ -261,11 +304,52 @@
                     "type": "string",
                     "hidden": true,
                     "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information"
+                },
+                "custom_config_version": {
+                    "type": "string",
+                    "default": "master",
+                    "hidden": true
+                },
+                "custom_config_base": {
+                    "type": "string",
+                    "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+                    "hidden": true
+                },
+                "hostnames": {
+                    "type": "string",
+                    "default": "[binac:['.binac.uni-tuebingen.de'], cbe:['.cbe.vbc.ac.at'], cfc:['.hpc.uni-tuebingen.de'], crick:['.thecrick.org'], icr_davros:['.davros.compute.estate'], imperial:['.hpc.ic.ac.uk'], imperial_mb:['.hpc.ic.ac.uk'], genotoul:['.genologin1.toulouse.inra.fr', '.genologin2.toulouse.inra.fr'], genouest:['.genouest.org'], uppmax:['.uppmax.uu.se'], utd_ganymede:['ganymede.utdallas.edu'], utd_sysbio:['sysbio.utdallas.edu']]",
+                    "hidden": true
+                },
+                "show_hidden_params": {
+                    "type": "string",
+                    "hidden": true
+                },
+                "singularity_pull_docker_container": {
+                    "type": "string",
+                    "hidden": true
                 }
             },
             "required": [
                 "validate_params"
             ]
+        },
+        "parameters_set_internally": {
+            "title": "Parameters set internally",
+            "type": "object",
+            "description": "These parameters are determined during runtime",
+            "default": "",
+            "properties": {
+                "outdir_internal": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "These parameters are determined during runtime"
+                },
+                "interim_dir_internal": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "These parameters are determined during runtime"
+                }
+            }
         }
     },
     "allOf": [
@@ -282,7 +366,10 @@
             "$ref": "#/definitions/autometa_nextflow_parameters"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/definitions/generic_nf_core_options"
+        },
+        {
+            "$ref": "#/definitions/parameters_set_internally"
         }
     ]
 }

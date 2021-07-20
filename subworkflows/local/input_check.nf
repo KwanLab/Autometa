@@ -41,17 +41,18 @@ def create_fastq_channels(LinkedHashMap row) {
     return array
 }
 
+
 workflow INPUT_CONTIGS {
     main:
         Channel
             .fromPath(params.input)
             .ifEmpty { exit 1, "Cannot find contig fasta file(s)." }
             .map { row ->
-                        return [ meta, row ]
-            .set { ch_fasta }
-                }
                         def meta = [:]
                         meta.id           = row.simpleName
+                        return [ meta, row ]
+                }
+            .set { ch_fasta }
     emit:
         metagenome = ch_fasta
 }

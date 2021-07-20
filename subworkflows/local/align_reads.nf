@@ -36,8 +36,8 @@ process ALIGN_READS {
 
 params.bedtools_genomecov_options      = [:]
 
-include { BOWTIE2_ALIGN } from './../../modules/nf-core/software/bedtools/genomecov.nf' addParams( options: params.bedtools_genomecov_options )
-include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/software/bedtools/genomecov.nf' addParams( options: params.bedtools_genomecov_options )
+include { BOWTIE2_ALIGN } from './../../modules/nf-core/modules/bowtie2/align/main.nf' addParams( options: params.bedtools_genomecov_options )
+include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/modules/bedtools/genomecov.nf' addParams( options: params.bedtools_genomecov_options )
 
 workflow ALIGN_READS {
     take:

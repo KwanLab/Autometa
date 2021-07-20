@@ -25,8 +25,9 @@ process LENGTH_TABLE {
     input:
     tuple val(meta), path(metagenome)
 
-    output:   
+    output:
     tuple val(meta), path("${meta.id}.lengths.tsv"), emit: bam
+    path  '*.version.txt'                          , emit: version
 
     script:
     def software = getSoftwareName(task.process)
@@ -40,6 +41,6 @@ process LENGTH_TABLE {
     lengths.index.name = "contig"
     lengths.to_csv(${meta.id}.lengths.tsv, sep="\t", index=True, header=True)
 
-    # echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > ${software}.version.txt
+     echo "TODO" > ${software}.version.txt
     """
 }

@@ -1,10 +1,12 @@
 // Import generic module functions
-include { saveFiles } from './functions'
+include { initOptions; saveFiles; getSoftwareName } from './functions'
 
 params.options = [:]
+options        = initOptions(params.options)
 
 process SAMPLESHEET_CHECK {
     tag "$samplesheet"
+    label 'process_low'
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'pipeline_info', meta:[:], publish_by_meta:[]) }
@@ -22,7 +24,9 @@ process SAMPLESHEET_CHECK {
     output:
     path '*.csv'
 
-    script: // This script is bundled with the pipeline, in nf-core/autometa/bin/
+    script:
+    // Add soft-links to original FastQs for consistent naming in pipeline
+    def software = getSoftwareName(task.process)
     """
     check_samplesheet.py \\
         $samplesheet \\

@@ -4,27 +4,29 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-//TODO REMOVE FILE, this has been replaced by hmmsearch
+// TODO: For faster results/ les I/O this could be replaced with hmmsearch
 process MARKERS {
     tag "Finding markers for ${meta.id}"
     label "process_low"
-    
-    // copying orfs via stageInMode is required to run hmmscan (does not handle symlinks)
-    //stageInMode 'copy'
-   
+
     conda (params.enable_conda ? "autometa" : null)
-     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-     } else {
-         container "jason-c-kwan/autometa:nfcore"
-     }  
-   
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+    } else {
+        container "jason-c-kwan/autometa:nfcore"
+    }
+
     input:
         tuple val(meta), path(orfs)
-  
+        path(cutoffs)
+
     output:
         tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
-  
+        path  '*.version.txt'                          , emit: version
+
+    script:
+    // Add soft-links to original FastQs for consistent naming in pipeline
+    def software = getSoftwareName(task.process)
     """
     autometa-markers \\
         --orfs $orfs \\
@@ -33,6 +35,8 @@ process MARKERS {
         --kingdom ${params.kingdom} \\
         --parallel \\
         --cpus ${task.cpus} \\
-        --seed 42
-    """
+        --seed 42 \\
+        --dbdir
+
+    echo "TODO" > autometa.version.txt"""
 }

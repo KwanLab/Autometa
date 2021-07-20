@@ -8,7 +8,7 @@ options        = initOptions(params.options)
 process HMMER_HMMSEARCH {
     tag "Annotating ORFs in $meta.id"
     label 'process_medium'
- 
+
     conda (params.enable_conda ? "bioconda::hmmer=3.3.2" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/hmmer:3.3.2--h1b792b2_1"
@@ -33,8 +33,8 @@ process HMMER_HMMSEARCH {
         --domtblout "${meta.id}.domtblout" \\
         --tblout "${meta.id}.tblout" \\
         --pfamtblout "${meta.id}.pfamtblout" \\
-        --cpu 1 \\
-        --seed 42 \\
+        ${options.args} \\
+        ${options.args2} \\
         $hmm \\
         $fasta > /dev/null 2>&1
 
