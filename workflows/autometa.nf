@@ -63,6 +63,7 @@ include { GET_SOFTWARE_VERSIONS                                 } from '../modul
 include { HMMER_HMMSEARCH                                       } from './../modules/local/hmmer_hmmsearch.nf'          addParams( options: modules['hmmsearch_options']                        )
 include { HMMER_HMMSEARCH_FILTER                                } from './../modules/local/hmmer_hmmsearch_filter.nf'   addParams( options: modules['hmmsearch_filter_options']                 )
 include { INPUT_CONTIGS                                         } from '../subworkflows/local/input_check'              addParams(                                                              )
+include { CREATE_MOCK                                           } from '../subworkflows/local/mock_data.nf'             addParams()
 include { SEQKIT_FILTER                                         } from './../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]                          )
 include { MERGE_TSV_WITH_HEADERS as MERGE_SPADES_COVERAGE_TSV   } from './../modules/local/merge_tsv.nf'                addParams( options: modules['spades_kmer_coverage']                     )
 include { MERGE_TSV_WITH_HEADERS as MERGE_HMMSEARCH             } from './../modules/local/merge_tsv.nf'                addParams( options: modules['merge_hmmsearch_options']                  )
@@ -73,14 +74,28 @@ include { TAXON_ASSIGNMENT                                      } from './../sub
 include { PREPARE_NR_DB                                         } from './../subworkflows/local/prepare_nr.nf'          addParams( debug:params.debug, diamond_makedb_options: modules['diamond_makedb_options'], nr_dmnd_dir: nr_dmnd_dir)
 include { PREPARE_TAXONOMY_DATABASES                            } from './../subworkflows/local/prepare_ncbi_taxinfo.nf' addParams( debug:params.debug, taxdump_tar_gz_dir: taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: prot_accession2taxid_gz_dir)
 include { DIAMOND_BLASTP                                        } from './../modules/local/diamond_blastp.nf'           addParams( options: modules['diamond_blastp_options']                   )
-include { MERGE_FASTA as MERGE_PRODIGAL                         } from './../modules/local/merge_fasta.nf'
+include { MERGE_FASTA as MERGE_PRODIGAL                         } from './../modules/local/merge_fasta.nf'              addParams()
 include { MARKERS                                               } from './../modules/local/markers.nf'                  addParams( options: modules['seqkit_split_options']                     )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
 
+if (params.mock_test){
+
+    CREATE_MOCK()
+
+    CREATE_MOCK.out.fasta
+        .set{input_ch}
+
+} else {
+
     INPUT_CONTIGS()
-    SEQKIT_FILTER(INPUT_CONTIGS.out.metagenome)
+
+    INPUT_CONTIGS.out.metagenome
+        .set{input_ch}
+}
+
+    SEQKIT_FILTER(input_ch)
 
     // Split contigs FASTA if running in parallel
     if ( params.parallel_split_fasta ) {

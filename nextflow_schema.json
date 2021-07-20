@@ -223,15 +223,20 @@
                     "type": "boolean",
                     "description": "Use conda?"
                 },
+                "use_run_name": {
+                    "type": "boolean",
+                    "hidden": true,
+                    "description": "If TRUE, run-name will be used in the output directory structure"
+                },
                 "debug": {
                     "type": "boolean",
                     "description": "Run pipeline with small defaults (e.g. not the entire nr.gz download)",
                     "hidden": true
                 },
-                "use_run_name": {
+                "mock_test": {
                     "type": "boolean",
-                    "hidden": true,
-                    "description": "If TRUE, run-name will be used in the output directory structure"
+                    "description": "Run with minimal dataset",
+                    "hidden": true
                 }
             },
             "required": [
