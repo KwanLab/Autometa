@@ -18,7 +18,8 @@ process MARKERS {
 
     input:
         tuple val(meta), path(orfs)
-        path(cutoffs)
+        //path(hmmdb) currently only inside docker
+        //path(cutoffs) currently only inside docker
 
     output:
         tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
@@ -27,6 +28,11 @@ process MARKERS {
     script:
     // Add soft-links to original FastQs for consistent naming in pipeline
     def software = getSoftwareName(task.process)
+    if (params.enable_conda)
+    """
+    exit 1
+    """
+    else
     """
     autometa-markers \\
         --orfs $orfs \\
@@ -36,7 +42,8 @@ process MARKERS {
         --parallel \\
         --cpus ${task.cpus} \\
         --seed 42 \\
-        --dbdir
+        --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
+        --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
 
     echo "TODO" > autometa.version.txt"""
 }
