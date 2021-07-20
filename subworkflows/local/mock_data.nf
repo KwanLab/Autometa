@@ -45,7 +45,6 @@ process DOWNLOAD_MOCK_DATA {
 }
 
 process WRITE_FILE_APPEND_COV {
-    publishDir params.outdir, mode: 'copy'
 
     input:
         path x
