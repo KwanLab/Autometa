@@ -160,7 +160,6 @@ def main():
     )
     args = parser.parse_args()
 
-    
     if "all" in args.community_sizes:
         community_sizes = (
             "78Mbp",
