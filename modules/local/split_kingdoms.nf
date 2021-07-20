@@ -9,15 +9,14 @@ process SPLIT_KINGDOMS {
     label 'process_medium'
 
     publishDir "${params.interim_dir_internal}",
-          mode: params.publish_dir_mode,
-          saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
+        mode: params.publish_dir_mode,
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
-
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:${params.autometa_image}"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     input:
@@ -31,17 +30,16 @@ process SPLIT_KINGDOMS {
         path  '*.version.txt'                           , emit: version
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    """
-    autometa-taxonomy \\
-      --votes "${votes}" \\
-      --output . \\
-      --prefix "${meta.id}" \\
-      --split-rank-and-write superkingdom \\
-      --assembly "${assembly}" \\
-      --ncbi "${ncbi_tax_dir}"
+        def software = getSoftwareName(task.process)
+        """
+        autometa-taxonomy \\
+            --votes "${votes}" \\
+            --output . \\
+            --prefix "${meta.id}" \\
+            --split-rank-and-write superkingdom \\
+            --assembly "${assembly}" \\
+            --ncbi "${ncbi_tax_dir}"
 
-    echo "TODO" > autometa.version.txt
-    """
+        echo "TODO" > autometa.version.txt
+        """
 }

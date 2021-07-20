@@ -19,17 +19,16 @@ process SAMPLESHEET_CHECK {
     }
 
     input:
-    path samplesheet
+        path samplesheet
 
     output:
-    path '*.csv'
+        path '*.csv'
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    """
-    check_samplesheet.py \\
-        $samplesheet \\
-        samplesheet.valid.csv
-    """
+        def software = getSoftwareName(task.process)
+        """
+        check_samplesheet.py \\
+            $samplesheet \\
+            samplesheet.valid.csv
+        """
 }

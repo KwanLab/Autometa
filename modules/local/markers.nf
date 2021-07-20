@@ -26,24 +26,24 @@ process MARKERS {
         path  '*.version.txt'                          , emit: version
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    if (params.enable_conda)
-    """
-    exit 1
-    """
-    else
-    """
-    autometa-markers \\
-        --orfs $orfs \\
-        --hmmscan ${meta.id}.hmmscan.tsv \\
-        --out ${meta.id}.markers.tsv \\
-        --kingdom ${params.kingdom} \\
-        --parallel \\
-        --cpus ${task.cpus} \\
-        --seed 42 \\
-        --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
-        --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
+        def software = getSoftwareName(task.process)
+        if (params.enable_conda)
+        """
+        exit 1
+        """
+        else
+        """
+        autometa-markers \\
+            --orfs $orfs \\
+            --hmmscan ${meta.id}.hmmscan.tsv \\
+            --out ${meta.id}.markers.tsv \\
+            --kingdom ${params.kingdom} \\
+            --parallel \\
+            --cpus ${task.cpus} \\
+            --seed 42 \\
+            --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
+            --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
 
-    echo "TODO" > autometa.version.txt"""
+        echo "TODO" > autometa.version.txt
+        """
 }

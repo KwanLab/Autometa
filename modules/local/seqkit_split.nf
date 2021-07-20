@@ -18,24 +18,23 @@ process SEQKIT_SPLIT {
     }
 
     input:
-    tuple val(meta), path(fasta)
+        tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("outfolder/*")    , emit: fasta
-    path "*.version.txt"                    , emit: version
+        tuple val(meta), path("outfolder/*")    , emit: fasta
+        path "*.version.txt"                    , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
-    def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        def software = getSoftwareName(task.process)
+        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        """
+        seqkit \\
+            split \\
+            ${fasta} \\
+            ${options.args} \\
+            ${options.args2} \\
+            -O outfolder
 
-    """
-    seqkit \\
-        split \\
-        ${fasta} \\
-        ${options.args} \\
-        ${options.args2} \\
-        -O outfolder
-
-    seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
-    """
+        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        """
 }

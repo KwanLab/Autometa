@@ -9,36 +9,35 @@ params.nr_dmnd_dir = [:]
 
 include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'  addParams( options: params.diamond_makedb_options, nr_dmnd_dir: params.nr_dmnd_dir)
 
-
 process DOWNLOAD_NR {
     tag "Downloading nr.gz"
     label 'process_low'
 
     conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:${params.autometa_image}"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     output:
-    // hack nf-core options.args3 and use for output name
-    path "nr.gz" , emit: singlefile
+        path "nr.gz" , emit: singlefile
 
-    """
-    rsync -a \
-        --quiet \
-        'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz' 'nr.gz'
+    script:
+        """
+        rsync -a \\
+            --quiet \\
+            'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz' 'nr.gz'
 
-    rsync -a \
-        --quiet \
-        'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz.md5' 'nr.gz.md5'
+        rsync -a \\
+            --quiet \\
+            'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz.md5' 'nr.gz.md5'
 
-    md5sum -c *.md5
-   # rm 'taxdump.tar.gz.md5'
-   # tar -xf taxdump.tar.gz
-   # rm taxdump.tar.gz
-    """
+        md5sum -c *.md5
+        # rm 'taxdump.tar.gz.md5'
+        # tar -xf taxdump.tar.gz
+        # rm taxdump.tar.gz
+        """
 }
 
 
@@ -49,19 +48,20 @@ process TEST_DOWNLOAD {
 
     conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:${params.autometa_image}"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     output:
-    path("nr.gz"), emit: singlefile
+        path("nr.gz"), emit: singlefile
 
-    """
-    # https://github.com/nextflow-io/nextflow/issues/1564
-    trap 'echo OK; exit 0;' EXIT
-    curl -s ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz | zcat | head -n 10000 | gzip > nr.gz
-    """
+    script:
+        """
+        # https://github.com/nextflow-io/nextflow/issues/1564
+        trap 'echo OK; exit 0;' EXIT
+        curl -s ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz | zcat | head -n 10000 | gzip > nr.gz
+        """
 }
 
 workflow PREPARE_NR_DB {
@@ -88,8 +88,6 @@ workflow PREPARE_NR_DB {
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
         }
-
-
 
     emit:
         diamond_db = out_ch

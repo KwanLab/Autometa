@@ -14,9 +14,9 @@ process MERGE_TSV_WITH_HEADERS {
     conda (params.enable_conda ? "bioconda::autometa" : null)
 
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-         container "jason-c-kwan/autometa:${params.autometa_image}"
+        container "jason-c-kwan/autometa:${params.autometa_image}"
     }
 
     input:
@@ -24,14 +24,12 @@ process MERGE_TSV_WITH_HEADERS {
         val extension
 
     output:
-    tuple val(meta), path("${meta.id}.${extension}"), emit: merged_tsv
+        tuple val(meta), path("${meta.id}.${extension}"), emit: merged_tsv
 
 
     script:
-    def software = getSoftwareName(task.process)
-
-
-    """
-      awk 'FNR==1 && NR!=1{next;}{print}' *.tsv > "${meta.id}.${extension}"
-    """
+        def software = getSoftwareName(task.process)
+        """
+        awk 'FNR==1 && NR!=1{next;}{print}' *.tsv > "${meta.id}.${extension}"
+        """
 }

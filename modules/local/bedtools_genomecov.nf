@@ -1,8 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-// nf-core version doesn't have the easy ability to map the -g flag 
-
 params.options = [:]
 options        = initOptions(params.options)
 
@@ -21,23 +19,22 @@ process BEDTOOLS_GENOMECOV {
     }
 
     input:
-    tuple val(meta), path(bam), path(lengths)
+        tuple val(meta), path(bam), path(lengths)
 
     output:
-    tuple val(meta), path("*.bed"), emit: bed
-    path  "*.version.txt"         , emit: version
+        tuple val(meta), path("*.bed"), emit: bed
+        path  "*.version.txt"         , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
-    def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
-    """
-    bedtools \\
-        genomecov \\
-        -ibam ${bam} \\
-        -g "${lengths}"
-        $options.args \\
-        > ${prefix}.bed
+        def software = getSoftwareName(task.process)
+        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        """
+        bedtools \\
+            genomecov \\
+            -ibam ${bam} \\
+            -g "${lengths}" \\
+            $options.args  > ${prefix}.bed
 
-    bedtools --version | sed -e "s/bedtools v//g" > bedtools.version.txt
-    """
+        bedtools --version | sed -e "s/bedtools v//g" > bedtools.version.txt
+        """
 }

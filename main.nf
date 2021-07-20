@@ -34,11 +34,15 @@ if (params.use_run_name){
     params.interim_dir_internal = "${params.interim_dir}/autometa_interim_dir/${workflow.sessionId}" // Intermediate results directory
     params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.sessionId}"           // Final results directory
 }
-println "\n"
-println "Intermediate results directory: $params.interim_dir_internal"
-println "Binning results directory: $params.outdir_internal"
-println "\n"
 
+println """
+--------------------------------------------
+Output files will be found here:
+Intermediate results directory: ${params.interim_dir_internal}
+Binning results directory: ${params.outdir_internal}
+--------------------------------------------
+\n
+"""
 
 /*
 ========================================================================================

@@ -25,23 +25,23 @@ process HMMER_HMMSEARCH_FILTER {
     }
 
     input:
-    tuple val(meta), path(domtblout), path(fasta)
-    path("bacteria.single_copy.cutoffs")
+        tuple val(meta), path(domtblout), path(fasta)
+        path("bacteria.single_copy.cutoffs")
 
     output:
-    tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
-    path "*.version.txt"                           , emit: version
+        tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
+        path "*.version.txt"                           , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
-    def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
-    """
-    autometa-markerfilter \\
-        --infpath "$domtblout" \\
-        --cutoffs  "/home/chase/Documents/github/Autometa/autometa/databases/markers/bacteria.single_copy.cutoffs" \\
-        --markersout "${meta.id}.markers.tsv" \\
-        --orfs "$fasta"
+        def software = getSoftwareName(task.process)
+        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        """
+        autometa-markerfilter \\
+            --infpath "$domtblout" \\
+            --cutoffs  "/home/chase/Documents/github/Autometa/autometa/databases/markers/bacteria.single_copy.cutoffs" \\
+            --markersout "${meta.id}.markers.tsv" \\
+            --orfs "$fasta"
 
-    echo "TODO" > autometa.version.txt
-    """
+        echo "TODO" > autometa.version.txt
+        """
 }

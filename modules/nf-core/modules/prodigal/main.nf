@@ -33,7 +33,7 @@ process PRODIGAL {
     def software = getSoftwareName(task.process)
     prefix = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
     """
-    prodigal -i "${genome}" \\
+    prodigal -i ${genome} \\
         $options.args \\
         -f $output_format \\
         -d "${prefix}.fna" \\

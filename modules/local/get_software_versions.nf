@@ -20,22 +20,21 @@ process GET_SOFTWARE_VERSIONS {
     cache false
 
     input:
-    path versions
+        path versions
 
     output:
-    path "software_versions.tsv"     , emit: tsv
-    path 'software_versions_mqc.yaml', emit: yaml
-    path  '*.version.txt'                                   , emit: version
-
+        path "software_versions.tsv"     , emit: tsv
+        path 'software_versions_mqc.yaml', emit: yaml
+        path  '*.version.txt'            , emit: version
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    """
-    echo $workflow.manifest.version > pipeline.version.txt
-    echo $workflow.nextflow.version > nextflow.version.txt
-    scrape_software_versions.py &> software_versions_mqc.yaml
+        // Add soft-links to original FastQs for consistent naming in pipeline
+        def software = getSoftwareName(task.process)
+        """
+        echo $workflow.manifest.version > pipeline.version.txt
+        echo $workflow.nextflow.version > nextflow.version.txt
+        scrape_software_versions.py &> software_versions_mqc.yaml
 
-    echo "make linter happy" > autometa.version.txt
-    """
+        echo "make linter happy" > autometa.version.txt
+        """
 }

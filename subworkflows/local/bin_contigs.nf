@@ -23,65 +23,81 @@ workflow BIN_CONTIGS {
 
     main:
 
-
-        kmers_embedded.join(
-            coverage
-        ).join(
-            gc_content
-        ).join(
-            markers
-        )
-        .set{coverage_gccontent_markers}
+        kmers_embedded
+            .join(
+                coverage
+                )
+            .join(
+                gc_content
+                )
+            .join(
+                markers
+                )
+            .set{
+                coverage_gccontent_markers
+                }
 
         if (params.taxonomy_aware) {
                 coverage_gccontent_markers
                 .join(
                     taxon_assignments
                 )
-                .set{binning_ch}
+                .set{
+                    binning_ch
+                    }
         } else {
                 coverage_gccontent_markers
                 .combine(
                     taxon_assignments
                 )
-                .set{binning_ch}
+                .set{
+                    binning_ch
+                    }
         }
 
         BINNING(binning_ch)
 
-
-
-        kmers_normalized.join(
+        kmers_normalized
+        .join(
             coverage
         ).join(
             BINNING.out.binning
         ).join(
             markers
         )
-        .set{coverage_binningout_markers}
+        .set{
+            coverage_binningout_markers
+            }
 
         if (params.taxonomy_aware) {
                 coverage_binningout_markers
                 .join(
                     taxon_assignments
                 )
-                .set{unclustered_recruitment_ch}
+                .set{
+                    unclustered_recruitment_ch
+                    }
         } else {
                 coverage_binningout_markers
                 .combine(
                     taxon_assignments
                 )
-                .set{unclustered_recruitment_ch}
+                .set{
+                    unclustered_recruitment_ch
+                    }
         }
 
         UNCLUSTERED_RECRUITMENT(unclustered_recruitment_ch)
 
-        BINNING.out.main.join(
+        BINNING.out.main
+        .join(
             markers
         ).join(
             metagenome
         )
-        .set{binning_summary_ch}
+        .set{
+            binning_summary_ch
+            }
 
         BINNING_SUMMARY(binning_summary_ch, binning_column)
 

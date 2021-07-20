@@ -9,7 +9,6 @@ params.prot_accession2taxid_gz_dir =  params.prot_accession2taxid_gz_dir
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
     label 'process_high'
-
     publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
@@ -32,21 +31,20 @@ process BINNING_SUMMARY {
         path  '*.version.txt'                                   , emit: version
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    """
-    mkdir -p ${meta.id}
+        def software = getSoftwareName(task.process)
+        """
+        mkdir -p ${meta.id}
 
-    autometa-binning-summary \
-      --ncbi ${params.prot_accession2taxid_gz_dir} \
-      --binning-main $binning_main \
-      --markers $markers \
-      --metagenome $metagenome \
-      --binning-column $binning_column \
-      --output-stats "${meta.id}_metabin_stats.tsv" \
-      --output-taxonomy "${meta.id}_metabin_taxonomy.tsv" \
-      --output-metabins "${meta.id}_metabins"
+        autometa-binning-summary \\
+            --ncbi ${params.prot_accession2taxid_gz_dir} \\
+            --binning-main $binning_main \\
+            --markers $markers \\
+            --metagenome $metagenome \\
+            --binning-column $binning_column \\
+            --output-stats "${meta.id}_metabin_stats.tsv" \\
+            --output-taxonomy "${meta.id}_metabin_taxonomy.tsv" \\
+            --output-metabins "${meta.id}_metabins"
 
-    echo "TODO" > autometa.version.txt
-    """
+        echo "TODO" > autometa.version.txt
+        """
 }

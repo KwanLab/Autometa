@@ -1,5 +1,5 @@
-#!/usr/bin/env nextflow
-nextflow.enable.dsl=2
+// Import generic module functions
+include { initOptions; saveFiles; getSoftwareName } from './functions'
 
 params.options = [:]
 options        = initOptions(params.options)
@@ -19,19 +19,19 @@ process SAMTOOLS_VIEW_AND_SORT {
     }
 
     input:
-    tuple val(meta), path(bam)
+        tuple val(meta), path(bam)
 
     output:
-    tuple val(meta), path("*.bam"), emit: bam
-    path  "*.version.txt"         , emit: version
+        tuple val(meta), path("*.bam"), emit: bam
+        path "*.version.txt"          , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
-    def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
-    """
-    samtools view ${options.args} -@ ${task.cpus} ${bam} |\
-        samtools sort ${options.args2} -@ ${task.cpus} -o ${prefix}.bam -T $prefix
+        def software = getSoftwareName(task.process)
+        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        """
+        samtools view ${options.args} -@ ${task.cpus} ${bam} |\
+            samtools sort ${options.args2} -@ ${task.cpus} -o ${prefix}.bam -T $prefix
 
-    echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > ${software}.version.txt
-    """
+        echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > ${software}.version.txt
+        """
 }

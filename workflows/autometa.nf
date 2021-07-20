@@ -1,26 +1,3 @@
-/*
-include { hasExtension } from '../modules/local/functions'
-// Check mandatory parameters
-if (!params.input) exit 1, 'Input samplesheet not specified!'
-
-// Validate input parameters
-def hybrid = false
-if(hasExtension(params.input, "csv")){
-    // just check if long reads are provided
-    Channel
-        .from(file(params.input))
-        .splitCsv(header: true)
-        .map { row ->
-                if (row.size() == 5) {
-                    if (row.long_reads) hybrid = true
-                } else {
-                    log.error "Input samplesheet contains row with ${row.size()} column(s). Expects 5."
-                    System.exit(1)
-                }
-            }
-}
- */
-//Workflow.validateWorkflowParams(params, log, hybrid)
 
 def modules = params.modules.clone()
 

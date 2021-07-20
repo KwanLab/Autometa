@@ -10,28 +10,30 @@ include { SPLIT_KINGDOMS } from './../../modules/local/split_kingdoms.nf' addPar
 // Autometa taxon assignment workflow
 workflow TAXON_ASSIGNMENT {
     take:
-      metagenome
-      blastp_table
-      ncbi_tax_dir
+        metagenome
+        blastp_table
+        ncbi_tax_dir
 
     main:
-      LCA(blastp_table, ncbi_tax_dir) // output '${blast.simpleName}.lca.tsv'
-      MAJORITY_VOTE(LCA.out.lca, ncbi_tax_dir) //output ${lca.simpleName}.votes.tsv
+        LCA(blastp_table, ncbi_tax_dir) // output '${blast.simpleName}.lca.tsv'
+        MAJORITY_VOTE(LCA.out.lca, ncbi_tax_dir) //output ${lca.simpleName}.votes.tsv
 
-       metagenome.join(
-          MAJORITY_VOTE.out.votes
-      ).set{split_kingdoms_input}
+        metagenome
+        .join(
+            MAJORITY_VOTE.out.votes
+        )
+        .set{split_kingdoms_input}
 
 
-      SPLIT_KINGDOMS(split_kingdoms_input, ncbi_tax_dir)
-      // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
+        SPLIT_KINGDOMS(split_kingdoms_input, ncbi_tax_dir)
+        // output "${assembly.simpleName}.taxonomy.tsv" "${assembly.simpleName}.bacteria.fna" , "${assembly.simpleName}.archaea.fna"
 
     emit:
-      taxonomy = SPLIT_KINGDOMS.out.taxonomy
-      bacteria = SPLIT_KINGDOMS.out.bacteria
-      archaea = SPLIT_KINGDOMS.out.archaea
-      orf_votes = LCA.out.lca
-      contig_votes = MAJORITY_VOTE.out.votes
+        taxonomy = SPLIT_KINGDOMS.out.taxonomy
+        bacteria = SPLIT_KINGDOMS.out.bacteria
+        archaea = SPLIT_KINGDOMS.out.archaea
+        orf_votes = LCA.out.lca
+        contig_votes = MAJORITY_VOTE.out.votes
 }
 
 

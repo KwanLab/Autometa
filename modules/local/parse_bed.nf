@@ -1,8 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-// nf-core version doesn't have the easy ability to map the -g flag
-
 params.options = [:]
 options        = initOptions(params.options)
 
@@ -21,21 +19,21 @@ process PARSE_BED {
     }
 
     input:
-    tuple val(meta), path(bam), path(lengths), path(bed_out)
+        tuple val(meta), path(bam), path(lengths), path(bed_out)
 
     output:
-    tuple val(meta), path("${meta.id}.coverage.tsv"), emit: coverage
-    path  "*.version.txt"                           , emit: version
+        tuple val(meta), path("${meta.id}.coverage.tsv"), emit: coverage
+        path  "*.version.txt"                           , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
-    """
-    autometa-parse-bed \
-        --ibam $bam \
-        --lengths $lengths \
-        --bed $bed_out \
-        --output ${meta.id}.coverage.tsv
+        def software = getSoftwareName(task.process)
+        """
+        autometa-parse-bed \\
+            --ibam $bam \\
+            --lengths $lengths \\
+            --bed $bed_out \\
+            --output ${meta.id}.coverage.tsv
 
-    echo "TODO" > autometa.version.txt
-    """
+        echo "TODO" > autometa.version.txt
+        """
 }

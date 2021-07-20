@@ -4,7 +4,6 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-
 process SPADES_KMER_COVERAGE {
     tag "Calculating k-mer coverage for ${meta.id}"
     label 'process_low'
@@ -13,7 +12,7 @@ process SPADES_KMER_COVERAGE {
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 
-   conda (params.enable_conda ? "autometa" : null)
+    conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -28,14 +27,13 @@ process SPADES_KMER_COVERAGE {
         path  '*.version.txt'                            , emit: version
 
     script:
-    // Add soft-links to original FastQs for consistent naming in pipeline
-    def software = getSoftwareName(task.process)
-    """
-    autometa-coverage \
-      --assembly $metagenome \
-      --from-spades \
-      --out ${meta.id}.coverage
+        def software = getSoftwareName(task.process)
+        """
+        autometa-coverage \\
+            --assembly ${metagenome} \\
+            --from-spades \\
+            --out "${meta.id}.coverage"
 
-    echo "TODO" > autometa.version.txt
-    """
+        echo "TODO" > autometa.version.txt
+        """
 }

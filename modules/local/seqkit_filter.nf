@@ -14,7 +14,6 @@ process SEQKIT_FILTER {
 
 
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
-
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
     } else {
@@ -25,28 +24,26 @@ process SEQKIT_FILTER {
         tuple val(meta), path(metagenome)
 
     output:
-      tuple val(meta), path("${meta.id}.filtered.fna")  , emit: fasta
-      tuple val(meta), path("${meta.id}.gc_content.tsv"), emit: gc_content
-      path  '*.version.txt'                             , emit: version
-    //  tuple val(meta), path("${meta.id}.stats.tsv"), emit: stats
-
+        tuple val(meta), path("${meta.id}.filtered.fna")  , emit: fasta
+        tuple val(meta), path("${meta.id}.gc_content.tsv"), emit: gc_content
+        path  '*.version.txt'                             , emit: version
 
     script:
-    def software = getSoftwareName(task.process)
+        def software = getSoftwareName(task.process)
+        """
+        # filter contigs by specified length
+        seqkit seq -j ${task.cpus} -m ${params.length_cutoff} ${metagenome} | seqkit sort -n > "${meta.id}.filtered.fna"
 
-   """
-   # filter contigs by specified length
-    seqkit seq -j ${task.cpus} -m ${params.length_cutoff} ${metagenome} | seqkit sort -n > "${meta.id}.filtered.fna"
+        # calcualte gc content
+        seqkit fx2tab -j ${task.cpus} -n -lg "${meta.id}.filtered.fna" > temp
 
+        # Extract columns, create tsv
+        awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
+        echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${meta.id}.gc_content.tsv"
+        # Remove temporary files
+        rm temp
+        rm temp2
 
-    # calcualte gc content
-    seqkit fx2tab -j ${task.cpus} -n -lg "${meta.id}.filtered.fna" > temp
-
-    awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
-    echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${meta.id}.gc_content.tsv"
-    rm temp
-    rm temp2
-
-    seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
-    """
+        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        """
 }
