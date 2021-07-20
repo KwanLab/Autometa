@@ -47,7 +47,7 @@ Using `conda <https://conda.io/projects/conda/en/latest/user-guide/install/index
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa-nf python=3 nf-core nextflow -y
+    conda create -c conda-forge -c bioconda --name autometa-nf python>=3.7 nf-core>=2 nextflow>=21.04.0 -y
 
 
 Once it finishes installing be sure to active the environment:
@@ -56,12 +56,11 @@ Once it finishes installing be sure to active the environment:
 
     conda activate autometa-nf
 
-Lastly, download the pipeline from GitHub using nextflow
+Optional: If you want to use nextflow directly and not nf-core tools download the pipeline from GitHub using nextflow.
 
 .. code-block:: bash
 
-    nextflow pull https://github.com/KwanLab/Autometa -r main
-
+    nextflow pull KwanLab/Autometa -r main
 
 
 Launching Autometa
@@ -69,17 +68,13 @@ Launching Autometa
 
 Run the pipeline using the command below. 
 
-Note: Unless specified using the parameters (:code:`--interim_dir`, :code:`--outdir`, and :code:`--tracedir`), intermediate and temporary files will be created relative to the directory this is executed from. 
-
 .. code-block:: bash
 
     nf-core launch KwanLab/Autometa
 
-You will then be provided two "launch method" options: "Web based" or "Command line". While it is possible to use the command line version, it is preferred and easier to use the Web based GUI.
+You will then be asked to choose "Web based" or "Command line". While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
 Use the arrow keys to select one or the other and then press return/enter.
 
-
-Note: You can use `tmux <https://github.com/tmux/tmux/wiki>`_ or `screen <https://www.gnu.org/software/screen/>`_ in case you want to exit the window or disconnect from the server.
 
 Set autometa parameters with web based GUI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,11 +83,10 @@ The GUI will present all available parameters, though some extra parameters may 
 
 The only mandatory parameters are :code:`--input` which is the path to your input metagenome's nucleotide FASTA file, and :code:`-profile`.
 
-Currently the availble options for :code:`-profile` are 
+The most common options for :code:`-profile` are 
 
 * **standard**: runs all process jobs locally. If you use slurm, don't use this.
-* **basic_slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm:` before using
-* **docker**: is currently required
+* **slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm:` before using
 
 An example input for locally-executed jobs would be 
 
@@ -106,9 +100,7 @@ An example input for slurm-executed jobs would be
 Running the pipeline
 ^^^^^^^^^^^^^^^^^^^^
 
-After you are finished double-checking your parameter settings, click "Launch" at the top right of web based GUI page, or "Launch workflow" at the bottom of the page.
-
-
+After you are finished double-checking your parameter settings, click "Launch" at the top right of web based GUI page, or "Launch workflow" at the bottom of the page. After returning to the terminal you should be provided the option :code:`Do you want to run this command now?  [y/n]`  enter :code:`y` to begin the pipeline.
 
 
 Advanced Nextflow
@@ -118,18 +110,8 @@ Advanced Nextflow
 Multiple Inputs
 ^^^^^^^^^^^^^^^
 
-You can also input multiple asseblies at once with the help of wildcards. In the below example all the files with extension "fasta" would be taken as input by nextflow_.
-
-.. code-block:: bash
-
-    // Find this section of code in parameters.config
-    params.metagenome = "$HOME/tutorial/test_data/*.fna"
-    params.interim = "$HOME/tutorial/interim/" 
-    params.processed = "$HOME/tutorial/processed/"
-
-.. note::
-    1. Wildcard characters will only be interpreted when "double quotes" are used
-    2. If the interim and processed directories doens't exist, nextflow would generate them 
+You can also input multiple assemblies at once with the help of wildcards. In the below example all the files with extension ".fna" would be taken as input by nextflow_.
+:code:`--input /tutorial/test_data/*.fna`
 
 Database directory
 ^^^^^^^^^^^^^^^^^^
@@ -197,10 +179,6 @@ Up to date descriptions and default values of Autometa's nextflow parameters can
 .. code-block:: bash
 
     nextflow run KwanLab/Autometa -r main --help
-
-
-
-
 
 
 You can also adjust other pipeline parameters that ultimately control how the binning is performed.
@@ -312,26 +290,6 @@ The slurm partition available on our cluster is queue.  You'll need to update th
     }
 
 More parameters that are available for the slurm executor are listed in the nextflow `executor docs for slurm <https://www.nextflow.io/docs/latest/executor.html#slurm>`_.
-
-HTCondor
-^^^^^^^^
-
-This allows you to run the pipeline using the HTCondor resource manager. To do this you'll need to enable the HTCondor executor to condor value in the ``nextflow.config``.
-
-.. code-block:: groovy
-
-    // Find this section of code in nextflow.config
-    }
-    chtc {
-        process.executor = "condor"
-        // See https://www.nextflow.io/docs/latest/executor.html#htcondor for more configuration options.
-    }
-
-More parameters that are available for the htcondor executor are listed in the nextflow executor `docs for HTCondor <https://www.nextflow.io/docs/latest/executor.html#htcondor>`_.
-
-.. note::
-    1. The pipeline must be launched from a node where the ``condor_submit`` command is available, that is, in a common usage scenario, the cluster head node.
-    2. The HTCondor executor for Nextflow_ does not support at this time the HTCondor ability to transfer input/output data to the corresponding job computing node. Therefore the data needs to be made accessible to the computing nodes using a shared file system directory from where the Nextflow_ workflow has to be executed (or specified via the -w option).
 
 
 
