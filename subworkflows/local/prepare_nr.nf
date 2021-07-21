@@ -77,7 +77,6 @@ workflow PREPARE_NR_DB {
         }
         else if (file("${params.nr_dmnd_dir}/nr.gz")){
             // skip huge download if nr.gz already exists
-             //TODO
             DIAMOND_MAKEDB(file("${params.nr_dmnd_dir}/nr.gz"), "nr")
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
