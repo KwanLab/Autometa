@@ -12,6 +12,8 @@ Before you run Autometa, you need to have assembled your shotgun metagenome. The
 #. Assemble the trimmed reads. We recommend using MetaSPAdes which is a part of the SPAdes_ package to assemble the trimmed reads but you can use any other assembler as well.
 #. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step. We tend to use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
+.. TODO: SPAdes info is for python version, currently the Nextflow version assumes everything is from SPAdes. It's not clear how coverage is used.
+
 .. note::
 
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
@@ -32,14 +34,13 @@ System Requirements
 
 Nextflow 
 
-Currently the nextflow pipeline only works with Docker so Docker must be installed on your system `Get Docker <https://docs.docker.com/get-docker>`_. We do plan on removing this Docker dependency.
+Currently the nextflow pipeline only works with Docker so Docker must be installed on your system `Get Docker <https://docs.docker.com/get-docker>`_. We do plan on removing this dependency on Docker.
 
 Nextflow runs on any Linux compatible system or MacOS with Java installed. 
 
 
 Quick Start
 ------------
-
 
 Installation
 ^^^^^^^^^^^^
@@ -56,15 +57,18 @@ Once it finishes installing be sure to active the environment:
 
     conda activate autometa-nf
 
-Optional: If you want to use nextflow directly and not nf-core tools download the pipeline from GitHub using nextflow.
+After launching for the first time (next section), the pipeline will download and install dependencies as required (either with Docker or Conda, as selected). 
+
+Optional: If you want to use nextflow directly and not through nf-core tools, download the pipeline from GitHub using nextflow.
 
 .. code-block:: bash
 
     nextflow pull KwanLab/Autometa -r main
 
+    
 
-Launching Autometa
-^^^^^^^^^^^^^^^^^^
+Launching Autometa with nf-core tools
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Run the pipeline using the command below. 
 
@@ -72,7 +76,7 @@ Run the pipeline using the command below.
 
     nf-core launch KwanLab/Autometa
 
-You will then be asked to choose "Web based" or "Command line". While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
+You will then be asked to choose "Web based" or "Command line" in order to select/provide options. While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
 Use the arrow keys to select one or the other and then press return/enter.
 
 
