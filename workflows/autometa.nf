@@ -47,12 +47,11 @@ include { MERGE_TSV_WITH_HEADERS as MERGE_HMMSEARCH             } from './../mod
 include { PRODIGAL                                              } from './../modules/nf-core/modules/prodigal/main'     addParams( options: modules['prodigal_options']                         )
 include { SEQKIT_SPLIT                                          } from './../modules/local/seqkit_split.nf'             addParams( options: modules['seqkit_split_options'], num_splits: params.num_splits                     )
 include { SPADES_KMER_COVERAGE                                  } from './../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']                     )
-include { TAXON_ASSIGNMENT                                      } from './../subworkflows/local/taxon_assignment'       addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options']                         )
 include { PREPARE_NR_DB                                         } from './../subworkflows/local/prepare_nr.nf'          addParams( debug:params.debug, diamond_makedb_options: modules['diamond_makedb_options'], nr_dmnd_dir: nr_dmnd_dir)
 include { PREPARE_TAXONOMY_DATABASES                            } from './../subworkflows/local/prepare_ncbi_taxinfo.nf' addParams( debug:params.debug, taxdump_tar_gz_dir: taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: prot_accession2taxid_gz_dir)
-include { DIAMOND_BLASTP                                        } from './../modules/local/diamond_blastp.nf'           addParams( options: modules['diamond_blastp_options']                   )
 include { MERGE_FASTA as MERGE_PRODIGAL                         } from './../modules/local/merge_fasta.nf'              addParams()
 include { MARKERS                                               } from './../modules/local/markers.nf'                  addParams( options: modules['seqkit_split_options']                     )
+include { TAXON_ASSIGNMENT                                      } from './../subworkflows/local/taxon_assignment'       addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: nr_dmnd_dir, taxdump_tar_gz_dir: taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
@@ -119,27 +118,10 @@ if (params.mock_test){
  * -------------------------------------------------
  */
     if (params.taxonomy_aware) {
-        // check if user has given permission for large downloads
-        if (params.large_downloads_permission) {
-            // Download and prep necessary databases
-            PREPARE_NR_DB()
-            PREPARE_NR_DB.out.diamond_db
-                .set{diamond_db}
-            PREPARE_TAXONOMY_DATABASES()
-            PREPARE_TAXONOMY_DATABASES.out.taxdump
-                .set{ncbi_taxdump}
-            PREPARE_TAXONOMY_DATABASES.out.prot_accession2taxid
-                .set{prot_accession2taxid}
-        } else {
-            diamond_db = file("${nr_dmnd_dir}/nr.dmnd")
-            ncbi_taxdump = file("${taxdump_tar_gz_dir}/taxdump.tar.gz")
-            prot_accession2taxid = file("${prot_accession2taxid_gz_dir}/prot.accession2taxid.gz")
-        }
-
-        DIAMOND_BLASTP(merged_prodigal, diamond_db)
 
 
-        TAXON_ASSIGNMENT(SEQKIT_FILTER.out.fasta, DIAMOND_BLASTP.out.diamond_results, file(taxdump_tar_gz_dir))
+
+        TAXON_ASSIGNMENT(SEQKIT_FILTER.out.fasta, merged_prodigal)
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
 
