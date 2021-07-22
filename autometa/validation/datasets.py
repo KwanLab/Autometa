@@ -64,8 +64,12 @@ def download(
         raise NotImplementedError
 
     # points to csv file on google drive
-    df = pd.read_csv("https://drive.google.com/uc?id=148fUO7jocoNOBUl2K4bCfjsbd42QxCzX", dtype=str, index_col=["dataset", "file"])
-    
+    df = pd.read_csv(
+        "https://drive.google.com/uc?id=148fUO7jocoNOBUl2K4bCfjsbd42QxCzX",
+        dtype=str,
+        index_col=["dataset", "file"],
+    )
+
     for community_size in community_sizes:
         community_size_outdir = os.path.join(dir_path, community_size)
         # make a new directory
