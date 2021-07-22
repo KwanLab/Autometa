@@ -6,7 +6,7 @@ params.prot_accession2taxid_gz_dir = [:]
 
 include { BINNING } from './../../modules/local/binning.nf' addParams( options: params.binning_options )
 include { UNCLUSTERED_RECRUITMENT } from './../../modules/local/unclustered_recruitment.nf' addParams( options: params.unclustered_recruitment_options )
-include { BINNING_SUMMARY } from './../../modules/local/binning_summary.nf' addParams( options: params.binning_summary_options , prot_accession2taxid_gz_dir: params.prot_accession2taxid_gz_dir)
+include { BINNING_SUMMARY } from './../../modules/local/binning_summary.nf' addParams( options: params.binning_summary_options)
 
 
 workflow BIN_CONTIGS {
@@ -99,7 +99,7 @@ workflow BIN_CONTIGS {
             binning_summary_ch
             }
 
-        BINNING_SUMMARY(binning_summary_ch, binning_column)
+        BINNING_SUMMARY(binning_summary_ch, params.prot_accession2taxid_gz_dir, binning_column)
 
     emit:
         binning = BINNING.out.binning
