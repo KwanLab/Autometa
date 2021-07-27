@@ -30,7 +30,9 @@ RUN conda install -c bioconda -c conda-forge python=3.7 --file=requirements.txt 
 
 COPY . ./
 RUN cd pipeline && python setup_lca_functions.py build_ext --inplace \
-    && cd -
+    && cd - \
+    && hmmpress -f single-copy_markers/Bacteria_single_copy.hmm \
+    && hmmpress -f single-copy_markers/Archaea_single_copy.hmm
 
 # Test pipeline entrypoints
 RUN python pipeline/recursive_dbscan.py -h \

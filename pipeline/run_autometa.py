@@ -22,10 +22,8 @@ import subprocess
 import time
 import logging
 import os
-import platform
 import shutil
 
-from multiprocessing import cpu_count
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 
@@ -38,10 +36,6 @@ def init_logger(autom_path, db_path, out_path):
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(logging.DEBUG)
-
-    # Check user CPUs
-    # NOTE: As far as I can tell this is not being used in this script
-    # user_CPU_number = cpu_count()
 
     # Output current branch and commit
     branch_command = "git -C " + autom_path + " branch | grep \* | sed 's/^..//'"
