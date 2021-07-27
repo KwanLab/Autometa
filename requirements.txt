@@ -1,0 +1,16 @@
+# For information on available operators see https://pip.pypa.io/en/stable/user_guide/#fixing-conflicting-dependencies
+bedtools
+biopython
+bowtie2
+diamond==2.*
+hmmer
+numpy
+pandas>=1.1
+parallel
+prodigal
+requests
+rsync
+samtools==1.11
+scikit-learn
+tqdm
+tsne
