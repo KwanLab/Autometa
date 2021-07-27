@@ -2,8 +2,10 @@
 bedtools
 biopython
 bowtie2
+cython
 diamond==2.*
 hmmer
+joblib
 numpy
 pandas>=1.1
 parallel

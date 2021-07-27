@@ -21,7 +21,7 @@
 import time
 import numpy as np
 import pandas as pd
-from sklearn import tree, metrics, preprocessing
+from sklearn import tree
 from sklearn.model_selection import train_test_split
 import collections
 import argparse
@@ -33,7 +33,6 @@ from sklearn import decomposition
 
 # for parallel ML
 from joblib import Parallel, delayed
-import random
 import multiprocessing
 import os
 
