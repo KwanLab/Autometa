@@ -19,7 +19,7 @@
 
 try:
     # python 2 compatible
-    from urllib2 import urlopen
+    from urllib.request import urlopen
 except ImportError:
     # python 3 compatible
     # https://stackoverflow.com/a/14510349/13118765
@@ -46,7 +46,7 @@ AUTOMETA_DATABASES = os.path.join(os.path.dirname(PIPELINE), "databases")
 def run_command(command_string, stdout_path=None):
     # Function that checks if a command ran properly
     # If it didn't, then print an error message then quit
-    print("make_taxonomy_table.py, run_command: " + command_string)
+    print(("make_taxonomy_table.py, run_command: " + command_string))
     if stdout_path:
         f = open(stdout_path, "w")
         exit_code = subprocess.call(command_string, stdout=f, shell=True)
@@ -57,14 +57,14 @@ def run_command(command_string, stdout_path=None):
     if exit_code != 0:
         print("make_taxonomy_table.py: Error, the command:")
         print(command_string)
-        print("failed, with exit code " + str(exit_code))
+        print(("failed, with exit code " + str(exit_code)))
         exit(1)
 
 
 def run_command_return(command_string, stdout_path=None):
     # Function that checks if a command ran properly.
     # If it didn't, then print an error message then quit
-    print("make_taxonomy_table.py, run_command: " + command_string)
+    print(("make_taxonomy_table.py, run_command: " + command_string))
     if stdout_path:
         f = open(stdout_path, "w")
         exit_code = subprocess.call(command_string, stdout=f, shell=True)
@@ -78,8 +78,10 @@ def run_command_return(command_string, stdout_path=None):
 def cythonize_lca_functions():
     lca_functions_so = os.path.join(PIPELINE, "lca_functions.so")
     print(
-        "{} not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(
-            lca_functions_so
+        (
+            "{} not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(
+                lca_functions_so
+            )
         )
     )
     current_dir = os.getcwd()
@@ -158,7 +160,7 @@ def prepare_databases(outdir, db="all", update=False):
             else:
                 print("nr.dmnd database is up to date.")
         else:
-            print("{} not found. Downloading nr.gz".format(nr_md5_fpath))
+            print(("{} not found. Downloading nr.gz".format(nr_md5_fpath)))
             download_file(outdir, nr_db_url, nr_db_md5_url)
 
         nr_fpath = os.path.join(outdir, "nr.gz")
@@ -259,13 +261,15 @@ def check_dbs(db_path, update=False):
             "taxdump": ["names.dmp", "nodes.dmp", "merged.dmp"],
         }
     db_files = os.listdir(db_path)
-    for db, fpaths in db_dict.items():
+    for db, fpaths in list(db_dict.items()):
         for fpath in fpaths:
             if fpath not in db_files:
                 print(
-                    "{0} database not found, downloading/formatting.\n\
+                    (
+                        "{0} database not found, downloading/formatting.\n\
 				This may take some time...".format(
-                        db
+                            db
+                        )
                     )
                 )
                 prepare_databases(outdir=db_path, db=db, update=update)
@@ -286,7 +290,7 @@ def run_prodigal(path_to_assembly):
     assembly_fname, _ = os.path.splitext(os.path.basename(path_to_assembly))
     output_path = os.path.join(output_dir, assembly_fname + ".orfs.faa")
     if os.path.isfile(output_path):
-        print("{} file already exists!".format(output_path))
+        print(("{} file already exists!".format(output_path)))
         print("Continuing to next step...")
     else:
         run_command(
@@ -322,8 +326,10 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
         exit(1)
     if error:
         print(
-            "Error when performing diamond blastp:\n{}\nAttempting to correct by rebuilding nr...".format(
-                error
+            (
+                "Error when performing diamond blastp:\n{}\nAttempting to correct by rebuilding nr...".format(
+                    error
+                )
             )
         )
         prepare_databases(outdir=db_dir_path, db="nr", update=False)
@@ -338,7 +344,7 @@ def run_blast2lca(input_file, taxdump_path):
     fname = os.path.splitext(os.path.basename(input_file))[0] + ".lca"
     output = os.path.join(output_dir, fname)
     if os.path.isfile(output) and os.path.getsize(output):
-        print("{} file already exists! Continuing to next step...".format(output))
+        print(("{} file already exists! Continuing to next step...".format(output)))
     else:
         lca_script = os.path.join(PIPELINE, "lca.py")
         cmd = "{} database_directory {} {}".format(lca_script, db_dir_path, input_file)
@@ -480,7 +486,7 @@ diamond_outfpath = prodigal_output + ".blastp"
 if cov_table:
     if not os.path.isfile(cov_table):
         print(
-            "Error! Could not find coverage table at the following path: " + cov_table
+            ("Error! Could not find coverage table at the following path: " + cov_table)
         )
         exit(1)
 
@@ -520,14 +526,16 @@ if usr_prot_path:
     usr_prot_path = os.path.abspath(usr_prot_path)
     if os.path.isdir(usr_prot_path):
         print(
-            "You have provided a directory {}. \
+            (
+                "You have provided a directory {}. \
 		--user_prot_db requires a file path.".format(
-                usr_prot_path
+                    usr_prot_path
+                )
             )
         )
         exit(1)
     elif not os.path.isfile(usr_prot_path):
-        print("{} is not a file.".format(usr_prot_path))
+        print(("{} is not a file.".format(usr_prot_path)))
         exit(1)
     else:
         diamond_db_path = usr_prot_path
@@ -546,26 +554,26 @@ if not os.path.isfile(prodigal_output + ".faa"):
     run_prodigal(filtered_assembly)
 
 if not os.path.isfile(diamond_outfpath):
-    print("Could not find {}. Running diamond blast... ".format(diamond_outfpath))
+    print(("Could not find {}. Running diamond blast... ".format(diamond_outfpath)))
     diamond_output = run_diamond(
         prodigal_output, diamond_db_path, num_processors, diamond_outfpath
     )
 elif not os.path.getsize(diamond_outfpath):
-    print("{} file is empty. Re-running diamond blast...".format(diamond_outfpath))
+    print(("{} file is empty. Re-running diamond blast...".format(diamond_outfpath)))
     diamond_output = run_diamond(
         prodigal_output, diamond_db_path, num_processors, diamond_outfpath
     )
 elif not os.path.isfile(diamond_outfpath):
-    print("{} not found. \nExiting...".format(diamond_outfpath))
+    print(("{} not found. \nExiting...".format(diamond_outfpath)))
     exit(1)
 else:
     diamond_output = diamond_outfpath
 
 if not os.path.isfile(prodigal_output + ".lca"):
-    print("Could not find {}. Running lca...".format(prodigal_output + ".lca"))
+    print(("Could not find {}. Running lca...".format(prodigal_output + ".lca")))
     blast2lca_output = run_blast2lca(diamond_output, db_dir_path)
 elif not os.path.getsize(prodigal_output + ".lca"):
-    print("{} file is empty. Re-running lca...".format(prodigal_output + ".lca"))
+    print(("{} file is empty. Re-running lca...".format(prodigal_output + ".lca")))
     blast2lca_output = run_blast2lca(diamond_output, db_dir_path)
 else:
     blast2lca_output = prodigal_output + ".lca"
@@ -606,7 +614,7 @@ for i, row in taxonomy_pd.iterrows():
     contig = row["contig"]
     if contig not in all_seq_records:
         # Using filtered assembly, taxonomy.tab contains contigs not filtered
-        print("{0} below length filter, skipping.".format(contig))
+        print(("{0} below length filter, skipping.".format(contig)))
         continue
     if kingdom in categorized_seq_objects:
         categorized_seq_objects[kingdom].append(all_seq_records[contig])
