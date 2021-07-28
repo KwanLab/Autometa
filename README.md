@@ -39,55 +39,59 @@ Installation
 
 The following was tested on the Autometa [Docker](https://www.docker.com) image, which is based on the [Anaconda Docker image](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
 
-First we install Prodigal, HMMER and DIAMOND.
+First install [miniconda](https://docs.conda.io/en/latest/miniconda.html# "miniconda).
 
-```
-sudo apt-get install prodigal hmmer build-essential zlib1g-dev
-mkdir diamond
-cd diamond
-wget http://github.com/bbuchfink/diamond/releases/download/v0.9.14/diamond-linux64.tar.gz
-tar xvf diamond-linux64.tar.gz
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-At this point you should add the diamond directory to your $PATH environmental variable.
+### Download Autometa, setup compute environment and format marker databases
 
-If you want to calculate coverages, then also install bowtie2, samtools and bedtools:
 
-```
-sudo apt-get install bowtie2 bedtools
-wget https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2
-tar -vxjf samtools-1.6.tar.bz2
-cd samtools-1.6
-./configure --prefix=~/samtools
-make
-make install
-```
-
-You should add the ~/samtools/bin folder to your $PATH environmental variable.
-
-Install Anaconda Python.
-
-```
-wget https://repo.continuum.io/archive/Anaconda2-5.0.1-Linux-x86_64.sh
-chmod +x Anaconda2-5.0.1-Linux-x86_64.sh
-./Anaconda2-5.0.1-Linux-x86_64.sh
+```bash
+# This will download Autometa into your current directory
+git clone https://github.com/KwanLab/Autometa.git
+# Navigate to Autometa directory
+cd Autometa
+# Create autometa environment
+conda create -n autometa -c bioconda -c conda-forge python=3.7 --file=requirements.txt
+## Activate your autometa environment
+conda activate autometa
+## Setup lca functions
+cd pipeline
+python setup_lca_functions.py build_ext --inplace
+## Setup HMM databases
+hmmpress -f single-copy_markers/Bacteria_single_copy.hmm 
+hmmpress -f single-copy_markers/Archaea_single_copy.hmm
+cd -
 ```
 
-Install Python modules.
+You can also add the `Autometa/pipeline` directory to your `$PATH` environmental
+variable so you will not have to specify the entire path to the autometa scripts.
 
-```
-conda install tqdm joblib biopython
-sudo apt-get install libatlas-base-dev
-conda install -c maxibor tsne
-```
+**Note: You should supply the full path to the pipeline directory**
 
-Now download Autometa.
-
-```
-git clone https://github.com/KwanLab/Autometa
+```bash
+# NOTE: The next line assumes your current working directory is in the Autometa directory
+export PATH="$PWD/pipeline":$PATH
 ```
 
-You should now add the autometa/pipeline directory to your $PATH environmental variable
+Example if you have installed Autometa into your home directory
+
+```bash
+export PATH="$HOME/Autometa/pipeline":$PATH
+```
+
+Examples running autometa with and without the `pipeline` directory in your `$PATH` variable
+
+```bash
+# Without $PATH
+cd ~/environments/soil/blue_ridge_parkway
+python $HOME/Autometa/pipeline/run_autometa.py --assembly sample_1.fna
+# With $PATH
+run_autometa.py --assembly sample_1.fna
+```
 
 ### Running with Docker
 
