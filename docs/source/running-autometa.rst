@@ -48,7 +48,7 @@ Using `conda <https://conda.io/projects/conda/en/latest/user-guide/install/index
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa-nf python>=3.7 nf-core>=2 nextflow>=21.04.0 -y
+    curl -s https://raw.githubusercontent.com/KwanLab/Autometa/nfcore/environment.yml | conda env create
 
 
 Once it finishes installing be sure to active the environment:
