@@ -298,7 +298,16 @@ More parameters that are available for the slurm executor are listed in the next
 
 
 
+Docker version
+==============
 
+Using a different Docker image version of Autometa.
+
+Especially when developing new features it may be necessary to run the pipeline with a custom docker image. 
+Create a new image by navigating to the top Autometa directory and running `make image`. This will create a new 
+Autometa Docker image, tagged with the name of the current Git branch. 
+
+To use this tagged version (or any other Autometa image tag) add the argument --autometa_image tag_name to the nextflow run command
 
 
 
