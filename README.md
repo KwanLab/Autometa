@@ -13,7 +13,7 @@ Third party programs
 * [Prodigal](https://github.com/hyattpd/prodigal/releases/)
 * [HMMER](http://hmmer.org)
 * [DIAMOND](https://github.com/bbuchfink/diamond)
-* [Anaconda Python](https://www.anaconda.com) **Note: Autometa runs on Python 2.7, and is not currently compatible with Python 3**
+* [Anaconda Python](https://www.anaconda.com) **Note: Autometa only runs on Python 3, and is not currently compatible with Python 2**
 
 Databases (these will be automatically downloaded the first time you run make\_taxonomy\_table.py). NOTE: You will need ~150 GB (at time of writing) to download and process these.
 
