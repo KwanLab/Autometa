@@ -1,4 +1,4 @@
-name: autometa
+name: autometa-nf
 
 channels:
   - conda-forge
@@ -6,29 +6,6 @@ channels:
   - defaults
 
 dependencies:
-  - attrs
-  - bedtools
-  - biopython
-  - bowtie2
-  - diamond==2.*
-  - gdown
-  - hdbscan
-  - hmmer
-  - libiconv
-  - make
-  - markdown>=3.3.4
   - nextflow>=20.10
   - nf-core>=1.13.3
-  - numpy
-  - pandas>=1.1
-  - parallel
-  - prodigal
   - python>=3.8
-  - requests
-  - rsync
-  - samtools==1.11
-  - scikit-bio
-  - scikit-learn
-  - tqdm
-  - tsne
-  - umap-learn
