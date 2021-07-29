@@ -26,6 +26,7 @@ Cluster contigs recursively searching for bins with highest completeness and pur
 
 import logging
 import os
+import re
 import shutil
 import tempfile
 from typing import List, Tuple
@@ -684,6 +685,28 @@ def get_kmer_embedding(
     return rank_embedding
 
 
+def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]:
+    df = pd.read_csv(checkpoints_fpath, sep="\t", index_col="contig", comment="#")
+    # Retrieve last column in df for most recent binning
+    rank_pattern = re.compile(r"#\srank:\s(\S+)")
+    rank_name_txt_pattern = re.compile(r"#\sname:\s(\S+)")
+    starting_rank = None
+    starting_rank_name_txt = None
+    with open(checkpoints_fpath) as fh:
+        for line in fh:
+            rank_match = rank_pattern.search(line)
+            if rank_match:
+                starting_rank = rank_match.group(1)
+            rank_name_txt_match = rank_name_txt_pattern.search(line)
+            if rank_name_txt_match:
+                starting_rank_name_txt = rank_name_txt_match.group(1)
+    # logger.debug(f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name:{starting_rank_name_txt}")
+    print(
+        f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name: {starting_rank_name_txt}"
+    )
+    return df, starting_rank, starting_rank_name_txt
+
+
 def cluster_by_taxon_partitioning(
     main: pd.DataFrame,
     counts: pd.DataFrame,
@@ -702,6 +725,7 @@ def cluster_by_taxon_partitioning(
     method: str = "dbscan",
     reverse_ranks: bool = False,
     cache: str = None,
+    binning_checkpoints_fpath: str = None,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
@@ -795,22 +819,59 @@ def cluster_by_taxon_partitioning(
 
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
-        ranks = [rank for rank in NCBI.CANONICAL_RANKS]
+        ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
-        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS)]
-    ranks.remove("root")
+        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
     # Subset ranks by provided starting rank
     # if stage is cached then we can first look to the cache before we begin subsetting main...
     # COMBAK :if not cached_canonical_rank: ... will need to set this as the start...
-    starting_rank_index = ranks.index(starting_rank)
-    ranks = ranks[starting_rank_index:]
-    logger.debug(f"Using ranks: {', '.join(ranks)}")
-    logger.debug(f"Max partition size set to: {max_partition_size}")
+    # Retrieve appropriate starting canonical rank and rank_name_txt from cached binning checkpoints
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
     rank_embeddings = {}
+    starting_rank_name_txt = None
+    if cache:
+        if binning_checkpoints_fpath and not os.path.exists(binning_checkpoints_fpath):
+            raise FileNotFoundError(binning_checkpoints_fpath)
+        if not binning_checkpoints_fpath:
+            binning_checkpoints_fpath = os.path.join(
+                cache, "binning_checkpoints.tsv.gz"
+            )
+        if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(
+            binning_checkpoints_fpath
+        ):
+            (
+                binning_checkpoints,
+                starting_rank,
+                starting_rank_name_txt,
+            ) = get_checkpoint_info(binning_checkpoints_fpath)
+            most_recent_binning_checkpoint = binning_checkpoints.fillna(
+                axis=1, method="ffill"
+            ).iloc[:, -1]
+            # Update datastructures to begin at checkpoint stage.
+            clustered_contigs = set(
+                most_recent_binning_checkpoint.index.unique.tolist()
+            )
+            most_recent_clustered_df = (
+                most_recent_binning_checkpoint.dropna()
+                .to_frame()
+                .rename(columns={starting_rank_name_txt: "cluster"})
+            )
+            num_clusters = most_recent_clustered_df.cluster.nunique()
+            clusters.append(most_recent_clustered_df)
+        else:
+            logger.debug(
+                f"Binning checkpoints not found (creating): {binning_checkpoints_fpath}"
+            )
+            binning_checkpoints = pd.DataFrame()
+
+    starting_rank_index = ranks.index(starting_rank)
+    ranks = ranks[starting_rank_index:]
+    logger.debug(f"Using ranks: {', '.join(ranks)}")
+    logger.debug(f"Max partition size set to: {max_partition_size}")
+    starting_rank_name_txt_found = False
     for rank in ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
         unclassified_filter = main[rank] != "unclassified"
@@ -823,7 +884,7 @@ def cluster_by_taxon_partitioning(
         # Subset counts by filtering out any unclassified according to current canonical rank and that exist in main df
         rank_counts = counts.loc[counts.index.isin(main.loc[unclassified_filter].index)]
         # cache dir structured with sub-directories corresponding to each canonical rank.
-        cache_embedding_fpath = (
+        embedding_cache_fpath = (
             os.path.join(
                 cache,
                 rank,
@@ -832,26 +893,29 @@ def cluster_by_taxon_partitioning(
             if cache
             else None
         )
-
-        if cache_embedding_fpath and not os.path.isdir(os.path.join(cache, rank)):
+        # Create cache rank outdir if it does not exist
+        if embedding_cache_fpath and not os.path.isdir(os.path.join(cache, rank)):
             os.makedirs(os.path.join(cache, rank))
+
+        # Store canonical rank embedding for later lookup at lower canonical ranks
         rank_embedding = get_kmer_embedding(
             rank_counts,
-            cache_fpath=cache_embedding_fpath,
+            cache_fpath=embedding_cache_fpath,
             norm_method=norm_method,
             pca_dimensions=pca_dimensions,
             embed_dimensions=embed_dimensions,
             embed_method=embed_method,
         )
-        # Store canonical rank embedding for later lookup at lower canonical ranks
         rank_embeddings[rank] = rank_embedding
         # Now group by canonical rank and try embeddings specific to each name in this canonical rank
         main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
         # Find best clusters within each rank name for the canonical rank subset
         for rank_name_txt, dff in main_grouped_by_rank:
-            # COMBAK: If we know the particular rank_name that was cached
-            # we need to get to the starting taxon within this grouped ranking...
-
+            # Skip contig set if we are still searching for our starting taxon
+            if rank_name_txt == starting_rank_name_txt:
+                starting_rank_name_txt_found = True
+            if starting_rank_name_txt and not starting_rank_name_txt_found:
+                continue
             # Skip contig set if no contigs are classified with this rank name for this rank.
             if dff.empty:
                 continue
@@ -867,7 +931,7 @@ def cluster_by_taxon_partitioning(
                 continue
             # First subset counts by rank_name_txt
             rank_name_txt_counts = counts.loc[counts.index.isin(rank_df.index)]
-            cache_embedding_fpath = (
+            embedding_cache_fpath = (
                 os.path.join(
                     cache,
                     rank,
@@ -889,31 +953,24 @@ def cluster_by_taxon_partitioning(
             n_contigs_in_rank = rank_df.shape[0]
             # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
             if n_contigs_in_rank > max_partition_size:
-                # Action 1: embed these contigs then continue to recurse s.t. their higher canonical rank coords.
-                #   may be looked up at the lower canonical rank (See Case 2)
-                # TODO: Some logic seems to be missing here. We probably want to keep this grouping for later lookup
-                # but how do we look up this grouping at a lower rank?... May have to retrieve multiple groupings? Or maybe this is not necessary....
-                # Keeping for now but this embedding may be commented out/discarded later.
                 logger.debug(
                     f"{rank_name_txt} > max_partition_size ({n_contigs_in_rank:,}>{max_partition_size:,}). skipping [and caching embedding]"
                 )
                 rank_name_embedding = get_kmer_embedding(
                     rank_name_txt_counts,
-                    cache_fpath=cache_embedding_fpath,
+                    cache_fpath=embedding_cache_fpath,
                     norm_method=norm_method,
                     pca_dimensions=pca_dimensions,
                     embed_dimensions=embed_dimensions,
                     embed_method=embed_method,
                 )
                 rank_embeddings[rank_name_txt] = rank_name_embedding
+                binning_checkpoints[rank_name_txt] = pd.NA
                 continue
-            # Case 2: num. contigs in rank_df is less than max partition size and greater than min contigs
             elif min_contigs <= n_contigs_in_rank <= max_partition_size:
-                # Action 2: perform normalization and embedding on counts for specific ranks' contigs
-                # i.e. contigs are in range to perform embedding on subset
                 rank_name_embedding = get_kmer_embedding(
                     rank_name_txt_counts,
-                    cache_fpath=cache_embedding_fpath,
+                    cache_fpath=embedding_cache_fpath,
                     norm_method=norm_method,
                     pca_dimensions=pca_dimensions,
                     embed_dimensions=embed_dimensions,
@@ -921,7 +978,6 @@ def cluster_by_taxon_partitioning(
                 )
                 logger.debug(f"{rank_name_txt} shape={rank_name_embedding.shape}")
             else:
-                # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
                 # Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
                 # prev_canonical_rank_taxon_name = prev_rank_names[rank_name_txt]
                 # rank_embeddings[rank_name_txt]
@@ -943,7 +999,7 @@ def cluster_by_taxon_partitioning(
             logger.debug(
                 f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
             )
-            clusters_df = get_clusters(
+            rank_name_txt_binning_df = get_clusters(
                 main=rank_df,
                 markers_df=markers,
                 domain=domain,
@@ -955,21 +1011,43 @@ def cluster_by_taxon_partitioning(
                 verbose=verbose,
             )
             # Store clustered contigs
-            is_clustered = clusters_df["cluster"].notnull()
-            clustered = clusters_df.loc[is_clustered]
+            is_clustered = rank_name_txt_binning_df["cluster"].notnull()
+            clustered = rank_name_txt_binning_df.loc[is_clustered]
             if clustered.empty:
                 continue
             clustered_contigs.update({contig for contig in clustered.index})
             clustered = reindex_bin_names(df=clustered, initial_index=num_clusters)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
-            # Cache binning
+            # Cache binning at rank_name_txt stage (rank-name-txt checkpointing)
             if cache:
-                clustered_cache_fpath = os.path.join(
-                    cache, rank, f"{rank_name_txt}.binning.tsv.gz"
+                binning_checkpoints[rank_name_txt] = rank_name_txt_binning_df.cluster
+                binning_checkpoints_str = binning_checkpoints.to_csv(
+                    sep="\t", index=True, header=True
                 )
-                clustered.to_csv(
-                    clustered_cache_fpath, sep="\t", index=True, header=True
+                header = f"""
+                # completeness: {completeness}
+                # purity: {purity}
+                # domain: {domain}
+                # coverage_stddev: {coverage_stddev}
+                # gc_content_stddev: {gc_content_stddev}
+                # method: {method}
+                # norm_method: {norm_method}
+                # pca_dimensions: {pca_dimensions}
+                # embed_dimensions: {embed_dimensions}
+                # embed_method: {embed_method}
+                # min-partition-size: {min_contigs}
+                # max-partition-size: {max_partition_size}
+                # rank: {rank}
+                # name: {rank_name_txt}
+                # """
+                binning_checkpoints_outlines = "\n".join(
+                    [header, binning_checkpoints_str]
+                )
+                with open(binning_checkpoints_fpath, "w") as fh:
+                    fh.write(binning_checkpoints_outlines)
+                logger.debug(
+                    f"Checkpoint created rank: {rank} name: {rank_name_txt} num_checkpoints: {binning_checkpoints.shape[1]}"
                 )
 
     if not clusters:
@@ -1001,10 +1079,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers",
-        help="Path to k-mer counts table",
-        metavar="filepath",
-        required=True,
+        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -1081,11 +1156,7 @@ def main():
         "--norm-method",
         help="kmer normalization method to use on kmer counts",
         default="am_clr",
-        choices=[
-            "am_clr",
-            "ilr",
-            "clr",
-        ],
+        choices=["am_clr", "ilr", "clr",],
     )
     parser.add_argument(
         "--pca-dims",
@@ -1098,11 +1169,7 @@ def main():
         "--embed-method",
         help="kmer embedding method to use on normalized kmer frequencies",
         default="bhsne",
-        choices=[
-            "bhsne",
-            "umap",
-            "sksne",
-        ],
+        choices=["bhsne", "umap", "sksne",],
     )
     parser.add_argument(
         "--embed-dims",
@@ -1159,10 +1226,7 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="log debug information",
+        "--verbose", action="store_true", default=False, help="log debug information",
     )
     args = parser.parse_args()
 
