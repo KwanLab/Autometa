@@ -8,27 +8,34 @@ Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R
 Dependencies
 ------------
 
-Third party programs
+**Note: Autometa only runs on Python 3, and is not currently compatible with Python 2**
+
+#### Package managemet tool
+
+* [Anaconda](https://www.anaconda.com) or * [Miniconda](https://docs.conda.io/en/latest/miniconda.html) (lightweight version of anaconda)
+
+#### Third party programs
 
 * [Prodigal](https://github.com/hyattpd/prodigal/releases/)
 * [HMMER](http://hmmer.org)
 * [DIAMOND](https://github.com/bbuchfink/diamond)
-* [Anaconda Python](https://www.anaconda.com) **Note: Autometa only runs on Python 3, and is not currently compatible with Python 2**
 
-Databases (these will be automatically downloaded the first time you run make\_taxonomy\_table.py). NOTE: You will need ~150 GB (at time of writing) to download and process these.
+#### Databases
+
+Note: these will be automatically downloaded the first time you run `make_taxonomy_table.py`). You will need ~150 GB (at time of writing) to download and process these.
 
 * [nr](ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz) (Note: tested with newer NR versions without GI numbers)
 * [taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)
 * [prot.accession2taxid.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz)
 
-Python packages (Note: this list assumes the use of Anaconda Python)
+#### Python packages (Note: this list assumes the use of Anaconda Python)
 
 * [tqdm](https://pypi.python.org/pypi/tqdm/4.19.5)
 * [BioPython](http://biopython.org)
 * [tsne](https://pypi.python.org/pypi/tsne)
 * [joblib](https://pypi.python.org/pypi/joblib)
 
-Additionally, if you want to calculate your own contig coverages (rather than trusting the coverage values given by the SPAdes assembler), you will need:
+Additionally, if you want to calculate your own contig coverages (rather than using the k-mer coverage values given by the SPAdes assembler), you will need:
 
 * [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 * [Samtools](https://github.com/samtools/samtools)
@@ -39,14 +46,14 @@ Installation
 
 The following was tested on the Autometa [Docker](https://www.docker.com) image, which is based on the [Anaconda Docker image](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
 
-First install [miniconda](https://docs.conda.io/en/latest/miniconda.html# "miniconda).
+#### First install [miniconda](https://docs.conda.io/en/latest/miniconda.html# "miniconda).
 
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-### Download Autometa, setup compute environment and format marker databases
+#### Download Autometa, setup compute environment and format marker databases
 
 
 ```bash
@@ -67,23 +74,26 @@ hmmpress -f single-copy_markers/Archaea_single_copy.hmm
 cd -
 ```
 
-You can also add the `Autometa/pipeline` directory to your `$PATH` environmental
-variable so you will not have to specify the entire path to the autometa scripts.
+#### Adding Autometa commands into your environment variable `$PATH`
 
-**Note: You should supply the full path to the pipeline directory**
+You can add the `Autometa/pipeline` directory to your `$PATH` environment
+variable for easy access to the autometa pipeline's suite of commands. 
+After doing this, you will not have to specify the entire path to the autometa scripts.
+
+**Note: You should supply the full path to the pipeline directory when updating your `$PATH`**
 
 ```bash
 # NOTE: The next line assumes your current working directory is in the Autometa directory
 export PATH="$PWD/pipeline":$PATH
 ```
 
-Example if you have installed Autometa into your home directory
+#### Example if you have installed Autometa into your home directory
 
 ```bash
 export PATH="$HOME/Autometa/pipeline":$PATH
 ```
 
-Examples running autometa with and without the `pipeline` directory in your `$PATH` variable
+#### Examples running autometa with and without the `pipeline` directory in your `$PATH` variable
 
 ```bash
 # Without $PATH
