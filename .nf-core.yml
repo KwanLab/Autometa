@@ -17,5 +17,6 @@ lint:
     - docs/README.md
     - .gitignore
     - LICENSE
+    - .github/PULL_REQUEST_TEMPLATE.md
   template_strings: false
   nextflow_config: false

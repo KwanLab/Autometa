@@ -7,5 +7,5 @@ channels:
 
 dependencies:
   - nextflow>=20.10
-  - nf-core>=1.13.3
+  - bioconda::nf-core>=2.1
   - python>=3.8
