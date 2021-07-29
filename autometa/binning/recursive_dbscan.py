@@ -432,7 +432,7 @@ def recursive_hdbscan(
 
         DataFrame:
             index = contig
-            columns = ['x,'y','coverage','gc_content','cluster','purity','completeness','coverage_stddev','gc_content_stddev']
+            columns = ['x_1','x_2','coverage','gc_content','cluster','purity','completeness','coverage_stddev','gc_content_stddev']
     """
     max_min_cluster_size = 10000
     max_min_samples = 10
@@ -575,7 +575,7 @@ def get_clusters(
         )
     clusterer = recursive_clusterers[method]
 
-    # Continue while unclustered are remaining
+    # Continue until clusters are no longer being recovered
     # break when either clustered_df or unclustered_df is empty
     while True:
         clustered_df, unclustered_df = clusterer(
@@ -923,6 +923,8 @@ def cluster_by_taxon_partitioning(
             else:
                 # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
                 # Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
+                # prev_canonical_rank_taxon_name = prev_rank_names[rank_name_txt]
+                # rank_embeddings[rank_name_txt]
                 rank_name_embedding = rank_embedding.loc[
                     rank_embedding.index.isin(rank_df.index)
                 ]
@@ -961,6 +963,14 @@ def cluster_by_taxon_partitioning(
             clustered = reindex_bin_names(df=clustered, initial_index=num_clusters)
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
+            # Cache binning
+            if cache:
+                clustered_cache_fpath = os.path.join(
+                    cache, rank, f"{rank_name_txt}.binning.tsv.gz"
+                )
+                clustered.to_csv(
+                    clustered_cache_fpath, sep="\t", index=True, header=True
+                )
 
     if not clusters:
         raise BinningError("Failed to recover any clusters from dataset")
