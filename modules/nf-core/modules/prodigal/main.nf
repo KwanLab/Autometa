@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process PRODIGAL {
-    tag "$meta.id"
+    tag "Annotating $meta.id"
     label 'process_low'
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,

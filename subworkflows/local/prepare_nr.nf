@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 params.diamond_makedb_options = [:]
-params.nr_dmnd_dir = [:]
+params.nr_dmnd_dir            = [:]
 
 include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'  addParams( options: params.diamond_makedb_options, nr_dmnd_dir: params.nr_dmnd_dir)
 
@@ -90,5 +90,4 @@ workflow PREPARE_NR_DB {
 
     emit:
         diamond_db = out_ch
-
 }

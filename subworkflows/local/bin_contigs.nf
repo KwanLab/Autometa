@@ -1,12 +1,11 @@
+params.binning_options                  = [:]
+params.unclustered_recruitment_options  = [:]
+params.binning_summary_options          = [:]
+params.prot_accession2taxid_gz_dir      = [:]
 
-params.binning_options = [:]
-params.unclustered_recruitment_options = [:]
-params.binning_summary_options      = [:]
-params.prot_accession2taxid_gz_dir = [:]
-
-include { BINNING } from './../../modules/local/binning.nf' addParams( options: params.binning_options )
-include { UNCLUSTERED_RECRUITMENT } from './../../modules/local/unclustered_recruitment.nf' addParams( options: params.unclustered_recruitment_options )
-include { BINNING_SUMMARY } from './../../modules/local/binning_summary.nf' addParams( options: params.binning_summary_options)
+include { BINNING                 } from './../../modules/local/binning.nf'                 addParams( options: params.binning_options                  )
+include { UNCLUSTERED_RECRUITMENT } from './../../modules/local/unclustered_recruitment.nf' addParams( options: params.unclustered_recruitment_options  )
+include { BINNING_SUMMARY         } from './../../modules/local/binning_summary.nf'         addParams( options: params.binning_summary_options          )
 
 
 workflow BIN_CONTIGS {
@@ -22,7 +21,6 @@ workflow BIN_CONTIGS {
         binning_column
 
     main:
-
         kmers_embedded
             .join(
                 coverage
@@ -33,73 +31,67 @@ workflow BIN_CONTIGS {
             .join(
                 markers
                 )
-            .set{
-                coverage_gccontent_markers
-                }
+            .set{coverage_gccontent_markers}
 
         if (params.taxonomy_aware) {
-                coverage_gccontent_markers
+            coverage_gccontent_markers
                 .join(
                     taxon_assignments
                 )
-                .set{
-                    binning_ch
-                    }
+                .set{binning_ch}
         } else {
-                coverage_gccontent_markers
+            coverage_gccontent_markers
                 .combine(
                     taxon_assignments
                 )
-                .set{
-                    binning_ch
-                    }
+                .set{binning_ch}
         }
 
-        BINNING(binning_ch)
+        BINNING (
+            binning_ch
+        )
 
         kmers_normalized
-        .join(
-            coverage
-        ).join(
-            BINNING.out.binning
-        ).join(
-            markers
-        )
-        .set{
-            coverage_binningout_markers
-            }
+            .join(
+                coverage
+            ).join(
+                BINNING.out.binning
+            ).join(
+                markers
+            )
+            .set{coverage_binningout_markers}
 
         if (params.taxonomy_aware) {
-                coverage_binningout_markers
+            coverage_binningout_markers
                 .join(
                     taxon_assignments
                 )
-                .set{
-                    unclustered_recruitment_ch
-                    }
+                .set{unclustered_recruitment_ch}
         } else {
-                coverage_binningout_markers
+            coverage_binningout_markers
                 .combine(
                     taxon_assignments
                 )
-                .set{
-                    unclustered_recruitment_ch
-                    }
+                .set{unclustered_recruitment_ch}
         }
 
-        UNCLUSTERED_RECRUITMENT(unclustered_recruitment_ch)
+        UNCLUSTERED_RECRUITMENT (
+            unclustered_recruitment_ch
+        )
 
         BINNING.out.main
-        .join(
-            markers
-        ).join(
-            metagenome
-        )
-        .set{
-            binning_summary_ch
-            }
+            .join(
+                markers
+            ).join(
+                metagenome
+            )
+            .set{binning_summary_ch}
 
-        BINNING_SUMMARY(binning_summary_ch, params.prot_accession2taxid_gz_dir, binning_column)
+        BINNING_SUMMARY (
+            binning_summary_ch,
+            params.prot_accession2taxid_gz_dir,
+            binning_column
+        )
 
     emit:
         binning = BINNING.out.binning

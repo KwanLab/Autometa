@@ -1,7 +1,3 @@
-#!/usr/bin/env nextflow
-nextflow.enable.dsl = 2
-
-
 process GET_ASSEMBLY_SUMMARY {
 
     output:
@@ -56,11 +52,7 @@ process WRITE_FILE_APPEND_COV {
     """
     cat "${x}" | awk '/^>/ {\$0=\$1} 1' | sed 's/>.*/&_length_1_cov_1/' > "${y}"
     """
-
-
-
 }
-
 
 assemblies = Channel.fromList(
     [
@@ -71,7 +63,6 @@ assemblies = Channel.fromList(
 workflow CREATE_MOCK {
 
     main:
-
         GET_ASSEMBLY_SUMMARY()
         GET_FTP_DIRS(
             GET_ASSEMBLY_SUMMARY.out,
@@ -93,7 +84,5 @@ workflow CREATE_MOCK {
 
     emit:
         fasta = ch_fasta
-
-
 }
 

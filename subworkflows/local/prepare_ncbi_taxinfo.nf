@@ -7,9 +7,6 @@ params.taxdump_tar_gz_dir = [:]
 params.prot_accession2taxid_gz_dir = [:]
 options = initOptions(params.options)
 
-
-
-
 process TEST_DOWNLOAD {
     // For development work so you don't download the entire nr.gz database
     tag "Downloading first 10,000 lines of nr.gz"
@@ -105,7 +102,6 @@ process DOWNLOAD_TAXDUMP {
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
-
         if (params.debug){
             TEST_DOWNLOAD().singlefile
             .set{prot_accession2taxid_ch}

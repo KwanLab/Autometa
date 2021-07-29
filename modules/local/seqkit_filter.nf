@@ -5,13 +5,12 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process SEQKIT_FILTER {
-    tag "Removing contigs less than ${params.length_cutoff} from ${meta.id}"
+    tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'
 
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
-
 
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -40,6 +39,7 @@ process SEQKIT_FILTER {
         # Extract columns, create tsv
         awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
         echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${meta.id}.gc_content.tsv"
+        
         # Remove temporary files
         rm temp
         rm temp2
