@@ -12,7 +12,7 @@ Dependencies
 
 #### Package managemet tool
 
-* [Anaconda](https://www.anaconda.com) or * [Miniconda](https://docs.conda.io/en/latest/miniconda.html) (lightweight version of anaconda)
+* [Anaconda](https://www.anaconda.com) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html) (lightweight version of anaconda)
 
 #### Third party programs
 
