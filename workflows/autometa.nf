@@ -13,28 +13,46 @@ def check_for_file(path) {
 // check if user wants to separate contigs based on taxonomy before binning
 
 if (params.single_db_dir) {
-    nr_dmnd_dir = "${params.single_db_dir}"
-    prot_accession2taxid_gz_dir = "${params.single_db_dir}"
-    taxdump_tar_gz_dir = "${params.single_db_dir}"
+    nr_dmnd_dir = params.single_db_dir
+    prot_accession2taxid_gz_dir = params.single_db_dir
+    taxdump_tar_gz_dir = params.single_db_dir
 }
 // instead of doing '(!params.single_db_dir && params.nr_dmnd_dir)'
 // just override e.g. 'nr_dmnd_location' so users can set
 // 'single_db_dir' but also set individual other db paths if they have them
 // e.g. if they have nr.dmnd but not the other files.
 if (!params.single_db_dir && params.nr_dmnd_dir) {
-    nr_dmnd_dir = "${params.nr_dmnd_dir}"
+    nr_dmnd_dir = params.nr_dmnd_dir
 }
 if (!params.single_db_dir && params.prot_accession2taxid_gz_dir) {
-    prot_accession2taxid_gz_dir = "${params.taxdump_tar_gz_dir}" // currently the python needs it to be here
+    prot_accession2taxid_gz_dir = params.taxdump_tar_gz_dir // currently the python code needs it to be here
 }
 if (!params.single_db_dir && params.taxdump_tar_gz_dir) {
-    taxdump_tar_gz_dir = "${params.taxdump_tar_gz_dir}"
+    taxdump_tar_gz_dir = params.taxdump_tar_gz_dir
 }
 if (params.large_downloads_permission) {
     // TODO: check if files already exist, if they do fail the pipeline early at this stage
 } else {
     // TODO: check if files exist, if they don't fail the pipeline early at this stage
 }
+
+
+// if these are still null then it meand they weren't set, so make them null. 
+// this only works because the markov models are inside the docker image. 
+// that needs to be changed in future versions
+
+if (!params.taxonomy_aware) {
+    single_db_dir = null
+    nr_dmnd_dir = null
+    prot_accession2taxid_gz_dir = "/scratch/dbs"
+    taxdump_tar_gz_dir = null
+}
+
+
+
+
+
+
 
 /*
  * -------------------------------------------------
