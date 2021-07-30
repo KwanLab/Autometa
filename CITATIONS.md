@@ -1,4 +1,10 @@
-# nf-core/autometa: Citations
+# Autometa: 
+
+## [Autometa](https://github.com/KwanLab/Autometa)
+    > Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R. L.; Rey, F. E.; Kwan, J. C. Autometa: Automated extraction of microbial genomes from individual shotgun metagenomes. Nucleic Acids Research, 2019. DOI: https://doi.org/10.1093/nar/gkz148
+
+## [python](https://www.python.org)
+    > Van Rossum, G., & Drake, F. L. (2009). Python 3 Reference Manual. Scotts Valley, CA: CreateSpace.
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -10,10 +16,20 @@
 
 ## Pipeline tools
 
-* [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+* [Diamond](https://github.com/bbuchfink/diamond)
+    > Buchfink B, Reuter K, Drost HG, "Sensitive protein alignments at tree-of-life scale using DIAMOND", Nature Methods 18, 366–368 (2021). doi:10.1038/s41592-021-01101-x
 
-* [MultiQC](https://www.ncbi.nlm.nih.gov/pubmed/27312411/)
-    > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+* [HMMER](http://hmmer.org)
+    > HMMER Web Server: Interactive Sequence Similarity Searching. R. D. Finn, J. Clements, S. R. Eddy. Nucleic Acids Research, 39:W29-37, 2011.
+
+* [Prodigal]()
+    > Hyatt, D., Chen, GL., LoCascio, P.F. et al. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC Bioinformatics 11, 119 (2010). https://doi.org/10.1186/1471-2105-11-119
+
+* [Samtools](http://www.htslib.org)
+    > Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H, Twelve years of SAMtools and BCFtools, GigaScience (2021) 10(2) giab008 [https://pubmed.ncbi.nlm.nih.gov/33590861]
+
+* [SeqKit](https://github.com/shenwei356/seqkit)
+    > W Shen, S Le, Y Li*, F Hu*. SeqKit: a cross-platform and ultrafast toolkit for FASTA/Q file manipulation. PLOS ONE. doi:10.1371/journal.pone.0163962.
 
 ## Software packaging/containerisation tools
 
