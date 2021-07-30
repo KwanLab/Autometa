@@ -172,28 +172,22 @@ accession2taxid_url = (
 #         exit(1)
 
 if args["update"]:
-    os.system("wget -v %s -O %s/taxdump.tar.gz" % (taxdump_url, taxdump_dir_path))
+    os.system(f"wget -v {taxdump_url} -O {taxdump_dir_path}/taxdump.tar.gz")
     os.system(
-        "tar -xvzf %s/taxdump.tar.gz -C %s names.dmp nodes.dmp"
-        % (taxdump_dir_path, taxdump_dir_path)
+        f"tar -xvzf {taxdump_dir_path}/taxdump.tar.gz -C {taxdump_dir_path} names.dmp nodes.dmp"
     )
-    os.system("rm %s/taxdump.tar.gz" % taxdump_dir_path)
-    os.system("wget -v %s -O %s.gz" % (accession2taxid_url, accession2taxid_path))
-    print("Gunzipping prot.accession2taxid gzipped file\nThis may take some time...")
-    os.system("gunzip -9vNf %s.gz > %s" % (accession2taxid_path, accession2taxid_path))
+    os.system(f"rm {taxdump_dir_path}/taxdump.tar.gz")
+    os.system(f"wget -v {accession2taxid_url} -O {accession2taxid_path}.gz")
     print(
-        (
-            "\nnodes.dmp, names.dmp and prot.accession2taxid files updated in %s\nResuming..."
-            % taxdump_dir_path
-        )
+        f"\nnodes.dmp, names.dmp and prot.accession2taxid.gz files updated in {taxdump_dir_path}\nResuming..."
     )
 
 
 start_time = time.strftime("%H:%M:%S", time.gmtime(time.time()))
 t0 = time.time()
 output_filename = str(".".join(blast_file.split("/")[-1].split(".")[:-1]))
-output_dir = "/".join(os.path.abspath(blast_file).split("/")[:-1])
-print(("{}: Beginning LCA".format(start_time)))
+output_dir = os.path.dirname(os.path.abspath(blast_file))
+print(f"{start_time}: Beginning LCA")
 # Parse nodes file
 parents = dict()
 children = dict()
@@ -306,12 +300,12 @@ accession2taxid_dict = lca_functions.Process_accession2taxid_file(
 )
 
 t = time.strftime("%H:%M:%S", time.gmtime(round((time.time() - t0), 2)))
-print(("{}: Finished acc2taxid translation dict".format(t)))
+print(f"{t}: Finished acc2taxid translation dict")
 
 blast_taxids = lca_functions.Convert_accession2taxid(accession2taxid_dict, blast_orfs)
 
 t = time.strftime("%H:%M:%S", time.gmtime(round((time.time() - t0), 2)))
-print(("{}: Finished acc2taxid conversion".format(t)))
+print(f"{t}: Finished acc2taxid conversion")
 
 """
 Next Module: Performs LCA algorithm on taxids from converted BLAST accession numbers
@@ -381,11 +375,10 @@ if failure_tracking:
         pass
 
 t = time.strftime("%H:%M:%S", time.gmtime(round((time.time() - t0), 2)))
-print(("{}: Finished LCA query".format(t)))
+print(f"{f}: Finished LCA query")
 
-reference_taxids = (
-    dict()
-)  # {taxid:{'name':'scientific name','parent':'parent taxid', 'rank':'given rank'}, taxid2:{...},...}
+reference_taxids = dict()
+# {taxid:{'name':'scientific name','parent':'parent taxid', 'rank':'given rank'}, taxid2:{...},...}
 
 with open(names_path, "r") as names_dmp:
     for line in names_dmp:
@@ -418,10 +411,10 @@ for orf in lca_dict.keys():
         lca_dict[orf]["rank"] = "no rank"
         lca_dict[orf]["name"] = "root"
 
-with open(output_dir + "/" + output_filename + ".lca", "w") as lca_outfile:
+lca_outfpath = os.path.join(output_dir, f"{output_filename}.lca")
+with open(lca_outfpath, "w") as lca_outfile:
     for orf in list(lca_dict.keys()):
         rank = lca_dict[orf]["rank"]
         name = lca_dict[orf]["name"]
         lca = lca_dict[orf]["lca"]
-        lca_outfile.write("%s\t%s\t%s\t%s\n" % (orf, name, rank, lca))
-        # lca_outfile.write('%s\t%s\t%s\n' % (orf, name, rank))
+        lca_outfile.write(f"{orf}\t{name}\t{rank}\t{lca}\n")

@@ -204,14 +204,6 @@ def prepare_databases(outdir, db="all", update=False):
             print("updating prot.accession2taxid")
             download_file(outdir, accession2taxid_url, accession2taxid_md5_url)
 
-        acc2taxid_fpath = os.path.join(outdir, "prot.accession2taxid.gz")
-        if os.path.isfile(acc2taxid_fpath):
-            print(
-                "Gunzipping prot.accession2taxid gzipped file\nThis may take some time..."
-            )
-            cmd = "gunzip -9vNf {}".format(acc2taxid_fpath)
-            run_command(cmd, stdout_path=acc2taxid_fpath.rstrip(".gz"))
-            print("prot.accession2taxid updated")
     if db == "all" or db == "taxdump":
         taxdump_url = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
         taxdump_md5_url = taxdump_url + ".md5"
@@ -251,26 +243,25 @@ def check_dbs(db_path, update=False):
     if os.path.realpath(db_path) == AUTOMETA_DATABASES:
         db_dict = {
             "nr": ["nr.dmnd", "nr.gz.md5"],
-            "acc2taxid": ["prot.accession2taxid.gz.md5", "prot.accession2taxid"],
+            "acc2taxid": ["prot.accession2taxid.gz.md5", "prot.accession2taxid.gz"],
             "taxdump": ["merged.dmp", "names.dmp", "nodes.dmp", "taxdump.tar.gz.md5"],
         }
     else:
         db_dict = {
             "nr": ["nr.dmnd"],
-            "acc2taxid": ["prot.accession2taxid"],
+            "acc2taxid": ["prot.accession2taxid.gz"],
             "taxdump": ["names.dmp", "nodes.dmp", "merged.dmp"],
         }
     db_files = os.listdir(db_path)
     for db, fpaths in list(db_dict.items()):
         for fpath in fpaths:
+            if db == "acc2taxid":
+                fpath = (
+                    fpath.strip(".gz") if os.path.exists(fpath.strip(".gz")) else fpath
+                )
             if fpath not in db_files:
                 print(
-                    (
-                        "{0} database not found, downloading/formatting.\n\
-				This may take some time...".format(
-                            db
-                        )
-                    )
+                    f"{db} database not found, downloading/formatting... This may take some time..."
                 )
                 prepare_databases(outdir=db_path, db=db, update=update)
 
@@ -301,7 +292,6 @@ def run_prodigal(path_to_assembly):
 
 
 def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
-    view_output = orfs_fpath + ".blastp"
     tmp_dir_path = os.path.join(os.path.dirname(orfs_fpath), "tmp")
     if not os.path.isdir(tmp_dir_path):
         os.makedirs(
@@ -312,11 +302,11 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
         "--evalue 1e-5",
         "--max-target-seqs 200",
         "--outfmt 6",
-        "--query {}.faa".format(orfs_fpath),
-        "--db {}".format(diamond_db_path),
-        "-p {}".format(num_processors),
-        "--out {}".format(outfpath),
-        "-t {}".format(tmp_dir_path),
+        f"--query {orfs_fpath}.faa",
+        f"--db {diamond_db_path}",
+        f"-p {num_processors}",
+        f"--out {outfpath}",
+        f"-t {tmp_dir_path}",
     ]
     cmd = " ".join(cmds)
     error = run_command_return(cmd)
@@ -326,11 +316,7 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
         exit(1)
     if error:
         print(
-            (
-                "Error when performing diamond blastp:\n{}\nAttempting to correct by rebuilding nr...".format(
-                    error
-                )
-            )
+            f"Error when performing diamond blastp:\n{error}\nAttempting to correct by rebuilding nr..."
         )
         prepare_databases(outdir=db_dir_path, db="nr", update=False)
         # Retry with rebuilt nr.dmnd
@@ -340,14 +326,14 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
 
 
 # blast2lca using accession numbers#
-def run_blast2lca(input_file, taxdump_path):
+def run_blast2lca(input_file):
     fname = os.path.splitext(os.path.basename(input_file))[0] + ".lca"
     output = os.path.join(output_dir, fname)
     if os.path.isfile(output) and os.path.getsize(output):
-        print(("{} file already exists! Continuing to next step...".format(output)))
+        print(f"{output} file already exists! Continuing to next step...")
     else:
         lca_script = os.path.join(PIPELINE, "lca.py")
-        cmd = "{} database_directory {} {}".format(lca_script, db_dir_path, input_file)
+        cmd = f"{lca_script} database_directory {db_dir_path} {input_file}"
         run_command(cmd)
     return output
 
@@ -517,6 +503,10 @@ else:
 names_dmp_path = os.path.join(db_dir_path, "names.dmp")
 nodes_dmp_path = os.path.join(db_dir_path, "nodes.dmp")
 accession2taxid_path = os.path.join(db_dir_path, "prot.accession2taxid")
+if not os.path.exists(accession2taxid_path) and os.path.exists(
+    f"{accession2taxid_path}.gz"
+):
+    accession2taxid_path = f"{accession2taxid_path}.gz"
 diamond_db_path = os.path.join(db_dir_path, "nr.dmnd")
 current_taxdump_md5 = os.path.join(db_dir_path, "taxdump.tar.gz.md5")
 current_acc2taxid_md5 = os.path.join(db_dir_path, "prot.accession2taxid.gz.md5")
