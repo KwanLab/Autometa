@@ -128,7 +128,7 @@ workflow AUTOMETA {
  * -------------------------------------------------
 */
 
-    if ( params.parallel_split_fasta ) {
+    if ( params.num_splits > 0 ) {
         MERGE_PRODIGAL (
             PRODIGAL.out.amino_acid_fasta.groupTuple(),
             "faa"
@@ -193,7 +193,7 @@ workflow AUTOMETA {
  // HMMER_HMMSEARCH_FILTER(hmmsearch_out)
 
     // Before binning we need to merge back everything that was run in parallel
-    if (params.parallel_split_fasta) {
+    if ( params.num_splits > 0 ) {
         MERGE_SPADES_COVERAGE_TSV (
             SPADES_KMER_COVERAGE.out.coverages.groupTuple(),
             "coverage"

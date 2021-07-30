@@ -9,7 +9,7 @@ process HMMER_HMMSEARCH_FILTER {
     tag "Filtering marker hmms in $meta.id"
     label 'process_medium'
 
-    if (!params.parallel_split_fasta ) {
+    if ( params.num_splits < 2 ) {
         // if running in parallel, the results are published from the process
         // that merges the individual results from this process
     publishDir "${params.interim_dir_internal}",
