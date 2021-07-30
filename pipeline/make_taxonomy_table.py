@@ -114,10 +114,10 @@ def download_file(destination_dir, file_url, md5_url):
     while True:
         outfpath = os.path.join(destination_dir, filename)
         md5_fpath = os.path.join(destination_dir, md5name)
-        run_command("wget {} -O {}".format(file_url, outfpath))
-        run_command("wget {} -O {}".format(md5_url, md5_fpath))
+        run_command(f"wget {file_url} -O {outfpath}")
+        run_command(f"wget {md5_url} -O {md5_fpath}")
 
-        downloaded_md5 = subprocess.check_output(["md5sum", outfpath]).split(" ")[0]
+        downloaded_md5 = subprocess.check_output(["md5sum", outfpath]).decode("utf-8").split(" ")[0]
 
         with open(md5_fpath, "r") as check_md5_file:
             check_md5 = check_md5_file.readline().split(" ")[0]
@@ -143,7 +143,7 @@ def prepare_databases(outdir, db="all", update=False):
     # Downloading files for db population
     if db == "all" or db == "nr":
         nr_db_url = "ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-        nr_db_md5_url = nr_db_url + ".md5"
+        nr_db_md5_url = f"{nr_db_url}.md5"
         # First download nr if we don't yet have it OR it is not up to date
         nr_md5_fpath = os.path.join(outdir, "nr.gz.md5")
         if os.path.isfile(nr_md5_fpath) and os.path.getsize(nr_md5_fpath):
