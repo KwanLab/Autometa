@@ -208,7 +208,7 @@ def main():
 
     if not internet_is_connected(host=args.host):
         logger.error(
-            "No internet connection detected. Please confirm connection. Downloader will still attempt to run. (Ping a custom IP address with --host argument)"
+            "No internet connection detected (couldn't ping google.com at IP 8.8.8.8). Please confirm connection. Downloader will still attempt to run. (Ping a custom IP address with --host argument)"
         )
 
     download(
