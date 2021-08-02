@@ -203,7 +203,7 @@ nodes_dmp_path = taxdump_dir_path + "/nodes.dmp"
 
 taxids = {}
 print(strftime("%Y-%m-%d %H:%M:%S") + " Processing taxid names")
-wc_output = subprocess.check_output(["wc", "-l", names_dmp_path])
+wc_output = subprocess.check_output(["wc", "-l", names_dmp_path], text=True)
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
@@ -220,7 +220,7 @@ with open(names_dmp_path) as names_dmp:
             taxids[int(float(line_list[0]))] = {"name": line_list[1]}
 
 print(strftime("%Y-%m-%d %H:%M:%S") + " Processing taxid nodes")
-wc_output = subprocess.check_output(["wc", "-l", nodes_dmp_path])
+wc_output = subprocess.check_output(["wc", "-l", nodes_dmp_path], text=True)
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
@@ -234,23 +234,12 @@ with open(nodes_dmp_path) as nodes_dmp:
         taxids[int(float(line_list[0]))]["parent"] = int(float(line_list[1]))
         taxids[int(float(line_list[0]))]["rank"] = line_list[2]
 
-# name_lookup = {} # Dictionary of dictionaries, keyed by rank then name
-# for taxid in taxids:
-# 	rank = taxids[taxid]['rank']
-# 	name = taxids[taxid]['name']
-# 	if rank in name_lookup:
-# 		name_lookup[rank][name] = taxid
-# 	else:
-# 		name_lookup[rank] = { name: taxid }
-
 print(strftime("%Y-%m-%d %H:%M:%S") + " Parsing taxonomy table")
-# protein_classifications = {} # protein_classifications[contig][rank][taxid] (running total of each thing)
 contig_classifications = {}
-# number_of_proteins = {}
 length_of_contigs = {}
 
 # Work out number of lines in file
-wc_output = subprocess.check_output(["wc", "-l", contig_table_path])
+wc_output = subprocess.check_output(["wc", "-l", contig_table_path], text=True)
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
@@ -389,9 +378,8 @@ for cluster in tqdm(contig_classifications, total=total_clusters):
     top_taxids[cluster] = acceptedTaxid
 
 print(strftime("%Y-%m-%d %H:%M:%S") + " Resolving taxon paths")
-taxon_paths = (
-    {}
-)  # Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
+taxon_paths = {}
+# Dictionary of dictionaries, keyed by contig then rank, contains the taxon names
 for cluster in tqdm(top_taxids, total=len(top_taxids)):
     taxon_paths[cluster] = {}
     current_taxid = top_taxids[cluster]

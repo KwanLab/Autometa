@@ -160,7 +160,7 @@ def lowest_majority(ctg_lcas, nodes_dict):
 def parse_names(names_dmp_path):
     names = {}
     print((strftime("%Y-%m-%d %H:%M:%S") + " Processing taxid names"))
-    wc_output = subprocess.check_output(["wc", "-l", names_dmp_path])
+    wc_output = subprocess.check_output(["wc", "-l", names_dmp_path], text=True)
     wc_list = wc_output.split()
     number_of_lines = int(wc_list[0])
     with open(names_dmp_path) as names_dmp:
@@ -177,7 +177,7 @@ def parse_names(names_dmp_path):
 
 def parse_nodes(nodes_dmp_path):
     print((strftime("%Y-%m-%d %H:%M:%S") + " Processing taxid nodes"))
-    wc_output = subprocess.check_output(["wc", "-l", nodes_dmp_path])
+    wc_output = subprocess.check_output(["wc", "-l", nodes_dmp_path], text=True)
     wc_list = wc_output.split()
     number_of_lines = int(wc_list[0])
     nodes_dmp = open(nodes_dmp_path)
@@ -194,7 +194,7 @@ def parse_nodes(nodes_dmp_path):
 
 def parse_merged(fpath):
     print((strftime("%Y-%m-%d %H:%M:%S") + " Processing merged taxid nodes"))
-    wc_output = subprocess.check_output(["wc", "-l", fpath])
+    wc_output = subprocess.check_output(["wc", "-l", fpath], text=True)
     wc_list = wc_output.split()
     number_of_lines = int(wc_list[0])
     fh = open(fpath)
@@ -211,7 +211,7 @@ def parse_merged(fpath):
 def parse_lca(lca_fpath):
     print((strftime("%Y-%m-%d %H:%M:%S") + " Parsing lca taxonomy table"))
     # Work out number of lines in file
-    wc_output = subprocess.check_output(["wc", "-l", lca_fpath])
+    wc_output = subprocess.check_output(["wc", "-l", lca_fpath], text=True)
     wc_list = wc_output.split()
     number_of_lines = int(wc_list[0])
     number_of_proteins = {}

@@ -21,9 +21,7 @@
 # __Author__: Evan R. Rees
 
 
-import re
 import numpy as np
-from subprocess import check_output
 from itertools import chain
 import gzip
 
@@ -119,10 +117,10 @@ def Extract_blast(blast_file, bitscore_filter=0.9):
 def Convert_accession2taxid(acc2taxid_dict, blast_dict):
     "Returns dictionary of orfs with set of their associated tax ids converted from accesssion numbers and accession.version numbers"
     blast_taxids = dict()
-    for orf in blast_dict.iterkeys():
+    for orf in blast_dict.keys():
         blast_taxids[orf] = set()
         for accession_number in blast_dict[orf].__iter__():
-            if accession_number in acc2taxid_dict.viewkeys():
+            if accession_number in acc2taxid_dict.keys():
                 blast_taxids[orf].add(int(acc2taxid_dict.get(accession_number)))
     return blast_taxids
 
@@ -130,7 +128,7 @@ def Convert_accession2taxid(acc2taxid_dict, blast_dict):
 def Process_accession2taxid_file(acc2taxid_fpath, blast_dict):
     "Returns dictionary of accession numbers and accession.version with their associated tax ids"
     acc2taxid_dict = dict()
-    accession_set = set(chain.from_iterable(blast_dict.values()))
+    accession_set = set(chain.from_iterable(list(blast_dict.values())))
 
     if acc2taxid_fpath.endswith(".gz"):
         fh = gzip.open(acc2taxid_fpath, "rt")

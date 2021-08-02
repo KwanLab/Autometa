@@ -30,61 +30,57 @@ from argparse import ArgumentDefaultsHelpFormatter
 
 def init_logger(autom_path, db_path, out_path):
     # logger
-    logger = logging.getLogger(out_path + "/run_autometa.py")
-    hdlr = logging.FileHandler(out_path + "/run_autometa.log")
+    logger = logging.getLogger(os.path.join(out_path, "run_autometa.py"))
+    hdlr = logging.FileHandler(os.path.join(out_path, "run_autometa.log"))
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(logging.DEBUG)
 
     # Output current branch and commit
-    branch_command = "git -C " + autom_path + " branch | grep \* | sed 's/^..//'"
+    branch_command = f"git -C {autom_path} branch | grep \* | sed 's/^..//'"
     branch = (
         subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE)
         .communicate()[0]
         .rstrip()
     )
 
-    commit_command = "git -C " + autom_path + " rev-parse --short HEAD"
+    commit_command = f"git -C {autom_path} rev-parse --short HEAD"
     commit = (
         subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE)
         .communicate()[0]
         .rstrip()
     )
-    logger.info("Autometa branch: {}".format(branch))
-    logger.info("Autometa commit: {}".format(commit))
+    logger.info(f"Autometa branch: {branch}")
+    logger.info(f"Autometa commit: {commit}")
     # Check programs
     progs = ["md5sum", "gzip", "tar", "gunzip", "wget"]
     for prog in progs:
-        prog_version = subprocess.check_output([prog, "--version"]).split("\n")[0]
-        logger.info("{}".format(prog_version))
+        prog_version = subprocess.check_output([prog, "--version"], text=True).split("\n")[0]
+        logger.info(prog_version)
     # Check 3rd party dependencies
-    dmnd_v = subprocess.check_output(["diamond", "version"]).strip()
-    logger.info("{}".format(dmnd_v))
+    dmnd_v = subprocess.check_output(["diamond", "version"], text=True).strip()
+    logger.info(dmnd_v)
     hmmscan_v = (
-        subprocess.check_output(["hmmpress", "-h"]).split("\n")[1].replace("# ", "")
+        subprocess.check_output(["hmmpress", "-h"], text=True).split("\n")[1].replace("# ", "")
     )
-    logger.info("{}".format(hmmscan_v))
+    logger.info(hmmscan_v)
     prodigal_v = (
         subprocess.Popen("prodigal -v", stderr=subprocess.PIPE, shell=True)
         .communicate()[1]
         .replace("\n", "")
     )
-    logger.info("{}".format(prodigal_v))
-    logger.info("DB Dir: {}".format(db_path))
+    logger.info(prodigal_v)
+    logger.info(f"DB Dir: {db_path}")
     db_fpaths = os.listdir(db_path)
     for fpath in db_fpaths:
-        logger.info(
-            "DB (fname, size): {} {}".format(
-                fpath, os.stat(db_path + "/" + fpath).st_size
-            )
-        )
+        logger.info(f"DB (fname, size): {fpath} {os.path.getsize(os.path.join(db_path, fpath))}")
     return logger
 
 
 def run_command(command_string, stdout_path=None):
     # Function that checks if a command ran properly. If it didn't, then print an error message then quit
-    logger.info("run_autometa.py, run_command: " + command_string)
+    logger.info(f"run_autometa.py, run_command: {command_string}")
     if stdout_path:
         f = open(stdout_path, "w")
         exit_code = subprocess.call(command_string, stdout=f, shell=True)
@@ -112,11 +108,7 @@ def run_command_quiet(command_string):
 
 
 def cythonize_lca_functions():
-    logger.info(
-        "{}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py".format(
-            pipeline_path
-        )
-    )
+    logger.info(f"{pipeline_path}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py")
     current_dir = os.getcwd()
     os.chdir(pipeline_path)
     run_command("python setup_lca_functions.py build_ext --inplace")
