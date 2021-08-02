@@ -36,7 +36,7 @@ n = int(sys.argv[1])
 
 # Store a list of the bacterial species
 bacteria_path = "/mnt/not_backed_up/ncbi_bacteria_genomes/bacteria"
-ls_output = subprocess.check_output(["ls", "-1", bacteria_path])
+ls_output = subprocess.check_output(["ls", "-1", bacteria_path], text=True)
 bacteria_list = ls_output.split()
 highest_index = len(bacteria_list) - 1
 print(highest_index)
@@ -63,7 +63,7 @@ for i in random_bacteria:
     asm_path = bacteria_path + "/" + species_directory + "/representative"
     if not os.path.exists(asm_path):
         asm_path = bacteria_path + "/" + species_directory + "/latest_assembly_versions"
-    asm_ls_output = subprocess.check_output(["ls", "-1", asm_path])
+    asm_ls_output = subprocess.check_output(["ls", "-1", asm_path], text=True)
     asm_list = asm_ls_output.split()
 
     asm_dir = asm_list[0]

@@ -42,7 +42,7 @@ for i, row in enumerate(rows):
         asm_dir = base_dir + "/" + row_list[0] + "/" + row_list[1]
         # Now we need to find the .fna file
         search_string = asm_dir + "/*.fna"
-        ls_output = subprocess.check_output("ls -1 " + search_string, shell=True)
+        ls_output = subprocess.check_output("ls -1 " + search_string, shell=True, text=True)
         fna_list = ls_output.split()
         if not len(fna_list) == 1:
             print("Error, wrong number of .fna files in " + asm_dir)

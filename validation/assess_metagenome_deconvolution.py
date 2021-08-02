@@ -155,7 +155,7 @@ print()
 
 # 1. Parse read ranges table, so that we can spot non-unique reads in the reference alignment
 print(strftime("%Y-%m-%d %H:%M:%S") + " Parsing read ranges table...")
-wc_output = subprocess.check_output(["wc", "-l", ref_read_ranges_table_path])
+wc_output = subprocess.check_output(["wc", "-l", ref_read_ranges_table_path], text=True)
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 
@@ -170,7 +170,7 @@ for i, row in enumerate(tqdm(range_table_rows, total=number_of_lines)):
 
 # 2. Go through reference contig table, and remember which species each contig belongs to
 print(strftime("%Y-%m-%d %H:%M:%S") + " Parsing contig species table...")
-wc_output = subprocess.check_output(["wc", "-l", ref_species_table_path])
+wc_output = subprocess.check_output(["wc", "-l", ref_species_table_path], text=True)
 wc_list = wc_output.split()
 number_of_lines = int(wc_list[0])
 number_of_contigs = number_of_lines

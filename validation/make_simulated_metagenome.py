@@ -90,7 +90,7 @@ coverage = (250 * reads) / (length * 1000000)
 
 # First get list of input bacterial species
 # bacteria_genome_dir = '/mnt/not_backed_up/ncbi_bacteria_genomes/random_3000_bacteria'
-ls_output = subprocess.check_output(["ls", "-1", bacteria_genome_dir])
+ls_output = subprocess.check_output(["ls", "-1", bacteria_genome_dir], text=True)
 bacteria_list = ls_output.split()
 highest_index = len(bacteria_list) - 1
 
@@ -108,7 +108,7 @@ while total_length < (length * 1000000):
 
     # First get list of dirs within the bacteria dir - should be only one there
     bacterium_dir = bacteria_genome_dir + "/" + bacteria_list[i]
-    bacterium_ls_output = subprocess.check_output(["ls", "-1", bacterium_dir])
+    bacterium_ls_output = subprocess.check_output(["ls", "-1", bacterium_dir], text=True)
     bacterium_ls_list = bacterium_ls_output.split()
     if not (len(bacterium_ls_list) == 1):
         print("There is more than one dir/file in " + bacterium_dir)

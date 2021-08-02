@@ -76,15 +76,11 @@ with open(args["out"], "w") as outfile:
         contig_length = int(contig.split("_")[3])
         # If there's not detailed alignment info, check status in first file
         if len(info_list) == 0:
-            aln_status = subprocess.check_output(
-                "grep {} {}".format(contig, all_alignments_file), shell=True
-            )
+            aln_status = subprocess.check_output(f"grep {contig} {all_alignments_file}", shell=True, text=True)
             if aln_status.split()[3] == "correct":
                 # Alignment info (to ref genome)  stored in another file..
                 reference_genome = (
-                    subprocess.check_output(
-                        "grep {} {}".format(contig, alignments_file), shell=True
-                    )
+                    subprocess.check_output(f"grep {contig} {alignments_file}", shell=True, text=True)
                 ).split()[0]
                 # print reference_genome
                 output_dict[contig]["reference_genome"] = reference_genome
