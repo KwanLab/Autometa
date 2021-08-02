@@ -700,9 +700,8 @@ def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]
             rank_name_txt_match = rank_name_txt_pattern.search(line)
             if rank_name_txt_match:
                 starting_rank_name_txt = rank_name_txt_match.group(1)
-    # logger.debug(f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name:{starting_rank_name_txt}")
-    print(
-        f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name: {starting_rank_name_txt}"
+    logger.debug(
+        f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name:{starting_rank_name_txt}"
     )
     return df, starting_rank, starting_rank_name_txt
 
@@ -1079,7 +1078,10 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
+        "--kmers",
+        help="Path to k-mer counts table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -1156,7 +1158,11 @@ def main():
         "--norm-method",
         help="kmer normalization method to use on kmer counts",
         default="am_clr",
-        choices=["am_clr", "ilr", "clr",],
+        choices=[
+            "am_clr",
+            "ilr",
+            "clr",
+        ],
     )
     parser.add_argument(
         "--pca-dims",
@@ -1169,7 +1175,11 @@ def main():
         "--embed-method",
         help="kmer embedding method to use on normalized kmer frequencies",
         default="bhsne",
-        choices=["bhsne", "umap", "sksne",],
+        choices=[
+            "bhsne",
+            "umap",
+            "sksne",
+        ],
     )
     parser.add_argument(
         "--embed-dims",
@@ -1226,7 +1236,10 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose", action="store_true", default=False, help="log debug information",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="log debug information",
     )
     args = parser.parse_args()
 
