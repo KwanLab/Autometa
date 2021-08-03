@@ -1040,6 +1040,7 @@ def cluster_by_taxon_partitioning(
                 )
                 header = "\n".join(
                     [
+                        f"#-- Parameters --#",
                         f"# completeness: {completeness}",
                         f"# purity: {purity}",
                         f"# domain: {domain}",
@@ -1050,10 +1051,12 @@ def cluster_by_taxon_partitioning(
                         f"# pca_dimensions: {pca_dimensions}",
                         f"# embed_dimensions: {embed_dimensions}",
                         f"# embed_method: {embed_method}",
-                        f"# min-partition-size: {min_contigs}",
+                        f"# min-partition-size: {min_contigs} (max([pca_dimensions + 1, embed_dimensions + 1])",
                         f"# max-partition-size: {max_partition_size}",
+                        f"#-- Runtime Variables --#",
                         f"# rank: {rank}",
                         f"# name: {rank_name_txt}",
+                        f"# checkpoint-shape: {binning_checkpoints.shape}",
                     ]
                 )
                 binning_checkpoints_outlines = "\n".join(
