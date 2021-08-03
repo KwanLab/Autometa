@@ -1059,12 +1059,13 @@ def cluster_by_taxon_partitioning(
                 binning_checkpoints_outlines = "\n".join(
                     [header, binning_checkpoints_str]
                 )
-                fh = (
-                    gzip.open(binning_checkpoints_fpath, "wb")
-                    if binning_checkpoints_fpath.endswith(".gz")
-                    else open(binning_checkpoints_fpath, "w")
-                )
-                fh.write(binning_checkpoints_outlines)
+
+                if binning_checkpoints_fpath.endswith(".gz"):
+                    fh = gzip.open(binning_checkpoints_fpath, "wb")
+                    fh.write(binning_checkpoints_outlines.encode())
+                else:
+                    fh = open(binning_checkpoints_fpath, "w")
+                    fh.write(binning_checkpoints_outlines)
                 fh.close()
                 logger.debug(
                     f"Checkpoint => {rank} : {rank_name_txt} ({binning_checkpoints.shape[1]:,} total checkpoints)"
