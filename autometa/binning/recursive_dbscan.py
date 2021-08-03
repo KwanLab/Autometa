@@ -705,14 +705,22 @@ def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]
     rank_name_txt_pattern = re.compile(r"#\sname:\s(\S+)")
     starting_rank = None
     starting_rank_name_txt = None
-    with open(checkpoints_fpath) as fh:
-        for line in fh:
-            rank_match = rank_pattern.search(line)
-            if rank_match:
-                starting_rank = rank_match.group(1)
-            rank_name_txt_match = rank_name_txt_pattern.search(line)
-            if rank_name_txt_match:
-                starting_rank_name_txt = rank_name_txt_match.group(1)
+    fh = (
+        gzip.open(checkpoints_fpath, "rt")
+        if checkpoints_fpath.endswith(".gz")
+        else open(checkpoints_fpath)
+    )
+    for line in fh:
+        rank_match = rank_pattern.search(line)
+        if rank_match:
+            starting_rank = rank_match.group(1)
+        rank_name_txt_match = rank_name_txt_pattern.search(line)
+        if rank_name_txt_match:
+            starting_rank_name_txt = rank_name_txt_match.group(1)
+        if starting_rank and starting_rank_name_txt:
+            # At this point we have all of our variables we want to look-up
+            break
+    fh.close()
     logger.debug(
         f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name:{starting_rank_name_txt}"
     )
@@ -1049,7 +1057,7 @@ def cluster_by_taxon_partitioning(
                 fh.write(binning_checkpoints_outlines)
                 fh.close()
                 logger.debug(
-                    f"Checkpoint created rank: {rank} name: {rank_name_txt} num_checkpoints: {binning_checkpoints.shape[1]}"
+                    f"Checkpoint => {rank} : {rank_name_txt} ({binning_checkpoints.shape[1]:,} total checkpoints)"
                 )
 
     if not clusters:
