@@ -45,7 +45,7 @@ process DOWNLOAD_ACESSION2TAXID {
 
     output:
         // hack nf-core options.args3 and use for output name
-        path "prot.accession2taxid" , emit: singlefile
+        path "prot.accession2taxid" , emit: accession2taxid
         path  "*.version.txt"   , emit: version
     script:
         """
@@ -77,7 +77,7 @@ process DOWNLOAD_TAXDUMP {
     }
 
     output:
-        path "*" , emit: singlefile
+        path "*" , emit: taxdump_files
         path  "*.version.txt"   , emit: version
 
     script:
@@ -102,17 +102,38 @@ process DOWNLOAD_TAXDUMP {
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
-        if (params.debug){
-            TEST_DOWNLOAD().singlefile
-            .set{prot_accession2taxid_ch}
+        
+
+        taxdump_dir = file(params.taxdump_tar_gz_dir)
+        taxdump_dir_files = taxdump_dir.list()
+        taxdump_dir_files = taxdump_dir_files.collect()
+        expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
+    
+        if (taxdump_dir_files.containsAll(expected_files)){
+            taxdump_files = taxdump_dir_files
         } else {
-            DOWNLOAD_ACESSION2TAXID().singlefile
-            .set{prot_accession2taxid_ch}
+            DOWNLOAD_TAXDUMP()
+            DOWNLOAD_TAXDUMP.out.taxdump_files
+                .set{taxdump_files}
         }
-        DOWNLOAD_TAXDUMP()
+
+        accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
+        accession2taxid_dir_files = taxdump_dir.list()
+        accession2taxid_dir_files = accession2taxid_dir_files.collect()
+        expected_files = ['prot.accession2taxid']
+    
+        if (accession2taxid_dir_files.containsAll(expected_files)){
+            prot_accession2taxid_ch = accession2taxid_dir_files
+        } else if (params.debug){
+            TEST_DOWNLOAD().singlefile
+                .set{prot_accession2taxid_ch}
+        } else {
+            DOWNLOAD_ACESSION2TAXID().accession2taxid
+                .set{prot_accession2taxid_ch}
+        }
 
     emit:
-        taxdump = DOWNLOAD_TAXDUMP.out.singlefile
+        taxdump = taxdump_files
         prot_accession2taxid = prot_accession2taxid_ch
 
 }

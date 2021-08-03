@@ -172,18 +172,6 @@ workflow AUTOMETA {
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
 
-        if (TAXON_ASSIGNMENT.out.bacteria){
-            println "ASd"
-        } else {
-            println "s"
-        }
-        
-        if (TAXON_ASSIGNMENT.out.archaea){
-            println TAXON_ASSIGNMENT.out.archaea
-        } else {
-            println "s"
-        }
-
         TAXON_ASSIGNMENT.out.bacteria
         ANALYZE_KMERS (
             TAXON_ASSIGNMENT.out.bacteria

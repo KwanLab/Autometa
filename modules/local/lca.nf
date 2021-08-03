@@ -6,7 +6,7 @@ options        = initOptions(params.options)
 
 process LCA {
     tag "Finding LCA for ${meta.id}"
-    label 'process_low'
+    label 'process_high'
     publishDir "${params.outdir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }

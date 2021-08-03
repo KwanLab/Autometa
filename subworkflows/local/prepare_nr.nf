@@ -10,8 +10,9 @@ params.nr_dmnd_dir            = [:]
 include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'  addParams( options: params.diamond_makedb_options, nr_dmnd_dir: params.nr_dmnd_dir)
 
 process DOWNLOAD_NR {
-    tag "Downloading nr.gz"
+    tag "Downloading nr.gz (>100GB download. May take some time.)"
     label 'process_low'
+    storeDir "${params.nr_dmnd_dir}"
 
     conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -21,7 +22,7 @@ process DOWNLOAD_NR {
     }
 
     output:
-        path "nr.gz" , emit: singlefile
+        path("nr.gz"), emit: singlefile
 
     script:
         """
@@ -34,9 +35,6 @@ process DOWNLOAD_NR {
             'rsync://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz.md5' 'nr.gz.md5'
 
         md5sum -c *.md5
-        # rm 'taxdump.tar.gz.md5'
-        # tar -xf taxdump.tar.gz
-        # rm taxdump.tar.gz
         """
 }
 
@@ -67,17 +65,18 @@ process TEST_DOWNLOAD {
 workflow PREPARE_NR_DB {
 
     main:
-        if (params.debug){
-            TEST_DOWNLOAD().singlefile
-                .set{nr_db_ch}
-        }
-        else if (file("${params.nr_dmnd_dir}/nr.dmnd")){
+        if (file("${params.nr_dmnd_dir}/nr.dmnd").exists()){
             // skip huge download and db creation if nr.dmnd already exists
             out_ch = file("${params.nr_dmnd_dir}/nr.dmnd")
-        }
-        else if (file("${params.nr_dmnd_dir}/nr.gz")){
+        } else if (file("${params.nr_dmnd_dir}/nr.gz").exists()){
             // skip huge download if nr.gz already exists
             DIAMOND_MAKEDB(file("${params.nr_dmnd_dir}/nr.gz"), "nr")
+            DIAMOND_MAKEDB.out.diamond_db
+                .set{out_ch}
+        } else if (params.debug){
+            TEST_DOWNLOAD().singlefile
+                .set{nr_db_ch}
+            DIAMOND_MAKEDB(nr_db_ch, "nr")
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
         } else {
