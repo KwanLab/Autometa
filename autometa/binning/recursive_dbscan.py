@@ -24,6 +24,7 @@ COPYRIGHT
 Cluster contigs recursively searching for bins with highest completeness and purity.
 """
 
+import datetime
 import gzip
 import logging
 import os
@@ -1038,6 +1039,7 @@ def cluster_by_taxon_partitioning(
                 binning_checkpoints_str = binning_checkpoints.to_csv(
                     sep="\t", index=True, header=True
                 )
+                now = datetime.datetime.now()
                 header = "\n".join(
                     [
                         f"#-- Parameters --#",
@@ -1057,6 +1059,8 @@ def cluster_by_taxon_partitioning(
                         f"# rank: {rank}",
                         f"# name: {rank_name_txt}",
                         f"# checkpoint-shape: {binning_checkpoints.shape}",
+                        f"# current time: {now}",
+                        f"# timestamp: {now.timestamp()}",
                     ]
                 )
                 binning_checkpoints_outlines = "\n".join(
