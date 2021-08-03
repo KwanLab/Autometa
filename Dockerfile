@@ -1,7 +1,8 @@
 FROM continuumio/miniconda3
 LABEL maintainer="jason.kwan@wisc.edu"
 
-# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+# Copyright 2021 Copyright 2021 Ian J. Miller, Evan R. Rees, Siddharth Uppal,
+# Chase Clark, Andrew Lail, Kyle Wolf, Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
 #
@@ -18,7 +19,6 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-# && apt-get install -y build-essential zlib1g-dev libatlas-base-dev libncurses5-dev libncursesw5-dev libbz2-dev liblzma-dev \
 RUN apt-get update \
     && apt-get install -y build-essential \
     && apt-get clean \
