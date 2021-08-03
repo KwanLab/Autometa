@@ -1030,7 +1030,7 @@ def cluster_by_taxon_partitioning(
             if cache:
                 binning_checkpoints = pd.merge(
                     binning_checkpoints,
-                    rank_name_txt_binning_df[["cluster"]],
+                    clustered[["cluster"]],
                     how="outer",
                     left_index=True,
                     right_index=True,
@@ -1040,20 +1040,20 @@ def cluster_by_taxon_partitioning(
                 )
                 header = "\n".join(
                     [
-                        f"# completeness: {completeness}"
-                        f"# purity: {purity}"
-                        f"# domain: {domain}"
-                        f"# coverage_stddev: {coverage_stddev}"
-                        f"# gc_content_stddev: {gc_content_stddev}"
-                        f"# method: {method}"
-                        f"# norm_method: {norm_method}"
-                        f"# pca_dimensions: {pca_dimensions}"
-                        f"# embed_dimensions: {embed_dimensions}"
-                        f"# embed_method: {embed_method}"
-                        f"# min-partition-size: {min_contigs}"
-                        f"# max-partition-size: {max_partition_size}"
-                        f"# rank: {rank}"
-                        f"# name: {rank_name_txt}"
+                        f"# completeness: {completeness}",
+                        f"# purity: {purity}",
+                        f"# domain: {domain}",
+                        f"# coverage_stddev: {coverage_stddev}",
+                        f"# gc_content_stddev: {gc_content_stddev}",
+                        f"# method: {method}",
+                        f"# norm_method: {norm_method}",
+                        f"# pca_dimensions: {pca_dimensions}",
+                        f"# embed_dimensions: {embed_dimensions}",
+                        f"# embed_method: {embed_method}",
+                        f"# min-partition-size: {min_contigs}",
+                        f"# max-partition-size: {max_partition_size}",
+                        f"# rank: {rank}",
+                        f"# name: {rank_name_txt}",
                     ]
                 )
                 binning_checkpoints_outlines = "\n".join(
