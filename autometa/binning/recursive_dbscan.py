@@ -722,7 +722,7 @@ def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]
             break
     fh.close()
     logger.debug(
-        f"{df.shape[1]:,} binning checkpoints found. starting at canonical rank: {starting_rank} with name:{starting_rank_name_txt}"
+        f"{df.shape[1]:,} binning checkpoints found. starting at {starting_rank} with {starting_rank_name_txt}"
     )
     return df, starting_rank, starting_rank_name_txt
 

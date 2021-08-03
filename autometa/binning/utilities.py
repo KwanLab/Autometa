@@ -56,6 +56,7 @@ def read_annotations(annotations: Iterable, how: str = "inner") -> pd.DataFrame:
         index_col='contig', cols=[annotations, ...]
     """
     # Read in tables and concatenate along annotations axis
+    logger.debug(f"Reading/merging {len(annotations):,} contig annotation files")
     df = pd.concat(
         [
             pd.read_csv(annotation, sep="\t", index_col="contig")
