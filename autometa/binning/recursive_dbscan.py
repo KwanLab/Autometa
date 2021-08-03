@@ -24,6 +24,7 @@ COPYRIGHT
 Cluster contigs recursively searching for bins with highest completeness and purity.
 """
 
+import gzip
 import logging
 import os
 import re
@@ -686,6 +687,18 @@ def get_kmer_embedding(
 
 
 def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]:
+    """Retrieve checkpoint information from generated binning_checkpoints.tsv
+
+    Parameters
+    ----------
+    checkpoints_fpath : str
+        Generated binning_checkpoints.tsv within cache directory
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, str, str]
+        binning_checkpoints, starting canonical rank, starting rank name within starting canonical rank
+    """
     df = pd.read_csv(checkpoints_fpath, sep="\t", index_col="contig", comment="#")
     # Retrieve last column in df for most recent binning
     rank_pattern = re.compile(r"#\srank:\s(\S+)")
@@ -795,42 +808,19 @@ def cluster_by_taxon_partitioning(
     TableFormatError
         No marker information is availble for contigs to be binned.
     """
-    # Set taxonomy canonical rank iteration order for more-to-less specific or less-to-more specific
-    # TODO: Add cache_binning behavior... How
-    # How does one cache the binning and resume at the exact stage#
-    # Cached binning file is binning of contigs and a header comment of all function parameters...?
-    # cache_binning_fpath = ...
-    # if cache_binning_fpath and os.path.exists(cache_binning_fpath) and os.path.getsize(cache_binning_fpath):
-    #
-
-    ### PSEUDOCODE ###
-    # 1. if cache and not cache exists:
-    # cache binning parameters
-    # Set boolean to checkpoint binning run
-    # At what stage should the binning be checkpointed?
-    # After clusters are retrieved...
-    # See #COMBAK for location
-    # 2. if cache and cache exists:
-    # read cached binning params and retrieve (main)
-    # implement logic to continue from rank that the previous binning run was on...
-    # 3. continue without worrying about cache
-    #
-
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
         ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
-    # Subset ranks by provided starting rank
     # if stage is cached then we can first look to the cache before we begin subsetting main...
-    # COMBAK :if not cached_canonical_rank: ... will need to set this as the start...
-    # Retrieve appropriate starting canonical rank and rank_name_txt from cached binning checkpoints
     clustered_contigs = set()
     num_clusters = 0
     clusters = []
     rank_embeddings = {}
     starting_rank_name_txt = None
+    # Retrieve appropriate starting canonical rank and rank_name_txt from cached binning checkpoints if cache was provided
     if cache:
         if binning_checkpoints_fpath and not os.path.exists(binning_checkpoints_fpath):
             raise FileNotFoundError(binning_checkpoints_fpath)
@@ -846,26 +836,26 @@ def cluster_by_taxon_partitioning(
                 starting_rank,
                 starting_rank_name_txt,
             ) = get_checkpoint_info(binning_checkpoints_fpath)
-            most_recent_binning_checkpoint = binning_checkpoints.fillna(
-                axis=1, method="ffill"
-            ).iloc[:, -1]
             # Update datastructures to begin at checkpoint stage.
-            clustered_contigs = set(
-                most_recent_binning_checkpoint.index.unique.tolist()
+            ## Forward fill binning annotations to most recent checkpoint and drop any contigs without bin annotations
+            most_recent_binning_checkpoint = (
+                binning_checkpoints.fillna(axis=1, method="ffill").iloc[:, -1].dropna()
             )
-            most_recent_clustered_df = (
-                most_recent_binning_checkpoint.dropna()
-                .to_frame()
-                .rename(columns={starting_rank_name_txt: "cluster"})
+            clustered_contigs = set(
+                most_recent_binning_checkpoint.index.unique().tolist()
+            )
+            most_recent_clustered_df = most_recent_binning_checkpoint.to_frame().rename(
+                columns={starting_rank_name_txt: "cluster"}
             )
             num_clusters = most_recent_clustered_df.cluster.nunique()
             clusters.append(most_recent_clustered_df)
         else:
             logger.debug(
-                f"Binning checkpoints not found (creating): {binning_checkpoints_fpath}"
+                f"Binning checkpoints not found. Writing checkpoints to {binning_checkpoints_fpath}"
             )
             binning_checkpoints = pd.DataFrame()
 
+    # Subset ranks by provided (or checkpointed) starting rank
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")
@@ -1020,31 +1010,44 @@ def cluster_by_taxon_partitioning(
             clusters.append(clustered)
             # Cache binning at rank_name_txt stage (rank-name-txt checkpointing)
             if cache:
-                binning_checkpoints[rank_name_txt] = rank_name_txt_binning_df.cluster
+                binning_checkpoints = pd.merge(
+                    binning_checkpoints,
+                    rank_name_txt_binning_df[["cluster"]],
+                    how="outer",
+                    left_index=True,
+                    right_index=True,
+                ).rename(columns={"cluster": rank_name_txt})
                 binning_checkpoints_str = binning_checkpoints.to_csv(
                     sep="\t", index=True, header=True
                 )
-                header = f"""
-                # completeness: {completeness}
-                # purity: {purity}
-                # domain: {domain}
-                # coverage_stddev: {coverage_stddev}
-                # gc_content_stddev: {gc_content_stddev}
-                # method: {method}
-                # norm_method: {norm_method}
-                # pca_dimensions: {pca_dimensions}
-                # embed_dimensions: {embed_dimensions}
-                # embed_method: {embed_method}
-                # min-partition-size: {min_contigs}
-                # max-partition-size: {max_partition_size}
-                # rank: {rank}
-                # name: {rank_name_txt}
-                # """
+                header = "\n".join(
+                    [
+                        f"# completeness: {completeness}"
+                        f"# purity: {purity}"
+                        f"# domain: {domain}"
+                        f"# coverage_stddev: {coverage_stddev}"
+                        f"# gc_content_stddev: {gc_content_stddev}"
+                        f"# method: {method}"
+                        f"# norm_method: {norm_method}"
+                        f"# pca_dimensions: {pca_dimensions}"
+                        f"# embed_dimensions: {embed_dimensions}"
+                        f"# embed_method: {embed_method}"
+                        f"# min-partition-size: {min_contigs}"
+                        f"# max-partition-size: {max_partition_size}"
+                        f"# rank: {rank}"
+                        f"# name: {rank_name_txt}"
+                    ]
+                )
                 binning_checkpoints_outlines = "\n".join(
                     [header, binning_checkpoints_str]
                 )
-                with open(binning_checkpoints_fpath, "w") as fh:
-                    fh.write(binning_checkpoints_outlines)
+                fh = (
+                    gzip.open(binning_checkpoints_fpath, "wb")
+                    if binning_checkpoints_fpath.endswith(".gz")
+                    else open(binning_checkpoints_fpath, "w")
+                )
+                fh.write(binning_checkpoints_outlines)
+                fh.close()
                 logger.debug(
                     f"Checkpoint created rank: {rank} name: {rank_name_txt} num_checkpoints: {binning_checkpoints.shape[1]}"
                 )
