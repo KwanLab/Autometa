@@ -29,19 +29,21 @@ RUN conda install -c bioconda -c conda-forge python=3.7 --file=requirements.txt 
     && conda clean --all -y
 
 COPY . ./
-RUN cd pipeline && python setup_lca_functions.py build_ext --inplace \
+RUN cd pipeline \
+    && python setup_lca_functions.py build_ext --inplace \
     && cd - \
     && hmmpress -f single-copy_markers/Bacteria_single_copy.hmm \
     && hmmpress -f single-copy_markers/Archaea_single_copy.hmm
 
+ENV PATH="/pipeline:/validation:${PATH}"
 # Test pipeline entrypoints
-RUN python pipeline/recursive_dbscan.py -h \
-    && python pipeline/calculate_read_coverage.py -h \
-    && python pipeline/run_autometa.py -h \
-    && python pipeline/make_contig_table.py -h \
-    && python pipeline/make_marker_table.py -h \
-    && python pipeline/cluster_taxonomy.py -h \
-    && python pipeline/lca.py -h \
-    && python pipeline/cluster_process.py -h \
-    && python pipeline/make_taxonomy_table.py -h \
-    && python pipeline/add_contig_taxonomy.py &> /dev/null
+RUN recursive_dbscan.py -h \
+    && calculate_read_coverage.py -h \
+    && run_autometa.py -h \
+    && make_contig_table.py -h \
+    && make_marker_table.py -h \
+    && cluster_taxonomy.py -h \
+    && lca.py -h \
+    && cluster_process.py -h \
+    && make_taxonomy_table.py -h \
+    && add_contig_taxonomy.py &> /dev/null
