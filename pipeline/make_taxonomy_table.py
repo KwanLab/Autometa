@@ -326,7 +326,7 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
 
 
 # blast2lca using accession numbers#
-def run_blast2lca(input_file):
+def run_blast2lca(input_file, db_dir_path):
     fname = os.path.splitext(os.path.basename(input_file))[0] + ".lca"
     output = os.path.join(output_dir, fname)
     if os.path.isfile(output) and os.path.getsize(output):
