@@ -30,7 +30,7 @@ import os
 import re
 import shutil
 import tempfile
-from typing import List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import pandas as pd
 import numpy as np
@@ -686,7 +686,7 @@ def get_kmer_embedding(
     return rank_embedding
 
 
-def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]:
+def get_checkpoint_info(checkpoints_fpath: str) -> Dict[str, Union[pd.DataFrame, str]]:
     """Retrieve checkpoint information from generated binning_checkpoints.tsv
 
     Parameters
@@ -696,8 +696,10 @@ def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]
 
     Returns
     -------
-    Tuple[pd.DataFrame, str, str]
+    Dict[str, str, str]
         binning_checkpoints, starting canonical rank, starting rank name within starting canonical rank
+        keys="binning_checkpoints", "starting_rank", "starting_rank_name_txt"
+        values=pd.DataFrame, str, str
     """
     df = pd.read_csv(checkpoints_fpath, sep="\t", index_col="contig", comment="#")
     # Retrieve last column in df for most recent binning
@@ -724,7 +726,11 @@ def get_checkpoint_info(checkpoints_fpath: str) -> Tuple[pd.DataFrame, str, str]
     logger.debug(
         f"{df.shape[1]:,} binning checkpoints found. starting at {starting_rank} with {starting_rank_name_txt}"
     )
-    return df, starting_rank, starting_rank_name_txt
+    return {
+        "binning_checkpoints": df,
+        "starting_rank": starting_rank,
+        "starting_rank_name_txt": starting_rank_name_txt,
+    }
 
 
 def cluster_by_taxon_partitioning(
@@ -803,6 +809,9 @@ def cluster_by_taxon_partitioning(
     cache : str, optional
         Directory to cache intermediate results
 
+    binning_checkpoints_fpath : str, optional
+        File path to binning checkpoints (checkpoints are only created if the `cache` argument is provided)
+
     verbose : bool, optional
         log stats for each recursive_dbscan clustering iteration
 
@@ -815,6 +824,8 @@ def cluster_by_taxon_partitioning(
     -------
     TableFormatError
         No marker information is availble for contigs to be binned.
+    FileNotFoundError
+        Provided `binning_checkpoints_fpath` does not exist
     """
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
@@ -839,11 +850,10 @@ def cluster_by_taxon_partitioning(
         if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(
             binning_checkpoints_fpath
         ):
-            (
-                binning_checkpoints,
-                starting_rank,
-                starting_rank_name_txt,
-            ) = get_checkpoint_info(binning_checkpoints_fpath)
+            checkpoint_info = get_checkpoint_info(binning_checkpoints_fpath)
+            binning_checkpoints = checkpoint_info["binning_checkpoints"]
+            starting_rank = checkpoint_info["starting_rank"]
+            starting_rank_name_txt = checkpoint_info["starting_rank_name_txt"]
             # Update datastructures to begin at checkpoint stage.
             ## Forward fill binning annotations to most recent checkpoint and drop any contigs without bin annotations
             most_recent_binning_checkpoint = (
@@ -1236,6 +1246,13 @@ def main():
         metavar="dirpath",
     )
     parser.add_argument(
+        "--binning-checkpoints",
+        help="File path to store itermediate contig binning results"
+        " (The `--cache` argument is required for this feature). If  "
+        "`--cache` is provided without this argument, a binning checkpoints file will be created.",
+        metavar="filepath",
+    )
+    parser.add_argument(
         "--rank-filter",
         help="Taxonomy column canonical rank to subset by provided value of `--rank-name-filter`",
         default="superkingdom",
@@ -1320,6 +1337,7 @@ def main():
             method=args.clustering_method,
             reverse_ranks=args.reverse_ranks,
             cache=args.cache,
+            binning_checkpoints_fpath=args.binning_checkpoints,
             verbose=args.verbose,
         )
 
