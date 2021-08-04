@@ -42,15 +42,16 @@ def init_logger(autom_path, db_path, out_path):
     branch = (
         subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE)
         .communicate()[0]
-        .rstrip()
     )
-
+    # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
+    branch = branch.decode().rstrip() if isinstance(branch, bytes) else branch.rstrip()
     commit_command = f"git -C {autom_path} rev-parse --short HEAD"
     commit = (
         subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE)
         .communicate()[0]
-        .rstrip()
     )
+    # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
+    commit = commit.decode().rstrip() if isinstance(commit, bytes) else commit.rstrip()
     logger.info(f"Autometa branch: {branch}")
     logger.info(f"Autometa commit: {commit}")
     # Check programs
@@ -68,8 +69,9 @@ def init_logger(autom_path, db_path, out_path):
     prodigal_v = (
         subprocess.Popen("prodigal -v", stderr=subprocess.PIPE, shell=True)
         .communicate()[1]
-        .replace("\n", "")
     )
+    # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
+    prodigal_v = prodigal_v.decode().replace("\n", "") if isinstance(prodigal_v, bytes) else prodigal_v.replace("\n", "")
     logger.info(prodigal_v)
     logger.info(f"DB Dir: {db_path}")
     db_fpaths = os.listdir(db_path)
