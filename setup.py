@@ -36,7 +36,8 @@ setup(
             "autometa-taxonomy-majority-vote = autometa.taxonomy.majority_vote:main",
             "autometa-binning = autometa.binning.recursive_dbscan:main",
             "autometa-binning-summary = autometa.binning.summary:main",
-            "autometa-binning-loginfo = autometa.binning.loginfo:main",
+            "autometa-large-data-mode-binning = autometa.binning.large_data_mode:main",
+            "autometa-large-data-mode-binning-loginfo = autometa.binning.large_data_mode_loginfo:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
         ]
     },

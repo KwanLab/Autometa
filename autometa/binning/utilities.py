@@ -69,6 +69,57 @@ def read_annotations(annotations: Iterable, how: str = "inner") -> pd.DataFrame:
     return df
 
 
+def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
+    """Clean taxon names (by broadcasting lowercase and replacing whitespace)
+    then subset by all contigs under `rank` that are equal to `name`.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe containing columns of canonical ranks.
+
+    rank : str
+        Canonical rank on which to apply filtering.
+
+    name : str
+        Taxon in `rank` to retrieve.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame subset by `df[rank] == name`
+
+    Raises
+    ------
+    KeyError
+        `rank` not in taxonomy columns.
+
+    ValueError
+        Provided `name` not found in `rank` column.
+    """
+    # First clean the assigned taxa by broadcasting lowercase and replacing any whitespace with underscores
+    for canonical_rank in NCBI.CANONICAL_RANKS:
+        if canonical_rank not in df.columns:
+            continue
+        df[canonical_rank] = df[canonical_rank].map(
+            lambda name: name.lower()
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("(", "_")
+            .replace(")", "_")
+        )
+    # Now check that the provided rank is in our dataframe
+    if rank not in df.columns:
+        raise KeyError(f"{rank} not in taxonomy columns: {df.columns}")
+    # Perform rank filter
+    filtered_df = df[df[rank] == name]
+    # Check that we still have some contigs left
+    if filtered_df.empty:
+        raise ValueError(f"Provided name: {name} not found in {rank} column")
+    logger.debug(f"{rank} filtered to {name} taxonomy. shape: {filtered_df.shape}")
+    return filtered_df
+
+
 def add_metrics(
     df: pd.DataFrame, markers_df: pd.DataFrame, domain: str = "bacteria"
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
