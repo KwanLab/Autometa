@@ -101,22 +101,22 @@
                 },
                 "completeness": {
                     "type": "number",
-                    "default": 20.0,
+                    "default": 20,
                     "description": "Minimum completeness needed to keep a cluster (default is at least 20% complete)"
                 },
                 "purity": {
                     "type": "number",
-                    "default": 95.0,
+                    "default": 95,
                     "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
                 },
                 "gc_stddev_limit": {
                     "type": "number",
-                    "default": 5.0,
+                    "default": 5,
                     "description": "Maximum GC% standard deviation under which a cluster is kept (default is 5%)"
                 },
                 "cov_stddev_limit": {
                     "type": "number",
-                    "default": 25.0,
+                    "default": 25,
                     "description": "Maximum coverage standard deviation under which a cluster is kept (default is  25%)"
                 }
             },
@@ -185,8 +185,9 @@
                 },
                 "num_splits": {
                     "type": "integer",
-                    "default": 24,
-                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss"
+                    "default": 1,
+                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss",
+                    "help_text": "Values over 2 will result in spliting the input metagenome into X-number of FASTA files, to be processed in parallell where applicable. Tis will result in a doubling of disk space occupied by your input metagenome. "
                 },
                 "max_cpus": {
                     "type": "integer",
