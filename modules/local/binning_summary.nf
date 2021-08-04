@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-params.prot_accession2taxid_gz_dir =  params.prot_accession2taxid_gz_dir
+params.prot_accession2taxid_gz_dir =  [:]
 
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
@@ -22,7 +22,6 @@ process BINNING_SUMMARY {
 
     input:
         tuple val(meta), path(binning_main), path(markers), path(metagenome)
-        path(prot_accession2taxid_gz_dir)
         val(binning_column)
 
     output:
@@ -37,7 +36,7 @@ process BINNING_SUMMARY {
         mkdir -p ${meta.id}
 
         autometa-binning-summary \\
-            --ncbi ${prot_accession2taxid_gz_dir} \\
+            --ncbi ${params.prot_accession2taxid_gz_dir} \\
             --binning-main $binning_main \\
             --markers $markers \\
             --metagenome $metagenome \\
