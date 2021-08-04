@@ -514,7 +514,7 @@ def cluster_by_taxon_partitioning(
             # Cache binning at rank_name_txt stage (rank-name-txt checkpointing)
             if cache:
                 binning_checkpoints = checkpoint(
-                    binning_checkpoints=binning_checkpoints,
+                    checkpoints_df=binning_checkpoints,
                     clustered=clustered,
                     rank=rank,
                     rank_name_txt=rank_name_txt,
@@ -561,7 +561,10 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
+        "--kmers",
+        help="Path to k-mer counts table",
+        metavar="filepath",
+        required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -639,7 +642,11 @@ def main():
         "--norm-method",
         help="kmer normalization method to use on kmer counts",
         default="am_clr",
-        choices=["am_clr", "ilr", "clr",],
+        choices=[
+            "am_clr",
+            "ilr",
+            "clr",
+        ],
     )
     parser.add_argument(
         "--pca-dims",
@@ -652,7 +659,11 @@ def main():
         "--embed-method",
         help="kmer embedding method to use on normalized kmer frequencies",
         default="bhsne",
-        choices=["bhsne", "umap", "sksne",],
+        choices=[
+            "bhsne",
+            "umap",
+            "sksne",
+        ],
     )
     parser.add_argument(
         "--embed-dims",
@@ -716,7 +727,10 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose", action="store_true", default=False, help="log debug information",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="log debug information",
     )
     args = parser.parse_args()
 
