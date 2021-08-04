@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v2.0.0-alpha.0 - [date]
 
-Initial release of nf-core/autometa, created with the [nf-core](https://nf-co.re/) template.
+Second release of nf-core/autometa, created with the [nf-core](https://nf-co.re/) template.
 
 ### `Added`
 
