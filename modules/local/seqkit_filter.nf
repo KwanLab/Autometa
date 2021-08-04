@@ -29,9 +29,12 @@ process SEQKIT_FILTER {
 
     script:
         def software = getSoftwareName(task.process)
+        def metagenomecmd = metagenome.getExtension() == 'gz' ? "gunzip -c $metagenome" : "cat $metagenome"
         """
         # filter contigs by specified length
-        seqkit seq -j ${task.cpus} -m ${params.length_cutoff} ${metagenome} | seqkit sort -n > "${meta.id}.filtered.fna"
+        ${metagenomecmd} | \\
+            seqkit seq -j ${task.cpus} -m ${params.length_cutoff} | \\
+            seqkit sort -n > "${meta.id}.filtered.fna"
 
         # calcualte gc content
         seqkit fx2tab -j ${task.cpus} -n -lg "${meta.id}.filtered.fna" > temp
@@ -39,7 +42,7 @@ process SEQKIT_FILTER {
         # Extract columns, create tsv
         awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
         echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${meta.id}.gc_content.tsv"
-        
+
         # Remove temporary files
         rm temp
         rm temp2
