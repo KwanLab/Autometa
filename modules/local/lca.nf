@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_high'
-    publishDir "${params.outdir_internal}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
@@ -30,7 +30,7 @@ process LCA {
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-lca --blast ${blast} --dbdir "${blastdb_dir}" --output ${meta.id}.lca.tsv
+        autometa-taxonomy-lca --blast ${blast} --dbdir ${blastdb_dir} --output ${meta.id}.lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

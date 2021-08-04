@@ -8,7 +8,7 @@ process SPADES_KMER_COVERAGE {
     tag "Calculating k-mer coverage for ${meta.id}"
     label 'process_low'
 
-    publishDir "${params.outdir_internal}",
+    publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
 
