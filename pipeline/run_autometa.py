@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
+import gzip
 import sys
 import subprocess
 import time
@@ -27,6 +28,7 @@ import shutil
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 
+from Bio import SeqIO
 
 def init_logger(autom_path, db_path, out_path):
     # logger
@@ -161,14 +163,16 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 
 def length_trim(fasta, length_cutoff):
     # will need to update path of this perl script
-    outfile_name, ext = os.path.splitext(os.path.basename(fasta))
+    filename = os.path.basename(fasta)
+    filename = filename.strip(".gz") if filename.endswith(".gz") else filename
+    outfile_name, ext = os.path.splitext(filename)
     outfile_name += ".filtered" + ext
-    output_path = output_dir + "/" + outfile_name
-    run_command(
-        "{}/fasta_length_trim.pl {} {} {}".format(
-            pipeline_path, fasta, length_cutoff, output_path
-        )
-    )
+    output_path = os.path.join(output_dir, outfile_name)
+    infh = gzip.open(fasta, 'rt') if fasta.endswith(".gz") else open(fasta)
+    records = [record for record in SeqIO.parse(infh, "fasta") if len(record.seq) >= length_cutoff]
+    infh.close()
+    output_path = output_path.strip('.gz') if output_path.endswith(".gz") else output_path
+    SeqIO.write(records, output_path, "fasta")
     return output_path
 
 
