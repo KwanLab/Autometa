@@ -30,6 +30,7 @@ from argparse import ArgumentDefaultsHelpFormatter
 
 from Bio import SeqIO
 
+
 def init_logger(autom_path, db_path, out_path):
     # logger
     logger = logging.getLogger(os.path.join(out_path, "run_autometa.py"))
@@ -41,17 +42,15 @@ def init_logger(autom_path, db_path, out_path):
 
     # Output current branch and commit
     branch_command = f"git -C {autom_path} branch | grep \* | sed 's/^..//'"
-    branch = (
-        subprocess.Popen(branch_command, shell=True, stdout=subprocess.PIPE)
-        .communicate()[0]
-    )
+    branch = subprocess.Popen(
+        branch_command, shell=True, stdout=subprocess.PIPE
+    ).communicate()[0]
     # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
     branch = branch.decode().rstrip() if isinstance(branch, bytes) else branch.rstrip()
     commit_command = f"git -C {autom_path} rev-parse --short HEAD"
-    commit = (
-        subprocess.Popen(commit_command, shell=True, stdout=subprocess.PIPE)
-        .communicate()[0]
-    )
+    commit = subprocess.Popen(
+        commit_command, shell=True, stdout=subprocess.PIPE
+    ).communicate()[0]
     # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
     commit = commit.decode().rstrip() if isinstance(commit, bytes) else commit.rstrip()
     logger.info(f"Autometa branch: {branch}")
@@ -59,26 +58,35 @@ def init_logger(autom_path, db_path, out_path):
     # Check programs
     progs = ["md5sum", "gzip", "tar", "gunzip", "wget"]
     for prog in progs:
-        prog_version = subprocess.check_output([prog, "--version"], text=True).split("\n")[0]
+        prog_version = subprocess.check_output([prog, "--version"], text=True).split(
+            "\n"
+        )[0]
         logger.info(prog_version)
     # Check 3rd party dependencies
     dmnd_v = subprocess.check_output(["diamond", "version"], text=True).strip()
     logger.info(dmnd_v)
     hmmscan_v = (
-        subprocess.check_output(["hmmpress", "-h"], text=True).split("\n")[1].replace("# ", "")
+        subprocess.check_output(["hmmpress", "-h"], text=True)
+        .split("\n")[1]
+        .replace("# ", "")
     )
     logger.info(hmmscan_v)
-    prodigal_v = (
-        subprocess.Popen("prodigal -v", stderr=subprocess.PIPE, shell=True)
-        .communicate()[1]
-    )
+    prodigal_v = subprocess.Popen(
+        "prodigal -v", stderr=subprocess.PIPE, shell=True
+    ).communicate()[1]
     # only decode if the returned object is encoded as a bytes object, otherwise treat as a string
-    prodigal_v = prodigal_v.decode().replace("\n", "") if isinstance(prodigal_v, bytes) else prodigal_v.replace("\n", "")
+    prodigal_v = (
+        prodigal_v.decode().replace("\n", "")
+        if isinstance(prodigal_v, bytes)
+        else prodigal_v.replace("\n", "")
+    )
     logger.info(prodigal_v)
     logger.info(f"DB Dir: {db_path}")
     db_fpaths = os.listdir(db_path)
     for fpath in db_fpaths:
-        logger.info(f"DB (fname, size): {fpath} {os.path.getsize(os.path.join(db_path, fpath))}")
+        logger.info(
+            f"DB (fname, size): {fpath} {os.path.getsize(os.path.join(db_path, fpath))}"
+        )
     return logger
 
 
@@ -112,7 +120,9 @@ def run_command_quiet(command_string):
 
 
 def cythonize_lca_functions():
-    logger.info(f"{pipeline_path}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py")
+    logger.info(
+        f"{pipeline_path}/lca_functions.so not found, cythonizing lca_function.pyx for make_taxonomy_table.py"
+    )
     current_dir = os.getcwd()
     os.chdir(pipeline_path)
     run_command("python setup_lca_functions.py build_ext --inplace")
@@ -168,10 +178,16 @@ def length_trim(fasta, length_cutoff):
     outfile_name, ext = os.path.splitext(filename)
     outfile_name += ".filtered" + ext
     output_path = os.path.join(output_dir, outfile_name)
-    infh = gzip.open(fasta, 'rt') if fasta.endswith(".gz") else open(fasta)
-    records = [record for record in SeqIO.parse(infh, "fasta") if len(record.seq) >= length_cutoff]
+    infh = gzip.open(fasta, "rt") if fasta.endswith(".gz") else open(fasta)
+    records = [
+        record
+        for record in SeqIO.parse(infh, "fasta")
+        if len(record.seq) >= length_cutoff
+    ]
     infh.close()
-    output_path = output_path.strip('.gz') if output_path.endswith(".gz") else output_path
+    output_path = (
+        output_path.strip(".gz") if output_path.endswith(".gz") else output_path
+    )
     SeqIO.write(records, output_path, "fasta")
     return output_path
 
@@ -491,15 +507,11 @@ else:
 if make_tax_table:
     # First, check that the expected kingdom bin is there
     expected_kingdom_bin_path = output_dir + "/" + kingdom.title() + ".fasta"
-    if (not os.path.isfile(expected_kingdom_bin_path)) or os.stat(
+    if (not os.path.isfile(expected_kingdom_bin_path)) or not os.path.getsize(
         expected_kingdom_bin_path
-    ).st_size == 0:
+    ):
         print(
-            (
-                "Error at make_taxonomy_table.py stage - file {0} is either not there or empty".format(
-                    expected_kingdom_bin_path
-                )
-            )
+            f"Error at make_taxonomy_table.py stage - file {expected_kingdom_bin_path} is either not there or empty"
         )
         exit(1)
 
