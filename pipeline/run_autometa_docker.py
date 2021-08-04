@@ -151,7 +151,6 @@ if make_tax_table and not db_dir_path:
 # check if fasta in path
 if not os.path.isfile(fasta_assembly):
     print("Could not find {}...".format(fasta_assembly))
-    logger.debug("Could not find {}...".format(fasta_assembly))
     exit(1)
 
 # We have to create the output dir if it doesn't exist
