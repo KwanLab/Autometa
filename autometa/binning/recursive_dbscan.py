@@ -316,9 +316,9 @@ def run_hdbscan(
     Notes
     -----
 
-        * reasoning for parameter: `cluster_selection_method <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html#leaf-clustering>`_
-        * reasoning for parameters: `min_cluster_size and min_samples <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html>`_
-        * documentation for `HDBSCAN <https://hdbscan.readthedocs.io/en/latest/index.html>`_
+        * Reasoning for parameter: `cluster_selection_method <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html#leaf-clustering>`_
+        * Reasoning for parameters: `min_cluster_size and min_samples <https://hdbscan.readthedocs.io/en/latest/parameter_selection.html>`_
+        * Documentation for `HDBSCAN <https://hdbscan.readthedocs.io/en/latest/index.html>`_
 
     Parameters
     ----------
@@ -948,15 +948,7 @@ def cluster_by_taxon_partitioning(
                 if cache
                 else None
             )
-            # Now check num. contigs for kmer embedding retrieval
-            # We are accounting for three cases.
-            # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
-            #   Action 1: embed these contigs then continue to recurse s.t. their higher canonical rank coords.
-            #   may be looked up at the lower canonical rank (See Case 2)
-            # Case 2: num. contigs in rank_df is less than max partition size and greater than min contigs
-            #   Action 2: perform normalization and embedding on counts for specific ranks' contigs
-            # Case 3: num. contigs in rank_df is less than the minimum number of contigs required for embedding
-            #   Action 3: keep coordinates from higher canonical rank. i.e. kingdom embedding -> phylum embedding -> etc.
+            # Check num. contigs for kmer embedding retrieval
             min_contigs = max([pca_dimensions + 1, embed_dimensions + 1])
             n_contigs_in_rank = rank_df.shape[0]
             # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
@@ -1107,10 +1099,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--kmers",
-        help="Path to k-mer counts table",
-        metavar="filepath",
-        required=True,
+        "--kmers", help="Path to k-mer counts table", metavar="filepath", required=True,
     )
     parser.add_argument(
         "--coverages",
@@ -1187,11 +1176,7 @@ def main():
         "--norm-method",
         help="kmer normalization method to use on kmer counts",
         default="am_clr",
-        choices=[
-            "am_clr",
-            "ilr",
-            "clr",
-        ],
+        choices=["am_clr", "ilr", "clr",],
     )
     parser.add_argument(
         "--pca-dims",
@@ -1204,11 +1189,7 @@ def main():
         "--embed-method",
         help="kmer embedding method to use on normalized kmer frequencies",
         default="bhsne",
-        choices=[
-            "bhsne",
-            "umap",
-            "sksne",
-        ],
+        choices=["bhsne", "umap", "sksne",],
     )
     parser.add_argument(
         "--embed-dims",
@@ -1272,10 +1253,7 @@ def main():
         default="bacteria",
     )
     parser.add_argument(
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="log debug information",
+        "--verbose", action="store_true", default=False, help="log debug information",
     )
     args = parser.parse_args()
 
@@ -1348,8 +1326,6 @@ def main():
             binning_checkpoints_fpath=args.binning_checkpoints,
             verbose=args.verbose,
         )
-
-    # reindex_bin_names(df=, cluster_col=, initial_index=)
 
     write_results(
         results=main_out,

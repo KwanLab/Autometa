@@ -225,8 +225,10 @@ def reindex_bin_names(
     ----------
     df : pd.DataFrame
         Dataframe containing `cluster_col`
+
     cluster_col : str, optional
         Cluster column to apply reindexing, by default "cluster"
+
     initial_index : int, optional
         Starting index number when reindexing, by default 0
 
@@ -284,6 +286,7 @@ def zero_pad_bin_names(df: pd.DataFrame, cluster_col: str = "cluster") -> pd.Dat
     ----------
     df : pd.DataFrame
         Dataframe containing `cluster_col`
+
     cluster_col : str, optional
         Cluster column to apply zero padding, by default "cluster"
 
