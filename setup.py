@@ -39,6 +39,7 @@ setup(
             "autometa-large-data-mode-binning = autometa.binning.large_data_mode:main",
             "autometa-large-data-mode-binning-loginfo = autometa.binning.large_data_mode_loginfo:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
+            "autometa-download-dataset = autometa.validation.datasets:main",
         ]
     },
     author="Jason C. Kwan",
