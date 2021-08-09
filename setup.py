@@ -38,6 +38,7 @@ setup(
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
             "autometa-benchmark = autometa.validation.benchmark:main",
             "autometa-binning-summary = autometa.binning.summary:main",
+            "autometa-download-dataset = autometa.validation.datasets:main",
         ]
     },
     author="Jason C. Kwan",
