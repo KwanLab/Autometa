@@ -334,6 +334,100 @@ def compute_classification_metrics(labels: namedtuple) -> dict:
     )
 
 
+def evaluate_clustering_classification(
+    predictions: Iterable, reference: str
+) -> pd.DataFrame:
+    ref_df = (
+        pd.read_csv(
+            reference,
+            sep="\t",
+            usecols=["contig", "reference_genome", "length"],
+            index_col="contig",
+        )
+        # Convert the taxid dtype to int
+        .convert_dtypes()
+        # Drop any contigs missing taxid classification
+        .dropna(axis="index")
+    )
+    ref_df = ref_df[ref_df.reference_genome != "misassembled"]
+    # Count contigs by reference genome
+    ref_contig_count = (
+        ref_df.groupby("reference_genome")
+        .count()
+        .rename(columns={"length": "reference_contig_count"})
+    )
+    all_scores = []
+    for prediction in predictions:
+        # predictions cols: contig, length, cluster
+        pred_df = pd.read_csv(
+            prediction, sep="\t", index_col="contig", usecols=["contig", "cluster"]
+        ).convert_dtypes()
+        num_raw_contigs = pred_df.shape[0]
+        # Drop any rows that correspond to unclustered contigs (either NA or 'unclustered')
+        pred_df = pred_df.dropna(subset=["cluster"], axis="index")
+        pred_df = pred_df[pred_df.cluster != "unclustered"]
+        num_clean_contigs = pred_df.shape[0]
+        num_dropped_contigs = num_raw_contigs - num_clean_contigs
+        logger.info(f"Dropped {num_dropped_contigs:,} unclustered contigs")
+        # Merge reference with predictions
+        df = pd.merge(ref_df, pred_df, how="left", left_index=True, right_index=True)
+        # Generate columns of cluster in reference lengths, cluster lengths and reference lengths
+        ## Add cluster length in reference column
+        dff = df.groupby(["reference_genome", "cluster"])["length"].sum()
+        dff.name = "cluster_length_in_reference"
+        ## Add cluster length column
+        cluster_lengths = df.groupby("cluster")["length"].sum()
+        dff = pd.merge(
+            dff, cluster_lengths, how="left", left_on="cluster", right_index=True
+        ).rename(columns={"length": "cluster_length"})
+        ## Add reference length column
+        reference_lengths = df.groupby("reference_genome")["length"].sum()
+        dff = pd.merge(
+            dff,
+            reference_lengths,
+            how="left",
+            left_on="reference_genome",
+            right_index=True,
+        ).rename(columns={"length": "reference_length"})
+        # Compute F1-score metrics
+        dff = dff.assign(
+            precision=lambda x: x.cluster_length_in_reference / x.reference_length,
+            recall=lambda x: x.cluster_length_in_reference / x.cluster_length,
+            F1=lambda x: 2 * (x.precision * x.recall) / (x.precision + x.recall),
+        )
+        # For each reference genome sort clusters by length for selection of the dominant cluster
+        dff = dff.sort_values(by=["cluster_length_in_reference"], ascending=[False])
+        # For each reference genome retrieve the top (dominant) cluster
+        main_df = dff.groupby("reference_genome").head(1)
+        # Check that we have a unique cluster for each reference
+        if not main_df[main_df.index.duplicated()].empty:
+            logger.warning(
+                f"There are {main_df[main_df.index.duplicated()].shape[0]} clusters that share a max aligned length"
+            )
+        ## Add reference contig count
+        main_df = pd.merge(
+            main_df, ref_contig_count, how="left", left_index=True, right_index=True
+        )
+        ## Add cluster contig count
+        cluster_contig_count = (
+            pred_df.reset_index()
+            .groupby("cluster")
+            .count()
+            .rename(columns={"contig": "cluster_contig_count"})
+        )
+        main_df = pd.merge(
+            main_df, cluster_contig_count, how="left", left_index=True, right_index=True
+        )
+        # ?Compute average F1 and sample weighted average F1?
+        # n_samples = main_df.shape[0]
+        # reference_length_sum = main_df.reference_length.sum()
+        main_df["dataset"] = os.path.basename(prediction)
+        # Remove 'cluster' from index only keeping 'reference_genome' in index
+        main_df.reset_index(level=1)
+        all_scores.append(main_df)
+    return pd.concat(all_scores)
+
+
 def evaluate_classification(
     predictions: Iterable,
     reference: str,
@@ -358,6 +452,8 @@ def evaluate_classification(
     Tuple[pd.DataFrame, List[dict]]
         Metrics
     """
+    if not ncbi:
+        raise ValueError("--ncbi is required for the classification benchmark!")
     # Read in community reference assignments
     reference = (
         pd.read_csv(
@@ -452,7 +548,7 @@ def main():
     parser.add_argument(
         "--benchmark",
         help="Type of benchmarking to perform",
-        choices={"classification", "clustering"},
+        choices={"clustering", "classification", "clustering-classification"},
         required=True,
     )
     parser.add_argument(
@@ -496,9 +592,21 @@ def main():
     logger.info(f"Evaluating {args.benchmark} benchmarks")
     if args.benchmark == "clustering":
         df = evaluate_clustering(predictions=args.predictions, reference=args.reference)
-    else:
-        if not args.ncbi:
-            raise ValueError(f"--ncbi is required for the classification benchmark!")
+        if args.output_long:
+            # Write out stacked dataframe for visualization with `plot-cluster-evaluation-metrics.R`
+            dff = df.stack()
+            dff.index.name = ("dataset", "metric")
+            dff.name = "score"
+            dff = (
+                dff.to_frame()
+                .reset_index(level=1)
+                .rename(columns={"level_1": "metric"})
+            )
+            dff.to_csv(args.output_long, sep="\t", index=True, header=True)
+            logger.info(
+                f"Wrote {dff.index.nunique()} datasets (stacked) metrics to {args.output_long}"
+            )
+    elif args.benchmark == "classification":
         ncbi = NCBI(args.ncbi)
         df, reports = evaluate_classification(
             predictions=args.predictions,
@@ -507,8 +615,15 @@ def main():
         )
         if args.output_classification_reports:
             write_reports(
-                reports=reports, outdir=args.output_classification_reports, ncbi=ncbi
+                reports=reports,
+                outdir=args.output_classification_reports,
+                ncbi=args.ncbi,
             )
+    else:
+        # args.benchmark == "clustering-classification":
+        df = evaluate_clustering_classification(
+            predictions=args.predictions, reference=args.reference
+        )
 
     output_wide = (
         f"{args.benchmark}_benchmarks.tsv.gz"
@@ -517,16 +632,6 @@ def main():
     )
     df.to_csv(output_wide, sep="\t", index=True, header=True)
     logger.info(f"Wrote {df.shape[0]} datasets metrics to {output_wide}")
-    if args.output_long and not args.benchmark == "classification":
-        # Write out stacked dataframe for visualization with `plot-cluster-evaluation-metrics.R`
-        dff = df.stack()
-        dff.index.name = ("dataset", "metric")
-        dff.name = "score"
-        dff = dff.to_frame().reset_index(level=1).rename(columns={"level_1": "metric"})
-        dff.to_csv(args.output_long, sep="\t", index=True, header=True)
-        logger.info(
-            f"Wrote {dff.index.nunique()} datasets (stacked) metrics to {args.output_long}"
-        )
 
 
 if __name__ == "__main__":
