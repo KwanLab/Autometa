@@ -10,7 +10,7 @@ Dependencies
 
 **Note: Autometa only runs on Python 3, and is not currently compatible with Python 2**
 
-#### Package managemet tool
+#### Package management tool
 
 * [Anaconda](https://www.anaconda.com) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html) (lightweight version of anaconda)
 
