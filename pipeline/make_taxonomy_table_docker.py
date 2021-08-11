@@ -128,7 +128,6 @@ single_genome_mode = args["single_genome"]
 # check if fasta in path
 if not os.path.isfile(fasta_path):
     print("Could not find {}...".format(fasta_path))
-    logger.debug("Could not find {}...".format(fasta_path))
     exit(1)
 
 # We have to create the output dir if it doesn't exist
@@ -144,48 +143,40 @@ db_dir_path_absolute = os.path.abspath(db_dir_path)
 # If the assembly fasta is not already in the output dir, we need to copy it there so that the docker container can see it
 output_dir_absolute = os.path.abspath(output_dir)
 fasta_path_absolute = os.path.abspath(fasta_path)
-fasta_directory = "/".join(fasta_path_absolute.split("/")[:-1])
-fasta_filename = fasta_path_absolute.split("/")[-1]
+fasta_directory = os.path.dirname(fasta_path_absolute)
+fasta_filename = os.path.basename(fasta_path_absolute)
 
 if output_dir_absolute != fasta_directory:
     # This means we need to copy the fasta assembly to the output directory
-    run_command("cp " + fasta_path_absolute + " " + output_dir_absolute + "/")
+    run_command(f"cp {fasta_path_absolute} {output_dir_absolute}/")
 
 # If a coverage table is give, it must already exist.
 # If it exists, then it also should be copied to the output directory if it isn't already there
 if cov_table:
     if not os.path.isfile(cov_table):
-        print(
-            ("Error! Could not find coverage table at the following path: " + cov_table)
-        )
+        print(f"Error! Could not find coverage table at the following path: {cov_table}")
         exit(1)
     else:
         cov_table_absolute = os.path.abspath(cov_table)
-        cov_table_directory = "/".join(cov_table_absolute.split("/")[:-1])
-        cov_table_filename = cov_table_absolute.split("/")[1]
+        cov_table_directory = os.path.dirname(cov_table_absolute)
+        cov_table_filename = os.path.basename(cov_table_absolute)
         if output_dir_absolute != cov_table_directory:
-            run_command("cp " + cov_table_absolute + " " + output_dir_absolute + "/")
+            run_command(f"cp {cov_table_absolute} {output_dir_absolute}/")
 
 # Construct make_taxonomy_table.py command to pass to the docker container
-make_taxonomy_table_command = "make_taxonomy_table.py --assembly /output/{} --processors {} --db_dir /databases --length_cutoff {} --output_dir /output".format(
-    fasta_filename, num_processors, length_cutoff
-)
+make_taxonomy_table_command = f"make_taxonomy_table.py --assembly /output/{fasta_filename} --processors {num_processors} --db_dir /databases --length_cutoff {length_cutoff} --output_dir /output"
 
 if cov_table:
-    make_taxonomy_table_command = (
-        make_taxonomy_table_command + " --cov_table {}".format(cov_table_filename)
-    )
+    make_taxonomy_table_command = f"{make_taxonomy_table_command} --cov_table /output/{cov_table_filename}"
 
 if update:
-    make_taxonomy_table_command = make_taxonomy_table_command + " --update"
+    make_taxonomy_table_command += " --update"
 
 if single_genome_mode:
-    make_taxonomy_table_command = make_taxonomy_table_command + " --single_genome"
+    make_taxonomy_table_command += " --single_genome"
 
 # Construct Docker run command
-docker_command = "docker run --volume {}:/output:rw --volume {}:/databases:rw --detach=false --rm jasonkwan/autometa:latest".format(
-    output_dir_absolute, db_dir_path_absolute
-)
+docker_command = f"docker run --volume {output_dir_absolute}:/output:rw --volume {db_dir_path_absolute}:/databases:rw --detach=false --rm jasonkwan/autometa:latest"
 
 # Incorporate autometa command
 docker_command = docker_command + " " + make_taxonomy_table_command
