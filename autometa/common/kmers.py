@@ -44,9 +44,6 @@ from tsne import bh_sne
 from umap import UMAP
 import trimap
 
-# import densne # TODO: this import should be available after installation of denSNE
-
-
 from autometa.common import utilities
 from autometa.common.exceptions import TableFormatError
 
@@ -470,7 +467,7 @@ def embed(
         * `sklearn.manifold.TSNE <https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html#sklearn.manifold.TSNE>`_
         * `tsne.bh_sne <https://pypi.org/project/tsne/>`_
         * `UMAP <https://umap-learn.readthedocs.io/en/latest/>`_
-        * `densMAP <https://github.com/hhcho/densvis/tree/master/densmap>`_
+        * `densMAP <https://umap-learn.readthedocs.io/en/latest/densmap_demo.html#better-preserving-local-density-with-densmap>`_
         * `TriMap <https://github.com/eamid/trimap>`_
 
     Parameters
