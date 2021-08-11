@@ -719,7 +719,15 @@ def main():
         "--rank-filter",
         help="Taxonomy column canonical rank to subset by provided value of `--rank-name-filter`",
         default="superkingdom",
-        choices=[rank for rank in NCBI.CANONICAL_RANKS if rank != "root"],
+        choices=[
+            "superkingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species",
+        ],
     )
     parser.add_argument(
         "--rank-name-filter",
