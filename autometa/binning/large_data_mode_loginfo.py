@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse
+
 import os
 import re
 
@@ -409,8 +409,17 @@ def get_runtimes(logfile: str) -> Dict[str, Union[pd.DataFrame, pd.Series, int, 
 
 
 def main():
+    import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
     parser = argparse.ArgumentParser(
-        description="Retrieve clustering time stats from autometa.binning.recursive_dbscan err log"
+        description="Retrieve clustering time stats from autometa.binning.recursive_dbscan err log",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--log",
@@ -459,15 +468,15 @@ def main():
                 and os.path.getsize(out_filepath)
                 and not args.overwrite
             ):
-                print(
+                logger.warning(
                     f"{out_filepath} already exists. User --overwrite to overwrite this table. Skipping..."
                 )
             else:
                 # In other scenarios (--overwrite provided or file does not exists) we write out table
                 info.to_csv(out_filepath, sep="\t", index=False, header=True)
-                print(f"Wrote {info_type} runtimes to {out_filepath}")
+                logger.debug(f"Wrote {info_type} runtimes to {out_filepath}")
         else:
-            print(f"{info_type}\t{info}")
+            logger.info(f"{info_type}: {info}")
 
     # Some misc summary methods:
     ## Retrieve total duration for individual algorithms.
