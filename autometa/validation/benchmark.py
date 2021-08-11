@@ -334,7 +334,7 @@ def compute_classification_metrics(labels: namedtuple) -> dict:
     )
 
 
-def evaluate_clustering_classification(
+def evaluate_binning_classification(
     predictions: Iterable, reference: str
 ) -> pd.DataFrame:
     ref_df = (
@@ -548,7 +548,7 @@ def main():
     parser.add_argument(
         "--benchmark",
         help="Type of benchmarking to perform",
-        choices={"clustering", "classification", "clustering-classification"},
+        choices={"clustering", "classification", "binning-classification"},
         required=True,
     )
     parser.add_argument(
@@ -620,8 +620,8 @@ def main():
                 ncbi=args.ncbi,
             )
     else:
-        # args.benchmark == "clustering-classification":
-        df = evaluate_clustering_classification(
+        # args.benchmark == "binning-classification":
+        df = evaluate_binning_classification(
             predictions=args.predictions, reference=args.reference
         )
 
