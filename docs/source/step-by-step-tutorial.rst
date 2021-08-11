@@ -521,6 +521,7 @@ flag and the number of dimensions of which to reduce k-mer frequencies can be al
 .. note::
     1. Even though bhsne and sksne are the same embedding method (but different implementations)
     they appear to give very different results. We recommend using the former.
+
     2. In case you put ``--pca-dimensions`` as zero then autometa will skip PCA.
 
 7. Binning
