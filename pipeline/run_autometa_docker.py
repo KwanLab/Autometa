@@ -144,7 +144,7 @@ cov_table = args["cov_table"]
 # Argument error checks
 
 # check if appropriate databases specified for make taxonomy table
-if make_tax_table and not db_dir_path:
+if (make_tax_table or taxonomy_table_path) and not db_dir_path:
     print("Must specify databases directory (-db)")
     exit(1)
 
@@ -192,21 +192,17 @@ if taxonomy_table_path:
 # If it exists, then it also should be copied to the output directory if it isn't already there
 if cov_table:
     if not os.path.isfile(cov_table):
-        print(
-            ("Error! Could not find coverage table at the following path: " + cov_table)
-        )
+        print(f"Error! Could not find coverage table at the following path: {cov_table}")
         exit(1)
     else:
         cov_table_absolute = os.path.abspath(cov_table)
-        cov_table_directory = "/".join(cov_table_absolute.split("/")[:-1])
-        cov_table_filename = cov_table_absolute.split("/")[-1]
+        cov_table_directory = os.path.dirname(cov_table_absolute)
+        cov_table_filename = os.path.basename(cov_table_absolute)
         if output_dir_absolute != cov_table_directory:
-            run_command("cp " + cov_table_absolute + " " + output_dir_absolute + "/")
+            run_command(f"cp {cov_table_absolute} {output_dir_absolute}/")
 
 # Construct run_autometa.py command to pass to the docker container
-autometa_command = "run_autometa.py --assembly /output/{} --processors {} --length_cutoff {} --completeness_cutoff {} --kingdom {} --output_dir /output".format(
-    fasta_filename, processors, length_cutoff, cluster_completeness, kingdom
-)
+autometa_command = f"run_autometa.py --assembly /output/{fasta_filename} --processors {processors} --length_cutoff {length_cutoff} --completeness_cutoff {cluster_completeness} --kingdom {kingdom} --output_dir /output"
 
 # Add optional arguments
 if taxonomy_table_path:
