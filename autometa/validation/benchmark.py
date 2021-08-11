@@ -542,7 +542,7 @@ def main():
         level=logger.DEBUG,
     )
     parser = argparse.ArgumentParser(
-        description="Benchmark classification or clustering against reference assignments for the provided simulated/synthetic community.",
+        description="Benchmark classification, clustering or binning-classification against reference assignments for the provided simulated/synthetic community.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
