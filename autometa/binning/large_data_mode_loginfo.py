@@ -1,6 +1,44 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+COPYRIGHT
+Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
+This file is part of Autometa.
 
+Autometa is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Autometa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Autometa. If not, see <http://www.gnu.org/licenses/>.
+COPYRIGHT
+
+Template Script for Autometa Modules
+
+Template Description:
+Concise sentence describing functionality of script
+
+Template Format:
+0. - Shebang python env definition
+1. - Two lines following comment block script description
+2. - One line separating different import types
+3. - Two lines separating imports and logger
+4. - Two lines separating logger and algorithm functions
+5. - Main function
+6. - if __name__ == '__main__' clause
+7. - Argparse
+8. - Logging aliased to logger in 5.
+"""
+
+import logging
 import os
 import re
 
@@ -8,6 +46,9 @@ import pandas as pd
 
 from datetime import datetime
 from typing import Dict, Union
+
+
+logger = logging.getLogger(__name__)
 
 
 def format_total_times(total_times: list, max_partition_size: str) -> pd.DataFrame:
