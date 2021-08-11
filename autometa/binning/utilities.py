@@ -313,7 +313,7 @@ def reindex_bin_names(
     Returns
     -------
     pd.DataFrame
-        [description]
+        DataFrame of re-indexed bins in `cluster_col` starting at `initial_index` + 1
     """
     # Create mapping from current cluster_col round name to padded name
     reindexed_bin_names = {
