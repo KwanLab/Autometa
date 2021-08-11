@@ -8,7 +8,12 @@ Miller, I. J.; Rees, E. R.; Ross, J.; Miller, I.; Baxa, J.; Lopera, J.; Kerby, R
 Dependencies
 ------------
 
-**Note: Autometa only runs on Python 3, and is not currently compatible with Python 2**
+Note
+----
+
+Autometa only runs on Python 3, and is _not_ currently compatible with Python 2. Previous releases used python 2.7, however, these releases may cause installation difficulties as the tsne dependency is no longer available on python 2.7.
+
+If you already have python installed, you can determine your python version with the command: `python --version` or `python -V`
 
 #### Package management tool
 
@@ -55,7 +60,6 @@ bash Miniconda3-latest-Linux-x86_64.sh
 
 #### Download Autometa, setup compute environment and format marker databases
 
-
 ```bash
 # This will download Autometa into your current directory
 git clone https://github.com/KwanLab/Autometa.git
@@ -68,16 +72,16 @@ conda activate autometa
 ## Setup lca functions
 cd pipeline
 python setup_lca_functions.py build_ext --inplace
+cd -
 ## Setup HMM databases
 hmmpress -f single-copy_markers/Bacteria_single_copy.hmm 
 hmmpress -f single-copy_markers/Archaea_single_copy.hmm
-cd -
 ```
 
 #### Adding Autometa commands into your environment variable `$PATH`
 
 You can add the `Autometa/pipeline` directory to your `$PATH` environment
-variable for easy access to the autometa pipeline's suite of commands. 
+variable for easy access to the autometa pipeline's suite of commands.
 After doing this, you will not have to specify the entire path to the autometa scripts.
 
 **Note: You should supply the full path to the pipeline directory when updating your `$PATH`**
