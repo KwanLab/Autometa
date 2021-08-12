@@ -18,6 +18,7 @@ rsync
 samtools=>1.11
 scikit-bio
 scikit-learn
+seqkit
 tqdm
 tsne
 numba>=0.47
