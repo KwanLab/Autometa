@@ -23,7 +23,7 @@ process HMMER_HMMSEARCH {
 
     output:
         tuple val(meta), path("*.domtblout"), emit: domtblout
-        path "*.version.txt"               , emit: version
+        path "*.version.txt"                , emit: version
 
     script:
         def software = getSoftwareName(task.process)
