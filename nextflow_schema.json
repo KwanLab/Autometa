@@ -153,10 +153,22 @@
                     "description": "Directory containing databases required for taxonomy assignment"
                 },
                 "nr_dmnd_dir": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
                 },
                 "prot_accession2taxid_gz_dir": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
+                },
+                "taxdump_tar_gz_dir": {
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
                 },
                 "binning_starting_rank": {
                     "type": "string",
@@ -170,7 +182,7 @@
                 },
                 "large_downloads_permission": {
                     "type": "boolean",
-                    "description": "Can Autometa download nr.gz? (It's >100Gb)"
+                    "description": "Can Autometa download nr.gz if needed? (It's >100Gb)"
                 }
             }
         },
@@ -180,9 +192,6 @@
             "description": "These paramters control how the pipeline is executed",
             "default": "",
             "properties": {
-                "taxdump_tar_gz_dir": {
-                    "type": "string"
-                },
                 "num_splits": {
                     "type": "integer",
                     "default": 1,
@@ -226,7 +235,8 @@
                 "autometa_image": {
                     "type": "string",
                     "default": "latest",
-                    "description": "CHange the version of the docker image"
+                    "description": "CHange the version of the docker image",
+                    "hidden": true
                 }
             },
             "required": [
