@@ -36,7 +36,7 @@ process SEQKIT_FILTER {
             seqkit seq -j ${task.cpus} -m ${params.length_cutoff} | \\
             seqkit sort -n > "${meta.id}.filtered.fna"
 
-        # calcualte gc content
+        # calculate gc content
         seqkit fx2tab -j ${task.cpus} -n -lg "${meta.id}.filtered.fna" > temp
 
         # Extract columns, create tsv
