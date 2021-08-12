@@ -232,11 +232,11 @@
                     "description": "Run with minimal dataset",
                     "hidden": true
                 },
-                "autometa_image": {
+                "autometa_image_tag": {
                     "type": "string",
                     "default": "latest",
-                    "description": "CHange the version of the docker image",
-                    "hidden": true
+                    "description": "Change which tag of the autometa docker image is used",
+                    "help_text": "Appends input to `jason-c-kwan/autometa`\n\njason-c-kwan/autometa:${params.autometa_image_tag}\""
                 }
             },
             "required": [

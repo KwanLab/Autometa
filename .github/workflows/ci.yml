@@ -38,4 +38,4 @@ jobs:
       - name: Run pipeline with test data
         run: |
           docker build . -t jason-c-kwan/autometa:test
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --autometa_image 'latest'
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --autometa_image_tag 'latest'

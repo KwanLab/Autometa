@@ -15,7 +15,7 @@ process PARSE_BED {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/bedtools:2.30.0--hc088bd4_0"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image}"
+        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
     }
 
     input:
