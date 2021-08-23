@@ -19,7 +19,7 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-RUN apt-get update \
+RUN apt-get update --allow-releaseinfo-change \
     && apt-get install -y build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

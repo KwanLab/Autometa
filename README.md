@@ -111,8 +111,7 @@ run_autometa.py --assembly sample_1.fna
 
 As an alternative to doing all the above manually, we have provided an Autometa Docker image. First install [Docker](https://www.docker.com), then run the following commands:
 
-```
-git clone https://github.com/KwanLab/Autometa.git
+```bash
 docker pull jasonkwan/autometa:latest
 ```
 
@@ -127,6 +126,17 @@ make\_taxonomy\_table.py     | make\_taxonomy\_table\_docker.py
 run\_autometa.py             | run\_autometa\_docker.py
 ML\_recruitment.py           | ML\_recruitment\_docker.py
 cluster\_process.py          | cluster\_process\_docker.py
+
+### Building a local docker image
+
+You can build your own Autometa docker image from the Autometa Dockerfile using the `docker build` command.
+
+```bash
+# Retrieve Autometa source code
+git clone https://github.com/KwanLab/Autometa.git
+# Navigate to Autometa directory
+docker build . -t jasonkwan/autometa:latest
+```
 
 Usage
 -----
