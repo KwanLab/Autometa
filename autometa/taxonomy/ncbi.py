@@ -82,6 +82,12 @@ class NCBI:
             acc2taxid_gz
         ):
             self.accession2taxid_fpath = acc2taxid_gz
+        self.dead_accession2taxid_fpath = os.path.join(self.dirpath, "dead_prot.accession2taxid")
+        acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
+        if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
+            acc2taxid_gz
+        ):
+            self.dead_accession2taxid_fpath = acc2taxid_gz
         self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
         nr_dmnd_fname = ".".join([nr_bname, "dmnd"])

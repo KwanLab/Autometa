@@ -372,10 +372,11 @@ class LCA(NCBI):
             prot.accession2taxid.gz database is required for sseqid to taxid conversion.
 
         """
-        # We first retrieve all possible sseqids that we will need to convert.
+        # We first get all unique sseqids that were retrieved from the blast output
         accessions = set(
             chain.from_iterable([qseqid_sseqids for qseqid_sseqids in sseqids.values()])
         )
+        # Now build the mapping from sseqid to taxid from the live accession2taxid db
         # "rt" open the database in text mode instead of binary to be handled like a text file
         fh = (
             gzip.open(self.accession2taxid_fpath, "rt")
@@ -404,9 +405,46 @@ class LCA(NCBI):
             if acc_ver in accessions:
                 sseqids_to_taxids.update({acc_ver: taxid})
         fh.close()
-        # Now translate qseqid sseqids to taxids
-        root_taxid = 1
+        # Next check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+        # Any accessions not found in live prot.accession2taxid db *may* be here.
+        # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
+        fh = (
+            gzip.open(self.dead_accession2taxid_fpath, "rt")
+            if self.dead_accession2taxid_fpath.endswith(".gz")
+            else open(self.dead_accession2taxid_fpath)
+        )
+        __ = fh.readline()  # remove the first line as it just gives the description
+        if self.verbose:
+            logger.debug(
+                f"Searching for {len(accessions):,} accessions in {os.path.basename(self.dead_accession2taxid_fpath)}. This may take a while..."
+            )
+        n_lines = (
+            file_length(self.dead_accession2taxid_fpath, approximate=False)
+            if self.verbose
+            else None
+        )
+        desc = f"Parsing {os.path.basename(self.dead_accession2taxid_fpath)}"
+        dead_accessions = set()
+        for line in tqdm(
+            fh, disable=self.disable, desc=desc, total=n_lines, leave=False
+        ):
+            acc_num, acc_ver, taxid, _ = line.split("\t")
+            taxid = int(taxid)
+            if acc_num in accessions and acc_num not in sseqids_to_taxids:
+                sseqids_to_taxids.update({acc_num: taxid})
+                dead_accessions.add(acc_num)
+            if acc_ver in accessions and acc_ver not in sseqids_to_taxids:
+                sseqids_to_taxids.update({acc_ver: taxid})
+                dead_accessions.add(acc_ver)
+        fh.close()
+        # Now convert the provided sseqids to their respective taxids
         # Will place taxid as root (i.e. 1) if sseqid is not found in prot.accession2taxid
+        if self.verbose:
+            for dead_acc in dead_accessions:
+                logger.debug(f"dead accession converted: {dead_acc} -> {sseqids_to_taxids[dead_acc]}")
+            logger.debug(f"sseqids converted from {os.path.basename(self.dead_accession2taxid_fpath)}: {len(dead_accessions):,}")
+            
+        root_taxid = 1
         taxids = {}
         for qseqid, qseqid_sseqids in sseqids.items():
             qseqid_taxids = [
@@ -444,7 +482,7 @@ class LCA(NCBI):
                             qseqid_taxids,
                         )
                     except ValueError:
-                        logger.error(f"Missing either taxid(s), during LCA retrieval")
+                        logger.error(f"Missing taxids during LCA retrieval: {qseqid_taxids}. Setting {qseqid} to root taxid")
                         lca_taxid = root_taxid
                 if num_taxids == root_taxid:
                     lca_taxid = qseqid_taxids.pop()
@@ -562,7 +600,7 @@ class LCA(NCBI):
             version = float(".".join(version.split(".")[:2]))
         else:
             version = float(version)
-        if version < 2.6:
+        if version < 2.6 and not orfs_fpath:
             raise ValueError("Prodigal version under 2.6 requires orfs_fpath input!")
         # Create a contig translation dictionary with or without ORFs
         if orfs_fpath:
