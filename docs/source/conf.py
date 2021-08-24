@@ -20,7 +20,7 @@ for dirpath, dirnames, filenames in os.walk("../../", topdown=True):
 autodoc_mock_imports = ["Bio", "hdbscan", "tsne", "sklearn", "umap", "tqdm"]
 
 # fmt: off
-import parse_argparse  
+import parse_argparse
 
 # -- Project information -----------------------------------------------------
 
@@ -46,6 +46,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
+    'sphinx.ext.autosectionlabel'
 ]
 
 todo_include_todos = True
