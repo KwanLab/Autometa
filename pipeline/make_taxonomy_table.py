@@ -160,7 +160,7 @@ def prepare_databases(outdir, db="all", update=False):
             else:
                 print("nr.dmnd database is up to date.")
         else:
-            print(("{} not found. Downloading nr.gz".format(nr_md5_fpath)))
+            print(f"{nr_md5_fpath} not found. Downloading nr.gz")
             download_file(outdir, nr_db_url, nr_db_md5_url)
 
         nr_fpath = os.path.join(outdir, "nr.gz")
@@ -226,11 +226,7 @@ def prepare_databases(outdir, db="all", update=False):
 
         taxdump_fpath = os.path.join(outdir, "taxdump.tar.gz")
         if os.path.isfile(taxdump_fpath):
-            run_command(
-                "tar -xzf {} -C {} names.dmp nodes.dmp merged.dmp".format(
-                    taxdump_fpath, outdir
-                )
-            )
+            run_command(f"tar -xzf {taxdump_fpath} -C {outdir} names.dmp nodes.dmp merged.dmp")
             os.remove(taxdump_fpath)
             print("nodes.dmp, names.dmp, merged.dmp updated")
 
@@ -266,12 +262,9 @@ def check_dbs(db_path, update=False):
                 prepare_databases(outdir=db_path, db=db, update=update)
 
 
-def length_trim(fasta, length_cutoff):
+def length_trim(fasta, length_cutoff, output):
     filename = os.path.basename(fasta)
     filename = filename.strip(".gz") if filename.endswith(".gz") else filename
-    outfile_name, ext = os.path.splitext(filename)
-    outfile_name += ".filtered" + ext
-    output_path = os.path.join(output_dir, outfile_name)
     infh = gzip.open(fasta, "rt") if fasta.endswith(".gz") else open(fasta)
     records = [
         record
@@ -279,26 +272,20 @@ def length_trim(fasta, length_cutoff):
         if len(record.seq) >= length_cutoff
     ]
     infh.close()
-    output_path = (
-        output_path.strip(".gz") if output_path.endswith(".gz") else output_path
-    )
-    SeqIO.write(records, output_path, "fasta")
-    return output_path
+    n_seqs = SeqIO.write(records, output, "fasta")
+    print(f"Wrote length-filtered assembly ({length_cutoff}bp cutoff) to {output} ({n_seqs:,} seqs written)")
+    return output
 
 
-def run_prodigal(path_to_assembly):
+def run_prodigal(path_to_assembly, output):
     assembly_fname, _ = os.path.splitext(os.path.basename(path_to_assembly))
-    output_path = os.path.join(output_dir, assembly_fname + ".orfs.faa")
-    if os.path.isfile(output_path):
-        print(("{} file already exists!".format(output_path)))
+    if os.path.isfile(output):
+        print(f"{output} file already exists!")
         print("Continuing to next step...")
     else:
-        run_command(
-            "prodigal -i {} -a {}/{}.orfs.faa -p meta -m -o {}/{}.txt".format(
-                path_to_assembly, output_dir, assembly_fname, output_dir, assembly_fname
-            )
-        )
-
+        run_command(f"prodigal -i {path_to_assembly} -a {output} -p meta -m -o {output_dir}/{assembly_fname}.prodigal.txt")
+        print(f"Wrote prodigal-called ORFs to {output}")
+    return output
 
 def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
     tmp_dir_path = os.path.join(os.path.dirname(orfs_fpath), "tmp")
@@ -360,18 +347,15 @@ def run_taxonomy(
     contig_table_script = os.path.join(PIPELINE, "make_contig_table.py")
     # Only make the contig table if it doesn't already exist
     if not os.path.isfile(contig_tab_fpath):
-        cmd = "{} -a {} -o {}".format(
-            contig_table_script, assembly_path, contig_tab_fpath
-        )
+        cmd = f"{contig_table_script} -a {assembly_path} -o {contig_tab_fpath}"
         if coverage_table:
-            cmd += " -c {}".format(coverage_table)
+            cmd += f" -c {coverage_table}"
         elif single_genome_mode:
             cmd += " -n"
         run_command(cmd)
     if bgcs_path:
         mask_bgcs_script = os.path.join(PIPELINE, "mask_bgcs.py2.7")
-        cmd = "{} --bgc {} --orfs {} --lca {}"
-        cmd = cmd.format(mask_bgcs_script, bgcs_path, orfs_path, lca_fpath)
+        cmd = f"{mask_bgcs_script} --bgc {bgcs_path} --orfs {orfs_path} --lca {lca_fpath}"
         run_command(cmd)
         unmasked_fname = os.path.basename(lca_fpath).replace(".lca", ".unmasked.tsv")
         lca_fpath = os.path.join(output_dir, unmasked_fname)
@@ -473,7 +457,7 @@ output_dir = args["output_dir"]
 single_genome_mode = args["single_genome"]
 
 bgcs_dir = args["bgcs_dir"]
-fasta_fname, _ = os.path.splitext(os.path.basename(fasta_path))
+
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -541,18 +525,19 @@ if args["update"]:
     print("Checking database directory for updates")
     prepare_databases(outdir=db_dir_path, db="all", update=args["update"])
 
-filtered_assembly = os.path.join(output_dir, "{}.filtered.fasta".format(fasta_fname))
+fasta_fname, _ = os.path.splitext(os.path.basename(fasta_path).replace(".gz", ""))
+filtered_assembly = os.path.join(output_dir, f"{fasta_fname}.filtered.fna")
 if not os.path.isfile(filtered_assembly):
-    filtered_assembly = length_trim(fasta_path, length_cutoff)
+    filtered_assembly = length_trim(fasta=fasta_path, length_cutoff=length_cutoff, output=filtered_assembly)
 
 assembly_fname, ext = os.path.splitext(os.path.basename(filtered_assembly))
-prodigal_output = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.faa")
-diamond_outfpath = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.blastp")
+prodigal_output = os.path.join(output_dir, f"{assembly_fname}.orfs.faa")
+diamond_outfpath = os.path.join(output_dir, f"{assembly_fname}.orfs.blastp")
 
 if not os.path.isfile(prodigal_output):
     print("Prodigal output not found. Running prodigal...")
     # Check for file and if it doesn't exist run make_marker_table
-    run_prodigal(filtered_assembly)
+    prodigal_output = run_prodigal(path_to_assembly=filtered_assembly, output=prodigal_output)
 
 if not os.path.isfile(diamond_outfpath):
     print(f"Could not find {diamond_outfpath}. Running diamond blast... ")
@@ -570,7 +555,7 @@ elif not os.path.isfile(diamond_outfpath):
 else:
     diamond_output = diamond_outfpath
 
-lca_outfpath = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.blastp.lca.tsv")
+lca_outfpath = os.path.join(output_dir, f"{assembly_fname}.orfs.lca")
 if not os.path.isfile(lca_outfpath):
     print(f"Could not find {lca_outfpath}. Running lca...")
     blast2lca_output = run_blast2lca(diamond_output, db_dir_path)

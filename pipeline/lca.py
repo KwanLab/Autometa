@@ -185,7 +185,7 @@ if args["update"]:
 
 start_time = time.strftime("%H:%M:%S", time.gmtime(time.time()))
 t0 = time.time()
-output_filename = str(".".join(blast_file.split("/")[-1].split(".")[:-1]))
+output_filename = os.path.splitext(os.path.basename(blast_file))[0] # Remove blastp extension
 output_dir = os.path.dirname(os.path.abspath(blast_file))
 print(f"{start_time}: Beginning LCA")
 # Parse nodes file
@@ -360,7 +360,7 @@ for orf, taxset in blast_taxids.items():
 if failure_tracking:
     if failed_taxids:
         print("BLAST taxids do not exist in your db. please update your dbs")
-        with open(output_filename + "failed_taxids.txt", "w") as failed_ids_outfile:
+        with open(output_filename + "_failed_taxids.txt", "w") as failed_ids_outfile:
             for orfs, ids in failed_taxids:
                 failed_ids_outfile.write("%s,%s\n" % (orfs, ids))
     else:
