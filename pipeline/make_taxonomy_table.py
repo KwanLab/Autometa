@@ -29,7 +29,7 @@ except ImportError:
     def urlopen(url):
         return urllib_urlopen(Request(url))
 
-
+import gzip
 import subprocess
 import os
 import shutil
@@ -266,15 +266,24 @@ def check_dbs(db_path, update=False):
                 prepare_databases(outdir=db_path, db=db, update=update)
 
 
-def length_trim(fasta_path, length_cutoff):
-    input_fname, ext = os.path.splitext(os.path.basename(fasta_path))
-    # Trim the length of fasta file
-    outfname = input_fname + ".filtered" + ext
-    outfile_path = os.path.join(output_dir, outfname)
-    script = os.path.join(PIPELINE, "fasta_length_trim.pl")
-    cmd = " ".join(map(str, [script, fasta_path, length_cutoff, outfile_path]))
-    run_command(cmd)
-    return outfile_path
+def length_trim(fasta, length_cutoff):
+    filename = os.path.basename(fasta)
+    filename = filename.strip(".gz") if filename.endswith(".gz") else filename
+    outfile_name, ext = os.path.splitext(filename)
+    outfile_name += ".filtered" + ext
+    output_path = os.path.join(output_dir, outfile_name)
+    infh = gzip.open(fasta, "rt") if fasta.endswith(".gz") else open(fasta)
+    records = [
+        record
+        for record in SeqIO.parse(infh, "fasta")
+        if len(record.seq) >= length_cutoff
+    ]
+    infh.close()
+    output_path = (
+        output_path.strip(".gz") if output_path.endswith(".gz") else output_path
+    )
+    SeqIO.write(records, output_path, "fasta")
+    return output_path
 
 
 def run_prodigal(path_to_assembly):

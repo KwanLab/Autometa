@@ -172,7 +172,6 @@ def run_make_taxonomy_tab(fasta, length_cutoff):
 
 
 def length_trim(fasta, length_cutoff):
-    # will need to update path of this perl script
     filename = os.path.basename(fasta)
     filename = filename.strip(".gz") if filename.endswith(".gz") else filename
     outfile_name, ext = os.path.splitext(filename)
