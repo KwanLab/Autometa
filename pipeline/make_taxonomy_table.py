@@ -462,9 +462,7 @@ bgcs_dir = args["bgcs_dir"]
 # If cov_table defined, we need to check the file exists
 if cov_table:
     if not os.path.isfile(cov_table):
-        print(
-            ("Error! Could not find coverage table at the following path: " + cov_table)
-        )
+        print(f"Error! Could not find coverage table at the following path: {cov_table}")
         exit(1)
 
 # Check that output dir exists, and create it if it doesn't
@@ -475,18 +473,12 @@ lca_compilation_check()
 
 if not os.path.isdir(db_dir_path):
     # Verify the 'Autometa databases' directory exists
-    print(
-        "No databases directory found, creating and populating AutoMeta databases directory\n\
-	This may take some time..."
-    )
+    print("No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...")
     os.mkdir(db_dir_path)
     prepare_databases(outdir=db_dir_path, db="all", update=args["update"])
 elif not os.listdir(db_dir_path):
     # The 'Autometa databases' directory is empty
-    print(
-        "AutoMeta databases directory empty, populating with appropriate databases.\n\
-	This may take some time..."
-    )
+    print("Autometa databases directory empty, populating with appropriate databases.\nThis may take some time...")
     prepare_databases(outdir=db_dir_path, db="all", update=args["update"])
 else:
     check_dbs(db_path=db_dir_path, update=args["update"])
@@ -506,17 +498,10 @@ current_nr_md5 = os.path.join(db_dir_path, "nr.gz.md5")
 if usr_prot_path:
     usr_prot_path = os.path.abspath(usr_prot_path)
     if os.path.isdir(usr_prot_path):
-        print(
-            (
-                "You have provided a directory {}. \
-		--user_prot_db requires a file path.".format(
-                    usr_prot_path
-                )
-            )
-        )
+        print(f"You have provided a directory {usr_prot_path}. --user_prot_db requires a file path.")
         exit(1)
     elif not os.path.isfile(usr_prot_path):
-        print(("{} is not a file.".format(usr_prot_path)))
+        print(f"{usr_prot_path} is not a file.")
         exit(1)
     else:
         diamond_db_path = usr_prot_path
