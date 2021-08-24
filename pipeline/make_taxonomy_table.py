@@ -474,8 +474,6 @@ single_genome_mode = args["single_genome"]
 
 bgcs_dir = args["bgcs_dir"]
 fasta_fname, _ = os.path.splitext(os.path.basename(fasta_path))
-prodigal_output = os.path.join(output_dir, "{}.filtered.orfs".format(fasta_fname))
-diamond_outfpath = prodigal_output + ".blastp"
 
 # If cov_table defined, we need to check the file exists
 if cov_table:
@@ -547,35 +545,40 @@ filtered_assembly = os.path.join(output_dir, "{}.filtered.fasta".format(fasta_fn
 if not os.path.isfile(filtered_assembly):
     filtered_assembly = length_trim(fasta_path, length_cutoff)
 
-if not os.path.isfile(prodigal_output + ".faa"):
+assembly_fname, ext = os.path.splitext(os.path.basename(filtered_assembly))
+prodigal_output = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.faa")
+diamond_outfpath = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.blastp")
+
+if not os.path.isfile(prodigal_output):
     print("Prodigal output not found. Running prodigal...")
     # Check for file and if it doesn't exist run make_marker_table
     run_prodigal(filtered_assembly)
 
 if not os.path.isfile(diamond_outfpath):
-    print(("Could not find {}. Running diamond blast... ".format(diamond_outfpath)))
+    print(f"Could not find {diamond_outfpath}. Running diamond blast... ")
     diamond_output = run_diamond(
         prodigal_output, diamond_db_path, num_processors, diamond_outfpath
     )
 elif not os.path.getsize(diamond_outfpath):
-    print(("{} file is empty. Re-running diamond blast...".format(diamond_outfpath)))
+    print(f"{diamond_outfpath} file is empty. Re-running diamond blast...")
     diamond_output = run_diamond(
         prodigal_output, diamond_db_path, num_processors, diamond_outfpath
     )
 elif not os.path.isfile(diamond_outfpath):
-    print(("{} not found. \nExiting...".format(diamond_outfpath)))
+    print(f"{diamond_outfpath} not found. \nExiting...")
     exit(1)
 else:
     diamond_output = diamond_outfpath
 
-if not os.path.isfile(prodigal_output + ".lca"):
-    print(("Could not find {}. Running lca...".format(prodigal_output + ".lca")))
+lca_outfpath = os.path.join(output_dir, f"{assembly_fname}.filtered.orfs.blastp.lca.tsv")
+if not os.path.isfile(lca_outfpath):
+    print(f"Could not find {lca_outfpath}. Running lca...")
     blast2lca_output = run_blast2lca(diamond_output, db_dir_path)
-elif not os.path.getsize(prodigal_output + ".lca"):
-    print(("{} file is empty. Re-running lca...".format(prodigal_output + ".lca")))
+elif not os.path.getsize(lca_outfpath):
+    print(f"{lca_outfpath} file is empty. Re-running lca...")
     blast2lca_output = run_blast2lca(diamond_output, db_dir_path)
 else:
-    blast2lca_output = prodigal_output + ".lca"
+    blast2lca_output = lca_outfpath
 
 taxonomy_table = os.path.join(output_dir, "taxonomy.tab")
 if not os.path.isfile(taxonomy_table) or not os.path.getsize(taxonomy_table):
@@ -587,7 +590,7 @@ if not os.path.isfile(taxonomy_table) or not os.path.getsize(taxonomy_table):
             db_dir_path=db_dir_path,
             coverage_table=cov_table,
             bgcs_path=bgcs_dir,
-            orfs_path=prodigal_output + ".faa",
+            orfs_path=prodigal_output,
         )
     else:
         taxonomy_table = run_taxonomy(
@@ -624,7 +627,7 @@ for i, row in taxonomy_pd.iterrows():
 if not single_genome_mode:
     for kingdom in categorized_seq_objects:
         seq_list = categorized_seq_objects[kingdom]
-        output_path = os.path.join(output_dir, "{}.fasta".format(kingdom))
+        output_path = os.path.join(output_dir, f"{kingdom}.fasta")
         SeqIO.write(seq_list, output_path, "fasta")
 
 print("Done!")
