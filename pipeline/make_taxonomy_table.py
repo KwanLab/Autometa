@@ -298,7 +298,7 @@ def run_diamond(orfs_fpath, diamond_db_path, num_processors, outfpath):
         "--evalue 1e-5",
         "--max-target-seqs 200",
         "--outfmt 6",
-        f"--query {orfs_fpath}.faa",
+        f"--query {orfs_fpath}",
         f"--db {diamond_db_path}",
         f"-p {num_processors}",
         f"--out {outfpath}",
