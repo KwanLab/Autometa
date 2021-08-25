@@ -68,7 +68,8 @@ def write_cluster_records(
     ):
         contigs = set(dff.index)
         records = [rec for rec in mgrecords if rec.id in contigs]
-        outfpath = os.path.join(outdir, f"{cluster}.fna")
+        file_extension = "fasta" if cluster == "unclustered" else "fna"
+        outfpath = os.path.join(outdir, f"{cluster}.{file_extension}")
         SeqIO.write(records, outfpath, "fasta")
     return
 
