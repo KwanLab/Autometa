@@ -401,7 +401,9 @@ def get_confidence_filtered_predictions(
         raise NotImplementedError(classifier)
 
     df = pd.DataFrame(
-        predictions, index=test_data.index, columns=train_data.target_names,
+        predictions,
+        index=test_data.index,
+        columns=train_data.target_names,
     )
     # Filter predictions by confidence threshold
     confidence_threshold = num_classifications * confidence
@@ -626,10 +628,14 @@ def main():
     )
     # Write unclustered recruitment results into main bin df
     # index = 'contig', cols = [..., 'cluster', 'recruited_cluster', ...]
-    main_df.to_csv(args.output_binning, sep="\t", index=True, header=True, float_format='%.5f')
+    main_df.to_csv(
+        args.output_binning, sep="\t", index=True, header=True, float_format="%.5f"
+    )
     if args.output_main:
         # Outputs features matrix used as input to recruitment algorithm
-        features.to_csv(args.output_main, sep="\t", index=True, header=True, float_format='%.5f')
+        features.to_csv(
+            args.output_main, sep="\t", index=True, header=True, float_format="%.5f"
+        )
 
 
 if __name__ == "__main__":

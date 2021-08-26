@@ -323,7 +323,9 @@ def main():
     )
     # Now retrieve stats for each metabin
     metabin_stats_df = get_metabin_stats(
-        bin_df=bin_df, markers_fpath=args.markers, cluster_col=args.binning_column,
+        bin_df=bin_df,
+        markers_fpath=args.markers,
+        cluster_col=args.binning_column,
     )
     metabin_stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
     logger.info(f"Wrote metabin stats to {args.output_stats}")
