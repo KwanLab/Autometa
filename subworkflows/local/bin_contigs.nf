@@ -1,11 +1,11 @@
 params.binning_options                  = [:]
 params.unclustered_recruitment_options  = [:]
 params.binning_summary_options          = [:]
-params.prot_accession2taxid_gz_dir      = [:]
+params.taxdump_tar_gz_dir               = [:]
 
 include { BINNING                 } from './../../modules/local/binning.nf'                 addParams( options: params.binning_options                  )
 include { UNCLUSTERED_RECRUITMENT } from './../../modules/local/unclustered_recruitment.nf' addParams( options: params.unclustered_recruitment_options  )
-include { BINNING_SUMMARY         } from './../../modules/local/binning_summary.nf'         addParams( options: params.binning_summary_options, prot_accession2taxid_gz_dir: params.prot_accession2taxid_gz_dir       )
+include { BINNING_SUMMARY         } from './../../modules/local/binning_summary.nf'         addParams( options: params.binning_summary_options, taxdump_tar_gz_dir: params.taxdump_tar_gz_dir )
 
 
 workflow BIN_CONTIGS {
@@ -31,16 +31,16 @@ workflow BIN_CONTIGS {
             .join(
                 markers
                 )
-            .set{coverage_gccontent_markers}
+            .set{metagenome_annotations}
 
         if (params.taxonomy_aware) {
-            coverage_gccontent_markers
+            metagenome_annotations
                 .join(
                     taxon_assignments
                 )
                 .set{binning_ch}
         } else {
-            coverage_gccontent_markers
+            metagenome_annotations
                 .combine(
                     taxon_assignments
                 )

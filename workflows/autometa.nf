@@ -29,7 +29,7 @@ if (params.large_downloads_permission) {
 }
 
 
-// if these are still null then it meand they weren't set, so make them null.
+// if these are still null then it means they weren't set, so make them null.
 // this only works because the markov models are inside the docker image.
 // that needs to be changed in future versions
 
@@ -71,12 +71,14 @@ include { MARKERS                                               } from '../modul
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
 include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParams( options: modules['prodigal_options']                         )
+
 /*
  * -------------------------------------------------
  *  Import local subworkflows
  * -------------------------------------------------
 */
-include { BIN_CONTIGS      } from '../subworkflows/local/bin_contigs'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir )
+
+include { BIN_CONTIGS      } from '../subworkflows/local/bin_contigs'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
 include { INPUT_CONTIGS    } from '../subworkflows/local/input_check'      addParams( )
 include { CREATE_MOCK      } from '../subworkflows/local/mock_data'        addParams( )
 include { TAXON_ASSIGNMENT } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
@@ -85,11 +87,11 @@ workflow AUTOMETA {
     ch_software_versions = Channel.empty()
 
     if (params.mock_test){
-        CREATE_MOCK ()
+        CREATE_MOCK()
         CREATE_MOCK.out.fasta
             .set{input_ch}
     } else {
-        INPUT_CONTIGS ()
+        INPUT_CONTIGS()
         INPUT_CONTIGS.out.metagenome
             .set{input_ch}
     }
@@ -97,7 +99,7 @@ workflow AUTOMETA {
 
     SEQKIT_FILTER(
         input_ch
-        )
+    )
 
     // Split contigs FASTA if running in parallel
     if ( params.num_splits > 1 ) {

@@ -28,10 +28,9 @@ marker sets depending on sequence set taxonomy
 import logging
 import os
 
-import multiprocessing as mp
 import pandas as pd
 
-from autometa.common.external import hmmer
+from autometa.common.external import hmmscan
 from autometa.config.utilities import DEFAULT_CONFIG
 
 
@@ -103,7 +102,7 @@ def get(
     out: str = None,
     force: bool = False,
     format: str = "wide",
-    cpus: int = mp.cpu_count(),
+    cpus: int = 8,
     parallel: bool = True,
     gnu_parallel: bool = False,
     seed: int = 42,
@@ -167,13 +166,13 @@ def get(
     else:
         hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
         cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
-    hmmscan_fname = ".".join([kingdom, "hmmscan.tsv"])
+    hmmscan_fname = f"{kingdom}.hmmscan.tsv"
     scans = (
         os.path.join(os.path.dirname(os.path.abspath((orfs))), hmmscan_fname)
         if not scans
         else scans
     )
-    markers_fname = ".".join([kingdom, "markers.tsv"])
+    markers_fname = f"{kingdom}.markers.tsv"
     out = (
         os.path.join(os.path.dirname(os.path.abspath((orfs))), markers_fname)
         if not out
@@ -182,7 +181,7 @@ def get(
     kingdom = kingdom.lower()
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
-        scans = hmmer.hmmscan(
+        scans = hmmscan.run(
             orfs=orfs,
             hmmdb=hmmdb,
             outfpath=scans,
@@ -194,7 +193,7 @@ def get(
         )
 
     if not os.path.exists(out) or not os.path.getsize(out):
-        out = hmmer.filter_markers(
+        out = hmmscan.filter_markers(
             infpath=scans,
             outfpath=out,
             cutoffs=cutoffs,
@@ -269,7 +268,7 @@ def main():
     parser.add_argument(
         "--cpus",
         help=f"Number of cores to use for parallel execution.",
-        default=mp.cpu_count(),
+        default=8,
         type=int,
     )
     parser.add_argument(

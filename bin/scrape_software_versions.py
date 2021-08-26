@@ -18,8 +18,8 @@ for version_file in version_files:
 print(
     """
 id: 'software_versions'
-section_name: 'autometa Software Versions'
-section_href: 'https://github.com/autometa'
+section_name: 'Autometa Software Versions'
+section_href: 'https://github.com/KwanLab/Autometa'
 plot_type: 'html'
 description: 'are collected at run time from the software output.'
 data: |

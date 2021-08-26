@@ -3,7 +3,7 @@
 """
 COPYRIGHT
 Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-Shaurya Chanana, Iza1.3ak Miller, Jason C. Kwan
+Shaurya Chanana, Izaak Miller, Jason C. Kwan
 
 This file is part of Autometa.
 

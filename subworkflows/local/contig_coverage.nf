@@ -11,7 +11,7 @@ include { ALIGN_READS               } from './../../modules/local/align_reads.nf
 include { SAMTOOLS_VIEW_AND_SORT    } from './../../modules/local/samtools_view_sort.nf'     addParams( samtools_viewsort_options: params.samtools_viewsort_options  )
 include { GENOMECOV                 } from './../../subworkflows/local/genome_coverage.nf'   addParams( options: params.genome_coverage_options                      )
 
-workflow READ_COVERAGE {
+workflow CONTIG_COVERAGE {
     take:
         metagenome
         fwd_reads

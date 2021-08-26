@@ -8,8 +8,8 @@ params.prot_accession2taxid_gz_dir = [:]
 options = initOptions(params.options)
 
 process TEST_DOWNLOAD {
-    // For development work so you don't download the entire nr.gz database
-    tag "Downloading first 10,000 lines of nr.gz"
+    // For development work so you don't download the entire prot.accession2taxid.gz database
+    tag "Downloading first 10,000 lines of prot.accession2taxid.gz"
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
@@ -45,7 +45,7 @@ process DOWNLOAD_ACESSION2TAXID {
 
     output:
         // hack nf-core options.args3 and use for output name
-        path "prot.accession2taxid" , emit: accession2taxid
+        path "prot.accession2taxid.gz" , emit: accession2taxid
         path  "*.version.txt"   , emit: version
     script:
         """
@@ -58,7 +58,7 @@ process DOWNLOAD_ACESSION2TAXID {
             'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz.md5' 'prot.accession2taxid.gz.md5'
 
         md5sum -c *.md5
-        gunzip prot.accession2taxid.gz
+
         rsync --version | head -n1 > rsync.version.txt
         """
 }
@@ -102,8 +102,6 @@ process DOWNLOAD_TAXDUMP {
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
-
-
         taxdump_dir = file(params.taxdump_tar_gz_dir)
         taxdump_dir_files = taxdump_dir.list()
         taxdump_dir_files = taxdump_dir_files.collect()

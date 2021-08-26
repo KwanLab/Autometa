@@ -36,11 +36,11 @@ process HMMER_HMMSEARCH_FILTER {
         def software = getSoftwareName(task.process)
         def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
         """
-        autometa-markerfilter \\
-            --infpath "$domtblout" \\
+        autometa-hmmsearch-filter \\
+            --domtblout "$domtblout" \\
             --cutoffs  "/home/chase/Documents/github/Autometa/autometa/databases/markers/bacteria.single_copy.cutoffs" \\
-            --markersout "${meta.id}.markers.tsv" \\
-            --orfs "$fasta"
+            --seqdb "$fasta" \\
+            --out "${meta.id}.markers.tsv"
 
         echo "TODO" > autometa.version.txt
         """

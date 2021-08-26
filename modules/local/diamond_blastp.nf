@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process DIAMOND_BLASTP {
-    tag "Annotating ORFS in ${meta.id}"
+    tag "Aligning ORFS in ${meta.id} against ${diamond_databases}"
     label 'process_high'
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,

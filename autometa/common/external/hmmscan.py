@@ -35,7 +35,6 @@ import multiprocessing as mp
 import pandas as pd
 
 from glob import glob
-from Bio import SeqIO
 
 from autometa.common.external import prodigal
 
@@ -124,7 +123,7 @@ def annotate_sequential(orfs, hmmdb, outfpath, cpus, seed=42):
         raise err
 
 
-def hmmscan(
+def run(
     orfs,
     hmmdb,
     outfpath,
@@ -329,7 +328,7 @@ def main():
     ):
         result = args.hmmscan
     else:
-        result = hmmscan(
+        result = run(
             orfs=args.orfs,
             hmmdb=args.hmmdb,
             outfpath=args.hmmscan,

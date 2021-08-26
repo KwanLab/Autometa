@@ -22,7 +22,7 @@ process LENGTH_TABLE {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("${meta.id}.lengths.tsv"), emit: bam
+        tuple val(meta), path("${meta.id}.lengths.tsv"), emit: lengths
         path  '*.version.txt'                          , emit: version
 
     script:
@@ -32,7 +32,7 @@ process LENGTH_TABLE {
         from Bio import SeqIO
         import pandas as pd
 
-        seqs = {record.id: len(record) for record in SeqIO.parse(${metagenome}, "fasta")}
+        seqs = {record.id: len(record.seq) for record in SeqIO.parse(${metagenome}, "fasta")}
         lengths = pd.Series(seqs, name="length")
         lengths.index.name = "contig"
         lengths.to_csv(${meta.id}.lengths.tsv, sep="\t", index=True, header=True)
