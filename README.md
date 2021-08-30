@@ -121,11 +121,11 @@ You will now be able to run the Docker versions of the following scripts using t
 
 Normal script                | Docker version
 -----------------------------|---------------------------------
-calculate\_read\_coverage.py | calculate\_read\_coverage\_docker.py
-make\_taxonomy\_table.py     | make\_taxonomy\_table\_docker.py
-run\_autometa.py             | run\_autometa\_docker.py
-ML\_recruitment.py           | ML\_recruitment\_docker.py
-cluster\_process.py          | cluster\_process\_docker.py
+`calculate_read_coverage.py` | `calculate_read_coverage_docker.py`
+`make_taxonomy_table.py`     | `make_taxonomy_table_docker.py`
+`run_autometa.py`            | `run_autometa_docker.py`
+`ML_recruitment.py`          | `ML_recruitment_docker.py`
+`cluster_process.py`         | `cluster_process_docker.py`
 
 ### Building a local docker image
 
@@ -140,32 +140,36 @@ docker build . -t jasonkwan/autometa:latest
 
 Usage
 -----
+
 Before you run Autometa, you need to have assembled your shotgun metagenome. We recommend using MetaSPAdes (part of the [SPAdes](http://cab.spbu.ru/software/spades/) package) after removing Illumina adaptors with [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic).
 
 Note that if you use SPAdes or something else that names contigs like this:
 
-```
+```bash
 NODE_1_length_319818_cov_8.03695
 ```
 
 ...then Autometa can use the coverage information in the contig names. If you've used another assembler, then you first have to make a coverage table.
 
-```
-calculate_read_coverage.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
-	--forward_reads reads_R1.fastq.gz --reverse_reads reads_R2.fastq.gz
+```bash
+calculate_read_coverage.py \
+    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --processors 16 \
+    --forward_reads reads_R1.fastq.gz \
+    --reverse_reads reads_R2.fastq.gz
 ```
 
 The above command will produce a table called coverage.tab, containing the coverages of each contig in the assembly file. In tests, this took 4.4 hours with 16 CPUs and 127 million paired reads.
 
 Here we demonstrate the use of Autometa with the test dataset:
 
-```
+```bash
 autometa/test_data/scaffolds.fasta
 ```
 
 This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper. For your convenience we have also included a pre-calculated coverage table that you can try out below.
 
-```
+```bash
 autometa/test_data/coverage.tab
 ```
 
@@ -173,23 +177,25 @@ autometa/test_data/coverage.tab
 
 We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic contigs will be binned into bacterial bins. However, if you are confident that you do not have eukaryotic contamination, or a mixture of Archaea and Bacteria, then you can skip this stage because it is rather computationally intensive.
 
-```
-make_taxonomy_table.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
-	--length_cutoff 3000
+```bash
+make_taxonomy_table.py \
+    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --processors 16 \
+    --length_cutoff 3000
 ```
 
 If you want to use an external coverage table (see above), you can use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
 
 The first time you run this script, it will automatically download the database files listed above, and format the nr database for DIAMOND to use. By default, unless you specify a directory with the --db_dir flag, a "databases" subdirectory will be made in the Autometa directory. In our testing, the above command took 9.8 hours to run on 16 CPUs the first time (where databases had to be downloaded and compiled), and 7.8 hours when the databases had already been downloaded. Of course, your mileage will vary depending on connection speed, computational specifications, etc., although the most important determinant of the time required will be the complexity of the input dataset.
 
-Make\_taxonomy\_table.py will do the following:
+`make_taxonomy_table.py` will do the following:
 
 1. Identify genes in each contig with Prodigal.
 2. Search gene protein sequences against nr with DIAMOND.
 3. Determine the lowest common ancestor (LCA) of blast hits within 10% of the top bitscore.
 4. Determine the taxonomy of each contig by examining the LCA of each component protein (see paper for details)
 
-#### Output files produced by make\_taxonomy\_table.py
+#### Output files produced by `make_taxonomy_table.py`
 
 File                         | Description
 -----------------------------|------------
@@ -204,7 +210,7 @@ scaffolds_filtered.txt       | The full output from Prodigal
 taxonomy.tab                 | Table with information from scaffolds_filtered.fasta.tab, and also the full assigned taxonomy for each contig
 unclassified.fasta           | Contigs unclassified on the Kingdom level
 
-Note that in our test data, there are no non-bacterial contigs. For other datasets, make\_taxonomy\_table.py will produce other fasta files, for example Eukaryota.fasta and Viruses.fasta.
+Note that in our test data, there are no non-bacterial contigs. For other datasets, `make_taxonomy_table.py` will produce other fasta files, for example Eukaryota.fasta and Viruses.fasta.
 
 ### Step 2: Bin bacterial contigs with BH-tSNE and DBSCAN
 
@@ -212,14 +218,18 @@ Note: This procedure can also be used on archaeal sequences, but will most likel
 
 Here we are running Autometa on the Bacteria.fasta file made in step 1.
 
-```
-run_autometa.py --assembly Bacteria.fasta --processors 16 --length_cutoff 3000 \
-	--taxonomy_table taxonomy.tab
+```bash
+run_autometa.py \
+    --assembly Bacteria.fasta \
+    --processors 16 \
+    --length_cutoff 3000 \
+    --taxonomy_table taxonomy.tab \
+    --db_dir ~/autometa/databases 
 ```
 
-If you want to use an external coverage table, use the --cov_table flag to specify the path to the output of calculate\_read\_coverage.py in the command above.
+If you want to use an external coverage table, use the `--cov_table` flag to specify the path to the output of `calculate_read_coverage.py` in the command above.
 
-In the above command, we are supplying Bacteria.fasta to Autometa, and also the taxonomy table (taxonomy.tab) produced in step 1. If we supply a taxonomy table, then this information is used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. We are using the default output directory of the current working directory (this can be set with the --output_dir flag), and by default the pipeline assumes we are looking at bacterial contigs (use --kingdom archaea otherwise). The script will do the following:
+In the above command, we are supplying Bacteria.fasta to Autometa, and also the taxonomy table (taxonomy.tab) produced in step 1. If we supply a taxonomy table, then this information is used to help with clustering. Otherwise, Autometa clusters solely on 5-mer frequency and coverage. We are using the default output directory of the current working directory (this can be set with the `--output_dir` flag), and by default the pipeline assumes we are looking at bacterial contigs (use `--kingdom archaea` otherwise). The script will do the following:
 
 1. Find single-copy marker genes in the input contigs with HMMER
 2. Reduce the dimensions of 5-mer frequencies to two through [BH-tSNE](https://lvdmaaten.github.io/tsne/) for each contig
@@ -227,28 +237,29 @@ In the above command, we are supplying Bacteria.fasta to Autometa, and also the 
 4. Accept clusters that are estimated to be over 20% complete and 90% pure based on single-copy marker genes
 5. Unclustered contigs leftover will be re-clustered until no more acceptable clusters are yielded
 
-For more details on the above process, please see our paper. If you include a taxonomy table in the run\_autometa.py command, Autometa will attempt to further partition the data based on ascending taxonomic specificity (i.e. in the order phylum, class, order, family, genus, species) when clustering unclustered contigs from a previous attempt. We found that this is mainly useful if you have a highly complex metagenome (lots of species), or you have several related species at similar coverage level.
+For more details on the above process, please see our paper. If you include a taxonomy table in the `run_autometa.py` command, Autometa will attempt to further partition the data based on ascending taxonomic specificity (i.e. in the order phylum, class, order, family, genus, species) when clustering unclustered contigs from a previous attempt. We found that this is mainly useful if you have a highly complex metagenome (lots of species), or you have several related species at similar coverage level.
 
-#### Output files produced by run\_autometa.py
+#### Output files produced by `run_autometa.py`
 
 File | Description
 -----|------------
-Bacteria\_filtered.hmm.tbl | Output from HMMER
-Bacteria\_filtered\_marker.tab | Table describing the marker genes found in each contig
-k-mer\_matrix | Raw 5-mer frequencies for each contig
-recursive\_dbscan\_output.tab | Output table containing the cluster (bin) for each contig
-
+`Bacteria_filtered.hmm.tbl` | Output from HMMER
+`Bacteria_filtered_marker.tab` | Table describing the marker genes found in each contig
+`k-mer_matrix` | Raw 5-mer frequencies for each contig
+`recursive_dbscan_output.tab` | Output table containing the cluster (bin) for each contig
 
 ### Step 3: Recruit unclustered contigs to bins through supervised machine learning [optional]
 
 In this step we use supervised machine learning to classify the unclustered contigs to the bins that we have produced (formally, the bins produced in step 2 are the training set). Depending on the size of your dataset, this step can be computationally intensive.
 
-```
-ML_recruitment.py --contig_tab recursive_dbscan_output.tab \
-	--k_mer_matrix k-mer_matrix --out_table ML_recruitment_output.tab
+```bash
+ML_recruitment.py \
+    --contig_tab recursive_dbscan_output.tab \
+    --k_mer_matrix k-mer_matrix \
+    --out_table ML_recruitment_output.tab
 ```
 
-In the above command, we give ML\_recruitment.py the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). By default, classifications are only made if 10 out of 10 repeat classifications agree, and only if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes.
+In the above command, we give `ML_recruitment.py` the output table from step 2 (recursive\_dbscan\_output.tab), as well as the k-mer\_matrix file produced in step 2, and specify the output file (ML\_recruitment\_output.tab). By default, classifications are only made if 10 out of 10 repeat classifications agree, and only if the classification would not increase the apparent contamination estimated by the presence of single-copy marker genes.
 
 The specified output file is a table with the following columns:
 
@@ -270,29 +281,37 @@ single\_copy\_PFAMs      | Comma-delimited list of the PFAM accession numbers of
 num\_single\_copies      | The number of single-copy marker genes found within the contig
 bh\_tsne\_x              | The X coordinate after dimension reduction by BH-tSNE
 bh\_tsne\_y              | The Y coordinate after dimension reduction by BH-tSNE
-cluster                  | The cluster assigned by run\_autometa.py
-ML\_expanded\_clustering | The cluster assigned by ML\_recruitment.py (includes previous assignments by run\_autometa.py)
+cluster                  | The cluster assigned by `run_autometa.py`
+ML\_expanded\_clustering | The cluster assigned by `ML_recruitment.py` (includes previous assignments by `run_autometa.py`)
 
 ### Running all steps in sequence
 
-For convenience, it is possible to run all three of the above steps through run\_autometa.py, as shown below:
+For convenience, it is possible to run all three of the above steps through `run_autometa.py`, as shown below:
 
-```
-run_autometa.py --assembly ~/autometa/test_data/scaffolds.fasta --processors 16 \
-	--length_cutoff 3000 --maketaxtable --ML_recruitment
+```bash
+run_autometa.py \
+    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --processors 16 \
+    --length_cutoff 3000 \
+    --maketaxtable \
+    --ML_recruitment
 ```
 
-In the above command, the '--maketaxtable' flag tells run\_autometa.py to run make\_taxonomy\_table.py, and the '--ML_recruitment' flag tells run\_autometa.py to run ML\_recruitment.py. Note, this runs ML\_recruitment.py with the '--recursive' flag.
+In the above command, the '--maketaxtable' flag tells `run_autometa.py` to run `make_taxonomy_table.py`, and the `--ML_recruitment` flag tells `run_autometa.py` to run `ML_recruitment.py`. Note, this runs `ML_recruitment.py` with the `--recursive` flag.
 
 Analysis of results
 -------------------
 
 At the end of the above process, you will have a master table (either recursive\_dbscan\_output.tab or ML\_recruitment\_output.tab) which describes each contig in your metagenome, including which bin each was assigned to. However, this does not directly tell you much about each bin, so you can further process your data with the following command:
 
-```
-cluster_process.py --bin_table ML_recruitment_output.tab --column ML_expanded_clustering \
-	--fasta Bacteria.fasta --do_taxonomy --db_dir ~/autometa/databases \
-	--output_dir cluster_process_output
+```bash
+cluster_process.py \
+    --bin_table ML_recruitment_output.tab \
+    --column ML_expanded_clustering \
+    --fasta Bacteria.fasta \
+    --do_taxonomy \
+    --db_dir ~/autometa/databases \
+    --output_dir cluster_process_output
 ```
 
 This will do a number of things:
@@ -302,7 +321,7 @@ This will do a number of things:
 3. Create a file called cluster\_summary\_table, and store it in the cluster\_process\_output folder
 4. Create a file called cluster\_taxonomy.tab, and store it in the cluster\_process\_output folder
 
-Note: if you don't want to analyze the taxonomy of your clusters, you can omit the --do\_taxonomy and --db\_dir arguments. To analyze taxonomy here, you also need to have run make\_taxonomy\_table.py above.
+Note: if you don't want to analyze the taxonomy of your clusters, you can omit the `--do_taxonomy` and `--db_dir` arguments. To analyze taxonomy here, you also need to have run `make_taxonomy_table.py` above.
 
 Cluster\_summary\_table contains the following columns:
 
@@ -322,22 +341,24 @@ The cluster\_taxonomy.tab file similarly contains full taxonomic information for
 
 ### Automappa: An interactive interface for exploration and refinement of metagenomes
 
-Automappa is a tool built to interface with Autometa output to help you explore your binning results. 
+Automappa is a tool built to interface with Autometa output to help you explore your binning results.
 
 For details, see the Automappa page here: https://github.com/WiscEvan/Automappa
 
 ### Visualizing your results
 
-Cluster\_process.py gives you some information about the clusters, but it's a good idea to manually look at the data to convince yourself that Autometa did a good job. It's worth noting here that no binning pipeline (including Autometa) is guaranteed to give 100% correct results all the time, and before using the results in publications etc. you should use your biological common sense/judgement. With the tables you have produced, this is easy to do using [R](https://www.r-project.org). Try typing the following in to R:
+`cluster_process.py` gives you some information about the clusters, but it's a good idea to manually look at the data to convince yourself that Autometa did a good job. It's worth noting here that no binning pipeline (including Autometa) is guaranteed to give 100% correct results all the time, and before using the results in publications etc. you should use your biological common sense/judgement. With the tables you have produced, this is easy to do using [R](https://www.r-project.org). Try typing the following in to R:
 
-```
+```R
 library(ggplot2)
 data = read.table('ML_recruitment_output.tab', header=TRUE, sep='\t')
-ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = ML_expanded_clustering )) + \
-	geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) + \
-	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
-	theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') + \
-	guides( color = guide_legend( title = 'Cluster/bin' ))
+ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = ML_expanded_clustering )) +
+    geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) +
+    guides( color = 'legend', size = 'none', alpha = 'none' ) +
+    theme_classic() +
+    xlab('BH-tSNE X') +
+    ylab('BH-tSNE Y') +
+    guides( color = guide_legend( title = 'Cluster/bin' ))
 ```
 
 ![colored_by_cluster](img/col_cluster.svg)
@@ -346,25 +367,29 @@ In the above chart the points represent contigs. They are plotted on the two dim
 
 In addition to using nucleotide composition, Autometa uses coverage and can also use taxonomy to distinguish contigs with similar composition. We can also visualize these differences with R.
 
-```
-ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = phylum )) + \
-	geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) + \
-	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
-	theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') + \
-	guides( color = guide_legend( title = 'Phylum' ))
+```R
+ggplot( data, aes( x = bh_tsne_x, y = bh_tsne_y, col = phylum )) +
+    geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) +
+    guides( color = 'legend', size = 'none', alpha = 'none' ) +
+    theme_classic() +
+    xlab('BH-tSNE X') +
+    ylab('BH-tSNE Y') +
+    guides( color = guide_legend( title = 'Phylum' ))
 ```
 
 ![colored_by_phylum](img/col_phylum.svg)
 
 In the above plot, we have now colored the points by taxonomic phylum, and this reveals that several clusters that are close together in BH-tSNE space are in fact quite divergent from one another. This is probably the basis for Autometa's assignment of separate bins in these cases. In some cases, the contigs in a bin may in fact look divergent in plots like this (see, for example the grouping in the bottom left of the plot). You may want to manually examine cases such as these, but they could well be real if, for example, some contigs have few protein coding genes, or the organism is highly divergent from known sequences (see our paper [here](https://www.nature.com/articles/srep34362) for some examples). In this particular dataset, the coverages of all genomes are fairly similar, as revealed in the next plot:
 
-```
-ggplot( data, aes( x = cov, y = gc, col = ML_expanded_clustering )) + \
-	geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) + \
-	guides( color = 'legend', size = 'none', alpha = 'none' ) + \
-	theme_classic() + xlab('Coverage') + ylab('GC (%)') + \
-	guides( color = guide_legend( title = 'Cluster/bin' )) + \
-	scale_x_continuous( limits = c( 200, 250 ))
+```R
+ggplot( data, aes( x = cov, y = gc, col = ML_expanded_clustering )) +
+    geom_point( aes( alpha = 0.5, size = sqrt( data$length ) / 100 )) +
+    guides( color = 'legend', size = 'none', alpha = 'none' ) +
+    theme_classic() +
+    xlab('Coverage') +
+    ylab('GC (%)') +
+    guides( color = guide_legend( title = 'Cluster/bin' )) +
+    scale_x_continuous( limits = c( 200, 250 ))
 ```
 
 ![gc_cov_col_cluster](img/gc_cov_col_cluster.svg)
