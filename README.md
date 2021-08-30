@@ -81,8 +81,8 @@ hmmpress -f single-copy_markers/Archaea_single_copy.hmm
 #### Adding Autometa commands into your environment variable `$PATH`
 
 You can add the `Autometa/pipeline` directory to your `$PATH` environment
-variable for easy access to the autometa pipeline's suite of commands.
-After doing this, you will not have to specify the entire path to the autometa scripts.
+variable for easy access to the Autometa pipeline's suite of commands.
+After doing this, you will not have to specify the entire path to the Autometa scripts.
 
 **Note: You should supply the full path to the pipeline directory when updating your `$PATH`**
 
@@ -97,7 +97,7 @@ export PATH="$PWD/pipeline":$PATH
 export PATH="$HOME/Autometa/pipeline":$PATH
 ```
 
-#### Examples running autometa with and without the `pipeline` directory in your `$PATH` variable
+#### Examples running Autometa with and without the `pipeline` directory in your `$PATH` variable
 
 ```bash
 # Without $PATH
@@ -153,7 +153,7 @@ NODE_1_length_319818_cov_8.03695
 
 ```bash
 calculate_read_coverage.py \
-    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --assembly $HOME/Autometa/test_data/scaffolds.fasta \
     --processors 16 \
     --forward_reads reads_R1.fastq.gz \
     --reverse_reads reads_R2.fastq.gz
@@ -164,13 +164,13 @@ The above command will produce a table called coverage.tab, containing the cover
 Here we demonstrate the use of Autometa with the test dataset:
 
 ```bash
-autometa/test_data/scaffolds.fasta
+$HOME/Autometa/test_data/scaffolds.fasta
 ```
 
 This dataset is the simulated dataset referred to as "78.125 Mbp" in our paper. For your convenience we have also included a pre-calculated coverage table that you can try out below.
 
 ```bash
-autometa/test_data/coverage.tab
+$HOME/Autometa/test_data/coverage.tab
 ```
 
 ### Step 1: Split data into kingdom bins [optional]
@@ -179,7 +179,7 @@ We found that in host-associated metagenomes, this step vastly improves the binn
 
 ```bash
 make_taxonomy_table.py \
-    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --assembly $HOME/Autometa/test_data/scaffolds.fasta \
     --processors 16 \
     --length_cutoff 3000
 ```
@@ -290,7 +290,7 @@ For convenience, it is possible to run all three of the above steps through `run
 
 ```bash
 run_autometa.py \
-    --assembly ~/autometa/test_data/scaffolds.fasta \
+    --assembly $HOME/Autometa/test_data/scaffolds.fasta \
     --processors 16 \
     --length_cutoff 3000 \
     --maketaxtable \
