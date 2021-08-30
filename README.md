@@ -224,7 +224,7 @@ run_autometa.py \
     --processors 16 \
     --length_cutoff 3000 \
     --taxonomy_table taxonomy.tab \
-    --db_dir ~/autometa/databases 
+    --db_dir $HOME/Autometa/databases 
 ```
 
 If you want to use an external coverage table, use the `--cov_table` flag to specify the path to the output of `calculate_read_coverage.py` in the command above.
@@ -294,10 +294,11 @@ run_autometa.py \
     --processors 16 \
     --length_cutoff 3000 \
     --maketaxtable \
-    --ML_recruitment
+    --ML_recruitment \
+    --db_dir $HOME/Autometa/databases
 ```
 
-In the above command, the '--maketaxtable' flag tells `run_autometa.py` to run `make_taxonomy_table.py`, and the `--ML_recruitment` flag tells `run_autometa.py` to run `ML_recruitment.py`. Note, this runs `ML_recruitment.py` with the `--recursive` flag.
+In the above command, the `--maketaxtable` flag tells `run_autometa.py` to run `make_taxonomy_table.py`, and the `--ML_recruitment` flag tells `run_autometa.py` to run `ML_recruitment.py`. Note, this runs `ML_recruitment.py` with the `--recursive` flag.
 
 Analysis of results
 -------------------
@@ -310,7 +311,7 @@ cluster_process.py \
     --column ML_expanded_clustering \
     --fasta Bacteria.fasta \
     --do_taxonomy \
-    --db_dir ~/autometa/databases \
+    --db_dir $HOME/Autometa/databases \
     --output_dir cluster_process_output
 ```
 
@@ -343,7 +344,7 @@ The cluster\_taxonomy.tab file similarly contains full taxonomic information for
 
 Automappa is a tool built to interface with Autometa output to help you explore your binning results.
 
-For details, see the Automappa page here: https://github.com/WiscEvan/Automappa
+For details, see the [Automappa page](https://github.com/WiscEvan/Automappa "Automappa GitHub page")
 
 ### Visualizing your results
 
