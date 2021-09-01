@@ -50,7 +50,7 @@ if (!params.taxonomy_aware) {
  * -------------------------------------------------
 */
 
-include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers']                                       )
+include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers_options']                                       )
 include { GET_SOFTWARE_VERSIONS                                 } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]                                   )
 include { HMMER_HMMSEARCH                                       } from '../modules/local/hmmer_hmmsearch'            addParams( options: modules['hmmsearch_options']                                   )
 include { HMMER_HMMSEARCH_FILTER                                } from '../modules/local/hmmer_hmmsearch_filter'      addParams( options: modules['hmmsearch_filter_options']                            )
