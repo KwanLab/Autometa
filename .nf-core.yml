@@ -5,6 +5,8 @@ lint:
     - .github/workflows/awsfulltest.yml
     - .travis.yml
     - docs/usage.md
+    - docs/output.md
+
   files_unchanged:
     - manifest
     - .github/CONTRIBUTING.md
