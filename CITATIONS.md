@@ -22,7 +22,7 @@
 * [HMMER](http://hmmer.org)
     > HMMER Web Server: Interactive Sequence Similarity Searching. R. D. Finn, J. Clements, S. R. Eddy. Nucleic Acids Research, 39:W29-37, 2011.
 
-* [Prodigal]()
+* [Prodigal](https://github.com/hyattpd/Prodigal)
     > Hyatt, D., Chen, GL., LoCascio, P.F. et al. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC Bioinformatics 11, 119 (2010). https://doi.org/10.1186/1471-2105-11-119
 
 * [Samtools](http://www.htslib.org)
