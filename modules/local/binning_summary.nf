@@ -33,8 +33,6 @@ process BINNING_SUMMARY {
     script:
         def software = getSoftwareName(task.process)
         """
-        mkdir -p ${meta.id}
-
         autometa-binning-summary \\
             --ncbi ${params.taxdump_tar_gz_dir} \\
             --binning-main $binning_main \\
