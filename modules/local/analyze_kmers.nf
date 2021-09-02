@@ -47,10 +47,3 @@ process ANALYZE_KMERS {
         echo "TODO" > autometa.version.txt
         """
 }
-
-
-
-
-
-
-
