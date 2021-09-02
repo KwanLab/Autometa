@@ -116,7 +116,6 @@ workflow PREPARE_TAXONOMY_DATABASES {
         }
 
         accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
-        accession2taxid_dir_files = taxdump_dir.list()
         accession2taxid_dir_files = accession2taxid_dir_files.collect()
         expected_files = ['prot.accession2taxid']
 
