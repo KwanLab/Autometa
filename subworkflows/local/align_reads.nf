@@ -13,9 +13,9 @@ process ALIGN_READS {
 
     script:
         """
-        bowtie2-build \
-            --threads ${task.cpus} \
-            ${metagenome} \
+        bowtie2-build \\
+            --threads ${task.cpus} \\
+            ${metagenome} \\
             ${metagenome.simpleName}.db
 
         bowtie2 \\
