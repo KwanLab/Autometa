@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process BINNING {
+process BIN_CONTIGS {
     tag "Performing Autometa binning on ${meta.id}"
     label 'process_high'
     publishDir "${params.outdir_internal}",

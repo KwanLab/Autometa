@@ -78,10 +78,11 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
  * -------------------------------------------------
 */
 
-include { BIN_CONTIGS      } from '../subworkflows/local/bin_contigs'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
-include { INPUT_CONTIGS    } from '../subworkflows/local/input_check'      addParams( )
-include { CREATE_MOCK      } from '../subworkflows/local/mock_data'        addParams( )
-include { TAXON_ASSIGNMENT } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
+include { BINNING                  } from '../subworkflows/local/binning'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
+include { UNCLUSTERED_RECRUITMENT  } from '../subworkflows/local/unclustered_recruitment'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
+include { INPUT_CONTIGS            } from '../subworkflows/local/input_check'      addParams( )
+include { CREATE_MOCK              } from '../subworkflows/local/mock_data'        addParams( )
+include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
@@ -213,14 +214,25 @@ workflow AUTOMETA {
             .set{markers_tsv_merged_tsv_ch}
     }
 
-    BIN_CONTIGS(
+    BINNING(
         SEQKIT_FILTER.out.fasta,
         kmers_embedded_merged_tsv_ch,
-        kmers_normalized_tsv_ch,
         spades_coverage_merged_tsv_ch,
         SEQKIT_FILTER.out.gc_content,
         markers_tsv_merged_tsv_ch,
         taxonomy_results,
         "cluster"
     )
+
+    if (params.unclustered_recruitment) {
+        UNCLUSTERED_RECRUITMENT(
+            SEQKIT_FILTER.out.fasta,
+            kmers_normalized_tsv_ch,
+            spades_coverage_merged_tsv_ch,
+            markers_tsv_merged_tsv_ch,
+            taxonomy_results,
+            BINNING.out.binning
+        )
+    }
+
 }

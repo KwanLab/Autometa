@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process UNCLUSTERED_RECRUITMENT {
+process RECRUIT {
     tag "Performing Autometa unclustered recruitment on ${meta.id}"
     label 'process_high'
 
