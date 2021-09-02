@@ -6,6 +6,7 @@ lint:
     - .travis.yml
     - docs/usage.md
     - docs/output.md
+    - docs/images/nf-core-autometa_logo.png
 
   files_unchanged:
     - manifest

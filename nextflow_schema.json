@@ -118,6 +118,10 @@
                     "type": "number",
                     "default": 25,
                     "description": "Maximum coverage standard deviation under which a cluster is kept (default is  25%)"
+                },
+                "unclustered_recruitment": {
+                    "type": "boolean",
+                    "description": "Set to true for unclustered recruitment"
                 }
             },
             "required": [
