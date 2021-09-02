@@ -32,8 +32,6 @@ process HMMER_HMMSEARCH {
         """
         hmmsearch \\
             --domtblout "${meta.id}.domtblout" \\
-            --tblout "${meta.id}.tblout" \\
-            --pfamtblout "${meta.id}.pfamtblout" \\
             ${options.args} \\
             ${options.args2} \\
             $hmm \\
