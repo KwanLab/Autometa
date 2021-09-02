@@ -104,7 +104,6 @@ workflow PREPARE_TAXONOMY_DATABASES {
     main:
         taxdump_dir = file(params.taxdump_tar_gz_dir)
         taxdump_dir_files = taxdump_dir.list()
-        taxdump_dir_files = taxdump_dir_files.collect()
         expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
 
         if (taxdump_dir_files.containsAll(expected_files)){
@@ -116,7 +115,7 @@ workflow PREPARE_TAXONOMY_DATABASES {
         }
 
         accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
-        accession2taxid_dir_files = accession2taxid_dir_files.collect()
+        accession2taxid_dir_files = accession2taxid_dir_files.list()
         expected_files = ['prot.accession2taxid']
 
         if (accession2taxid_dir_files.containsAll(expected_files)){
