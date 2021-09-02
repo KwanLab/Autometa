@@ -1,4 +1,12 @@
 
+/*
+=======================
+TODO: Not yet implemented
+"Cutoffs" need to be downloaded/provided to this process
+=======================
+*/
+
+
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
@@ -38,7 +46,7 @@ process HMMER_HMMSEARCH_FILTER {
         """
         autometa-hmmsearch-filter \\
             --domtblout "$domtblout" \\
-            --cutoffs  "/home/chase/Documents/github/Autometa/autometa/databases/markers/bacteria.single_copy.cutoffs" \\
+            --cutoffs  TODO:"Cutoffs" need to be downloaded/provided to this process \\
             --seqdb "$fasta" \\
             --out "${meta.id}.markers.tsv"
 

@@ -1,3 +1,14 @@
+
+/*
+=======================
+TODO: Not yet implemented
+This should speed up hmm searches, however as of now 2 things are needed:
+1: cutoff values need to be downloaded/provided to the next process that reads
+the results of this process
+2: The cutoffs would need to be determined again using the -Z flag of hmmsearch
+=======================
+*/
+
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
