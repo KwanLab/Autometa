@@ -473,7 +473,7 @@ lca_compilation_check()
 
 if not os.path.isdir(db_dir_path):
     # Verify the 'Autometa databases' directory exists
-    print("No databases directory found, creating and populating AutoMeta databases directory\nThis may take some time...")
+    print("No databases directory found, creating and populating Autometa databases directory\nThis may take some time...")
     os.mkdir(db_dir_path)
     prepare_databases(outdir=db_dir_path, db="all", update=args["update"])
 elif not os.listdir(db_dir_path):
