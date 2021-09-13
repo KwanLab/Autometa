@@ -85,6 +85,7 @@ While the above must be satisfied, additional prerequisites may be present, depe
     * :white_check_mark: `:white_check_mark:` when adding tests
     * :arrow_up: `:arrow_up:` when upgrading dependencies
     * :arrow_down: `:arrow_down:` when downgrading dependencies
+    * :whale: `:whale:` when fixing the docker build
 
 ### Documentation Style Guide
 

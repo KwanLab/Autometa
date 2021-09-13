@@ -9,7 +9,7 @@
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
@@ -25,21 +25,21 @@ except ImportError:
 else:
     use_cython = True
 
-cmdclass = { }
-ext_modules = [ ]
+cmdclass = {}
+ext_modules = []
 
 if use_cython:
     ext_modules += [
-        Extension("lca_functions", [ "lca_functions.pyx" ]),
+        Extension("lca_functions", ["lca_functions.pyx"]),
     ]
-    cmdclass.update({ 'build_ext': build_ext })
+    cmdclass.update({"build_ext": build_ext})
 else:
     ext_modules += [
-        Extension("lca_functions", [ "lca_functions.c" ]),
+        Extension("lca_functions", ["lca_functions.c"]),
     ]
 
 setup(
-    name='lca_functions',
-    cmdclass = cmdclass,
+    name="lca_functions",
+    cmdclass=cmdclass,
     ext_modules=ext_modules,
 )

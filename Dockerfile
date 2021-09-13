@@ -1,7 +1,8 @@
-FROM continuumio/anaconda
+FROM continuumio/miniconda3
 LABEL maintainer="jason.kwan@wisc.edu"
 
-# Copyright 2018 Ian J. Miller, Evan Rees, Izaak Miller, Jason C. Kwan
+# Copyright 2021 Copyright 2021 Ian J. Miller, Evan R. Rees, Siddharth Uppal,
+# Chase Clark, Andrew Lail, Kyle Wolf, Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
 #
@@ -18,16 +19,31 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-SHELL ["/bin/bash", "-c"]
-ENV PATH="/opt/conda/bin:$PATH"
-RUN apt-get update
-RUN apt-get install -y prodigal hmmer build-essential zlib1g-dev bowtie2 bedtools libatlas-base-dev libncurses5-dev libncursesw5-dev libbz2-dev liblzma-dev
-RUN conda install -y tqdm joblib biopython
-RUN mkdir diamond && cd diamond && wget http://github.com/bbuchfink/diamond/releases/download/v0.9.14/diamond-linux64.tar.gz && tar xvf diamond-linux64.tar.gz
-RUN wget https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2
-RUN tar -vxjf samtools-1.6.tar.bz2
-RUN cd samtools-1.6 && ./configure --prefix=/samtools && make && make install
-RUN git clone https://github.com/danielfrg/tsne.git && cd tsne && python setup.py install
-RUN git clone https://github.com/KwanLab/Autometa.git && cd Autometa/pipeline && python setup_lca_functions.py build_ext --inplace
+RUN apt-get update --allow-releaseinfo-change \
+    && apt-get install -y build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV PATH="/diamond:/Autometa/pipeline:/samtools/bin:${PATH}"
+COPY requirements.txt ./
+RUN conda install -c bioconda -c conda-forge python=3.7 --file=requirements.txt \
+    && conda clean --all -y
+
+COPY . ./
+RUN cd pipeline \
+    && python setup_lca_functions.py build_ext --inplace \
+    && cd - \
+    && hmmpress -f single-copy_markers/Bacteria_single_copy.hmm \
+    && hmmpress -f single-copy_markers/Archaea_single_copy.hmm
+
+ENV PATH="/pipeline:/validation:${PATH}"
+# Test pipeline entrypoints
+RUN recursive_dbscan.py -h \
+    && calculate_read_coverage.py -h \
+    && run_autometa.py -h \
+    && make_contig_table.py -h \
+    && make_marker_table.py -h \
+    && cluster_taxonomy.py -h \
+    && lca.py -h \
+    && cluster_process.py -h \
+    && make_taxonomy_table.py -h \
+    && add_contig_taxonomy.py &> /dev/null

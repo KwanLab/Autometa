@@ -21,72 +21,85 @@
 # __Author__: Evan R. Rees
 
 
-import re
 import numpy as np
-from subprocess import check_output
 from itertools import chain
 import gzip
 
+
 class countcalls(object):
-   "Decorator that keeps track of the number of times a function is called."
+    "Decorator that keeps track of the number of times a function is called."
 
-   __instances = {}
+    __instances = {}
 
-   def __init__(self, f):
-      self.__f = f
-      self.__numcalls = 0
-      countcalls.__instances[f] = self
+    def __init__(self, f):
+        self.__f = f
+        self.__numcalls = 0
+        countcalls.__instances[f] = self
 
-   def __call__(self, *args, **kwargs):
-      self.__numcalls += 1
-      return self.__f(*args, **kwargs)
+    def __call__(self, *args, **kwargs):
+        self.__numcalls += 1
+        return self.__f(*args, **kwargs)
 
-   def count(self):
-      "Return the number of times the function f was called."
-      return countcalls.__instances[self.__f].__numcalls
+    def count(self):
+        "Return the number of times the function f was called."
+        return countcalls.__instances[self.__f].__numcalls
 
-   @staticmethod
-   def counts():
-      "Return a dict of {function: # of calls} for all registered functions."
-      return dict([(f.__name__, countcalls.__instances[f].__numcalls) for f in countcalls.__instances])
+    @staticmethod
+    def counts():
+        "Return a dict of {function: # of calls} for all registered functions."
+        return dict(
+            [
+                (f.__name__, countcalls.__instances[f].__numcalls)
+                for f in countcalls.__instances
+            ]
+        )
+
 
 def Preprocess(level_array):
     "Returns a sparse table with the level array associated with its respective eulerian tour from tree construction"
     n = int(len(level_array))
-    num_columns = int(np.floor(np.log2(n))+1)
-    sparse_table = np.empty((n,num_columns))
-    #height of sparse table is from 0 to n
-    #width of sparse table is from 0 to logn
-    sparse_table[:,0] = [index for index,values in enumerate(level_array)]
-    #Instantiates sparse table first column with indices of level array
+    num_columns = int(np.floor(np.log2(n)) + 1)
+    sparse_table = np.empty((n, num_columns))
+    # height of sparse table is from 0 to n
+    # width of sparse table is from 0 to logn
+    sparse_table[:, 0] = [index for index, values in enumerate(level_array)]
+    # Instantiates sparse table first column with indices of level array
     for col in range(1, num_columns):
-        #goes from col 1 to width of array because 0th column instantiated from above
+        # goes from col 1 to width of array because 0th column instantiated from above
         for row in range(0, n):
-            #goes from row 0 to last row (n) then will increment column +1
-            if 2**col <= n:
-                #assesses whether the range of indices in column will exceed the number of rows in sparse table
-                if row+(2**col)-1 < n:
-                    #assesses whether range of indices in column will exceed the number of rows in sparse table
-                    if level_array[int(sparse_table[row, (col-1)])] < level_array[int(sparse_table[(row + 2**(col-1)), (col-1)])]:
-                        #if array[index at sparse table location] < array[index at sparse table location]
-                        sparse_table[row, col] = sparse_table[row, col-1]
-                        #assigns index from specified sparse table location to current position in sparse table
+            # goes from row 0 to last row (n) then will increment column +1
+            if 2 ** col <= n:
+                # assesses whether the range of indices in column will exceed the number of rows in sparse table
+                if row + (2 ** col) - 1 < n:
+                    # assesses whether range of indices in column will exceed the number of rows in sparse table
+                    if (
+                        level_array[int(sparse_table[row, (col - 1)])]
+                        < level_array[
+                            int(sparse_table[(row + 2 ** (col - 1)), (col - 1)])
+                        ]
+                    ):
+                        # if array[index at sparse table location] < array[index at sparse table location]
+                        sparse_table[row, col] = sparse_table[row, col - 1]
+                        # assigns index from specified sparse table location to current position in sparse table
                     else:
-                        sparse_table[row, col] = sparse_table[row + (2**(col-1)), col-1]
-                        #if array[index at sparse table location] >= array[index at sparse table location]
-                        #assigns index from specified sparse table location to current position in sparse table
+                        sparse_table[row, col] = sparse_table[
+                            row + (2 ** (col - 1)), col - 1
+                        ]
+                        # if array[index at sparse table location] >= array[index at sparse table location]
+                        # assigns index from specified sparse table location to current position in sparse table
                 else:
                     sparse_table[row, col] = False
-                    #places zeros in positions not utilized in sparse table
-    return(sparse_table)
+                    # places zeros in positions not utilized in sparse table
+    return sparse_table
+
 
 def Extract_blast(blast_file, bitscore_filter=0.9):
     "Returns a dictionary of accession numbers extracted from BLAST std format outfile\ndefault bitscore filter takes orfs from >90% of top bitscore"
-    with open(blast_file,"r") as blast_file:
+    with open(blast_file, "r") as blast_file:
         blast_dict = dict()
         temp_orf_list = list()
         for line in blast_file:
-            line_list = line.rstrip().split('\t')
+            line_list = line.rstrip().split("\t")
             bitscore = float(line_list[-1])
             accession_num = line_list[1]
             orf = line_list[0]
@@ -98,54 +111,65 @@ def Extract_blast(blast_file, bitscore_filter=0.9):
                 blast_dict[orf] = [accession_num]
                 topbitscore = bitscore
                 temp_orf_list = [orf]
-    return(blast_dict)
+    return blast_dict
+
 
 def Convert_accession2taxid(acc2taxid_dict, blast_dict):
     "Returns dictionary of orfs with set of their associated tax ids converted from accesssion numbers and accession.version numbers"
     blast_taxids = dict()
-    for orf in blast_dict.iterkeys():
-        blast_taxids[orf]=set()
+    for orf in blast_dict.keys():
+        blast_taxids[orf] = set()
         for accession_number in blast_dict[orf].__iter__():
-            if accession_number in acc2taxid_dict.viewkeys():
+            if accession_number in acc2taxid_dict.keys():
                 blast_taxids[orf].add(int(acc2taxid_dict.get(accession_number)))
-    return(blast_taxids)
+    return blast_taxids
+
 
 def Process_accession2taxid_file(acc2taxid_fpath, blast_dict):
     "Returns dictionary of accession numbers and accession.version with their associated tax ids"
     acc2taxid_dict = dict()
-    accession_set = set(chain.from_iterable(blast_dict.values()))
+    accession_set = set(chain.from_iterable(list(blast_dict.values())))
 
-    if acc2taxid_fpath.endswith('.gz'):
-        fh = gzip.open(acc2taxid_fpath)
+    if acc2taxid_fpath.endswith(".gz"):
+        fh = gzip.open(acc2taxid_fpath, "rt")
     else:
         fh = open(acc2taxid_fpath)
     header = fh.readline()
     for line in fh:
-        acc_num, acc_ver, taxid, _ = line.split('\t')
+        acc_num, acc_ver, taxid, _ = line.split("\t")
         taxid = int(taxid)
         if acc_num in accession_set:
-            acc2taxid_dict.update({acc_num:taxid})
+            acc2taxid_dict.update({acc_num: taxid})
             # acc2taxid_dict[acc_num]=taxid
         elif acc_ver in accession_set:
-            acc2taxid_dict.update({acc_ver:taxid})
+            acc2taxid_dict.update({acc_ver: taxid})
             # acc2taxid_dict[acc_ver]=taxid
     fh.close()
-    return(acc2taxid_dict)
+    return acc2taxid_dict
 
-#Empty data structures used for RangeMinQuery
-tour=list()
-sparse_table=list()
+
+# Empty data structures used for RangeMinQuery
+tour = list()
+sparse_table = list()
 level = list()
-occurrence=dict()
+occurrence = dict()
+
 
 @countcalls
-def RangeMinQuery(node1, node2, tree=tour, sparse_table=sparse_table, level_array=level, first_occurrence_index=occurrence):
+def RangeMinQuery(
+    node1,
+    node2,
+    tree=tour,
+    sparse_table=sparse_table,
+    level_array=level,
+    first_occurrence_index=occurrence,
+):
     "Returns LCA by performing Range Minimum Query b/w 2 tax ids\nRequires:euler tree, sparse table, level array, occurrence dictionary"
     if node1 == node2:
         # If after performing previous RMQs the reduced input is the same tax ID
         # as the next input tax ID, no RMQ is needed, thus the same tax ID will
         # be returned.
-        return(node1)
+        return node1
     elif first_occurrence_index[node1] < first_occurrence_index[node2]:
         # From tax IDs converted from filtered BLAST output accession numbers,
         # will find the tax ID in the first occurrence dictionary and evaluate
@@ -157,14 +181,31 @@ def RangeMinQuery(node1, node2, tree=tour, sparse_table=sparse_table, level_arra
     else:
         low = first_occurrence_index[node2]
         high = first_occurrence_index[node1]
-    cutoff_range = int(np.floor(np.log2(high-low+1)))
-    #The cut off range determines the two partitions in the sparse table relevant for level value lookup.
-    #This allows for equipartitionining of the range b/w both nodes.
-    if level_array[int(sparse_table[low, cutoff_range])] <= level_array[int(sparse_table[(high-(2**cutoff_range)+1), cutoff_range])]:
-        #If the level at the index in the sparse table lower range is less than or equal to the level at index in the upper range...
-        return(tree[level_array.index(level_array[int(sparse_table[low, cutoff_range])], low, high)][1])
-        #LCA is minimum in lower range
+    cutoff_range = int(np.floor(np.log2(high - low + 1)))
+    # The cut off range determines the two partitions in the sparse table relevant for level value lookup.
+    # This allows for equipartitionining of the range b/w both nodes.
+    if (
+        level_array[int(sparse_table[low, cutoff_range])]
+        <= level_array[
+            int(sparse_table[(high - (2 ** cutoff_range) + 1), cutoff_range])
+        ]
+    ):
+        # If the level at the index in the sparse table lower range is less than or equal to the level at index in the upper range...
+        return tree[
+            level_array.index(
+                level_array[int(sparse_table[low, cutoff_range])], low, high
+            )
+        ][1]
+        # LCA is minimum in lower range
     else:
-        #If the level at the index in the sparse table lower range is greater than the level at index in the upper range...
-        return(tree[level_array.index(level_array[int(sparse_table[(high-(2**cutoff_range)+1), cutoff_range])], low, high)][1])
-        #LCA is minimum in upper range
+        # If the level at the index in the sparse table lower range is greater than the level at index in the upper range...
+        return tree[
+            level_array.index(
+                level_array[
+                    int(sparse_table[(high - (2 ** cutoff_range) + 1), cutoff_range])
+                ],
+                low,
+                high,
+            )
+        ][1]
+        # LCA is minimum in upper range
