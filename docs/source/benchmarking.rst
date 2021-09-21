@@ -17,11 +17,11 @@ e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all 
 .. code:: bash
 
     # Work out coverage level for art_illumina
-    # C = [(LN)/G]/2 
+    # C = [(LN)/G]/2
     # C = coverage
     # L = read length (total of paired reads)
     # G = genome size in bp
-    # -p  : indicate a paired-end read simulation or to generate reads from both ends of amplicons 
+    # -p  : indicate a paired-end read simulation or to generate reads from both ends of amplicons
     # -ss : HS25 -> HiSeq 2500 (125bp, 150bp)
     # -f  : fold of read coverage simulated or number of reads/read pairs generated for each amplicon
     # -m  : the mean size of DNA/RNA fragments for paired-end simulations
@@ -79,12 +79,12 @@ You can download the individual assemblies of different datasests with the help 
 
 .. code:: bash
 
-    file_id="15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y" 
+    file_id="15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y"
     gdown --id ${file_id} -O metagenome.fna.gz
     # or
     gdown https://drive.google.com/uc?id=${file_id} -O metagenome.fna.gz
 
-.. note:: 
+.. note::
 
     Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive. There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
 
@@ -93,3 +93,55 @@ Benchmarks
 
 .. todo::
     Add the Benchmarking statistics
+
+
+Download the respective datasets using the `autometa-download-dataset` command
+
+.. code::bash
+
+    # Note: community is the test dataset that was used for clustering or classification. e.g.
+    # choices: 78Mbp,156Mbp,312Mbp,625Mbp,1250Mbp,2500Mbp,5000Mbp,10000Mbp
+    community_sizes=(78Mbp 156Mbp 312Mbp 625Mbp 1250Mbp 2500Mbp 5000Mbp 10000Mbp)
+
+    autometa-download-dataset \
+    --community-type simulated \
+    --community-sizes ${community_sizes[@]} \
+    --file-names reference_assignments.tsv.gz binning.tsv.gz taxonomy.tsv.gz \
+    --dir-path simulated
+
+    for community_size in ${community_sizes[@]};do
+        autometa-benchmark \
+            --benchmark clustering \
+            --predictions simulated/${community_size}/binning.tsv.gz \
+            --reference simulated/${community_size}/reference_assignments.tsv.gz \
+            --output-wide ${community_size}.clustering_benchmarks.wide.tsv.gz \
+            --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
+    done
+    # NOTE: Concatenate the long output for figure 1 visualization (concatenation is in code block below)
+
+### Aggregate across simulated communities (when dataset index is unique)
+
+.. code:: python
+
+    import pandas as pd
+    import glob
+    df = pd.concat([
+        pd.read_csv(fp, sep="\t", index_col="dataset")
+        for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz")
+    ])
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
+
+
+### Aggregate across simulated communities (when dataset index is _not_ unique)
+
+.. code:: python
+    import pandas as pd
+    import os
+    import glob
+    dfs = []
+    for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz"):
+        df = pd.read_csv(fp, sep="\t", index_col="dataset")
+        df.index = df.index.map(lambda fpath: os.path.basename(fpath))
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
