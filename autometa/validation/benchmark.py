@@ -617,7 +617,7 @@ def main():
             write_reports(
                 reports=reports,
                 outdir=args.output_classification_reports,
-                ncbi=args.ncbi,
+                ncbi=ncbi,
             )
     else:
         # args.benchmark == "binning-classification":
