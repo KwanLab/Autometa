@@ -13,66 +13,10 @@ Benchmarking
 Benchmarking with the ``autometa-benchmark`` module
 ===================================================
 
-Example benchmarking with simulated communities
------------------------------------------------
-
-Download all of the simulated communities and their reference assignments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: bash
-
-    community_sizes=(78Mbp 156Mbp 312Mbp 625Mbp 1250Mbp 2500Mbp 5000Mbp 10000Mbp)
-    autometa-download-dataset \
-        --community-type simulated \
-        --community-sizes ${community_sizes[@]} \
-        --file-names reference_assignments.tsv.gz binning.tsv.gz taxonomy.tsv.gz \
-        --dir-path simulated
-
-Benchmark all of the simulated communities and their reference assignments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: bash
-
-    for community_size in ${community_sizes[@]};do
-        autometa-benchmark \
-            --benchmark clustering \
-            --predictions simulated/${community_size}/binning.tsv.gz \
-            --reference simulated/${community_size}/reference_assignments.tsv.gz \
-            --output-wide ${community_size}.clustering_benchmarks.wide.tsv.gz \
-            --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
-    done
-
-Aggregate across simulated communities (when dataset index is unique)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: python
-
-    import pandas as pd
-    import glob
-    df = pd.concat([
-        pd.read_csv(fp, sep="\t", index_col="dataset")
-        for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz")
-    ])
-    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
-
-Aggregate across simulated communities (when dataset index is `not` unique)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: python
-
-    import pandas as pd
-    import os
-    import glob
-    dfs = []
-    for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz"):
-        df = pd.read_csv(fp, sep="\t", index_col="dataset")
-        df.index = df.index.map(lambda fpath: os.path.basename(fpath))
-        dfs.append(df)
-    df = pd.concat(dfs)
-    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
-
 Downloading Test Datasets
-=========================
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The first step in benchmarking is to download the test data files. We will be benchmarking the taxon-profiling step and binning steps and thus the files for the same will be downloaded. reference_assignments are needed as somthiing to compare out output with. Same reference_assignmentsfile will be used for both benchmarking.
 
 Using the built-in ``autometa`` module
 --------------------------------------
@@ -131,6 +75,54 @@ Example for the 78Mbp simulated community
     Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive.
     There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository
     addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
+
+
+Benchmark clustering
+^^^^^^^^^^^^^^^^^^^^
+
+Here we are benchmarking the clustering step. All the simulated communities are being benchmarked. You don't have to run all of them.
+
+.. code:: bash
+
+    for community_size in ${community_sizes[@]};do
+        autometa-benchmark \
+            --benchmark clustering \
+            --predictions simulated/${community_size}/binning.tsv.gz \
+            --reference simulated/${community_size}/reference_assignments.tsv.gz \
+            --output-wide ${community_size}.clustering_benchmarks.wide.tsv.gz \
+            --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
+    done
+
+**Aggregate results (when dataset index is unique)**
+
+.. code:: python
+
+    import pandas as pd
+    import glob
+    df = pd.concat([
+        pd.read_csv(fp, sep="\t", index_col="dataset")
+        for fp in glob.glob("\*.clustering_benchmarks.long.tsv.gz")
+    ])
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
+
+**Aggregate results (when dataset index is `not` unique)**
+
+.. code:: python
+
+    import pandas as pd
+    import os
+    import glob
+    dfs = []
+    for fp in glob.glob("\*.clustering_benchmarks.long.tsv.gz"):
+        df = pd.read_csv(fp, sep="\t", index_col="dataset")
+        df.index = df.index.map(lambda fpath: os.path.basename(fpath))
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
+
+
+
+
 
 
 Autometa Test Datasets
