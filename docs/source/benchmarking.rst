@@ -47,8 +47,7 @@ You can download the individual assemblies of different datasests with the help 
 If you have installed ``autometa`` using ``conda`` then ``gdown`` should already be installed.
 If not, you can install it using ``conda install -c conda-forge gdown`` or ``pip install gdown``.
 
-Example for the 78Mbp simulated community
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Example for the 78Mbp simulated community**
 
 1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
 2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. This will have a ``copy link`` button that you should use. The link for the metagenome assembly (ie. ``metagenome.fna.gz``) should look like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
@@ -71,11 +70,14 @@ Example for the 78Mbp simulated community
     gdown https://drive.google.com/uc?id=${file_id} -O metagenome.fna.gz
 
 .. note::
+    
+    To follow along with the tutorial below you'll need to download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, and ``taxonomy.tsv.gz`` files for the dataset you want to run benchmarking on.
+
+.. note::
 
     Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive.
     There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository
     addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
-
 
 Benchmark clustering
 ^^^^^^^^^^^^^^^^^^^^
@@ -95,6 +97,8 @@ Here we are benchmarking the clustering step. All the simulated communities are 
 
 **Aggregate results (when dataset index is unique)**
 
+The following ``python`` code is useful to aggregate results when the dataset index is unique
+
 .. code:: python
 
     import pandas as pd
@@ -106,6 +110,8 @@ Here we are benchmarking the clustering step. All the simulated communities are 
     df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
 
 **Aggregate results (when dataset index is `not` unique)**
+
+The following ``python`` code is useful to aggregate results when the dataset index is `not` unique
 
 .. code:: python
 
@@ -121,9 +127,48 @@ Here we are benchmarking the clustering step. All the simulated communities are 
     df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
 
 
+Benchmark classification
+^^^^^^^^^^^^^^^^^^^^^^^^
 
+Previously we benchmarked the clustering step. Now we are going to benchmark the taxon profiling step. The only difference is that ``--classification`` flag is provided instead of ``--clustering`` flag.
 
+.. code:: bash
 
+    autometa-benchmark \
+    --benchmark classification \
+    --predictions $taxonomy ${community_size}.taxonomy.tsv.gz \
+    --reference simulated/${community_size}/reference_assignments.tsv.gz \
+    --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
+    --output-classification-reports taxa_reports \
+    --ncbi /ncbi
+
+Specifying mulile results
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``autometa-benchmark`` provides the flexibility of specifying multiple output files of the same dataset and benchmarking them simultaneously. For example, in case you have done the clustering for a sample using three different binner, you can benchmark all of them simulateously. This is really handy when benchmarking multiple tools on the same dataset.
+
+**For clustering**
+
+.. code:: bash
+
+    autometa-benchmark \
+                --benchmark clustering \
+                --predictions binner1_output.tsv.gz binner2_output.tsv.gz binner3_output.tsv.gz \
+                --reference simulated/${community_size}/reference_assignments.tsv.gz \
+                --output-wide ${community_size}.clustering_benchmarks.wide.tsv.gz \
+                --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
+
+**For classification**
+
+.. code:: bash
+
+    autometa-benchmark \
+    --benchmark classification \
+    --predictions taxonomic_profiler1.tsv.gz taxonomic_profiler2.tsv.gz taxonomic_profiler3.tsv.gz  \
+    --reference simulated/${community_size}/reference_assignments.tsv.gz \
+    --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
+    --output-classification-reports taxa_reports \
+    --ncbi /ncbi
 
 Autometa Test Datasets
 ======================
