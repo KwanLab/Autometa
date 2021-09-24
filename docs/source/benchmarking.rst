@@ -71,18 +71,16 @@ If not, you can install it using ``conda install -c conda-forge gdown`` or ``pip
 
 .. note::
     
-    To follow along with the tutorial below you'll need to download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, and ``taxonomy.tsv.gz`` files for the dataset you want to run benchmarking on.
+    1. To follow along with the tutorial below you'll need to download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, and ``taxonomy.tsv.gz`` files for the dataset you want to run benchmarking on.
 
-.. note::
-
-    Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive.
+    2. Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive.
     There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository
     addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
 
 Benchmark clustering
 ^^^^^^^^^^^^^^^^^^^^
 
-Here we are benchmarking the clustering step. All the simulated communities are being benchmarked. You don't have to run all of them.
+Here we are benchmarking the clustering step. All the simulated communities are being benchmarked. You don't have to run all of them, this is just for tutorial purposes.
 
 .. code:: bash
 
@@ -95,38 +93,6 @@ Here we are benchmarking the clustering step. All the simulated communities are 
             --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
     done
 
-**Aggregate results (when dataset index is unique)**
-
-The following ``python`` code is useful to aggregate results when the dataset index is unique
-
-.. code:: python
-
-    import pandas as pd
-    import glob
-    df = pd.concat([
-        pd.read_csv(fp, sep="\t", index_col="dataset")
-        for fp in glob.glob("\*.clustering_benchmarks.long.tsv.gz")
-    ])
-    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
-
-**Aggregate results (when dataset index is `not` unique)**
-
-The following ``python`` code is useful to aggregate results when the dataset index is `not` unique
-
-.. code:: python
-
-    import pandas as pd
-    import os
-    import glob
-    dfs = []
-    for fp in glob.glob("\*.clustering_benchmarks.long.tsv.gz"):
-        df = pd.read_csv(fp, sep="\t", index_col="dataset")
-        df.index = df.index.map(lambda fpath: os.path.basename(fpath))
-        dfs.append(df)
-    df = pd.concat(dfs)
-    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
-
-
 Benchmark classification
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -135,12 +101,33 @@ Previously we benchmarked the clustering step. Now we are going to benchmark the
 .. code:: bash
 
     autometa-benchmark \
-    --benchmark classification \
-    --predictions $taxonomy ${community_size}.taxonomy.tsv.gz \
-    --reference simulated/${community_size}/reference_assignments.tsv.gz \
-    --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
-    --output-classification-reports taxa_reports \
-    --ncbi /ncbi
+        --benchmark classification \
+        --predictions $taxonomy ${community_size}.taxonomy.tsv.gz \
+        --reference simulated/${community_size}/reference_assignments.tsv.gz \
+        --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
+        --output-classification-reports taxa_reports \
+        --ncbi /ncbi
+
+Benchmark clustering-classification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This will benchmark the taxonomic assignemnt of each bin. To run this you'll need ``binning.tsv.gz`` file for the specific community. This can be downloa by running:
+
+.. code:: bash
+    autometa-download-dataset \
+        --community-type simulated \
+        --community-sizes 78Mbp \
+        --file-names binning.tsv.gz\
+        --dir-path simulated
+
+Now running the command to benchmark:
+
+.. code:: bash
+
+    autometa-benchmark \
+        --benchmark binning-classification \
+        --predictions 78Mbp/binning.tsv \
+        --reference 78Mbp/reference_assignments.tsv.gz \
+        --output-wide binning_classification_wide.tsv.gz
 
 Specifying mulile results
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -152,23 +139,23 @@ Specifying mulile results
 .. code:: bash
 
     autometa-benchmark \
-                --benchmark clustering \
-                --predictions binner1_output.tsv.gz binner2_output.tsv.gz binner3_output.tsv.gz \
-                --reference simulated/${community_size}/reference_assignments.tsv.gz \
-                --output-wide ${community_size}.clustering_benchmarks.wide.tsv.gz \
-                --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
+       --benchmark clustering \
+       --predictions binner1_78Mbp_output.tsv.gz binner2_78Mbp_output.tsv.gz binner3_78Mbp_output.tsv.gz \
+       --reference simulated/78Mbp/reference_assignments.tsv.gz \
+       --output-wide 78Mbp.clustering_benchmarks.wide.tsv.gz \
+       --output-long 78Mbp.clustering_benchmarks.long.tsv.gz
 
 **For classification**
 
 .. code:: bash
 
     autometa-benchmark \
-    --benchmark classification \
-    --predictions taxonomic_profiler1.tsv.gz taxonomic_profiler2.tsv.gz taxonomic_profiler3.tsv.gz  \
-    --reference simulated/${community_size}/reference_assignments.tsv.gz \
-    --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
-    --output-classification-reports taxa_reports \
-    --ncbi /ncbi
+        --benchmark classification \
+        --predictions taxonomic_profiler1_78Mbp.tsv.gz taxonomic_profiler2_78Mbp.tsv.gz taxonomic_profiler3_78Mbp.tsv.gz  \
+        --reference simulated/78Mbp/reference_assignments.tsv.gz \
+        --output-wide 78Mbp.classification_benchmarks.wide.tsv.gz \
+        --output-classification-reports taxa_reports \
+        --ncbi /ncbi
 
 Autometa Test Datasets
 ======================
