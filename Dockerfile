@@ -26,7 +26,9 @@ RUN apt-get update \
 
 COPY requirements.txt ./
 RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
-    && conda clean --all -y
+    && conda clean --all -y \
+    && python -m pip install trimap
+
 
 
 COPY . .

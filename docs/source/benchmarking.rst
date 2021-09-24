@@ -39,6 +39,13 @@ v2.0 binning/taxonomy predictions:
     --file-names reference_assignments.tsv.gz binning.tsv.gz taxonomy.tsv.gz \
     --dir-path simulated
 
+Autometa is packaged with a built-in module that allows any user to download any of the available test datasets.
+To use these utilities simply run the command ``autometa-download-dataset``.
+
+For example, to download all of the simulated communities reference binning/taxonomy assignments as well as the Autometa
+v2.0 binning/taxonomy predictions:
+
+.. code:: bash
 
 Using ``gdrive`` via command line
 ---------------------------------
