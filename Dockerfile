@@ -29,6 +29,7 @@ RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y \
     && python -m pip install trimap
 
+
 COPY . .
 RUN make install && make clean
 
@@ -58,5 +59,6 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-taxonomy-majority-vote -h > /dev/null \
     && autometa-binning -h > /dev/null \
     && autometa-unclustered-recruitment -h > /dev/null \
+    && autometa-benchmark -h > /dev/null \
     && autometa-binning-summary -h > /dev/null \
     && autometa-download-dataset -h > /dev/null
