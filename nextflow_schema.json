@@ -72,7 +72,7 @@
                 "embedding_method": {
                     "type": "string",
                     "default": "bhsne",
-                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\""
+                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\", \"densne\", \"trimap\""
                 },
                 "embedding_dimensions": {
                     "type": "integer",
