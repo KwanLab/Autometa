@@ -97,7 +97,7 @@
                 "classification_kmer_pca_dimensions": {
                     "type": "integer",
                     "default": 50,
-                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix"
+                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix by PCA"
                 },
                 "completeness": {
                     "type": "number",
