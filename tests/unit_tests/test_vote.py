@@ -117,14 +117,23 @@ def test_add_ranks(ncbi, votes, tmp_path):
 @pytest.mark.skip
 def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
     out = tmp_path / "votes.tsv"
-    votes = vote.assign(out=out, prot_orfs=prot_orfs, blast=blastp, ncbi_dir=ncbi_dir,)
+    votes = vote.assign(
+        out=out,
+        prot_orfs=prot_orfs,
+        blast=blastp,
+        ncbi_dir=ncbi_dir,
+    )
     assert isinstance(votes, pd.DataFrame)
     assert votes.index.name == "contig"
     assert "taxid" in votes.columns
 
 
 def test_get(ncbi, votes_fpath):
-    df = vote.get(filepath_or_dataframe=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
+    df = vote.get(
+        filepath_or_dataframe=votes_fpath,
+        kingdom="bacteria",
+        ncbi=ncbi,
+    )
     # canonical ranks should have been added to table if they were not already in place.
     assert df.shape == (2, 8)
 
@@ -132,7 +141,9 @@ def test_get(ncbi, votes_fpath):
 def test_get_none_recovered(ncbi, votes_fpath):
     with pytest.raises(KeyError):
         vote.get(
-            filepath_or_dataframe=votes_fpath, kingdom="archaea", ncbi=ncbi,
+            filepath_or_dataframe=votes_fpath,
+            kingdom="archaea",
+            ncbi=ncbi,
         )
 
 
@@ -140,7 +151,9 @@ def test_get_empty_votes(ncbi_dir, tmp_path):
     fpath = tmp_path / "votes.tsv"
     with pytest.raises(FileNotFoundError):
         vote.get(
-            filepath_or_dataframe=fpath, kingdom="archaea", ncbi=ncbi_dir,
+            filepath_or_dataframe=fpath,
+            kingdom="archaea",
+            ncbi=ncbi_dir,
         )
 
 
@@ -153,13 +166,19 @@ def test_get_superkingdom_not_in_columns(monkeypatch, ncbi, votes, tmp_path):
     monkeypatch.setattr(vote, "add_ranks", return_df, raising=True)
     with pytest.raises(TableFormatError):
         vote.get(
-            filepath_or_dataframe=fpath, kingdom="archaea", ncbi=ncbi,
+            filepath_or_dataframe=fpath,
+            kingdom="archaea",
+            ncbi=ncbi,
         )
 
 
 @pytest.fixture(name="ranks_added_votes", scope="module")
 def fixture_ranks_added_votes(votes_fpath, ncbi):
-    return vote.get(filepath_or_dataframe=votes_fpath, kingdom="bacteria", ncbi=ncbi,)
+    return vote.get(
+        filepath_or_dataframe=votes_fpath,
+        kingdom="bacteria",
+        ncbi=ncbi,
+    )
 
 
 @pytest.mark.parametrize(
@@ -217,7 +236,10 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
     assembly = dirpath / "assembly.fna"
     with pytest.raises(KeyError):
         vote.write_ranks(
-            taxonomy=votes, assembly=assembly, outdir=dirpath, rank="superkingdom",
+            taxonomy=votes,
+            assembly=assembly,
+            outdir=dirpath,
+            rank="superkingdom",
         )
 
 
