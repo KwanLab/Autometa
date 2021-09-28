@@ -2,7 +2,10 @@
 Contributing Guidelines
 =======================
 
-"Autometa is an open-source project developed on GitHub. If you would like to help develop Autometa or have ideas for new features please see our `contributing guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__
+Autometa is an open-source project developed on GitHub. If you would like to help develop
+Autometa or have ideas for new features please see `our list of areas where we would love some help <https://github.com/KwanLab/Autometa/contribute>`__.
+You will also see our `Contributing Guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__ for getting started with
+Autometa development.
 
 If you are wanting to help develop autometa, you will need these additional dependencies:
 
@@ -19,7 +22,7 @@ Autometa builds documentation using readthedocs. You have to install the followi
     conda install -n autometa -c conda-forge \
         sphinx sphinx_rtd_theme
     # List all make options
-    make 
+    make
     # Build documentation for autometa.readthedocs.io
     make docs
 

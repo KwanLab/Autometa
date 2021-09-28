@@ -79,38 +79,34 @@ def add_metrics(
     if domain not in marker_sets:
         raise KeyError(f"{domain} is not bacteria or archaea!")
     expected_number = marker_sets[domain]
-    metrics = []
     if "cluster" in df.columns:
-        clusters = dict(list(df.groupby("cluster")))
-        for cluster, dff in clusters.items():
-            pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
-            is_present = pfam_counts >= 1
-            is_single_copy = pfam_counts == 1
-            nunique_markers = pfam_counts[is_present].count()
-            num_single_copy_markers = pfam_counts[is_single_copy].count()
-            completeness = nunique_markers / expected_number * 100
-            # Protect from divide by zero
-            if nunique_markers == 0:
-                purity = pd.NA
-            else:
-                purity = num_single_copy_markers / nunique_markers * 100
-            if dff.shape[0] <= 1:
-                coverage_stddev = 0.0
-                gc_content_stddev = 0.0
-            else:
-                coverage_stddev = dff.coverage.std()
-                gc_content_stddev = dff.gc_content.std()
-            metrics.append(
-                {
-                    "cluster": cluster,
-                    "completeness": completeness,
-                    "purity": purity,
-                    "coverage_stddev": coverage_stddev,
-                    "gc_content_stddev": gc_content_stddev,
-                }
-            )
+        # join cluster and marker data, group by cluster
+        temp = df.join(markers_df, how="outer").groupby("cluster")
+        # count present
+        nunique_markers = temp[list(markers_df.columns)].sum().ge(1).sum(axis=1)
+        # count single copy
+        num_single_copy_markers = temp[list(markers_df.columns)].sum().eq(1).sum(axis=1)
+        # calculate completeness/purity
+        completeness = nunique_markers / expected_number * 100
+        purity = num_single_copy_markers / nunique_markers * 100
+        coverage_stddev = temp["coverage"].std()
+        gc_content_stddev = temp["gc_content"].std()
+        completeness = completeness.to_frame()
+        purity = purity.to_frame()
+        coverage_stddev = coverage_stddev.to_frame()
+        gc_content_stddev = gc_content_stddev.to_frame()
+        metrics_df = pd.concat(
+            [completeness, purity, coverage_stddev, gc_content_stddev], axis=1
+        )
+        metrics_df.columns = [
+            "completeness",
+            "purity",
+            "coverage_stddev",
+            "gc_content_stddev",
+        ]
+        merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
     # Account for exceptions where clusters were not recovered
-    if not metrics or "cluster" not in df.columns:
+    else:
         metrics_df = pd.DataFrame(
             [
                 {
@@ -128,10 +124,6 @@ def add_metrics(
         merged_df = df.copy()
         for metric in metric_cols:
             merged_df[metric] = pd.NA
-
-    else:
-        metrics_df = pd.DataFrame(metrics).set_index("cluster")
-        merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
     return merged_df, metrics_df
 
 
@@ -269,6 +261,7 @@ def recursive_dbscan(
     n_clusters = float("inf")
     best_median = float("-inf")
     best_df = pd.DataFrame()
+
     while n_clusters > 1:
         binned_df = run_dbscan(table, eps)
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
@@ -1023,7 +1016,9 @@ def main():
         "coverage_stddev",
         "gc_content_stddev",
     ]
-    main_out[outcols].to_csv(args.output_binning, sep="\t", index=True, header=True)
+    main_out[outcols].to_csv(
+        args.output_binning, sep="\t", index=True, header=True, float_format="%.5f"
+    )
     logger.info(f"Wrote binning results to {args.output_binning}")
     if args.output_main:
         # First after binning relevant assignments/metrics place contig physical annotations

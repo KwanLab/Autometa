@@ -17,8 +17,8 @@ I will be going through this tutorial using the 78Mbp test dataset which can be 
 The first step when running autometa is the legth filtering. This would remove any contigs that are below the length cutoff. This is useful in removing the noise from the data, as small contigs may have ambigious kmer frequencies. The default cutoff if 3,000bp, ie. any contig that is smaller than 3,000bp would be removed.
 
 .. note::
-    It is important that you alter the cutoff based on your N50. If your N50 is really small, e.g. 500bp (pretty common for soil assemblies), then you might want to lower your cutoff to somehwere near N50. The tradeoff with lowing the length cutoff, however, is a greater number of contigs which may make it more difficult for the dataset to be binned. As was shown in the `Autometa <https://academic.oup.com/nar/article/47/10/e57/5369936>`_ paper, as assembly quality degrades so does the binning performance. 
-    
+    It is important that you alter the cutoff based on your N50. If your N50 is really small, e.g. 500bp (pretty common for soil assemblies), then you might want to lower your cutoff to somehwere near N50. The tradeoff with lowing the length cutoff, however, is a greater number of contigs which may make it more difficult for the dataset to be binned. As was shown in the `Autometa <https://academic.oup.com/nar/article/47/10/e57/5369936>`_ paper, as assembly quality degrades so does the binning performance.
+
 Use the following command to run the length-filter step:
 
 .. code-block:: bash
@@ -79,36 +79,36 @@ If you have assembled your metagenome using some other assembler you can use one
 
     # If you have already made a bed file
     autometa-coverage \
-        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \ 
+        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \
         --bed 78mbp_metagenome.bed \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
     # If you have already made an alignment (bam file)
     autometa-coverage \
-        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \ 
+        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \
         --bam 78mbp_metagenome.bam \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
     # If you have already made an alignment (sam file)
     autometa-coverage \
-        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \ 
+        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \
         --sam 78mbp_metagenome.sam \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
     # If you just have forward and reverse reads
     autometa-coverage \
-        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \ 
+        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \
         --fwd-reads fwd_reads_1.fastq--rev-reads rev_reads_1.fastq \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
     # In case you have multiple fwd and rev read pairs supply a comma-delimited list (no spaces, fwd and rev lists should be in the same order)
     autometa-coverage \
-        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \ 
-        --fwd-reads fwd_reads_1.fastq,fwd_reads_2.fastq \ 
+        --assembly $HOME/tutorial/78mbp_metagenome.filtred.fna \
+        --fwd-reads fwd_reads_1.fastq,fwd_reads_2.fastq \
         --rev-reads rev_reads_1.fastq,rev_reads_2.fastq \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
@@ -256,7 +256,7 @@ The above command would generate the following files:
 5.1 BLASTP
 ^^^^^^^^^^
 
-Autometa assigns a taxonomic rank to each contig and then takes only the contig belonging to the specified kingdom (either bacteria or archaea) for binning. We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic or viral contigs will be binned into bacterial bins. 
+Autometa assigns a taxonomic rank to each contig and then takes only the contig belonging to the specified kingdom (either bacteria or archaea) for binning. We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic or viral contigs will be binned into bacterial bins.
 
 The first step for contig taxonomy assignment is a local alignment search of the ORFs against a reference database. This can be accelerated using `diamond <https://github.com/bbuchfink/diamond>`_.
 
@@ -313,7 +313,7 @@ Breaking down the above command:
 
 To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`__. A complete list of all command line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`__.
 
-.. note:: 
+.. note::
     Autometa only parses output format 6 provided above as: ``--outfmt 6``
 
 The above command would generate the blastP table (78mbp_metagenome.blastp.tsv) in output format 6
@@ -436,10 +436,10 @@ A k-mer (`ref <https://bioinfologics.github.io/post/2018/09/17/k-mer-counting-pa
 
 This step does the following:
 
-#. Create a  k-mer matrix of :math:`k^4/2` dimensions using the specified k-mer frequency
-#. Normaization of the k-mer matrix 
-#. Reduce the dimensions of k-mer frequencies using principle component analysis (PCA).
-#. Embedding the PCA dimensions into two dimensions to allow the ease of visualization and manual binning of the contigs (see `ViZBin <https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-014-0066-1>`_ paper).
+#. Create a k-mer count matrix of :math:`k^4/2` dimensions using the specified k-mer length
+#. Normalization of the k-mer count matrix to a normalized k-mer frequency matrix
+#. Reduce the dimensions of k-mer frequencies using principal component analysis (PCA).
+#. Embed the PCA dimensions into two dimensions to allow the ease of visualization and manual binning of the contigs (see `ViZBin <https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-014-0066-1>`_ paper).
 
 Use the following command to run the k-mer counting step:
 
@@ -476,7 +476,7 @@ Let us dissect the above command:
 +------------------------+--------------------------------------------------------------------------------------------------------------------------+-------------+
 | ``--embedding-output`` | Path to embedded k-mer table                                                                                             | Required    |
 +------------------------+--------------------------------------------------------------------------------------------------------------------------+-------------+
-| ``--embedding-method`` | Embedding method to reduce the k-mer frequencies. Choices: shsne, bhsne (default) and umap.                              | Optional    |
+| ``--embedding-method`` | Embedding method to reduce the k-mer frequencies. Choices: sksne, bhsne (default), umap, densmap and trimap.             | Optional    |
 +------------------------+--------------------------------------------------------------------------------------------------------------------------+-------------+
 | ``--cpus``             | Number of CPUs to use (default is to use all available CPUs)                                                             | Optional    |
 +------------------------+--------------------------------------------------------------------------------------------------------------------------+-------------+
@@ -499,23 +499,38 @@ The above command generates the following files:
 
 .. _advanced-usage-kmers:
 
-Advanced Usage 
+Advanced Usage
 ^^^^^^^^^^^^^^
 
-In the command used above k-mer normalization is being done using Autometa's implementation of center log-ratio transform (am_clr). Other available normalization methods are isometric log-ratio transform (ilr, scikit-bio implementation) and center log-ratio transform (clr, scikit-bio implementation). Normalization method can be altered using the ``--norm-method``  flag.
+In the command used above k-mer normalization is being done using Autometa's implementation of
+the center log-ratio transform (am_clr). Other available normalization methods are isometric
+log-ratio transform (ilr, scikit-bio implementation) and center log-ratio transform (clr, scikit-bio implementation).
+Normalization method can be altered using the ``--norm-method`` flag.
 
-In the above command k-mer embedding is being done using Barnes-Hut Stochastic Neighbor Embedding (BH-tSNE). Other embedding methods that are available are Uniform Manifold Approximation and Projection (UMAP) and Stochastic Neighbor Embedding (SKSNE). BH-tSNE and SKSNE are same embedding methods which use different implementations. BH-tSNE is an imolementation of tsne and SKSNE is an implementation of scikit-learn. Embedding method can be altered using the ``--embedding-method`` flag.
+In the above command k-mer embedding is being done using Barnes-Hut t-distributed Stochastic Neighbor Embedding (BH-tSNE).
+Other embedding methods that are available are Uniform Manifold Approximation and Projection (UMAP), densMAP (a density-preserving tool based
+on UMAP) and TriMap, a method that uses triplet constraints to form a low-dimensional embedding of a set of points. Two implementations of BH-tSNE are available, bhsne and sksne corresponding to the tsne and scikit-learn libraries, respectively.
+Embedding method can be altered using the ``--embedding-method`` flag.
 
-Autometa uses a k-mer size of 5 and then embedds the resulsting k-mer frequency table into 50 PCA dimensions which are then reduced to two dimentions. k-mer size can be altered using the ``--size`` flag, number of dimensions to reduce to PCA feature space after normalization and prior to embedding can be altered using the ``--pca-dimensions`` flag and the number of dimensions of which to reduce k-mer frequencies can be altered using the ``--embedding-dimensions`` flag.
+Autometa uses a k-mer size of 5 and then embeds the resulting k-mer frequency table
+into 50 PCA dimensions which are then reduced to two dimentions. k-mer size can be
+altered using the ``--size`` flag, number of dimensions to reduce to PCA feature
+space after normalization and prior to embedding can be altered using the ``--pca-dimensions``
+flag and the number of dimensions of which to reduce k-mer frequencies can be altered using the ``--embedding-dimensions`` flag.
 
 .. note::
-    1. Even though BH-tSNE and SKSNE are same embedding methods (but different implementation) they appear to give very different results. We recommend using the former.
+    1. Even though bhsne and sksne are the same embedding method (but different implementations)
+    they appear to give very different results. We recommend using the former.
+
     2. In case you put ``--pca-dimensions`` as zero then autometa will skip PCA.
 
 7. Binning
 -----------
 
-This is the step where contigs are binned into genomes via clustering. Autometa assesses genome bins by examining both their completeness. A taxonomy table may also used to help with clustering based on sequence homology. Otherwise, Autometa clusters solely on nucleotide composition and coverage. 
+This is the step where contigs are binned into genomes via clustering.
+Autometa assesses genome bins by examining both their completeness. A
+taxonomy table may also used to help with clustering based on sequence homology.
+Otherwise, Autometa clusters solely on nucleotide composition and coverage.
 
 This step does the following:
 
@@ -527,9 +542,13 @@ This step does the following:
     #. Coverage standard deviation
 #. Unbinned contigs will be re-binned until no more acceptable genome bins are yielded
 
-If you include a taxonomy table Autometa will attempt to further partition the data based on ascending taxonomic specificity (i.e. in the order superkingdom, phylum, class, order, family, genus, species) when binning unbinned contigs from a previous attempt. We found that this is mainly useful if you have a highly complex metagenome (lots of species), or you have several related species at similar coverage level.
+If you include a taxonomy table Autometa will attempt to further partition the data based
+on ascending taxonomic specificity (i.e. in the order superkingdom, phylum, class, order,
+family, genus, species) when binning unbinned contigs from a previous attempt. We found
+that this is mainly useful if you have a highly complex metagenome (lots of species), or
+you have several related species at similar coverage level.
 
-Use the following command to run the binning:
+Use the following command to perform binning:
 
 .. code-block:: bash
 
@@ -547,7 +566,7 @@ Use the following command to run the binning:
         --output-binning $HOME/tutorial/78mbp_metagenome.binning.tsv \
         --output-main $HOME/tutorial/78mbp_metagenome.main.tsv \
         --starting-rank superkingdom \
-        --domain bacteria 
+        --domain bacteria
 
 Let us dissect the above command:
 
@@ -644,7 +663,7 @@ You can attempt to improve your genome bins with an unclustered recruitment step
 
 .. _advanced-usage-binning:
 
-Advanced Usage 
+Advanced Usage
 ^^^^^^^^^^^^^^
 
 .. code-block::
@@ -726,7 +745,7 @@ The ``78mbp_metagenome.recruitment.tsv`` file contains the following columns:
 
 .. _advanced-usage-unclustered-recruitment:
 
-Advanced Usage 
+Advanced Usage
 ^^^^^^^^^^^^^^
 
 The clustering method for the unclustered recruitment step can be performed either using a decision tree classifier (default) or using a random forst algorithm. The choice of method can be selected using the  ``--classifier`` flag.

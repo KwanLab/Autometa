@@ -16,7 +16,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+!nextflow/lib/
 lib64/
 parts/
 sdist/
@@ -157,7 +157,12 @@ tests/data/*
 .DS_Store
 
 # nextflow
-.nextflow
-.nextflow.log*
+.nextflow*
 pipeline_info
-work
+work/
+large_db/
+nf-params.json
+autometa_interim_dir/
+autometa_outdir/
+autometa_tracedir/
+

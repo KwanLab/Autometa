@@ -42,6 +42,7 @@ from autometa.common.utilities import untar
 from autometa.common.utilities import calc_checksum
 from autometa.common.utilities import read_checksum
 from autometa.common.utilities import write_checksum
+from autometa.common.utilities import internet_is_connected
 from autometa.common.exceptions import ChecksumMismatchError
 from autometa.common.external import diamond
 from autometa.common.external import hmmer
@@ -183,17 +184,6 @@ class Databases:
             any_invalid = {}
         return not any_missing and not any_invalid
 
-    def internet_is_connected(
-        self, host: str = "8.8.8.8", port: int = 53, timeout: int = 2
-    ) -> bool:
-        # google.com
-        try:
-            socket.setdefaulttimeout(timeout)
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-            return True
-        except socket.error:
-            return False
-
     def get_remote_checksum(self, section: str, option: str) -> str:
         """Get the checksum from provided `section` respective to `option` in
         `self.config`.
@@ -226,7 +216,7 @@ class Databases:
             raise ValueError(
                 f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
-        if not self.internet_is_connected():
+        if not internet_is_connected():
             raise ConnectionError("Cannot connect to the internet")
         if section == "ncbi":
             host = self.config.get(section, "host")
