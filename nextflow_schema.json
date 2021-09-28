@@ -1,0 +1,384 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/autometa/main/nextflow_schema.json",
+    "title": "autometa pipeline parameters",
+    "description": "Autometa: Automated Extraction of Microbial Genomes from Shotgun Metagenomes",
+    "type": "object",
+    "definitions": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "required": [
+                "input",
+                "publish_dir_mode"
+            ],
+            "properties": {
+                "input": {
+                    "type": "string",
+                    "fa_icon": "fas fa-dna",
+                    "description": "Absolute (full) path of the metagenome assembly FASTA (.fna) file(s)",
+                    "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
+                    "default": "null"
+                },
+                "interim_dir": {
+                    "type": "string",
+                    "description": "Absolute (full) path of directory for intermediate files",
+                    "default": "~/where/pipeline/is/launched",
+                    "fa_icon": "fas fa-folder-open",
+                    "help_text": "Directory for storing files created during intermediate steps but which are interesting enough to keep for debugging or analyzing with other tools"
+                },
+                "outdir": {
+                    "type": "string",
+                    "description": "Absolute (full) path of directory where the results will be saved.",
+                    "default": "~/where/pipeline/is/launched",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "tracedir": {
+                    "type": "string",
+                    "description": "Absolute (full) path of directory to keep pipeline Nextflow logs and reports.",
+                    "default": "~/where/pipeline/is/launched",
+                    "fa_icon": "fas fa-cogs"
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "How should output files be stored?",
+                    "help_text": "\nImportant note: Using a linking method (anything ending in 'link') and then deleting the nextflow run's working/cache directory will result in the loss of all output files. Links will remain but will only point to non-existent file(s).\n\nUse one of the following\ncopy\n    Copies the output files into the published directory. (default)\nsymlink\n    Creates an absolute symbolic link in the published directory for each process output file.\nrellink\n    Creates a relative symbolic link in the published directory for each process output file.\nlink\n    Creates a hard link in the published directory for each process output file.\ncopyNoFollow\n    Copies the output files into the published directory without following symlinks ie. copies the links themselves.\nmove\n    Moves the output files into the published directory. Note: this is only supposed to be used for a terminating process i.e. a process whose output is not consumed by any other downstream process.\n\nFor more information see:\nhttps://www.nextflow.io/docs/latest/process.html#publishdir"
+                }
+            }
+        },
+        "autometa_binning_parameters": {
+            "title": "Autometa Binning Parameters",
+            "type": "object",
+            "default": "",
+            "properties": {
+                "length_cutoff": {
+                    "type": "integer",
+                    "default": 3000,
+                    "description": "Minimum contig length to use as input to Autometa"
+                },
+                "norm_method": {
+                    "type": "string",
+                    "default": "am_clr",
+                    "description": "Kmer count normalization transformation method to use. Choices are \"am_clr\", \"clr\", and \"ilr\""
+                },
+                "pca_dimensions": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix"
+                },
+                "embedding_method": {
+                    "type": "string",
+                    "default": "bhsne",
+                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\", \"densne\", \"trimap\""
+                },
+                "embedding_dimensions": {
+                    "type": "integer",
+                    "default": 2,
+                    "description": "Final dimensions of the kmer frequencies matrix"
+                },
+                "kmer_size": {
+                    "type": "integer",
+                    "default": 5,
+                    "description": "kmer length to use during kmer counting"
+                },
+                "clustering_method": {
+                    "type": "string",
+                    "default": "dbscan",
+                    "description": "Cluster contigs using specified clustering method. Choices are \"dbscan\" and \"hdbscan\""
+                },
+                "classification_method": {
+                    "type": "string",
+                    "default": "decision_tree",
+                    "description": "Classification method to use for unclustered recruitment step. Choices are \"decision_tree\" and \"random_forest\""
+                },
+                "classification_kmer_pca_dimensions": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix by PCA"
+                },
+                "completeness": {
+                    "type": "number",
+                    "default": 20,
+                    "description": "Minimum completeness needed to keep a cluster (default is at least 20% complete)"
+                },
+                "purity": {
+                    "type": "number",
+                    "default": 95,
+                    "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
+                },
+                "gc_stddev_limit": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "Maximum GC% standard deviation under which a cluster is kept (default is 5%)"
+                },
+                "cov_stddev_limit": {
+                    "type": "number",
+                    "default": 25,
+                    "description": "Maximum coverage standard deviation under which a cluster is kept (default is  25%)"
+                },
+                "unclustered_recruitment": {
+                    "type": "boolean",
+                    "description": "Set to true for unclustered recruitment"
+                }
+            },
+            "required": [
+                "length_cutoff",
+                "norm_method",
+                "pca_dimensions",
+                "embedding_method",
+                "embedding_dimensions",
+                "kmer_size",
+                "clustering_method",
+                "classification_method",
+                "classification_kmer_pca_dimensions",
+                "completeness",
+                "purity",
+                "gc_stddev_limit",
+                "cov_stddev_limit"
+            ]
+        },
+        "autometa_taxonomy_aware_binning_parameters": {
+            "title": "Autometa Taxonomy-Aware Binning Parameters",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "taxonomy_aware": {
+                    "type": "boolean",
+                    "description": "Turn taxonomy-aware clustering on/off"
+                },
+                "single_db_dir": {
+                    "type": "string",
+                    "default": "null",
+                    "fa_icon": "fas fa-folder-open",
+                    "description": "Directory containing databases required for taxonomy assignment"
+                },
+                "nr_dmnd_dir": {
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
+                },
+                "prot_accession2taxid_gz_dir": {
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
+                },
+                "taxdump_tar_gz_dir": {
+                    "type": "string",
+                    "description": "Currently not used do not set",
+                    "default": "Currently not used do not set",
+                    "hidden": true
+                },
+                "binning_starting_rank": {
+                    "type": "string",
+                    "default": "superkingdom",
+                    "description": "Which taxonomic rank to start the binning from. Choices are \"superkingdom\", \"phylum\", \"class\", \"order\", \"family\", \"genus\", \"species\""
+                },
+                "kingdom": {
+                    "type": "string",
+                    "default": "bacteria",
+                    "description": "Bin contigs belonging to this kingdom. Choices are \"bacteria\" and \"archaea\""
+                },
+                "large_downloads_permission": {
+                    "type": "boolean",
+                    "description": "Can Autometa download nr.gz if needed? (It's >100Gb)"
+                }
+            }
+        },
+        "autometa_nextflow_parameters": {
+            "title": "Autometa Nextflow Parameters",
+            "type": "object",
+            "description": "These paramters control how the pipeline is executed",
+            "default": "",
+            "properties": {
+                "num_splits": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss",
+                    "help_text": "Values over 2 will result in splitting the input metagenome into X-number of FASTA files, to be processed in parallel where applicable. This will result in a doubling of disk space occupied by your input metagenome."
+                },
+                "max_cpus": {
+                    "type": "integer",
+                    "default": 16,
+                    "description": "Max cpus to use/request"
+                },
+                "max_memory": {
+                    "type": "string",
+                    "default": "16 GB",
+                    "description": "Max RAM to use/request"
+                },
+                "max_time": {
+                    "type": "string",
+                    "default": "2d",
+                    "description": "Max time a *single* process is allowed to run"
+                },
+                "enable_conda": {
+                    "type": "boolean",
+                    "description": "Use conda?"
+                },
+                "use_run_name": {
+                    "type": "boolean",
+                    "hidden": true,
+                    "description": "If TRUE, run-name will be used in the output directory structure"
+                },
+                "debug": {
+                    "type": "boolean",
+                    "description": "Run pipeline with small defaults (e.g. not the entire nr.gz download)",
+                    "hidden": true
+                },
+                "mock_test": {
+                    "type": "boolean",
+                    "description": "Run with minimal dataset",
+                    "hidden": true
+                },
+                "autometa_image_tag": {
+                    "type": "string",
+                    "default": "latest",
+                    "description": "Change which tag of the autometa docker image is used",
+                    "help_text": "Appends input to `jason-c-kwan/autometa`\n\njason-c-kwan/autometa:${params.autometa_image_tag}\""
+                }
+            },
+            "required": [
+                "max_cpus",
+                "max_memory",
+                "max_time"
+            ]
+        },
+        "generic_nf_core_options": {
+            "title": "Generic nf-core options",
+            "type": "object",
+            "fa_icon": "fas fa-university",
+            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "properties": {
+                "validate_params": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to validate parameters on initiation",
+                    "hidden": true
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email address for completion summary.",
+                    "fa_icon": "fas fa-envelope",
+                    "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+                    "hidden": true
+                },
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "plaintext_email": {
+                    "type": "string",
+                    "hidden": true
+                },
+                "email_on_fail": {
+                    "type": "string",
+                    "description": "Institutional configs hostname.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_name": {
+                    "type": "string",
+                    "description": "Institutional config name.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "monochrome_logs": {
+                    "type": "boolean",
+                    "description": "Do not use coloured log outputs.",
+                    "fa_icon": "fas fa-users-cog",
+                    "hidden": true
+                },
+                "config_profile_url": {
+                    "type": "string",
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information",
+                    "default": "false",
+                    "hidden": true
+                },
+                "config_profile_description": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information"
+                },
+                "config_profile_contact": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "Only used for institutional-based profiles. See https://nf-co.re/usage/tutorials/step_by_step_institutional_profile#params-scope for more information"
+                },
+                "custom_config_version": {
+                    "type": "string",
+                    "default": "master",
+                    "hidden": true
+                },
+                "custom_config_base": {
+                    "type": "string",
+                    "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+                    "hidden": true
+                },
+                "hostnames": {
+                    "type": "string",
+                    "default": "[binac:['.binac.uni-tuebingen.de'], cbe:['.cbe.vbc.ac.at'], cfc:['.hpc.uni-tuebingen.de'], crick:['.thecrick.org'], icr_davros:['.davros.compute.estate'], imperial:['.hpc.ic.ac.uk'], imperial_mb:['.hpc.ic.ac.uk'], genotoul:['.genologin1.toulouse.inra.fr', '.genologin2.toulouse.inra.fr'], genouest:['.genouest.org'], uppmax:['.uppmax.uu.se'], utd_ganymede:['ganymede.utdallas.edu'], utd_sysbio:['sysbio.utdallas.edu']]",
+                    "hidden": true
+                },
+                "show_hidden_params": {
+                    "type": "string",
+                    "hidden": true
+                },
+                "singularity_pull_docker_container": {
+                    "type": "string",
+                    "hidden": true
+                }
+            },
+            "required": [
+                "validate_params"
+            ]
+        },
+        "parameters_set_internally": {
+            "title": "Parameters set internally",
+            "type": "object",
+            "description": "These parameters are determined during runtime",
+            "default": "",
+            "properties": {
+                "outdir_internal": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "These parameters are determined during runtime"
+                },
+                "interim_dir_internal": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "These parameters are determined during runtime"
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/autometa_binning_parameters"
+        },
+        {
+            "$ref": "#/definitions/autometa_taxonomy_aware_binning_parameters"
+        },
+        {
+            "$ref": "#/definitions/autometa_nextflow_parameters"
+        },
+        {
+            "$ref": "#/definitions/generic_nf_core_options"
+        },
+        {
+            "$ref": "#/definitions/parameters_set_internally"
+        }
+    ]
+}

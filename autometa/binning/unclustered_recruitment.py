@@ -50,6 +50,7 @@ import logging
 import warnings
 import numpy as np
 import pandas as pd
+import sys
 
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -574,7 +575,8 @@ def main():
     )
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     if not prev_num_unclustered:
-        raise BinningError("No unclustered contigs are available to recruit!")
+        logger.warning("No unclustered contigs are available to recruit!")
+        sys.exit(0)
     markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(
@@ -626,10 +628,14 @@ def main():
     )
     # Write unclustered recruitment results into main bin df
     # index = 'contig', cols = [..., 'cluster', 'recruited_cluster', ...]
-    main_df.to_csv(args.output_binning, sep="\t", index=True, header=True)
+    main_df.to_csv(
+        args.output_binning, sep="\t", index=True, header=True, float_format="%.5f"
+    )
     if args.output_main:
         # Outputs features matrix used as input to recruitment algorithm
-        features.to_csv(args.output_main, sep="\t", index=True, header=True)
+        features.to_csv(
+            args.output_main, sep="\t", index=True, header=True, float_format="%.5f"
+        )
 
 
 if __name__ == "__main__":

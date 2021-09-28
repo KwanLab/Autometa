@@ -57,11 +57,11 @@ endif
 
 ## Install autometa from source
 install: setup.py
-	python setup.py install
+	python3 setup.py install
 
 ## Install dependencies for test environment
 test_environment: tests/requirements.txt
-	python -m pip install --requirement=tests/requirements.txt
+	python3 -m pip install --requirement=tests/requirements.txt
 
 ## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
 image: Dockerfile
@@ -78,19 +78,19 @@ unit_test_data_download:
 
 ## Build test_data.json file for unit testing (requires all files from https://drive.google.com/open?id=189C6do0Xw-X813gspsafR9r8m-YfbhTS be downloaded into tests/data/)
 unit_test_data_build: tests/data/records.fna
-	python make_test_data.py
+	python3 make_test_data.py
 
 ## Run all unit tests
 unit_test: tests/data/test_data.json test_environment
-	python -m pytest --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python3 -m pytest --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with WIP
 unit_test_wip: tests/data/test_data.json test_environment
-	python -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python3 -m pytest -m "wip" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 ## Run unit tests marked with entrypoint
 unit_test_entrypoints: tests/data/test_data.json test_environment
-	python -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report=html tests
+	python3 -m pytest -m "entrypoint" --durations=0 --cov=autometa --emoji --cov-report=html tests
 
 
 #################################################################################
