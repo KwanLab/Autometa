@@ -200,7 +200,7 @@
                     "type": "integer",
                     "default": 1,
                     "description": "How many parallel splits should be ceated. Should never be more than total CPUss",
-                    "help_text": "Values over 2 will result in spliting the input metagenome into X-number of FASTA files, to be processed in parallell where applicable. Tis will result in a doubling of disk space occupied by your input metagenome. "
+                    "help_text": "Values over 2 will result in splitting the input metagenome into X-number of FASTA files, to be processed in parallel where applicable. This will result in a doubling of disk space occupied by your input metagenome."
                 },
                 "max_cpus": {
                     "type": "integer",
