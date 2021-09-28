@@ -7,6 +7,10 @@ options        = initOptions(params.options)
 process DIAMOND_BLASTP {
     tag "Aligning ORFS in ${meta.id} against ${diamond_database}"
     label 'process_high'
+    // Old diamond manual suggested *NOT* running in parallel... so we are setting maxForks to 1 here.
+    // TODO: There appears to be features for multiprocessing availabe now
+    // See: https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing
+    maxForks 1
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
