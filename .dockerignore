@@ -20,3 +20,4 @@ Autometa.egg-info
 # Ignore databases
 autometa/databases
 !autometa/databases/markers
+/work

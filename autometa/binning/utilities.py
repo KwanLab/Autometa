@@ -121,21 +121,25 @@ def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
 
 
 def add_metrics(
-    df: pd.DataFrame, markers_df: pd.DataFrame, domain: str = "bacteria"
+    df: pd.DataFrame, markers_df: pd.DataFrame
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Adds cluster metrics to each respective contig in df.
+
+    Metrics
+    -------
+
+        * :math:`completeness = \frac{markers_{cluster}}{markers_{ref}} * 100`
+        * :math:`purity \% = \frac{markers_{single-copy}}{markers_{cluster}} * 100`
+        * :math:`\mu_{coverage}  = \frac{1}{N}\sum_{i=1}^{N}\left(x_{i}-\mu\right)^{2}`
+        * :math:`\mu_{GC\%}  = \frac{1}{N}\sum_{i=1}^{N}\left(x_{i}-\mu\right)^{2}`
 
     Parameters
     ----------
     df : pd.DataFrame
-        index='contig' cols=['x','y','coverage','gc_content','cluster']
+        index='contig' cols=['coverage','gc_content','cluster','x_1','x_2',...,'x_n']
 
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-
-    domain : str, optional
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
 
     Returns
     -------
@@ -143,70 +147,54 @@ def add_metrics(
         `df` with added cluster metrics columns=['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev']
         pd.DataFrame(index=clusters,  cols=['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev'])
 
-    Raises
-    -------
-    KeyError
-        `domain` is not "bacteria" or "archaea"
-
     """
-    domain = domain.lower()
-    marker_sets = {"bacteria": 139.0, "archaea": 162.0}
-    if domain not in marker_sets:
-        raise KeyError(f"{domain} is not bacteria or archaea!")
-    expected_number = marker_sets[domain]
-    metrics = []
-    if "cluster" in df.columns:
-        for cluster, dff in df.groupby("cluster"):
-            pfam_counts = markers_df[markers_df.index.isin(dff.index)].sum()
-            is_present = pfam_counts >= 1
-            is_single_copy = pfam_counts == 1
-            nunique_markers = pfam_counts[is_present].count()
-            num_single_copy_markers = pfam_counts[is_single_copy].count()
-            completeness = nunique_markers / expected_number * 100
-            # Protect from divide by zero
-            if nunique_markers == 0:
-                purity = pd.NA
-            else:
-                purity = num_single_copy_markers / nunique_markers * 100
-            if dff.shape[0] <= 1:
-                coverage_stddev = 0.0
-                gc_content_stddev = 0.0
-            else:
-                coverage_stddev = dff.coverage.std()
-                gc_content_stddev = dff.gc_content.std()
-            metrics.append(
-                {
-                    "cluster": cluster,
-                    "completeness": completeness,
-                    "purity": purity,
-                    "coverage_stddev": coverage_stddev,
-                    "gc_content_stddev": gc_content_stddev,
-                }
-            )
+    reference_markers_count = markers_df.shape[1]
     # Account for exceptions where clusters were not recovered
-    if not metrics or "cluster" not in df.columns:
-        metrics_df = pd.DataFrame(
-            [
-                {
-                    "contig": contig,
-                    "cluster": pd.NA,
-                    "completeness": pd.NA,
-                    "purity": pd.NA,
-                    "coverage_stddev": pd.NA,
-                    "gc_content_stddev": pd.NA,
-                }
-                for contig in df.index
+    if "cluster" not in df.columns:
+        data = {
+            metric: pd.NA
+            for metric in [
+                "cluster",
+                "completeness",
+                "purity",
+                "coverage_stddev",
+                "gc_content_stddev",
+                "present_marker_count",
+                "single_copy_marker_count",
             ]
-        )
-        metric_cols = ["completeness", "purity", "coverage_stddev", "gc_content_stddev"]
-        merged_df = df.copy()
-        for metric in metric_cols:
-            merged_df[metric] = pd.NA
-
+        }
+        cluster_metrics_df = pd.DataFrame(data=data, index=df.index)
+        contig_metrics_df = df.copy().convert_dtypes()
+        contig_metrics_df[data.keys()] = pd.NA
     else:
-        metrics_df = pd.DataFrame(metrics).set_index("cluster")
-        merged_df = pd.merge(df, metrics_df, left_on="cluster", right_index=True)
-    return merged_df, metrics_df
+        # join cluster and marker data -> group contigs by cluster
+        main_grouped_by_cluster = df.join(markers_df, how="outer").groupby("cluster")
+        # sum cluster markers
+        cluster_marker_counts = main_grouped_by_cluster[markers_df.columns].sum()
+        # NOTE: df.ge(...) and df.eq(...) operators return boolean pd.DataFrame
+        present_marker_count = cluster_marker_counts.ge(1).sum(axis=1)
+        # count single copy
+        single_copy_marker_count = cluster_marker_counts.eq(1).sum(axis=1)
+        # calculate completeness and purity and std. dev. metrics
+        completeness = present_marker_count / reference_markers_count * 100
+        purity = single_copy_marker_count / present_marker_count * 100
+        coverage_stddev = main_grouped_by_cluster.coverage.std()
+        gc_content_stddev = main_grouped_by_cluster.gc_content.std()
+        # merge metrics with given dataframe
+        cluster_metrics_df = pd.DataFrame(
+            {
+                "completeness": completeness,
+                "purity": purity,
+                "coverage_stddev": coverage_stddev,
+                "gc_content_stddev": gc_content_stddev,
+                "present_marker_count": present_marker_count,
+                "single_copy_marker_count": single_copy_marker_count,
+            }
+        )
+        contig_metrics_df = pd.merge(
+            df, cluster_metrics_df, left_on="cluster", right_index=True
+        )
+    return contig_metrics_df, cluster_metrics_df
 
 
 def apply_binning_metrics_filter(

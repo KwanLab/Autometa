@@ -123,7 +123,6 @@ def run_dbscan(
 def recursive_dbscan(
     table: pd.DataFrame,
     markers_df: pd.DataFrame,
-    domain: str,
     completeness_cutoff: float,
     purity_cutoff: float,
     coverage_stddev_cutoff: float,
@@ -148,10 +147,6 @@ def recursive_dbscan(
 
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-
-    domain : str
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
 
     completeness_cutoff : float
         `completeness_cutoff` threshold to retain cluster (the default is 20.0).
@@ -188,9 +183,10 @@ def recursive_dbscan(
     n_clusters = float("inf")
     best_median = float("-inf")
     best_df = pd.DataFrame()
+
     while n_clusters > 1:
         binned_df = run_dbscan(table, eps)
-        df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
+        df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
         filtered_df = apply_binning_metrics_filter(
             df=metrics_df,
             completeness_cutoff=completeness_cutoff,
@@ -329,7 +325,6 @@ def run_hdbscan(
 def recursive_hdbscan(
     table: pd.DataFrame,
     markers_df: pd.DataFrame,
-    domain: str,
     completeness_cutoff: float,
     purity_cutoff: float,
     coverage_stddev_cutoff: float,
@@ -346,10 +341,6 @@ def recursive_hdbscan(
 
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-
-    domain : str
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
 
     completeness_cutoff : float
         `completeness_cutoff` threshold to retain cluster.
@@ -396,7 +387,7 @@ def recursive_hdbscan(
             min_samples=min_samples,
             cache_dir=cache_dir,
         )
-        df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df, domain=domain)
+        df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
         filtered_df = apply_binning_metrics_filter(
             df=metrics_df,
             completeness_cutoff=completeness_cutoff,
@@ -461,7 +452,6 @@ def recursive_hdbscan(
 def get_clusters(
     main: pd.DataFrame,
     markers_df: pd.DataFrame,
-    domain: str,
     completeness: float,
     purity: float,
     coverage_stddev: float,
@@ -479,10 +469,6 @@ def get_clusters(
 
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-
-    domain : str
-        Kingdom to determine metrics.
-        choices=['bacteria','archaea'].
 
     completeness : float
         completeness threshold to retain cluster.
@@ -528,7 +514,6 @@ def get_clusters(
         clustered_df, unclustered_df = clusterer(
             main,
             markers_df,
-            domain,
             completeness,
             purity,
             coverage_stddev,
@@ -573,7 +558,6 @@ def get_clusters(
 def taxon_guided_binning(
     main: pd.DataFrame,
     markers: pd.DataFrame,
-    domain: str = "bacteria",
     completeness: float = 20.0,
     purity: float = 95.0,
     coverage_stddev: float = 25.0,
@@ -597,10 +581,6 @@ def taxon_guided_binning(
 
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
-
-    domain : str, optional
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
 
     completeness : float, optional
         Description of parameter `completeness` (the default is 20.).
@@ -697,7 +677,6 @@ def taxon_guided_binning(
             clusters_df = get_clusters(
                 main=rank_df,
                 markers_df=markers,
-                domain=domain,
                 completeness=completeness,
                 purity=purity,
                 coverage_stddev=coverage_stddev,
@@ -904,7 +883,6 @@ def main():
         main_out = taxon_guided_binning(
             main=main_df,
             markers=markers_df,
-            domain=args.rank_name_filter,
             completeness=args.completeness,
             purity=args.purity,
             coverage_stddev=args.coverage_stddev,
@@ -918,7 +896,6 @@ def main():
         main_out = get_clusters(
             main=main_df,
             markers_df=markers_df,
-            domain=args.rank_name_filter,
             completeness=args.completeness,
             purity=args.purity,
             coverage_stddev=args.coverage_stddev,

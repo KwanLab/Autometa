@@ -7,12 +7,12 @@ Autometa or have ideas for new features please see our `contributing guidelines 
 
 Some good first issues are available on the KwanLab Autometa GitHub repository `good first issues 🥇💡 <https://github.com/KwanLab/Autometa/contribute>`__
 
-If you are wanting to help develop autometa, you will need these additional dependencies:
+If you are wanting to help develop Autometa, you will need these additional dependencies:
 
 Documentation
 =============
 
-Autometa builds documentation using readthedocs. You have to install the following to be able to build the docs
+Autometa builds documentation using `readthedocs <https://readthedocs.org/>`__. You have to install the following to be able to build the docs
 
 .. code-block:: bash
 

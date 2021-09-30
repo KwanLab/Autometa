@@ -31,6 +31,8 @@ Download and install miniconda_. Now run the following commands:
     make create_environment
     # activate autometa conda environment
     conda activate autometa
+    # install trimap for kmer embedding
+    pip install trimap
     # install autometa source code in autometa environment
     make install
 
@@ -49,13 +51,17 @@ Download and install miniconda_. Now run the following commands:
     cd Autometa
     # Construct the autometa environment from requirements.txt
     conda create -n autometa -c conda-forge -c bioconda --file=requirements.txt
+    # Activate environment
+    conda activate autometa
+    # install trimap for kmer embedding
+    pip install trimap
     # Install the autometa code base from source
     python setup.py install
 
 Docker image
 ============
 
-You can build a docker image for your clone of Autometa repository. 
+You can build a docker image for your clone of Autometa repository.
 
 #. Install Docker_
 #. Run the following commands
@@ -101,9 +107,9 @@ You can now run different unit tests using the following commands:
 .. note::
     As a shortcut you can also create the test environment and run **all** the unit tests using ``make unit_test`` command.
 
-For more information about the above commands see the :ref:`Contributing Guidelines` page. Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa. 
+For more information about the above commands see the :ref:`Contributing Guidelines` page. Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
 
 .. _conda: https://docs.conda.io/en/latest/
-.. _miniconda: https://docs.conda.io/en/latest/miniconda.html 
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _Docker: https://www.docker.com/
 .. _anaconda: https://www.anaconda.com/

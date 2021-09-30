@@ -1,0 +1,20 @@
+{
+    "name": "nf-core/autometa",
+    "homePage": "https://github.com/nf-core/autometa",
+    "repos": {
+        "nf-core/modules": {
+            "prodigal": {
+                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
+            },
+            "bowtie2/align": {
+                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
+            },
+            "multiqc": {
+                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
+            },
+            "fastqc": {
+                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
+            }
+        }
+    }
+}
