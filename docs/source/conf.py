@@ -40,14 +40,14 @@ release = version
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-# mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
-    "sphinx.ext.imgmath"
+    "sphinx.ext.mathjax"
 ]
 
 todo_include_todos = True
@@ -120,7 +120,7 @@ def sphinx_apidoc(header="Autometa modules"):
 
     source_dir = os.path.dirname(__file__)
     pkg_dir = os.path.join(os.path.dirname(os.path.dirname(source_dir)), "autometa")
-    dest_dirname = "_".join(header.split())
+    dest_dirname = header.replace(" ", "_")
     dest_dir = os.path.join(source_dir, dest_dirname)
     cmd = f"sphinx-apidoc --force --output-dir {dest_dir} {pkg_dir} --doc-project '{header}'"
     subprocess.call(cmd, shell=True)

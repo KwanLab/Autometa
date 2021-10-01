@@ -267,7 +267,6 @@ def majority_vote(
     ncbi_dir: str,
     verbose: bool = False,
     orfs: str = None,
-    force: bool = False,
 ) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
@@ -292,7 +291,8 @@ def majority_vote(
         Path to assigned taxids table.
 
     """
-    lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+    outdir = os.path.dirname(os.path.realpath(out))
+    lca = LCA(dbdir=ncbi_dir, verbose=verbose, outdir=outdir)
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids

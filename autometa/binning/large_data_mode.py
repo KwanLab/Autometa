@@ -103,15 +103,15 @@ def get_kmer_embedding(
         logger.debug(f"Found cached embeddings {cache_fpath}. Reading...")
         return pd.read_csv(cache_fpath, sep="\t", index_col="contig")
     # Cache does not exist, so we perform embedding on rank then cache
-    rank_embedding = kmers.embed(
+    embedding = kmers.embed(
         kmers=kmers.normalize(counts, method=norm_method),
         embed_dimensions=embed_dimensions,
         pca_dimensions=pca_dimensions,
         method=embed_method,
     )
-    rank_embedding.to_csv(cache_fpath, sep="\t", index=True, header=True)
+    embedding.to_csv(cache_fpath, sep="\t", index=True, header=True)
     logger.debug(f"Cached embeddings to {cache_fpath}")
-    return rank_embedding
+    return embedding
 
 
 def get_checkpoint_info(checkpoints_fpath: str) -> Dict[str, Union[pd.DataFrame, str]]:

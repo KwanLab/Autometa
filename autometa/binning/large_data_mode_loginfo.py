@@ -21,21 +21,9 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Template Script for Autometa Modules
+Autometa module: autometa-large-data-mode-binning-loginfo
 
-Template Description:
-Concise sentence describing functionality of script
-
-Template Format:
-0. - Shebang python env definition
-1. - Two lines following comment block script description
-2. - One line separating different import types
-3. - Two lines separating imports and logger
-4. - Two lines separating logger and algorithm functions
-5. - Main function
-6. - if __name__ == '__main__' clause
-7. - Argparse
-8. - Logging aliased to logger in 5.
+Generates tabular metadata from logfile for large-data-mode task (e.g. slurm_job.stderr)
 """
 
 import logging
@@ -45,7 +33,7 @@ import re
 import pandas as pd
 
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict
 
 
 logger = logging.getLogger(__name__)
@@ -58,6 +46,7 @@ def format_total_times(total_times: list, max_partition_size: str) -> pd.DataFra
     ----------
     total_times : list
         Runtime totals per algorithm during large-data-mode
+
     max_partition_size : str
         Partition size parameter retrieved from log file
 
@@ -93,6 +82,7 @@ def add_embedding_runtime_summary_info(
     ----------
     embedding_df : pd.DataFrame
         Embedding info retrieved from logfile
+
     totals : pd.DataFrame
         runtime totals summary table
 
@@ -187,14 +177,29 @@ def add_clustering_runtime_summary_info(
     return totals
 
 
-def get_runtimes(logfile: str) -> Dict[str, Union[pd.DataFrame, pd.Series, int, str]]:
-    # TODO:
-    # 1. Get total embedding time
-    # 2. Num embeddings used that were already cached
-    # 3. Get total k-mer count normalization time
-    # 4. Get taxa skipped that had n.contigs above max_partition_size
-    # 5. Get total binning time
-    # Compile regular expressions
+def get_loginfo(logfile: str) -> Dict[str, pd.DataFrame]:
+    """Get autometa-large-data-mode-binning runtime information
+
+    Data
+    ----
+
+        #. "embedding": Embeddings ranks and times
+        #. "kmer_count_normalization": K-mer count normalization times
+        #. "clustering": Embeddings retrieved from cache
+        #. "skipped_taxa": Ranks above max_partition_size
+        #. "totals": Total times for all binning tasks
+
+    Parameters
+    ----------
+    logfile : str
+        Path to autometa-large-data-mode-binning stderr logfile
+
+    Returns
+    -------
+    Dict[str, pd.DataFrame]
+        Dictionary containing large-data-mode-binning information corresponding to task
+
+    """
     max_partition_size_pattern = re.compile(r"Max\spartition\ssize\sset\sto:\s(\d+)")
     max_partition_size_write_pattern = re.compile(r"partitionSize\d+")
     begin_time_pattern = re.compile(
@@ -236,8 +241,10 @@ def get_runtimes(logfile: str) -> Dict[str, Union[pd.DataFrame, pd.Series, int, 
     embed_dims = None
     embed_method = None
     with open(logfile) as fh:
+        # NOTE: Ordering of retrieving these runtimes is specific.
+        # Inspect logfile and large_data_mode logger.[debug,info](..)
+        # for time-parsing logic
         for line in fh:
-
             # Get run begin timestamp and selected clustering method
             begin_time_match = begin_time_pattern.search(line)
             if begin_time_match:
@@ -439,14 +446,23 @@ def get_runtimes(logfile: str) -> Dict[str, Union[pd.DataFrame, pd.Series, int, 
     totals = add_clustering_runtime_summary_info(
         clustering_df=clustering_df, totals=totals
     )
-
-    return {
-        "embedding": embedding_df,
-        "kmer_count_normalization": norm_df,
-        "clustering": clustering_df,
-        "skipped_taxa": skipped_taxa_df,
-        "total": totals,
-    }
+    # NOTE: I am assigning these lists so it is clear that
+    # The dict keys are filenames to be used later for writing
+    filenames = [
+        "embedding",
+        "kmer_count_normalization",
+        "clustering",
+        "skipped_taxa",
+        "total",
+    ]
+    dataframes = [
+        embedding_df,
+        norm_df,
+        clustering_df,
+        skipped_taxa_df,
+        totals,
+    ]
+    return dict(zip(filenames, dataframes))
 
 
 def main():
@@ -468,7 +484,7 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--output",
+        "--outdir",
         help="Directory to write runtime information tables",
         required=False,
         default=os.curdir,
@@ -486,38 +502,36 @@ def main():
         default=False,
     )
     args = parser.parse_args()
-    # Retrieve runtimes from recursive_dbscan stderr logfile
-    log_info = get_runtimes(args.log)
+    # Retrieve information from recursive_dbscan stderr logfile
+    log_info = get_loginfo(args.log)
     # Make output directory if it does not exist
-    if not os.path.exists(args.output):
-        os.makedirs(args.output)
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
 
     # Write respecive runtime tables
     for info_type, info in log_info.items():
-        if isinstance(info, pd.DataFrame):
-            raw_filename = (
-                f"{info_type}.tsv"
-                if info_type == "skipped_taxa"
-                else f"{info_type}_runtimes.tsv"
-            )
-            out_filename = (
-                f"{args.prefix}{raw_filename}" if args.prefix else raw_filename
-            )
-            out_filepath = os.path.join(args.output, out_filename)
-            if (
-                os.path.exists(out_filepath)
-                and os.path.getsize(out_filepath)
-                and not args.overwrite
-            ):
-                logger.warning(
-                    f"{out_filepath} already exists. User --overwrite to overwrite this table. Skipping..."
-                )
-            else:
-                # In other scenarios (--overwrite provided or file does not exists) we write out table
-                info.to_csv(out_filepath, sep="\t", index=False, header=True)
-                logger.debug(f"Wrote {info_type} runtimes to {out_filepath}")
-        else:
+        if not isinstance(info, pd.DataFrame):
             logger.info(f"{info_type}: {info}")
+            continue
+        raw_filename = (
+            f"{info_type}.tsv"
+            if info_type == "skipped_taxa"
+            else f"{info_type}_runtimes.tsv"
+        )
+        out_filename = f"{args.prefix}{raw_filename}" if args.prefix else raw_filename
+        out_filepath = os.path.join(args.outdir, out_filename)
+        if (
+            os.path.exists(out_filepath)
+            and os.path.getsize(out_filepath)
+            and not args.overwrite
+        ):
+            logger.warning(
+                f"{out_filepath} already exists. Use --overwrite to overwrite this table. Skipping..."
+            )
+        else:
+            # --overwrite was provided or file does not exists
+            info.to_csv(out_filepath, sep="\t", index=False, header=True)
+            logger.debug(f"Wrote {info_type} runtimes to {out_filepath}")
 
     # Some misc summary methods:
     ## Retrieve total duration for individual algorithms.

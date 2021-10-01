@@ -65,10 +65,13 @@ class NCBI:
 
         Parameters
         ----------
+
         dirpath : str
             Path to the database directory
+
         verbose : bool, optional
             log progress to terminal, by default False
+
         """
         self.dirpath = dirpath
         self.verbose = verbose
@@ -82,7 +85,9 @@ class NCBI:
             acc2taxid_gz
         ):
             self.accession2taxid_fpath = acc2taxid_gz
-        self.dead_accession2taxid_fpath = os.path.join(self.dirpath, "dead_prot.accession2taxid")
+        self.dead_accession2taxid_fpath = os.path.join(
+            self.dirpath, "dead_prot.accession2taxid"
+        )
         acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
         if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
             acc2taxid_gz
