@@ -29,8 +29,6 @@ RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
     && conda clean --all -y \
     && python -m pip install trimap
 
-
-
 COPY . .
 RUN make install && make clean
 

@@ -10,16 +10,13 @@ Benchmarking
     perform compared to current state-of-the-art methods. Tools were selected for benchmarking based on their relevance
     to environmental, single-assembly, reference-free binning pipelines.
 
-Benchmarking with the ``autometa-benchmark`` module
-===================================================
+Example benchmarking with simulated communities
+===============================================
 
 Downloading Test Datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The first step in benchmarking is to download the test data files. We will be benchmarking the taxon-profiling step and binning steps and thus the files for the same will be downloaded. reference_assignments are needed as somthiing to compare out output with. Same reference_assignmentsfile will be used for both benchmarking.
-
-Using the built-in ``autometa`` module
---------------------------------------
+The first step in benchmarking is to download the test data files. We will be benchmarking the taxon-profiling step and binning steps and thus the files for the same will be downloaded. reference_assignments are needed as something to compare out output with. Same reference_assignments file will be used for both benchmarking.
 
 Autometa is packaged with a built-in module that allows any user to download any of the available test datasets.
 To use these utilities simply run the command ``autometa-download-dataset``.
@@ -39,55 +36,10 @@ v2.0 binning/taxonomy predictions:
     --file-names reference_assignments.tsv.gz binning.tsv.gz taxonomy.tsv.gz \
     --dir-path simulated
 
-Autometa is packaged with a built-in module that allows any user to download any of the available test datasets.
-To use these utilities simply run the command ``autometa-download-dataset``.
-
-For example, to download all of the simulated communities reference binning/taxonomy assignments as well as the Autometa
-v2.0 binning/taxonomy predictions:
-
-.. code:: bash
-
-Using ``gdrive`` via command line
----------------------------------
-
-You can download the individual assemblies of different datasests with the help of ``gdown`` using command line.
-If you have installed ``autometa`` using ``conda`` then ``gdown`` should already be installed.
-If not, you can install it using ``conda install -c conda-forge gdown`` or ``pip install gdown``.
-
-**Example for the 78Mbp simulated community**
-
-1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
-2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. This will have a ``copy link`` button that you should use. The link for the metagenome assembly (ie. ``metagenome.fna.gz``) should look like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
-3. The file ID is within the ``/`` forward slashes between ``file/d/`` and ``/``, e.g:
-
-.. code:: bash
-
-    # Pasted from copy link button:
-    https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing
-    #                 begin file ID ^ ------------------------------^ end file ID
-
-4. Copy the file ID
-5. Now that we have the File ID, you can specify the ID or use the ``drive.google.com`` prefix. Both should work.
-
-.. code:: bash
-
-    file_id="15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y"
-    gdown --id ${file_id} -O metagenome.fna.gz
-    # or
-    gdown https://drive.google.com/uc?id=${file_id} -O metagenome.fna.gz
-
-.. note::
-    
-    1. To follow along with the tutorial below you'll need to download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, and ``taxonomy.tsv.gz`` files for the dataset you want to run benchmarking on.
-
-    2. Unfortunately, at the moment ``gdown`` doesn't support downloading entire directories from Google drive.
-    There is an open `Pull request <https://github.com/wkentaro/gdown/pull/90#issue-569060398>`_ on the ``gdown`` repository
-    addressing this specific issue which we are keeping a close eye on and will update this documentation when it is merged.
-
 Benchmark clustering
 ^^^^^^^^^^^^^^^^^^^^
 
-Here we are benchmarking the clustering step. All the simulated communities are being benchmarked. You don't have to run all of them, this is just for tutorial purposes.
+Here we are benchmarking the clustering step. All the simulated communities are being benchmarked.
 
 .. code:: bash
 
@@ -100,16 +52,54 @@ Here we are benchmarking the clustering step. All the simulated communities are 
             --output-long ${community_size}.clustering_benchmarks.long.tsv.gz
     done
 
+Aggregate resulst across simulated communities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here we have provided some convinient python scripts for you to aggregate multiple binning results (whether they have unique dataset values or not).
+
+When dataset index is unique
+----------------------------
+
+When all the dataset files are unique the index column is the dataset column.
+
+.. code:: python
+
+    import pandas as pd
+    import glob
+    df = pd.concat([
+        pd.read_csv(fp, sep="\t", index_col="dataset")
+        for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz")
+    ])
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
+
+When dataset index is `not` unique
+----------------------------------
+
+When the dataset files are not unique, then the index (dataset value) will be renamed to the filename of the respective file. 
+
+.. code:: python
+
+    import pandas as pd
+    import os
+    import glob
+    dfs = []
+    for fp in glob.glob("*.clustering_benchmarks.long.tsv.gz"):
+        df = pd.read_csv(fp, sep="\t", index_col="dataset")
+        df.index = df.index.map(lambda fpath: os.path.basename(fpath))
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv("benchmarks.tsv", sep='\t', index=True, header=True)
+
 Benchmark classification
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Previously we benchmarked the clustering step. Now we are going to benchmark the taxon profiling step. The only difference is that ``--classification`` flag is provided instead of ``--clustering`` flag.
+Previously we benchmarked the clustering step. Now we are going to benchmark the taxon profiling step. The only difference is that the ``--classification`` flag is provide instead of the ``--clustering`` flag.
 
 .. code:: bash
 
     autometa-benchmark \
         --benchmark classification \
-        --predictions $taxonomy ${community_size}.taxonomy.tsv.gz \
+        --predictions taxonomy.tsv.gz \
         --reference simulated/${community_size}/reference_assignments.tsv.gz \
         --output-wide ${community_size}.classification_benchmarks.wide.tsv.gz \
         --output-classification-reports taxa_reports \
@@ -117,9 +107,16 @@ Previously we benchmarked the clustering step. Now we are going to benchmark the
 
 Benchmark clustering-classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This will benchmark the taxonomic assignemnt of each bin. To run this you'll need ``binning.tsv.gz`` file for the specific community. This can be downloa by running:
+
+This will benchmark the final binning results using the classification metrics, 
+precision, recall and F1-score.
+
+.. note::
+    
+    First, F1-scores are determined for each reference genome across all recovered genome bins (specifically for clusters containing any of the reference genome's contigs). Then, each reference genome's F1-score is selected corresponding to the respective cluster with the largest set of the respective reference genome's contigs (by length in bp).
 
 .. code:: bash
+    
     autometa-download-dataset \
         --community-type simulated \
         --community-sizes 78Mbp \
@@ -136,12 +133,13 @@ Now running the command to benchmark:
         --reference 78Mbp/reference_assignments.tsv.gz \
         --output-wide binning_classification_wide.tsv.gz
 
-Specifying mulile results
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Specifying multiple results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``autometa-benchmark`` provides the flexibility of specifying multiple output files of the same dataset and benchmarking them simultaneously. For example, in case you have done the clustering for a sample using three different binner, you can benchmark all of them simulateously. This is really handy when benchmarking multiple tools on the same dataset.
 
-**For clustering**
+For clustering
+--------------
 
 .. code:: bash
 
@@ -152,7 +150,8 @@ Specifying mulile results
        --output-wide 78Mbp.clustering_benchmarks.wide.tsv.gz \
        --output-long 78Mbp.clustering_benchmarks.long.tsv.gz
 
-**For classification**
+For classification
+------------------
 
 .. code:: bash
 
@@ -168,7 +167,7 @@ Autometa Test Datasets
 ======================
 
 Simulated Communities
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. csv-table:: Autometa Simulated Communities
     :file: simulated_community.csv
@@ -182,7 +181,7 @@ check the `README.md <https://drive.google.com/file/d/1Ti05Qp13FleuMQdnp3C5L-sXn
 located in the ``simulated_communities`` directory.
 
 Generating New Simulated Communities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 
 Communities were simulated using `ART <https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm>`__,
 a sequencing read simulator, with a collection of 3000 bacteria randomly retrieved.
@@ -207,7 +206,7 @@ e.g. ``-l 1250`` would translate to 1250Mbp as the sum of total lengths for all 
     $ art_illumina -p -ss HS25 -l 125 -f $coverage -o simulated_reads -m 275 -s 90 -i asm_path
 
 Synthetic Communities
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 51 bacterial isolates were assembled into synthetic communities which we've titled ``MIX51``.
 
