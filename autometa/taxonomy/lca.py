@@ -33,7 +33,7 @@ import gzip
 import logging
 import os
 
-from typing import Dict
+from typing import Dict, Set
 from itertools import chain
 
 import pandas as pd
@@ -477,7 +477,7 @@ class LCA(NCBI):
             taxids[qseqid] = qseqid_taxids
         return taxids
 
-    def reduce_taxids_to_lcas(self, taxids: Dict[str, set(int)]) -> Dict[str, int]:
+    def reduce_taxids_to_lcas(self, taxids: Dict[str, Set[int]]) -> Dict[str, int]:
         """Retrieves the lowest common ancestor for each set of taxids in of the taxids
 
         Parameters
