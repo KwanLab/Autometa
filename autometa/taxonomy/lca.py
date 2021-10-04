@@ -415,15 +415,17 @@ class LCA(NCBI):
         logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
         return sseqids_to_taxids
 
-    def convert_sseqids_to_taxids(self, sseqids: Dict[str, str]) -> Dict[str, int]:
+    def convert_sseqids_to_taxids(
+        self, sseqids: Dict[str, Set[str]]
+    ) -> Dict[str, Set[int]]:
         """
         Translates subject sequence ids to taxids from prot.accession2taxid.gz and dead_prot.accession2taxid.gz.
 
-        Note
-        ----
-        If an accession number is no longer available in prot.accesssion2taxid.gz
-        (either due to being suppressed, deprecated or removed by NCBI),
-        then root taxid (1) is returned as the taxid for the corresponding sseqid.
+        .. note::
+
+            If an accession number is no longer available in prot.accesssion2taxid.gz
+            (either due to being suppressed, deprecated or removed by NCBI),
+            then root taxid (1) is returned as the taxid for the corresponding sseqid.
 
         Parameters
         ----------
@@ -469,7 +471,7 @@ class LCA(NCBI):
         recovered_sseqids -= dead_sseqids_found
         root_taxid = 1
         taxids = {}
-        for qseqid, qseqid_sseqids in recovered_sseqids.items():
+        for qseqid, qseqid_sseqids in sseqids.items():
             # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
             qseqid_taxids = {
                 sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
@@ -507,9 +509,9 @@ class LCA(NCBI):
                             lambda taxid1, taxid2: self.lca(node1=taxid1, node2=taxid2),
                             qseqid_taxids,
                         )
-                    except ValueError:
+                    except ValueError as err:
                         logger.error(
-                            f"Missing taxids during LCA retrieval: {qseqid_taxids}. Setting {qseqid} to root taxid"
+                            f"Missing taxids during LCA retrieval: {qseqid_taxids}. Setting {qseqid} to root taxid. Error: {err}"
                         )
                         lca_taxid = root_taxid
                 # If only one taxid was recovered... This is our LCA
