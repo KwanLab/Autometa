@@ -472,7 +472,7 @@ class LCA(NCBI):
         live_sseqids_found -= dead_sseqids_found
         recovered_sseqids -= live_sseqids_found
         if recovered_sseqids:
-            logger.warning(
+            logger.warn(
                 f"sseqids without corresponding taxid: {len(recovered_sseqids):,}"
             )
         root_taxid = 1
