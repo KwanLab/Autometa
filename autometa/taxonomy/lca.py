@@ -349,71 +349,6 @@ class LCA(NCBI):
         # (parent, child)
         return lca_node[1]
 
-    def search_prot_accessions(
-        self,
-        accessions: set,
-        sseqids_to_taxids: Dict[str, int] = None,
-        live: bool = True,
-    ) -> Dict[str, int]:
-        """Search prot.accession2taxid.gz and dead_prot.accession2taxid.gz
-
-        Parameters
-        ----------
-        accessions : set
-            Set of subject sequence ids retrieved from diamond blastp search (sseqids)
-
-        sseqids_to_taxids : Dict[str, int], optional
-            Dictionary containing sseqids converted to taxids
-
-        live : bool, optional
-            Whether to use prot.accession2taxid.gz (live=True) or dead_prot.accession2taxid.gz (live=False)
-
-        Returns
-        -------
-        Dict[str, int]
-            Dictionary containing sseqids converted to taxids
-        """
-        if not sseqids_to_taxids:
-            sseqids_to_taxids = {}
-        if live:
-            # "rt" open the database in text mode instead of binary to be handled like a text file
-            fh = (
-                gzip.open(self.accession2taxid_fpath, "rt")
-                if self.accession2taxid_fpath.endswith(".gz")
-                else open(self.accession2taxid_fpath)
-            )
-            fpath = self.accession2taxid_fpath
-        else:
-            fh = (
-                gzip.open(self.dead_accession2taxid_fpath, "rt")
-                if self.dead_accession2taxid_fpath.endswith(".gz")
-                else open(self.dead_accession2taxid_fpath)
-            )
-            fpath = self.dead_accession2taxid_fpath
-        filename = os.path.basename(fpath)
-        # skip the header line
-        __ = fh.readline()
-        logger.debug(
-            f"Searching for {len(accessions):,} accessions in {filename}. This may take a while..."
-        )
-        n_lines = file_length(fpath, approximate=True) if self.verbose else None
-        desc = f"Parsing {filename}"
-        converted_sseqid_count = 0
-        for line in tqdm(
-            fh, disable=self.disable, desc=desc, total=n_lines, leave=False
-        ):
-            acc_num, acc_ver, taxid, _ = line.split("\t")
-            taxid = int(taxid)
-            if acc_num in accessions:
-                sseqids_to_taxids[acc_num] = taxid
-                converted_sseqid_count += 1
-            if acc_ver in accessions:
-                sseqids_to_taxids[acc_ver] = taxid
-                converted_sseqid_count += 1
-        fh.close()
-        logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
-        return sseqids_to_taxids
-
     def convert_sseqids_to_taxids(
         self,
         sseqids: Dict[str, Set[str]],
@@ -454,16 +389,16 @@ class LCA(NCBI):
         # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
         sseqids_to_taxids = self.search_prot_accessions(
             accessions=recovered_sseqids,
-            live=False,
+            db="dead",
             sseqids_to_taxids=None,
         )
         dead_sseqids_found = set(sseqids_to_taxids.keys())
 
-        # Now build the mapping from sseqid to taxid from the live accession2taxid db
+        # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
         # Possibly overwriting any merged accessions to live accessions
         sseqids_to_taxids = self.search_prot_accessions(
             accessions=recovered_sseqids,
-            live=True,
+            db="full",
             sseqids_to_taxids=sseqids_to_taxids,
         )
 

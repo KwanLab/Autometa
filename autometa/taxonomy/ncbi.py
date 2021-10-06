@@ -24,6 +24,7 @@ File containing definition of the NCBI class and containing functions useful for
 """
 
 
+import gzip
 import logging
 import os
 import string
@@ -34,6 +35,7 @@ import pandas as pd
 
 from tqdm import tqdm
 
+from autometa.common.utilities import file_length
 from autometa.common.exceptions import DatabaseOutOfSyncError
 from autometa.config.utilities import DEFAULT_CONFIG
 
@@ -79,12 +81,23 @@ class NCBI:
         self.names_fpath = os.path.join(self.dirpath, "names.dmp")
         self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
         self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
+        # Set prot.accession2taxid filepath
         self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
         acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
         if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
             acc2taxid_gz
         ):
             self.accession2taxid_fpath = acc2taxid_gz
+        # Set prot.accession2taxid.FULL.gz filepath
+        self.accession2taxidfull_fpath = os.path.join(
+            self.dirpath, "prot.accession2taxid.FULL"
+        )
+        acc2taxid_gz = ".".join([self.accession2taxidfull_fpath, "gz"])
+        if not os.path.exists(self.accession2taxidfull_fpath) and os.path.exists(
+            acc2taxid_gz
+        ):
+            self.accession2taxidfull_fpath = acc2taxid_gz
+        # Set dead_prot.accession2taxid filepath
         self.dead_accession2taxid_fpath = os.path.join(
             self.dirpath, "dead_prot.accession2taxid"
         )
@@ -93,6 +106,7 @@ class NCBI:
             acc2taxid_gz
         ):
             self.dead_accession2taxid_fpath = acc2taxid_gz
+        # Check formatting for nr database
         self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
         nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
@@ -104,6 +118,7 @@ class NCBI:
             logger.warning(
                 f"DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!"
             )
+        # Setup data structures from nodes.dmp, names.dmp and merged.dmp
         self.nodes = self.parse_nodes()
         self.names = self.parse_names()
         self.merged = self.parse_merged()
@@ -460,6 +475,98 @@ class NCBI:
                     err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
                     raise DatabaseOutOfSyncError(err_message)
         return taxid
+
+    def search_prot_accessions(
+        self,
+        accessions: set,
+        sseqids_to_taxids: Dict[str, int] = None,
+        db: str = "live",
+    ) -> Dict[str, int]:
+        """Search prot.accession2taxid.gz and dead_prot.accession2taxid.gz
+
+        Parameters
+        ----------
+        accessions : set
+            Set of subject sequence ids retrieved from diamond blastp search (sseqids)
+
+        sseqids_to_taxids : Dict[str, int], optional
+            Dictionary containing sseqids converted to taxids
+
+        db : str, optional
+            selection of one of the prot accession to taxid databases from NCBI. Choices are live, dead, full
+
+            * live: prot.accession2taxid.gz
+            * full: prot.accession2taxid.FULL.gz
+            * dead: dead_prot.accession2taxid.gz
+
+        Returns
+        -------
+        Dict[str, int]
+            Dictionary containing sseqids converted to taxids
+        """
+        if not sseqids_to_taxids:
+            sseqids_to_taxids = {}
+        if not isinstance(db, str):
+            raise ValueError(f"db must be a string! Type Given: {type(db)}")
+        db = db.lower()
+        choices = {
+            "live": self.accession2taxid_fpath,
+            "dead": self.dead_accession2taxid_fpath,
+            "full": self.accession2taxidfull_fpath,
+        }
+        if db not in choices:
+            raise ValueError(f"db must be one of live, full or dead. Given: {db}")
+        fpath = choices.get(db)
+
+        # Revert to accession2taxid if FULL is not present
+        if db == "full" and (not os.path.exists(fpath) or not os.path.getsize(fpath)):
+            logger.warn(
+                "prot.accession2taxid.FULL.gz was not found. Reverting to prot.accession2taxid.gz"
+            )
+            logger.warn(
+                "To achieve greater resolution of your metagenome taxonomy, considering downloading the prot.accession2taxid.FULL.gz database file"
+            )
+            fpath = choices.get("live")
+
+        # "rt" open the database in text mode instead of binary to be handled like a text file
+        fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath)
+        filename = os.path.basename(fpath)
+        # skip the header line
+        __ = fh.readline()
+        logger.debug(
+            f"Searching for {len(accessions):,} accessions in {filename}. This may take a while..."
+        )
+        n_lines = file_length(fpath, approximate=True) if self.verbose else None
+        desc = f"Parsing {filename}"
+        converted_sseqid_count = 0
+        for line in tqdm(
+            fh, disable=self.disable, desc=desc, total=n_lines, leave=False
+        ):
+            if db == "full":
+                # FULL format is accession.version\ttaxid\n
+                acc_num = None  # Just in case
+                acc_ver, taxid = line.strip().split("\t")
+            else:
+                # dead and live formats are accession\taccession.version\ttaxid\tgi\n
+                acc_num, acc_ver, taxid, _ = line.strip().split("\t")
+
+            taxid = int(taxid)
+            if acc_ver in accessions:
+                sseqids_to_taxids[acc_ver] = taxid
+                converted_sseqid_count += 1
+
+            # So prog will not have to search through the accessions set
+            if db == "full":
+                continue
+
+            # Search for base accession if using live or dead accession2taxid databases
+            if acc_num in accessions:
+                sseqids_to_taxids[acc_num] = taxid
+                converted_sseqid_count += 1
+
+        fh.close()
+        logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
+        return sseqids_to_taxids
 
 
 if __name__ == "__main__":
