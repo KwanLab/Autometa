@@ -398,7 +398,6 @@ class LCA(NCBI):
         )
         n_lines = file_length(fpath, approximate=True) if self.verbose else None
         desc = f"Parsing {filename}"
-        sseqids_to_taxids = {}
         converted_sseqid_count = 0
         for line in tqdm(
             fh, disable=self.disable, desc=desc, total=n_lines, leave=False
@@ -416,7 +415,9 @@ class LCA(NCBI):
         return sseqids_to_taxids
 
     def convert_sseqids_to_taxids(
-        self, sseqids: Dict[str, Set[str]]
+        self,
+        sseqids: Dict[str, Set[str]],
+        sseqid_to_taxid_output: str = None,
     ) -> Dict[str, Set[int]]:
         """
         Translates subject sequence ids to taxids from prot.accession2taxid.gz and dead_prot.accession2taxid.gz.
@@ -448,29 +449,53 @@ class LCA(NCBI):
             chain.from_iterable([qseqid_sseqids for qseqid_sseqids in sseqids.values()])
         )
 
-        # Now build the mapping from sseqid to taxid from the live accession2taxid db
-        sseqids_to_taxids = self.search_prot_accessions(
-            accessions=recovered_sseqids,
-            live=True,
-            sseqids_to_taxids=None,
-        )
-
-        # Remove sseqids: Ignore any sseqids already found
-        live_sseqids_found = set(sseqids_to_taxids.keys())
-        recovered_sseqids -= live_sseqids_found
-        # Next check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+        # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
         # Any accessions not found in live prot.accession2taxid db *may* be here.
         # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
         sseqids_to_taxids = self.search_prot_accessions(
             accessions=recovered_sseqids,
             live=False,
-            sseqids_to_taxids=sseqids_to_taxids,
+            sseqids_to_taxids=None,
         )
         dead_sseqids_found = set(sseqids_to_taxids.keys())
-        dead_sseqids_found -= live_sseqids_found
-        recovered_sseqids -= dead_sseqids_found
+
+        # Now build the mapping from sseqid to taxid from the live accession2taxid db
+        # Possibly overwriting any merged accessions to live accessions
+        sseqids_to_taxids = self.search_prot_accessions(
+            accessions=recovered_sseqids,
+            live=True,
+            sseqids_to_taxids=sseqids_to_taxids,
+        )
+
+        # Remove sseqids: Ignore any sseqids already found
+        live_sseqids_found = set(sseqids_to_taxids.keys())
+        live_sseqids_found -= dead_sseqids_found
+        recovered_sseqids -= live_sseqids_found
+        if recovered_sseqids:
+            logger.warning(
+                f"sseqids without corresponding taxid: {len(recovered_sseqids):,}"
+            )
         root_taxid = 1
         taxids = {}
+        if sseqid_to_taxid_output:
+            sseqid_not_found = pd.NA
+            df = pd.DataFrame(
+                [
+                    {
+                        "qseqid": qseqid,
+                        "sseqid": sseqid,
+                        "raw_taxid": sseqids_to_taxids.get(sseqid, sseqid_not_found),
+                    }
+                    for qseqid, qseqid_sseqids in sseqids.items()
+                    for sseqid in qseqid_sseqids
+                ]
+            )
+            # Update taxids if they are old.
+            df["merged_taxid"] = df.raw_taxid.map(lambda tid: self.merged.get(tid, tid))
+            # If we still have missing taxids, we will set the sseqid value to the root taxid
+            # fill missing taxids with root_taxid
+            df["cleaned_taxid"] = df.merged_taxid.fillna(root_taxid)
+            df.to_csv(sseqid_to_taxid_output, sep="\t", index=False, header=True)
         for qseqid, qseqid_sseqids in sseqids.items():
             # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
             qseqid_taxids = {
@@ -523,7 +548,13 @@ class LCA(NCBI):
             lca_taxids.update({qseqid: lca_taxid})
         return lca_taxids
 
-    def blast2lca(self, blast: str, out: str, force: bool = False) -> str:
+    def blast2lca(
+        self,
+        blast: str,
+        out: str,
+        sseqid_to_taxid_output: str = None,
+        force: bool = False,
+    ) -> str:
         """Determine lowest common ancestor of provided amino-acid ORFs.
 
         Parameters
@@ -548,7 +579,9 @@ class LCA(NCBI):
             raise FileNotFoundError(blast)
         blast = os.path.realpath(blast)
         sseqids = diamond.parse(results=blast, verbose=self.verbose)
-        taxids = self.convert_sseqids_to_taxids(sseqids)
+        taxids = self.convert_sseqids_to_taxids(
+            sseqids, sseqid_to_taxid_output=sseqid_to_taxid_output
+        )
         lcas = self.reduce_taxids_to_lcas(taxids)
         written_lcas = self.write_lcas(lcas=lcas, out=out)
         return written_lcas
@@ -682,7 +715,6 @@ def main():
         description="Script to determine Lowest Common Ancestor",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--output", help="Path to write LCA results.", required=True)
     parser.add_argument(
         "--blast",
         help="Path to BLAST results table respective to `orfs`. "
@@ -691,6 +723,14 @@ def main():
     )
     parser.add_argument(
         "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
+    )
+    parser.add_argument(
+        "--lca-output", help="Path to write LCA results.", required=True
+    )
+    parser.add_argument(
+        "--sseqid2taxid-output",
+        help="Path to write qseqids sseqids to taxids translations table (useful for debugging)",
+        required=False,
     )
     parser.add_argument(
         "--verbose",
@@ -706,12 +746,13 @@ def main():
     )
     args = parser.parse_args()
 
-    outdir = os.path.dirname(os.path.realpath(args.output))
+    outdir = os.path.dirname(os.path.realpath(args.lca_output))
     lca = LCA(dbdir=args.dbdir, verbose=args.verbose, outdir=outdir)
 
     lca.blast2lca(
         blast=args.blast,
-        out=args.output,
+        out=args.lca_output,
+        sseqid_to_taxid_output=args.sseqid2taxid_output,
         force=args.force,
     )
 

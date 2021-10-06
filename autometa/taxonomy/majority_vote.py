@@ -304,7 +304,6 @@ def majority_vote(
 def main():
     import argparse
 
-    basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     parser = argparse.ArgumentParser(
         description="Script to assign taxonomy via a modified majority voting"
         " algorithm.",
