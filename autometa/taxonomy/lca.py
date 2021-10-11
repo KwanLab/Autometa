@@ -483,6 +483,33 @@ class LCA(NCBI):
             lca_taxids.update({qseqid: lca_taxid})
         return lca_taxids
 
+    def read_sseqid_to_taxid_table(
+        self, sseqid_to_taxid_filepath: str
+    ) -> Dict[str, Set[int]]:
+        """Retrieve each qseqid's set of taxids from `sseqid_to_taxid_filepath` for reduction by LCA
+
+        Parameters
+        ----------
+        sseqid_to_taxid_filepath : str
+            Path to sseqid to taxid table with columns: qseqid, sseqid, raw_taxid, merged_taxid, clean_taxid
+
+        Returns
+        -------
+        Dict[str, Set[int]]
+            Dictionary keyed by qseqid containing sets of respective `clean` taxid
+        """
+        taxids = {}
+        with open(sseqid_to_taxid_filepath) as fh:
+            __ = fh.readline()
+            for line in fh:
+                qseqid, *__, clean_taxid = line.strip().split("\t")
+                clean_taxid = int(clean_taxid)
+                if qseqid in taxids:
+                    taxids[qseqid].add(clean_taxid)
+                else:
+                    taxids[qseqid] = set([clean_taxid])
+        return taxids
+
     def blast2lca(
         self,
         blast: str,
@@ -510,13 +537,21 @@ class LCA(NCBI):
         if os.path.exists(out) and os.path.getsize(out) and not force:
             logger.warning(f"FileAlreadyExists {out}")
             return out
-        if not os.path.exists(blast) or not os.path.getsize(blast):
-            raise FileNotFoundError(blast)
         blast = os.path.realpath(blast)
-        sseqids = diamond.parse(results=blast, verbose=self.verbose)
-        taxids = self.convert_sseqids_to_taxids(
-            sseqids, sseqid_to_taxid_output=sseqid_to_taxid_output
-        )
+        # If sseqid_to_taxid_output exists then we'll retrieve sseqid taxids from this...
+        if os.path.exists(sseqid_to_taxid_output) and os.path.getsize(
+            sseqid_to_taxid_output
+        ):
+            logger.debug(f"Retrieving taxids from {sseqid_to_taxid_output}")
+            taxids = self.read_sseqid_to_taxid_table(sseqid_to_taxid_output)
+        elif not os.path.exists(blast) or not os.path.getsize(blast):
+            raise FileNotFoundError(blast)
+        elif os.path.exists(blast) and os.path.getsize(blast):
+            logger.debug(f"Retrieving taxids from {blast}")
+            sseqids = diamond.parse(results=blast, verbose=self.verbose)
+            taxids = self.convert_sseqids_to_taxids(
+                sseqids, sseqid_to_taxid_output=sseqid_to_taxid_output
+            )
         lcas = self.reduce_taxids_to_lcas(taxids)
         written_lcas = self.write_lcas(lcas=lcas, out=out)
         return written_lcas
