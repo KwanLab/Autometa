@@ -1,85 +1,69 @@
 #!/usr/bin/env nextflow
 
+
+/*
+========================================================================================
+    Autometa
+========================================================================================
+    Autometa's Nextflow Analysis Pipeline
+    Github         : https://github.com/KwanLab/Autometa
+    Documentation  : https://autometa.readthedocs.io/en/latest/
+----------------------------------------------------------------------------------------
+*/
+
 nextflow.enable.dsl = 2
 
-include { AUTOMETA } from './nextflow/autometa.nf'
+/*
+========================================================================================
+    VALIDATE & PRINT PARAMETER SUMMARY
+========================================================================================
+*/
 
-// Below listed parameters should be provided by the parameters.config file
-// Available here: https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow/parameters.config
-//
+WorkflowMain.initialise(workflow, params, log)
 
-// Check User data inputs
-params.metagenome = null
-if ( !params.metagenome || params.metagenome instanceof Boolean )
-error """
-You must supply the `metagenome` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --metagenome "</path/to/your/metagenome(s)>"
+
+////////////////////////////////////////////////////
+/* --         VALIDATE PARAMETERS              -- */
+////////////////////////////////////////////////////
+
+
+if (params.use_run_name){
+    params.interim_dir_internal = "${params.interim_dir}/autometa_interim_dir/${workflow.runName}/${workflow.sessionId}" // Intermediate results directory
+    params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.runName}/${workflow.sessionId}"           // Final results directory
+} else {
+    params.interim_dir_internal = "${params.interim_dir}/autometa_interim_dir/${workflow.sessionId}" // Intermediate results directory
+    params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.sessionId}"           // Final results directory
+}
+
+println """
+--------------------------------------------
+Output files will be found here:
+Intermediate results directory: ${params.interim_dir_internal}
+Binning results directory: ${params.outdir_internal}
+--------------------------------------------
+\n
 """
-// Where to store intermediate and final results:
-params.interim = null
-if ( !params.interim || params.interim instanceof Boolean )
-error """
-You must supply the `--interim` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --interim "</directory/path/to/store/interimediate/results>""
-"""
-params.processed = null
-if ( !params.processed || params.processed instanceof Boolean )
-error """
-You must supply the `--processed` parameter in the config or on the command line!
-e.g.
-nextflow run main.nf -c parameters.config --processed "</directory/path/to/final/results>""
-"""
 
+/*
+========================================================================================
+    NAMED WORKFLOW FOR PIPELINE
+========================================================================================
+*/
 
-log.info """
+include { AUTOMETA } from './workflows/autometa.nf' addParams(single_db_dir: params.single_db_dir)
 
- Autometa - Automated Extraction of Genomes from Shotgun Metagenomes
- =====================================================
- projectDir                         : ${workflow.projectDir}
- -----------------------------------------------------
- Data
- -----------------------------------------------------
- metagenome                         : ${params.metagenome}
- interim                            : ${params.interim}
- processed                          : ${params.processed}
- -----------------------------------------------------
- Parameters
- -----------------------------------------------------
- cpus                               : ${params.cpus}
- length_cutoff                      : ${params.length_cutoff}
- kmer_size                          : ${params.kmer_size}
- norm_method                        : ${params.norm_method}
- pca_dimensions                     : ${params.pca_dimensions}
- embedding_method                   : ${params.embedding_method}
- embedding_dimensions               : ${params.embedding_dimensions}
- clustering_method                  : ${params.clustering_method}
- classification_kmer_pca_dimensions : ${params.classification_kmer_pca_dimensions}
- classification_method              : ${params.classification_method}
- completeness                       : ${params.completeness}
- purity                             : ${params.purity}
- gc_stddev_limit                    : ${params.gc_stddev_limit}
- cov_stddev_limit                   : ${params.cov_stddev_limit}
- kingdom                            : ${params.kingdom}
- -----------------------------------------------------
- Databases
- -----------------------------------------------------
- ncbi_database                      : ${params.ncbi_database}
- -----------------------------------------------------
-"""
+/*
+========================================================================================
+    Run Autometa
+========================================================================================
+*/
 
 workflow {
-  Channel
-    .fromPath(params.metagenome, checkIfExists: true, type: 'file')
-    .set{unfiltered_metagenome_ch}
-
-  AUTOMETA(unfiltered_metagenome_ch)
+    AUTOMETA()
 }
 
 /*
- * completion handler
- */
-workflow.onComplete {
-	log.info ( workflow.success ? "\nDone!\n" : "Oops .. something went wrong" )
-}
+========================================================================================
+    THE END
+========================================================================================
+*/

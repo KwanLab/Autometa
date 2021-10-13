@@ -28,11 +28,11 @@ marker sets depending on sequence set taxonomy
 import logging
 import os
 
-import multiprocessing as mp
 import pandas as pd
 
-from autometa.common.external import hmmer
+from autometa.common.external import hmmscan
 from autometa.config.utilities import DEFAULT_CONFIG
+
 
 MARKERS_DIR = DEFAULT_CONFIG.get("databases", "markers")
 # For cases where autometa has not been configured, attempt to find the markers via source
@@ -95,12 +95,14 @@ def load(fpath, format="wide"):
 def get(
     kingdom: str,
     orfs: str,
-    dbdir: str,
+    hmmdb: str,
+    cutoffs: str,
+    dbdir: str = MARKERS_DIR,
     scans: str = None,
     out: str = None,
     force: bool = False,
     format: str = "wide",
-    cpus: int = mp.cpu_count(),
+    cpus: int = 8,
     parallel: bool = True,
     gnu_parallel: bool = False,
     seed: int = 42,
@@ -115,7 +117,11 @@ def get(
     orfs: str
         Path to amino-acid ORFs file
     dbdir:
-        Directory should contain hmmpressed marker genes database files.
+        Optional directory containing hmmdb and cutoffs files
+    hmmdb:
+        Path to marker genes database file, previously hmmpressed.
+    cutoffs:
+        Path to marker genes cutoff tsv.
     scans: str, optional
         Path to existing hmmscan table to filter by cutoffs
     out: str, optional
@@ -150,15 +156,23 @@ def get(
         Why the exception is raised.
     """
     kingdom = kingdom.lower()
-    hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
-    cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
-    hmmscan_fname = ".".join([kingdom, "hmmscan.tsv"])
+    # if dbdir == MARKERS_DIR and hmmdb/cutoffs not set, use single dbdir
+    # else dbdir was set, so use it for both hmmdb and cutoffs
+    if dbdir == MARKERS_DIR:
+        if hmmdb is None:
+            hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
+        if cutoffs is None:
+            cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
+    else:
+        hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
+        cutoffs = os.path.join(dbdir, f"{kingdom}.single_copy.cutoffs")
+    hmmscan_fname = f"{kingdom}.hmmscan.tsv"
     scans = (
         os.path.join(os.path.dirname(os.path.abspath((orfs))), hmmscan_fname)
         if not scans
         else scans
     )
-    markers_fname = ".".join([kingdom, "markers.tsv"])
+    markers_fname = f"{kingdom}.markers.tsv"
     out = (
         os.path.join(os.path.dirname(os.path.abspath((orfs))), markers_fname)
         if not out
@@ -167,7 +181,7 @@ def get(
     kingdom = kingdom.lower()
 
     if not os.path.exists(scans) or not os.path.getsize(scans):
-        scans = hmmer.hmmscan(
+        scans = hmmscan.run(
             orfs=orfs,
             hmmdb=hmmdb,
             outfpath=scans,
@@ -179,7 +193,7 @@ def get(
         )
 
     if not os.path.exists(out) or not os.path.getsize(out):
-        out = hmmer.filter_markers(
+        out = hmmscan.filter_markers(
             infpath=scans,
             outfpath=out,
             cutoffs=cutoffs,
@@ -226,6 +240,14 @@ def main():
         default=MARKERS_DIR,
     )
     parser.add_argument(
+        "--hmmdb",
+        help="Path to single-copy marker HMM databases.",
+    )
+    parser.add_argument(
+        "--cutoffs",
+        help="Path to single-copy marker cutoff tsv.",
+    )
+    parser.add_argument(
         "--force",
         help="Whether to overwrite existing provided annotations.",
         action="store_true",
@@ -246,7 +268,7 @@ def main():
     parser.add_argument(
         "--cpus",
         help=f"Number of cores to use for parallel execution.",
-        default=mp.cpu_count(),
+        default=8,
         type=int,
     )
     parser.add_argument(
@@ -260,7 +282,9 @@ def main():
     get(
         kingdom=args.kingdom,
         orfs=args.orfs,
+        hmmdb=args.hmmdb,
         dbdir=args.dbdir,
+        cutoffs=args.cutoffs,
         scans=args.hmmscan,
         out=args.out,
         force=args.force,
