@@ -393,10 +393,13 @@ def main():
 
     args = parser.parse_args()
     raw_mg = Metagenome(assembly=args.assembly)
-
-    filtered_mg = raw_mg.length_filter(
-        out=args.output_fasta, cutoff=args.cutoff, force=args.force
-    )
+    try:
+        filtered_mg = raw_mg.length_filter(
+            out=args.output_fasta, cutoff=args.cutoff, force=args.force
+        )
+    except FileExistsError as err:
+        logger.debug(f"FileAlreadyExists: {args.output_fasta} Skipping length-filter...")
+        filtered_mg = Metagenome(assembly=args.output_fasta)
     if args.output_stats:
         stats_df = filtered_mg.describe()
         stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
