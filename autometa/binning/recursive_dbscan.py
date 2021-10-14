@@ -243,6 +243,7 @@ def run_hdbscan(
     min_cluster_size: int,
     min_samples: int,
     cache_dir: str = None,
+    core_dist_n_jobs: int = -1,
     dropcols: List[str] = [
         "cluster",
         "purity",
@@ -278,6 +279,10 @@ def run_hdbscan(
         Used to cache the output of the computation of the tree.
         By default, no caching is done. If a string is given, it is the
         path to the caching directory.
+
+    core_dist_n_jobs: int
+        Number of parallel jobs to run in core distance computations.
+        For ``core_dist_n_jobs`` below -1, (n_cpus + 1 + core_dist_n_jobs) are used.
 
     dropcols : list, optional
         Drop columns in list from `df`
@@ -317,6 +322,7 @@ def run_hdbscan(
         cluster_selection_method="leaf",
         allow_single_cluster=True,
         memory=cache_dir,
+        core_dist_n_jobs=core_dist_n_jobs,
     ).fit(X)
     clusters = pd.Series(clusterer.labels_, index=df.index, name="cluster")
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
