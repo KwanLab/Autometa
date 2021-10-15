@@ -303,6 +303,10 @@ class Metagenome:
             raise FileExistsError(out)
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
         records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
+        outdir = os.path.dirname(out)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+            logger.debug(f"Created outdir: {outdir}")
         n_written = SeqIO.write(records, out, "fasta")
         if not n_written:
             logger.warning(
@@ -389,10 +393,13 @@ def main():
 
     args = parser.parse_args()
     raw_mg = Metagenome(assembly=args.assembly)
-
-    filtered_mg = raw_mg.length_filter(
-        out=args.output_fasta, cutoff=args.cutoff, force=args.force
-    )
+    try:
+        filtered_mg = raw_mg.length_filter(
+            out=args.output_fasta, cutoff=args.cutoff, force=args.force
+        )
+    except FileExistsError as err:
+        logger.debug(f"FileAlreadyExists: {args.output_fasta} Skipping length-filter...")
+        filtered_mg = Metagenome(assembly=args.output_fasta)
     if args.output_stats:
         stats_df = filtered_mg.describe()
         stats_df.to_csv(args.output_stats, sep="\t", index=True, header=True)
