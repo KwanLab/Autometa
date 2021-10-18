@@ -11,7 +11,7 @@ Nextflow helps Autometa produce reproducible results while allowing the pipeline
 System Requirements
 ===================
 
-Currently the nextflow pipeline requires Docker so it must be installed on your system. If you don't have Docker installed you can install it from `docs.docker.com <https://docs.docker.com/get-docker>`_. We plan on removing this dependency in future versions, so other dependency managers (e.g. Conda, Singularity, etc) can be used.
+Currently the nextflow pipeline requires Docker so it must be installed on your system. If you don't have Docker installed you can install it from `docs.docker.com <https://docs.docker.com/get-docker>`_. We plan on removing this dependency in future versions, so that other dependency managers (e.g. Conda, Singularity, etc) can be used.
 
 Nextflow runs on any Posix compatible system. Detailed system requirements can be found in the nextflow documentation `here <https://www.nextflow.io/docs/latest/getstarted.html#requirements>`_
 
@@ -23,10 +23,21 @@ Data preparation
 
 Autometa takes contigs as input, so you need to have previously assembled your shotgun metagenome. The following workflow is recommended:
 
-#. Trim adapter sequences from the reads. We prefer to use Trimmomatic_, but you can go ahead and use any tool of your preference.
-#. Quality check of reads to make sure that the adapters have been removed, we use FastQC_ for this.
-#. Assemble the trimmed reads. We recommend using MetaSPAdes which is a part of the SPAdes_ package to assemble the trimmed reads but you can use any other assembler as well.
-#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step. We tend to use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
+#. Trim adapter sequences from the reads. 
+
+   * We usually use Trimmomatic_.
+
+#. Quality check of reads to make sure that the adapters have been removed.
+
+   * We usually use FastQC_.
+
+#. Assemble the trimmed reads. 
+
+   * We usually use MetaSPAdes which is a part of the SPAdes_ package.
+
+#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step. 
+   
+   * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
 
 .. TODO: SPAdes info is for python version, currently the Nextflow version assumes everything is from SPAdes. It's not clear how coverage is used.
@@ -41,20 +52,20 @@ Basic
 =====
 
 While the Autometa Nextflow pipeline can be run using Nextflow directly, we designed it using nf-core standards and templating to provide an easier user experience through use of the nf-core "tools" python library. 
-The directions below demonstrate using a minimal Conda environment to install Nextflow and nf-core tools and run the Autometa pipeline. 
+The directions below demonstrate using a minimal Conda environment to install Nextflow and nf-core tools and then running the Autometa pipeline. 
 
 .. _install-nextflow-nfcore-with-conda:
 
 Installing Nextflow and nf-core tools with Conda
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have not previously installed/used Conda, you can get it using the OS-appropriate Miniconda installer here: `<https://docs.conda.io/en/latest/miniconda.html>`_
+If you have not previously installed/used Conda, you can get it using the Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
 
-Running the following command will create a minimal Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
+After installing conda, running the following command will create a minimal Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/nfcore/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
 
 If you receive the message...
 
@@ -75,13 +86,13 @@ Once Conda has finished creating the environment be sure to active it:
 Launching Autometa using nf-core tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Download/Launch the Autometa Nextflow pipeline using nf-core tools. The stable version will always be the "main" git branch. To use an in-development git branch switch "main" with the name of the branch. After the pipeline downloads nf-core will start the pipeline launch process.
+Download/Launch the Autometa Nextflow pipeline using nf-core tools. The stable version of Autometa will always be the "main" git branch. To use an in-development git branch switch "main" in the command(s) with the name of the desired branch. After the pipeline downloads nf-core will start the pipeline launch process.
 
 .. code-block:: bash
 
     nf-core launch KwanLab/Autometa -r main
 
-You will then be asked to choose "Web based" or "Command line" in order to select/provide options. While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
+You will then be asked to choose "Web based" or "Command line" for selecting/providing options. While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
 Use the arrow keys to select one or the other and then press return/enter.
 
 
@@ -93,7 +104,7 @@ The GUI will present all available parameters, though some extra parameters may 
 * Parameters to set every time
     - :code:`--input`: the path to your input metagenome's nucleotide FASTA file
     - :code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
-        - **standard** (default): runs all process jobs locally.
+        - **standard** (default): runs all process jobs locally, (currently this requires Docker).
         - **slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm:` before using
 
 Running the pipeline
@@ -102,9 +113,9 @@ After you are finished double-checking your parameter settings, click "Launch" a
 
 .. note::
 
-    This process will lead to nf-core tools creating a file named :code:`nf-params.json`. This file contains your specified parameters that differed from the pipeline's defaults. This file can be modified by hand and shared to allow even easier configuration/sharing of settings (e.g. among members within a lab who use the same computing system).
+    This process will lead to nf-core tools creating a file named :code:`nf-params.json`. This file contains your specified parameters that differed from the pipeline's defaults. This file can also be modified by hand and/or shared to allow reproducible configuration/sharing of settings (e.g. among members within a lab who use the same computing system).
 
-    Additionally all Autometa specific pipeline parameters can be used as command line arguments using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens (e.g. :code:`--input`)
+    Additionally all Autometa specific pipeline parameters can be used as command line arguments using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens (e.g. :code:`--input "my/file/path/contigs"`)
 
 
 Advanced
@@ -117,9 +128,9 @@ While you might want to provide Autometa all the compute resources available in 
 
 Within the Autometa pipeline, parallelization happens two ways: 1) by providing all the contigs at once to software that handles parallelization internally; 2) by splitting the input FASTA into batches of contigs which are provided in parallel to non-parallelized software.
 
-In regards to the first method: The Autometa pipeline will try and use all resources available to individual pipeline modules. Each module has been pre-assigned resource allotments via a low/medium/high tag. This means that even if you don't select for the pipeline to run in parallel some modules (e.g. DIAMOND BLAST) may use multiple cores. The max number of CPUs that any single module can use is defined with the :code:`--max_cpus` option (default: 4). You can also set :code:`--max_memory` (default: 16GB) and :code:`--max_time` (default: 240h).
+In regards to the first method: The Autometa pipeline will try and use all resources available to individual pipeline modules. Each module/process has been pre-assigned resource allotments via a low/medium/high tag. This means that even if you don't select for the pipeline to run in parallel some modules (e.g. DIAMOND BLAST) may still use multiple cores. The maximum number of CPUs that any single module can use is defined with the :code:`--max_cpus` option (default: 4). You can also set :code:`--max_memory` (default: 16GB) and/or :code:`--max_time` (default: 240h). :code:`--max_time` refers to the maximum time each process is allowed to run, not the execution time for the the entire pipeline.
 
-In regards to the 2nd method: The Autometa pipeline will split the input metagenome FASTA file into the specified number of files which can be set by providing an integer value to the option: :code:`--num_splits` (default: :code:`1`- no splits, not run in parallel). Choosing the largest number of parallel processes possible may not provide largest gain in performance and a good rule would be to not exceed the number of avaliable cores.
+In regards to the 2nd method: The Autometa pipeline will split the input metagenome FASTA file into the specified number of files which can be set by providing an integer value to the option: :code:`--num_splits` (default: :code:`1`- no splits, not run in parallel). Choosing the largest number of parallel processes possible may not provide largest gain in performance and a good rule would be to not exceed the number of avaliable cores available.
 
 
 Multiple Inputs
