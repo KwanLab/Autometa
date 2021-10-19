@@ -168,7 +168,6 @@ def checkpoint(
     rank_name_txt: str,
     completeness: float,
     purity: float,
-    domain: str,
     coverage_stddev: float,
     gc_content_stddev: float,
     cluster_method: str,
@@ -194,7 +193,6 @@ def checkpoint(
             f"#-- Parameters --#",
             f"# completeness: {completeness}",
             f"# purity: {purity}",
-            f"# domain: {domain}",
             f"# coverage_stddev: {coverage_stddev}",
             f"# gc_content_stddev: {gc_content_stddev}",
             f"# cluster_method: {cluster_method}",
@@ -235,7 +233,6 @@ def cluster_by_taxon_partitioning(
     embed_dimensions: int = 2,
     embed_method: str = "umap",
     max_partition_size: int = 10000,
-    domain: str = "bacteria",
     completeness: float = 20.0,
     purity: float = 95.0,
     coverage_stddev: float = 25.0,
@@ -266,10 +263,6 @@ def cluster_by_taxon_partitioning(
     markers : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
 
-    domain : str, optional
-        Kingdom to determine metrics (the default is 'bacteria').
-        choices=['bacteria','archaea']
-
     completeness : float, optional
         Description of parameter `completeness` (the default is 20.).
 
@@ -282,10 +275,6 @@ def cluster_by_taxon_partitioning(
 
     gc_content_stddev : float, optional
         cluster GC content threshold to retain cluster (the default is 5.0).
-
-    taxonomy : bool, optional
-        Split canonical ranks and subset based on rank then attempt to find clusters (the default is True).
-        taxonomic_levels = [superkingdom,phylum,class,order,family,genus,species]
 
     starting_rank : str, optional
         Starting canonical rank at which to begin subsetting taxonomy (the default is superkingdom).
@@ -494,7 +483,6 @@ def cluster_by_taxon_partitioning(
             rank_name_txt_binning_df = get_clusters(
                 main=rank_df,
                 markers_df=markers,
-                domain=domain,
                 completeness=completeness,
                 purity=purity,
                 coverage_stddev=coverage_stddev,
@@ -520,7 +508,6 @@ def cluster_by_taxon_partitioning(
                     rank_name_txt=rank_name_txt,
                     completeness=completeness,
                     purity=purity,
-                    domain=domain,
                     coverage_stddev=coverage_stddev,
                     gc_content_stddev=gc_content_stddev,
                     cluster_method=method,
@@ -785,7 +772,6 @@ def main():
         embed_dimensions=args.embed_dims,
         embed_method=args.embed_method,
         max_partition_size=args.max_partition_size,
-        domain=args.rank_name_filter,
         completeness=args.completeness,
         purity=args.purity,
         coverage_stddev=args.cov_stddev_limit,
