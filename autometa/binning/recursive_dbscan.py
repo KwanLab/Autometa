@@ -244,13 +244,6 @@ def run_hdbscan(
     min_samples: int,
     cache_dir: str = None,
     core_dist_n_jobs: int = -1,
-    dropcols: List[str] = [
-        "cluster",
-        "purity",
-        "completeness",
-        "coverage_stddev",
-        "gc_content_stddev",
-    ],
 ) -> pd.DataFrame:
     """Run clustering on `df` at provided `min_cluster_size`.
 
@@ -284,10 +277,6 @@ def run_hdbscan(
         Number of parallel jobs to run in core distance computations.
         For ``core_dist_n_jobs`` below -1, (n_cpus + 1 + core_dist_n_jobs) are used.
 
-    dropcols : list, optional
-        Drop columns in list from `df`
-        (the default is ['cluster','purity','completeness']).
-
     Returns
     -------
     pd.DataFrame
@@ -301,30 +290,34 @@ def run_hdbscan(
         `df` is missing k-mer or coverage annotations.
 
     """
-    # Ignore any errors raised from trying to drop columns that do not exist in our df.
-    df.drop(columns=dropcols, inplace=True, errors="ignore")
+    # Ignore any errors raised from trying to drop previous 'cluster' in our df.
+    df = df.drop(columns="cluster", errors="ignore")
     n_samples = df.shape[0]
     if n_samples == 1:
         clusters = pd.Series([pd.NA], index=df.index, name="cluster")
         return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
-    if np.any(df.isnull()):
+
+    # NOTE: all of our kmer embedded columns should correspond from "x_1" to "x_{embedding_dimensions}"
+    features_cols = [col for col in df.columns if "x_" in col or col == "coverage"]
+    # Subset what will go into clusterer to only features (kmer and coverage information)
+    features_df = df[features_cols]
+    if np.any(features_df.isnull()):
         raise TableFormatError(
             f"df is missing {df.isnull().sum().sum()} kmer/coverage annotations"
         )
-    # NOTE: all of our kmer embedded columns should correspond from "x_1" to "x_{embedding_dimensions}"
-    cols = [col for col in df.columns if "x_" in col or col == "coverage"]
-    # Subset what will go into clusterer to only kmer and coverage information
-    X = df.loc[:, cols].to_numpy()
-    # Perform clustering
-    clusterer = HDBSCAN(
+    # Fit and predict clusters
+    clusters = HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         cluster_selection_method="leaf",
         allow_single_cluster=True,
         memory=cache_dir,
         core_dist_n_jobs=core_dist_n_jobs,
-    ).fit(X)
-    clusters = pd.Series(clusterer.labels_, index=df.index, name="cluster")
+    ).fit_predict(features_df.to_numpy())
+    clusters = pd.Series(clusters, index=df.index, name="cluster")
+    # NOTE: HDBSCAN labels outliers with -1
+    outlier_label = -1
+    clusters = clusters.loc[clusters.ne(outlier_label)]
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
 
 
@@ -505,8 +498,6 @@ def get_clusters(
         `main` with ['cluster','completeness','purity','coverage_stddev','gc_content_stddev'] columns added
 
     """
-    num_clusters = 0
-    clusters = []
     recursive_clusterers = {"dbscan": recursive_dbscan, "hdbscan": recursive_hdbscan}
     if method not in recursive_clusterers:
         raise ValueError(
@@ -514,6 +505,8 @@ def get_clusters(
         )
     clusterer = recursive_clusterers[method]
 
+    num_clusters = 0
+    clusters = []
     # Continue until clusters are no longer being recovered
     # break when either clustered_df or unclustered_df is empty
     while True:
@@ -545,7 +538,7 @@ def get_clusters(
         # continue with unclustered contigs
         main = unclustered_df
     # concatenate all clustering rounds in clusters list and sort by bin number
-    df = pd.concat(clusters, sort=True)
+    df = pd.concat(clusters, axis="index", sort=True)
     for metric in [
         "purity",
         "completeness",

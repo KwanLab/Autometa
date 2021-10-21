@@ -409,9 +409,10 @@ def cluster_by_taxon_partitioning(
             if dff.empty:
                 continue
             # Only cluster contigs that have not already been assigned a bin. (i.e. 'cluster' column value is pd.NA)
-            rank_df = (
-                dff.loc[dff["cluster"].isna()] if "cluster" in dff.columns else dff
-            )
+            if "cluster" in dff.columns:
+                rank_df = dff.loc[dff["cluster"].isna()].copy()
+            else:
+                rank_df = dff.copy()
             # Second cluster filter with set membership to global set of clustered contigs
             if clustered_contigs:
                 rank_df = rank_df.loc[~rank_df.index.isin(clustered_contigs)]

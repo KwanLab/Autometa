@@ -148,32 +148,35 @@ def add_metrics(
         pd.DataFrame(index=clusters,  cols=['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev'])
 
     """
+    metrics = [
+        "completeness",
+        "purity",
+        "coverage_stddev",
+        "gc_content_stddev",
+        "present_marker_count",
+        "single_copy_marker_count",
+    ]
     reference_markers_count = markers_df.shape[1]
     # Account for exceptions where clusters were not recovered
     if "cluster" not in df.columns:
-        data = {
-            metric: pd.NA
-            for metric in [
-                "cluster",
-                "completeness",
-                "purity",
-                "coverage_stddev",
-                "gc_content_stddev",
-                "present_marker_count",
-                "single_copy_marker_count",
-            ]
-        }
-        cluster_metrics_df = pd.DataFrame(data=data, index=df.index)
-        contig_metrics_df = df.copy().convert_dtypes()
-        contig_metrics_df[data.keys()] = pd.NA
+        cluster_metrics_df = pd.DataFrame(
+            data={metric: pd.NA for metric in metrics}, index=df.index
+        )
+        # Remove previous metrics to avoid creating metrics with suffixes
+        contig_metrics_df = (
+            df.copy().convert_dtypes().drop(columns=metrics, errors="ignore")
+        )
+        contig_metrics_df[metrics] = pd.NA
     else:
+        # Remove previous metrics to avoid creating metrics with suffixes
+        df = df.drop(columns=metrics, errors="ignore")
         # join cluster and marker data -> group contigs by cluster
         main_grouped_by_cluster = df.join(markers_df, how="outer").groupby("cluster")
         # sum cluster markers
         cluster_marker_counts = main_grouped_by_cluster[markers_df.columns].sum()
         # NOTE: df.ge(...) and df.eq(...) operators return boolean pd.DataFrame
         present_marker_count = cluster_marker_counts.ge(1).sum(axis=1)
-        # count single copy
+        # count single-copy
         single_copy_marker_count = cluster_marker_counts.eq(1).sum(axis=1)
         # calculate completeness and purity and std. dev. metrics
         completeness = present_marker_count / reference_markers_count * 100
@@ -192,7 +195,7 @@ def add_metrics(
             }
         )
         contig_metrics_df = pd.merge(
-            df, cluster_metrics_df, left_on="cluster", right_index=True
+            df, cluster_metrics_df, how="left", left_on="cluster", right_index=True
         )
     return contig_metrics_df, cluster_metrics_df
 
@@ -242,15 +245,13 @@ def apply_binning_metrics_filter(
     for metric in metrics:
         if metric not in df.columns:
             raise KeyError(f"{metric} not in `df` columns: {df.columns}")
-    gt_completeness_cutoff = df["completeness"] >= completeness_cutoff
-    gt_purity_cutoff = df["purity"] >= purity_cutoff
-    lt_coverage_stddev_cutoff = df["coverage_stddev"] <= coverage_stddev_cutoff
-    lt_gc_content_stddev_cutoff = df["gc_content_stddev"] <= gc_content_stddev_cutoff
+    # df[metric].ge(cutoff) equivalent operator: metric >= cutoff
+    # df[metric].le(cutoff) equivalent operator: metric <= cutoff
     return df[
-        gt_completeness_cutoff
-        & gt_purity_cutoff
-        & lt_coverage_stddev_cutoff
-        & lt_gc_content_stddev_cutoff
+        df.completeness.ge(completeness_cutoff)
+        & df.purity.ge(purity_cutoff)
+        & df.coverage_stddev.le(coverage_stddev_cutoff)
+        & df.gc_content_stddev.le(gc_content_stddev_cutoff)
     ]
 
 
