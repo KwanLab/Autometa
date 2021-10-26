@@ -311,10 +311,12 @@ def cluster_by_taxon_partitioning(
     """
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
-        ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
+        canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
-        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
+        canonical_ranks = [
+            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+        ]
     # if stage is cached then we can first look to the cache before we begin subsetting main...
     clustered_contigs = set()
     num_clusters = 0
@@ -356,48 +358,91 @@ def cluster_by_taxon_partitioning(
             binning_checkpoints = pd.DataFrame()
 
     # Subset ranks by provided (or checkpointed) starting rank
-    starting_rank_index = ranks.index(starting_rank)
-    ranks = ranks[starting_rank_index:]
-    logger.debug(f"Using ranks: {', '.join(ranks)}")
+    starting_rank_index = canonical_ranks.index(starting_rank)
+    canonical_ranks = canonical_ranks[starting_rank_index:]
+    logger.debug(f"Using canonical ranks: {', '.join(canonical_ranks)}")
     logger.debug(f"Max partition size set to: {max_partition_size}")
     starting_rank_name_txt_found = False
-    for rank in ranks:
+    for canonical_rank in canonical_ranks:
         # TODO: We should account for novel taxa here instead of removing 'unclassified'
-        unclassified_filter = main[rank] != "unclassified"
-        # group 'classified' contigs by rank
-        n_taxa_in_rank = main.loc[unclassified_filter, rank].nunique()
-        n_classified_contigs_in_rank = main.loc[unclassified_filter, rank].shape[0]
+        unclassified_filter = main[canonical_rank] != "unclassified"
+        # group 'classified' contigs by canonical_rank
+        n_taxa_in_rank = main.loc[unclassified_filter, canonical_rank].nunique()
+        n_classified_contigs_in_rank = main.loc[
+            unclassified_filter, canonical_rank
+        ].shape[0]
         logger.info(
-            f"Examining {rank}: {n_taxa_in_rank:,} unique taxa ({n_classified_contigs_in_rank:,} contigs)"
+            f"Examining {canonical_rank}: {n_taxa_in_rank:,} unique taxa ({n_classified_contigs_in_rank:,} contigs)"
         )
         # Subset counts by filtering out any unclassified according to current canonical rank and that exist in main df
         rank_counts = counts.loc[counts.index.isin(main.loc[unclassified_filter].index)]
-        # cache dir structured with sub-directories corresponding to each canonical rank.
-        embedding_cache_fpath = (
-            os.path.join(
-                cache,
-                rank,
-                f"{rank}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
-            )
-            if cache
-            else None
-        )
-        # Create cache rank outdir if it does not exist
-        if embedding_cache_fpath and not os.path.isdir(os.path.join(cache, rank)):
-            os.makedirs(os.path.join(cache, rank))
-
+        # Check num. contigs for kmer embedding retrieval
+        min_contigs = max([pca_dimensions + 1, embed_dimensions + 1])
         # Store canonical rank embedding for later lookup at lower canonical ranks
-        rank_embedding = get_kmer_embedding(
-            rank_counts,
-            cache_fpath=embedding_cache_fpath,
-            norm_method=norm_method,
-            pca_dimensions=pca_dimensions,
-            embed_dimensions=embed_dimensions,
-            embed_method=embed_method,
-        )
-        rank_embeddings[rank] = rank_embedding
+        if rank_counts.shape[0] >= min_contigs:
+            # cache dir structured with sub-directories corresponding to each canonical rank.
+            embedding_cache_fpath = (
+                os.path.join(
+                    cache,
+                    canonical_rank,
+                    f"{canonical_rank}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
+                )
+                if cache
+                else None
+            )
+            # Create canonical rank cache outdir if it does not exist
+            rank_cache_outdir = os.path.join(cache, canonical_rank)
+            if embedding_cache_fpath and not os.path.isdir(rank_cache_outdir):
+                os.makedirs(rank_cache_outdir)
+            rank_embedding = get_kmer_embedding(
+                rank_counts,
+                cache_fpath=embedding_cache_fpath,
+                norm_method=norm_method,
+                pca_dimensions=pca_dimensions,
+                embed_dimensions=embed_dimensions,
+                embed_method=embed_method,
+            )
+            rank_embeddings[canonical_rank] = rank_embedding
+        else:
+            # There are not enough contigs at this canonical rank
+            # so we must retrieve embeddings from a previous canonical rank
+            prev_canonical_rank_idx = canonical_ranks.index(canonical_rank) - 1
+            try:
+                prev_canonical_rank = canonical_ranks[prev_canonical_rank_idx]
+            except ValueError:
+                # Not enough contigs are present at the superkingdom rank
+                logger.warning(
+                    f"Unable to retrieve embeddings for {canonical_rank}, skipping..."
+                )
+                continue
+            # Attempt to get kmer embedding from previous canonical rank...
+            embedding_cache_fpath = (
+                os.path.join(
+                    cache,
+                    prev_canonical_rank,
+                    f"{prev_canonical_rank}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
+                )
+                if cache
+                else None
+            )
+            prev_canonical_rank_unclassified_filter = main[prev_canonical_rank].ne(
+                "unclassified"
+            )
+            rank_counts = counts.loc[
+                counts.index.isin(
+                    main.loc[prev_canonical_rank_unclassified_filter].index
+                )
+            ]
+            rank_embedding = get_kmer_embedding(
+                rank_counts,
+                cache_fpath=embedding_cache_fpath,
+                norm_method=norm_method,
+                pca_dimensions=pca_dimensions,
+                embed_dimensions=embed_dimensions,
+                embed_method=embed_method,
+            )
         # Now group by canonical rank and try embeddings specific to each name in this canonical rank
-        main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
+        main_grouped_by_rank = main.loc[unclassified_filter].groupby(canonical_rank)
         # Find best clusters within each rank name for the canonical rank subset
         for rank_name_txt, dff in main_grouped_by_rank:
             # Skip contig set if we are still searching for our starting taxon
@@ -424,14 +469,12 @@ def cluster_by_taxon_partitioning(
             embedding_cache_fpath = (
                 os.path.join(
                     cache,
-                    rank,
+                    canonical_rank,
                     f"{rank_name_txt}.{norm_method}_pca{pca_dimensions}_{embed_method}{embed_dimensions}.tsv.gz",
                 )
                 if cache
                 else None
             )
-            # Check num. contigs for kmer embedding retrieval
-            min_contigs = max([pca_dimensions + 1, embed_dimensions + 1])
             n_contigs_in_rank = rank_df.shape[0]
             # Case 1: num. contigs in rank_df is greater than the max partition size and needs to be further subset.
             if n_contigs_in_rank > max_partition_size:
@@ -467,7 +510,7 @@ def cluster_by_taxon_partitioning(
                     rank_embedding.index.isin(rank_df.index)
                 ]
                 logger.debug(
-                    f"using {rank} embedding for {rank_name_txt}. shape={rank_name_embedding.shape}"
+                    f"using {canonical_rank} embedding for {rank_name_txt}. shape={rank_name_embedding.shape}"
                 )
             # Add kmer embeddings into rank dataframe to use for clustering
             rank_df = pd.merge(
@@ -479,7 +522,7 @@ def cluster_by_taxon_partitioning(
             )
             # Find best clusters
             logger.debug(
-                f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
+                f"Examining taxonomy: {canonical_rank} : {rank_name_txt} : {rank_df.shape}"
             )
             rank_name_txt_binning_df = get_clusters(
                 main=rank_df,
@@ -505,7 +548,7 @@ def cluster_by_taxon_partitioning(
                 binning_checkpoints = checkpoint(
                     checkpoints_df=binning_checkpoints,
                     clustered=clustered,
-                    rank=rank,
+                    rank=canonical_rank,
                     rank_name_txt=rank_name_txt,
                     completeness=completeness,
                     purity=purity,
