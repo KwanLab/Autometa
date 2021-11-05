@@ -45,7 +45,7 @@ from autometa.common.utilities import write_checksum
 from autometa.common.utilities import internet_is_connected
 from autometa.common.exceptions import ChecksumMismatchError
 from autometa.common.external import diamond
-from autometa.common.external import hmmer
+from autometa.common.external import hmmscan
 from autometa.config.utilities import DEFAULT_FPATH
 from autometa.config.utilities import DEFAULT_CONFIG
 from autometa.config.utilities import AUTOMETA_DIR
@@ -444,7 +444,7 @@ class Databases:
         hmms = (fpath for fpath in hmms if fpath not in pressed_hmms)
         # Press hmms and write checksums of their indices
         for hmm_fp in hmms:
-            hmmer.hmmpress(hmm_fp)
+            hmmscan.hmmpress(hmm_fp)
             for index_fp in glob(f"{hmm_fp}.h3?"):
                 write_checksum(index_fp, f"{index_fp}.md5")
 
