@@ -34,6 +34,8 @@ import numpy as np
 
 from sklearn.cluster import DBSCAN
 from hdbscan import HDBSCAN
+from numba import config
+
 
 from autometa.common.markers import load as load_markers
 
@@ -50,6 +52,11 @@ from autometa.binning.utilities import (
 )
 
 pd.set_option("mode.chained_assignment", None)
+
+# See: https://numba.readthedocs.io/en/stable/user/threading-layer.html
+# for more information on setting the threading layer. This is to prevent the warning
+# Numba: Attempted to fork from a non-main thread, the TBB library may be in an invalid state in the child process
+config.THREADING_LAYER = 'safe'
 
 logger = logging.getLogger(__name__)
 
