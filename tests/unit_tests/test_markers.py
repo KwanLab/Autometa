@@ -28,7 +28,7 @@ import pytest
 import argparse
 import pandas as pd
 from autometa.common import markers
-from autometa.common.external import hmmer
+from autometa.common.external import hmmscan
 from autometa.common.markers import MARKERS_DIR
 
 
