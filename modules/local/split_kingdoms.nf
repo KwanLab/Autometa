@@ -24,10 +24,13 @@ process SPLIT_KINGDOMS {
         path(ncbi_tax_dir)
 
     output:
-        tuple val(meta), path("${meta.id}.taxonomy.tsv"), emit: taxonomy
-        tuple val(meta), path("${meta.id}.bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("${meta.id}.archaea.fna") , emit: archaea, optional: true
-        path  '*.version.txt'                           , emit: version
+        tuple val(meta), path("${meta.id}.taxonomy.tsv"),  emit: taxonomy
+        tuple val(meta), path("${meta.id}.bacteria.fna"),  emit: bacteria, optional: true
+        tuple val(meta), path("${meta.id}.archaea.fna"),   emit: archaea, optional: true
+        tuple val(meta), path("${meta.id}.viruses.fna"),   emit: viruses, optional: true
+        tuple val(meta), path("${meta.id}.eukaryota.fna"), emit: eukaryota, optional: true
+        tuple val(meta), path("${meta.id}.*.fna"),         emit: kingdoms, optional: true
+        path '*.version.txt',                              emit: version
 
     script:
         def software = getSoftwareName(task.process)
