@@ -805,6 +805,9 @@ def main():
     if main_df.shape[0] <= 1:
         raise BinningError("Not enough contigs in table for binning")
 
+    contigs_containing_markers_count = main_df.index.isin(markers_df.index).sum()
+    contigs_containing_markers_percent = contigs_containing_markers_count / main_df.shape[0] * 100
+    logger.info(f"{contigs_containing_markers_count:,} sequences contain markers ({contigs_containing_markers_percent:.2f}% of total in binning features table)")
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
     main_out = cluster_by_taxon_partitioning(
