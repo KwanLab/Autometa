@@ -514,7 +514,7 @@ class LCA(NCBI):
         self,
         blast: str,
         out: str,
-        sseqid_to_taxid_output: str = None,
+        sseqid_to_taxid_output: str = "",
         force: bool = False,
     ) -> str:
         """Determine lowest common ancestor of provided amino-acid ORFs.
@@ -539,7 +539,7 @@ class LCA(NCBI):
             return out
         blast = os.path.realpath(blast)
         # If sseqid_to_taxid_output exists then we'll retrieve sseqid taxids from this...
-        if os.path.exists(sseqid_to_taxid_output) and os.path.getsize(
+        if sseqid_to_taxid_output and os.path.exists(sseqid_to_taxid_output) and os.path.getsize(
             sseqid_to_taxid_output
         ):
             logger.debug(f"Retrieving taxids from {sseqid_to_taxid_output}")
