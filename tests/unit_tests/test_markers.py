@@ -72,24 +72,24 @@ def fixture_markers_dbdir():
     return MARKERS_DIR
 
 
-@pytest.fixture(name="mock_hmmer_hmmscan")
-def mock_hmmer_hmmscan(monkeypatch, scans_fpath):
+@pytest.fixture(name="mock_hmmscan_run")
+def mock_hmmscan_run(monkeypatch, scans_fpath):
     def return_args(*args, **kwargs):
         return scans_fpath
 
-    monkeypatch.setattr(hmmer, name="hmmscan", value=return_args, raising=True)
+    monkeypatch.setattr(hmmscan, name="run", value=return_args, raising=True)
 
 
-@pytest.fixture(name="mock_hmmer_filter_markers")
-def mock_hmmer_filter_markers(monkeypatch, filtered_markers_fpath):
+@pytest.fixture(name="mock_hmmscan_filter_markers")
+def mock_hmmscan_filter_markers(monkeypatch, filtered_markers_fpath):
     def return_args(*args, **kwargs):
         return filtered_markers_fpath
 
-    monkeypatch.setattr(hmmer, name="filter_markers", value=return_args, raising=True)
+    monkeypatch.setattr(hmmscan, name="filter_markers", value=return_args, raising=True)
 
 
 def test_marker_get(
-    markers_dbdir, orfs, mock_hmmer_hmmscan, mock_hmmer_filter_markers, tmp_path
+    markers_dbdir, orfs, mock_hmmscan_run, mock_hmmscan_filter_markers, tmp_path
 ):
     kingdom = "archaea"
     markers_fpath = tmp_path / f"{kingdom}.markers.tsv"
