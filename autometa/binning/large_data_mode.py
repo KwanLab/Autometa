@@ -242,6 +242,7 @@ def cluster_by_taxon_partitioning(
     reverse_ranks: bool = False,
     cache: str = None,
     binning_checkpoints_fpath: str = None,
+    n_jobs: int = -1,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
@@ -532,6 +533,7 @@ def cluster_by_taxon_partitioning(
                 coverage_stddev=coverage_stddev,
                 gc_content_stddev=gc_content_stddev,
                 method=method,
+                n_jobs=n_jobs,
                 verbose=verbose,
             )
             # Store clustered contigs
@@ -771,6 +773,12 @@ def main():
         default=False,
         help="log debug information",
     )
+    parser.add_argument(
+        "--cpus",
+        default=-1,
+        metavar="int",
+        help="Number of cores to use by clustering method (default will try to use as many as are available)",
+    )
     args = parser.parse_args()
 
     counts_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
@@ -806,8 +814,12 @@ def main():
         raise BinningError("Not enough contigs in table for binning")
 
     contigs_containing_markers_count = main_df.index.isin(markers_df.index).sum()
-    contigs_containing_markers_percent = contigs_containing_markers_count / main_df.shape[0] * 100
-    logger.info(f"{contigs_containing_markers_count:,} sequences contain markers ({contigs_containing_markers_percent:.2f}% of total in binning features table)")
+    contigs_containing_markers_percent = (
+        contigs_containing_markers_count / main_df.shape[0] * 100
+    )
+    logger.info(
+        f"{contigs_containing_markers_count:,} sequences contain markers ({contigs_containing_markers_percent:.2f}% of total in binning features table)"
+    )
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
     main_out = cluster_by_taxon_partitioning(
@@ -828,6 +840,7 @@ def main():
         reverse_ranks=args.reverse_ranks,
         cache=args.cache,
         binning_checkpoints_fpath=args.binning_checkpoints,
+        n_jobs=args.cpus,
         verbose=args.verbose,
     )
 

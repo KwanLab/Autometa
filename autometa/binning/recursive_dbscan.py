@@ -56,7 +56,7 @@ pd.set_option("mode.chained_assignment", None)
 # See: https://numba.readthedocs.io/en/stable/user/threading-layer.html
 # for more information on setting the threading layer. This is to prevent the warning
 # Numba: Attempted to fork from a non-main thread, the TBB library may be in an invalid state in the child process
-config.THREADING_LAYER = 'safe'
+config.THREADING_LAYER = "safe"
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ logger = logging.getLogger(__name__)
 def run_dbscan(
     df: pd.DataFrame,
     eps: float,
+    n_jobs: int = -1,
     dropcols: List[str] = [
         "cluster",
         "purity",
@@ -122,7 +123,7 @@ def run_dbscan(
     # Subset what will go into clusterer to only kmer and coverage information
     X = df.loc[:, cols].to_numpy()
     # Perform clustering
-    clusterer = DBSCAN(eps=eps, min_samples=1, n_jobs=-1).fit(X)
+    clusterer = DBSCAN(eps=eps, min_samples=1, n_jobs=n_jobs).fit(X)
     clusters = pd.Series(clusterer.labels_, index=df.index, name="cluster")
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
 
@@ -134,6 +135,7 @@ def recursive_dbscan(
     purity_cutoff: float,
     coverage_stddev_cutoff: float,
     gc_content_stddev_cutoff: float,
+    n_jobs: int = -1,
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one
@@ -192,7 +194,7 @@ def recursive_dbscan(
     best_df = pd.DataFrame()
 
     while n_clusters > 1:
-        binned_df = run_dbscan(table, eps)
+        binned_df = run_dbscan(df=table, eps=eps, n_jobs=n_jobs)
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
         filtered_df = apply_binning_metrics_filter(
             df=metrics_df,
@@ -335,6 +337,7 @@ def recursive_hdbscan(
     purity_cutoff: float,
     coverage_stddev_cutoff: float,
     gc_content_stddev_cutoff: float,
+    n_jobs: int = -1,
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Recursively run HDBSCAN starting with defaults and iterating the min_samples
@@ -392,6 +395,7 @@ def recursive_hdbscan(
             min_cluster_size=min_cluster_size,
             min_samples=min_samples,
             cache_dir=cache_dir,
+            core_dist_n_jobs=n_jobs,
         )
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
         filtered_df = apply_binning_metrics_filter(
@@ -463,6 +467,7 @@ def get_clusters(
     coverage_stddev: float,
     gc_content_stddev: float,
     method: str,
+    n_jobs: int = -1,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Find best clusters retained after applying metrics filters.
@@ -518,13 +523,14 @@ def get_clusters(
     # break when either clustered_df or unclustered_df is empty
     while True:
         clustered_df, unclustered_df = clusterer(
-            main,
-            markers_df,
-            completeness,
-            purity,
-            coverage_stddev,
-            gc_content_stddev,
+            table=main,
+            markers_df=markers_df,
+            completeness_cutoff=completeness,
+            purity_cutoff=purity,
+            coverage_stddev_cutoff=coverage_stddev,
+            gc_content_stddev_cutoff=gc_content_stddev,
             verbose=verbose,
+            n_jobs=n_jobs,
         )
         # No contigs can be clustered, label as unclustered and add the final df
         # of (unclustered) contigs
@@ -571,6 +577,7 @@ def taxon_guided_binning(
     starting_rank: str = "superkingdom",
     method: str = "dbscan",
     reverse_ranks: bool = False,
+    n_jobs: int = -1,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
@@ -688,6 +695,7 @@ def taxon_guided_binning(
                 coverage_stddev=coverage_stddev,
                 gc_content_stddev=gc_content_stddev,
                 method=method,
+                n_jobs=n_jobs,
                 verbose=verbose,
             )
             # Store clustered contigs
@@ -858,6 +866,12 @@ def main():
         default=False,
         help="log debug information",
     )
+    parser.add_argument(
+        "--cpus",
+        default=-1,
+        metavar="int",
+        help="Number of cores to use by clustering method (default will try to use as many as are available)",
+    )
     args = parser.parse_args()
 
     # First check if we are performing binning with taxonomic partitioning
@@ -896,6 +910,7 @@ def main():
             method=args.clustering_method,
             starting_rank=args.starting_rank,
             reverse_ranks=args.reverse_ranks,
+            n_jobs=args.cpus,
             verbose=args.verbose,
         )
     else:
@@ -907,6 +922,7 @@ def main():
             coverage_stddev=args.coverage_stddev,
             gc_content_stddev=args.gc_content_stddev,
             method=args.clustering_method,
+            n_jobs=args.cpus,
             verbose=args.verbose,
         )
 
