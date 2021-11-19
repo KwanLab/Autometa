@@ -73,8 +73,7 @@ workflow TAXON_ASSIGNMENT {
 
     emit:
         taxonomy = SPLIT_KINGDOMS.out.taxonomy
-        bacteria = SPLIT_KINGDOMS.out.bacteria
-        archaea = SPLIT_KINGDOMS.out.archaea
+        kingdoms = SPLIT_KINGDOMS.out.kingdoms
         orf_votes = LCA.out.lca
         contig_votes = MAJORITY_VOTE.out.votes
 }
