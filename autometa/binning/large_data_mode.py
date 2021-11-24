@@ -26,7 +26,7 @@ and determined lower bound
 """
 
 
-import datetime
+from datetime import datetime
 import gzip
 import logging
 import os
@@ -187,7 +187,7 @@ def checkpoint(
         right_index=True,
     ).rename(columns={"cluster": rank_name_txt})
     checkpoints_str = checkpoints_df.to_csv(sep="\t", index=True, header=True)
-    now = datetime.datetime.now()
+    now = datetime.now()
     header = "\n".join(
         [
             f"#-- Parameters --#",
@@ -696,6 +696,7 @@ def main():
             "bhsne",
             "umap",
             "sksne",
+            "trimap",
         ],
     )
     parser.add_argument(
@@ -777,6 +778,7 @@ def main():
         "--cpus",
         default=-1,
         metavar="int",
+        type=int,
         help="Number of cores to use by clustering method (default will try to use as many as are available)",
     )
     args = parser.parse_args()

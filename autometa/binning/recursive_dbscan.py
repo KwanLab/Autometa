@@ -870,6 +870,7 @@ def main():
         "--cpus",
         default=-1,
         metavar="int",
+        type=int,
         help="Number of cores to use by clustering method (default will try to use as many as are available)",
     )
     args = parser.parse_args()
