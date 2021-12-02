@@ -76,7 +76,7 @@ import pandas as pd
 from Bio import SeqIO
 
 from autometa.common import kmers, markers
-from autometa.common.external import hmmer, prodigal
+from autometa.common.external import hmmscan, prodigal
 from autometa.taxonomy.ncbi import NCBI
 
 import numpy as np
