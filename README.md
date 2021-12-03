@@ -51,7 +51,7 @@ Installation
 
 The following was tested on the Autometa [Docker](https://www.docker.com) image, which is based on the [Anaconda Docker image](https://hub.docker.com/r/continuumio/anaconda/). These instructions should work on [Debian](https://www.debian.org)-based linux distros such as [Ubuntu](https://www.ubuntu.com).
 
-#### First install [miniconda](https://docs.conda.io/en/latest/miniconda.html# "miniconda).
+#### First install [miniconda](https://docs.conda.io/en/latest/miniconda.html# "miniconda").
 
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
