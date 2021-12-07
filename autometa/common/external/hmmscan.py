@@ -132,7 +132,7 @@ def run(
     parallel=True,
     gnu_parallel=False,
     seed=42,
-):
+) -> str:
     """Runs hmmscan on dataset ORFs and provided hmm database.
 
     Note
@@ -227,7 +227,10 @@ def hmmpress(fpath):
 
 
 def read_tblout(infpath: str) -> pd.DataFrame:
-    """Read hmmscan tblout into pd.DataFrame
+    """Read hmmscan tblout-format results into pd.DataFrame
+
+    For more detailed column descriptions see the 'tabular output formats'
+    section in the [HMMER manual](http://eddylab.org/software/hmmer/Userguide.pdf#tabular-output-formats "HMMER Manual")
 
     Parameters
     ----------
@@ -275,9 +278,10 @@ def read_tblout(infpath: str) -> pd.DataFrame:
 
 
 def read_domtblout(fpath: str) -> pd.DataFrame:
-    """Read hmmscan domtblout file into pandas DataFrame
+    """Read hmmscan domtblout-format results into pandas DataFrame
 
-    For more detailed column descriptions see the 'tabular output formats' section in the [HMMER manual](http://eddylab.org/software/hmmer/Userguide.pdf#tabular-output-formats)
+    For more detailed column descriptions see the 'tabular output formats'
+    section in the [HMMER manual](http://eddylab.org/software/hmmer/Userguide.pdf#tabular-output-formats "HMMER Manual")
 
     Parameters
     ----------
@@ -323,7 +327,7 @@ def read_domtblout(fpath: str) -> pd.DataFrame:
     )
 
 
-def filter_markers(
+def filter_tblout_markers(
     infpath: str,
     cutoffs: str,
     outfpath: str = None,
@@ -363,7 +367,12 @@ def filter_markers(
     for fp in [infpath, cutoffs]:
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
+    if (
+        outfpath
+        and os.path.exists(outfpath)
+        and os.path.getsize(outfpath)
+        and not force
+    ):
         raise FileExistsError(f"{outfpath} already exists")
 
     df = read_tblout(infpath).dropna()
@@ -436,7 +445,7 @@ def main():
             gnu_parallel=args.gnu_parallel,
         )
 
-    df = filter_markers(
+    df = filter_tblout_markers(
         infpath=result,
         outfpath=args.markers,
         cutoffs=args.cutoffs,
@@ -444,7 +453,8 @@ def main():
         force=args.force,
     )
 
-    markers_df = df.groupby("contig")["sacc"].value_counts().unstack().convert_dtypes()
+    # markers_df format -> index=contig, cols=[PF\d+\.?\d+, ...], values=count
+    # markers_df = df.groupby("contig")["sacc"].value_counts().unstack().convert_dtypes()
 
 
 if __name__ == "__main__":
