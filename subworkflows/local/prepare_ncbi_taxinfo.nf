@@ -102,10 +102,18 @@ process DOWNLOAD_TAXDUMP {
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
-        taxdump_dir = file(params.taxdump_tar_gz_dir)
-        taxdump_dir_files = taxdump_dir.list()
         expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
-
+        taxdump_dir = file(params.taxdump_tar_gz_dir)
+        taxdump_dir_files = []
+        taxdump_dir.eachFile { item ->
+            if( item.isFile() ) {
+              //  println "${item.getName()}"
+                taxdump_dir_files.add(item.getName())
+            }
+            else if( item.isDirectory() ) {
+                //println "${item.getName()} - DIR"
+            }
+        }
         if (taxdump_dir_files.containsAll(expected_files)){
             taxdump_files = taxdump_dir_files
         } else {
@@ -115,9 +123,18 @@ workflow PREPARE_TAXONOMY_DATABASES {
         }
 
         accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
-        accession2taxid_dir_files = accession2taxid_dir_files.list()
+        accession2taxid_dir_files = []
         expected_files = ['prot.accession2taxid']
 
+        accession2taxid_dir.eachFile { item ->
+            if( item.isFile() ) {
+              //  println "${item.getName()}"
+                accession2taxid_dir_files.add(item.getName())
+            }
+            else if( item.isDirectory() ) {
+                //println "${item.getName()} - DIR"
+            }
+        }
         if (accession2taxid_dir_files.containsAll(expected_files)){
             prot_accession2taxid_ch = accession2taxid_dir_files
         } else if (params.debug){

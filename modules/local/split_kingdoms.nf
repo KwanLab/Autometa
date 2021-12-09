@@ -25,7 +25,7 @@ process SPLIT_KINGDOMS {
 
     output:
         tuple val(meta), path("${meta.id}.taxonomy.tsv"), emit: taxonomy
-        tuple val(meta), path("${meta.id}.*.fna")       , emit: kingdoms
+        tuple val(meta), path("${meta.id}.*.fna")       , emit: contigs_grouped_by_taxon // not kingdom specific, depends on --split-rank-and-write
         path  '*.version.txt'                           , emit: version
 
     script:

@@ -7,6 +7,8 @@ options        = initOptions(params.options)
 process DIAMOND_BLASTP {
     tag "Aligning ORFS in ${meta.id} against ${diamond_database}"
     label 'process_high'
+    label 'process_high_memory'
+    
     // Old diamond manual suggested *NOT* running in parallel... so we are setting maxForks to 1 here.
     // TODO: There appears to be features for multiprocessing available now
     // See: https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing

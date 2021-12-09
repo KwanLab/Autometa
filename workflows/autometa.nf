@@ -162,18 +162,25 @@ workflow AUTOMETA {
             SEQKIT_FILTER.out.fasta,
             merged_prodigal
         )
+
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
 
-        TAXON_ASSIGNMENT.out.bacteria
-        ANALYZE_KMERS (
-            TAXON_ASSIGNMENT.out.bacteria
-            )
+        TAXON_ASSIGNMENT.out.contigs_grouped_by_taxon
+            .set{contigs}
     } else {
-        ANALYZE_KMERS ( SEQKIT_FILTER.out.fasta )
+        SEQKIT_FILTER.out.fasta
+            .set{contigs}
+        // Create a fake `taxonomy_results` channel. For the reason behind the `dummy_file.txt` see:
+        // https://stackoverflow.com/questions/64138082/channel-checks-as-empty-even-if-it-has-content
         taxonomy_results = file( "$baseDir/assets/dummy_file.txt", checkIfExists: true )
         taxonomy_results = Channel.fromPath( taxonomy_results )
     }
+
+
+    ANALYZE_KMERS ( contigs )
+
+
 
     ANALYZE_KMERS.out.embedded
         .set{kmers_embedded_merged_tsv_ch}
@@ -207,7 +214,6 @@ workflow AUTOMETA {
         MERGE_HMMSEARCH.out.merged_tsv
             .set{markers_tsv_merged_tsv_ch}
     } else {
-        fasta_ch = SEQKIT_FILTER.out.fasta
         SPADES_KMER_COVERAGE.out.coverages
             .set{spades_coverage_merged_tsv_ch}
         MARKERS.out.markers_tsv
@@ -215,7 +221,7 @@ workflow AUTOMETA {
     }
 
     BINNING(
-        SEQKIT_FILTER.out.fasta,
+        contigs,
         kmers_embedded_merged_tsv_ch,
         spades_coverage_merged_tsv_ch,
         SEQKIT_FILTER.out.gc_content,
@@ -226,7 +232,7 @@ workflow AUTOMETA {
 
     if (params.unclustered_recruitment) {
         UNCLUSTERED_RECRUITMENT(
-            SEQKIT_FILTER.out.fasta,
+            contigs,
             kmers_normalized_tsv_ch,
             spades_coverage_merged_tsv_ch,
             markers_tsv_merged_tsv_ch,

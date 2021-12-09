@@ -71,11 +71,16 @@ workflow TAXON_ASSIGNMENT {
             ncbi_tax_dir
         )
 
+        // Flatten the different output taxa (e.g. split *.bacteria.fna and *.archaea.fna into two channels)
+        SPLIT_KINGDOMS.out.contigs_grouped_by_taxon
+            .transpose()
+            .set {contigs_grouped_by_taxon_ch}
+
     emit:
-        taxonomy = SPLIT_KINGDOMS.out.taxonomy
-        kingdoms = SPLIT_KINGDOMS.out.kingdoms
-        orf_votes = LCA.out.lca
-        contig_votes = MAJORITY_VOTE.out.votes
+        taxonomy                 = SPLIT_KINGDOMS.out.taxonomy
+        contigs_grouped_by_taxon = contigs_grouped_by_taxon_ch
+        orf_votes                = LCA.out.lca
+        contig_votes             = MAJORITY_VOTE.out.votes
 }
 
 
