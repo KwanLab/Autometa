@@ -26,6 +26,7 @@ Script to summarize Autometa binning results
 
 import logging
 import os
+from typing import Union
 
 import pandas as pd
 import numpy as np
@@ -34,7 +35,7 @@ from Bio import SeqIO
 
 from autometa.taxonomy.ncbi import NCBI
 from autometa.taxonomy import majority_vote
-from autometa.common import markers
+from autometa.common.markers import load as load_markers
 
 
 logger = logging.getLogger(__name__)
@@ -106,16 +107,23 @@ def fragmentation_metric(df: pd.DataFrame, quality_measure: float = 0.50) -> int
 
 
 def get_metabin_stats(
-    bin_df: pd.DataFrame, markers_fpath: str, cluster_col: str = "cluster"
+    bin_df: pd.DataFrame,
+    markers: Union[str, pd.DataFrame],
+    cluster_col: str = "cluster",
 ) -> pd.DataFrame:
     """Retrieve statistics for all clusters recovered from Autometa binning.
+
+    NOTE
+    ----
+    If `bin_df` is provided without the 'cluster_col' present, an overview of
+    metagenome stats will be determined.
 
     Parameters
     ----------
     bin_df : pd.DataFrame
         Autometa binning table. index=contig, cols=['cluster','length', 'GC', 'coverage', ...]
-    markers_fpath : str
-        Path to autometa annotated and filtered markers table respective to kingdom binned.
+    markers : str,pd.DataFrame
+        Path to or pd.DataFrame of markers table corresponding to contigs in `bin_df`
     cluster_col : str, optional
         Clustering column by which to group metabins
 
@@ -125,8 +133,23 @@ def get_metabin_stats(
         dataframe consisting of various metagenome-assembled genome statistics indexed by cluster.
     """
     logger.info(f"Retrieving metabins' stats for {cluster_col}")
+    if isinstance(markers, str):
+        markers_df = load_markers(markers)
+    elif isinstance(markers, pd.DataFrame):
+        markers_df = markers
+    else:
+        raise TypeError(
+            f"`markers` should be a path to or pd.DataFrame of a markers table corresponding to contigs in `bin_df`. Provided: {markers}"
+        )
+
+    num_expected_markers = markers_df.shape[1]
+
+    if cluster_col not in bin_df.columns:
+        raise ValueError(
+            f"cluster column ({cluster_col}) not in bin_df columns: {bin_df.columns}"
+        )
+
     stats = []
-    markers_df = markers.load(markers_fpath)
     for cluster, dff in bin_df.fillna(value={cluster_col: "unclustered"}).groupby(
         cluster_col
     ):
@@ -136,7 +159,6 @@ def get_metabin_stats(
         length_weighted_gc = np.average(
             a=dff.gc_content, weights=dff.length / dff.length.sum()
         )
-        num_expected_markers = markers_df.shape[1]
         cluster_pfams = markers_df[markers_df.index.isin(dff.index)]
         if cluster_pfams.empty:
             total_markers = 0
