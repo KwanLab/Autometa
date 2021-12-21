@@ -191,8 +191,9 @@ def get(
             gnu_parallel=gnu_parallel,
             seed=seed,
         )
-
+        logger.debug(f"{kingdom} marker scan finished")
     if not os.path.exists(out) or not os.path.getsize(out):
+        logger.debug(f"filtering {scans} for marker genes passing cutoffs")
         out = hmmscan.filter_markers(
             infpath=scans,
             outfpath=out,
@@ -200,6 +201,7 @@ def get(
             orfs=orfs,
             force=force,
         )
+        logger.debug(f"marker gene cutoff filter finished: {out}")
     return load(fpath=out, format=format)
 
 
