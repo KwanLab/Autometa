@@ -175,9 +175,12 @@ def add_metrics(
         # sum cluster markers
         cluster_marker_counts = main_grouped_by_cluster[markers_df.columns].sum()
         # NOTE: df.ge(...) and df.eq(...) operators return boolean pd.DataFrame
-        present_marker_count = cluster_marker_counts.ge(1).sum(axis=1)
         # count single-copy
         single_copy_marker_count = cluster_marker_counts.eq(1).sum(axis=1)
+        present_marker_count = cluster_marker_counts.ge(1).sum(axis=1)
+        # TODO: add redundant marker count to mag summary
+        # ... or 1, 2, 3, 4, 5+ count cols similar to CheckM output table
+        # redundant_marker_count = cluster_marker_counts.gt(1).sum(axis=1)
         # calculate completeness and purity and std. dev. metrics
         completeness = present_marker_count / reference_markers_count * 100
         purity = single_copy_marker_count / present_marker_count * 100
