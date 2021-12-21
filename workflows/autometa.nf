@@ -247,7 +247,7 @@ if (params.mock_test){
         .set { mock_input_ch }
 
     MOCK_DATA_REPORT(mock_input_ch,
-    file("$baseDir/lib/mock_data_report.Rmd")
+        file("$baseDir/lib/mock_data_report.Rmd")
     )
 }
 

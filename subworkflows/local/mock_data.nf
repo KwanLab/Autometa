@@ -3,12 +3,8 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.get_genomes_for_mock = [:]
 include { GET_GENOMES_FOR_MOCK  } from './../../modules/local/get_genomes_for_mock.nf' addParams( options: params.get_genomes_for_mock )
 
-
-
-
-
-
 process SAMTOOLS_WGSIM {
+    // This process is used to create simulated reads from an input FASTA file
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::samtools=1.13" : null)
@@ -25,7 +21,6 @@ process SAMTOOLS_WGSIM {
     path("*.fastq"), emit: fastq
     path "*.version.txt"          , emit: version
 
-
     """
     # https://sarahpenir.github.io/bioinformatics/Simulating-Sequence-Reads-with-wgsim/
     wgsim -1 300 -2 300 -r 0 -R 0 -X 0 -e 0 ${fasta} reads_1.fastq reads_2.fastq
@@ -34,15 +29,16 @@ process SAMTOOLS_WGSIM {
     """
 }
 
-
-// "GCF_013307045.1" has no markers
 workflow CREATE_MOCK {
 
     main:
+        // Download and format fasta files from specfied whole genome assemblies (genomes set from "get_genomes_for_mock" parameter in ~Autometa/conf/modules.config)
         GET_GENOMES_FOR_MOCK()
 
+        // Create fake reads from input genome sequences
         SAMTOOLS_WGSIM(GET_GENOMES_FOR_MOCK.out.metagenome)
 
+        // Format everything with a meta map for use in the main Autometa pipeline
         GET_GENOMES_FOR_MOCK.out.fake_spades_coverage
         .map { row ->
                     def meta = [:]

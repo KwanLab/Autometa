@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process GET_GENOMES_FOR_MOCK {
 
     conda (params.enable_conda ? "bioconda::emboss=6.6.0" : null)
-    // TODO: Dcoker image for emboss or another seqsplitter/python script
+    // TODO: Docker image for emboss or another seqsplitter/python script
 
     output:
         path "metagenome.fna.gz", emit: metagenome
@@ -23,8 +23,7 @@ process GET_GENOMES_FOR_MOCK {
     awk -F '\\t' '{print \$20}' |\\
     sed 's,https://,rsync://,' | xargs -n 1 -I {} rsync -am --exclude='*_rna_from_genomic.fna.gz' --exclude='*_cds_from_genomic.fna.gz' --include="*_genomic.fna.gz" --include="*_protein.faa.gz" --include='*/' --exclude='*' {} .
 
+    # "clean_mock_data.sh" is here: ~/Autometa/bin/clean_mock_data.sh
     clean_mock_data.sh
-
-
     """
 }
