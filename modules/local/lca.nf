@@ -30,7 +30,7 @@ process LCA {
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-lca --blast ${blast} --dbdir ${blastdb_dir} --output ${meta.id}.lca.tsv
+        autometa-taxonomy-lca --blast ${blast} --dbdir ${blastdb_dir} --lca-output ${meta.id}.lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

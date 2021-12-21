@@ -124,14 +124,14 @@ def assign(
 
     def blast2lca():
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose, outdir=outdir)
         lca.blast2lca(
             orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
         )
 
     def majority_vote_lca(out=out):
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose, outdir=outdir)
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
         votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca, verbose=verbose)
         out = majority_vote.write_votes(results=votes, out=out)
