@@ -351,12 +351,15 @@ def count(
 def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize k-mers by Centered Log Ratio transformation
 
-    1a. Drop any k-mers not present for all contigs
-    1b. Drop any contigs not containing any kmer counts
-    1c. Fill any remaining na values with 0
-    2a. Normalize the k-mer count by the total count of all k-mers for a given contig
-    2b. Add 1 as 0 can not be utilized for CLR
-    3. Perform CLR transformation log(norm. value / geometric mean norm. value)
+    Steps
+    -----
+
+        * Drop any k-mers not present for all contigs
+        * Drop any contigs not containing any kmer counts
+        * Fill any remaining na values with 0
+        * Normalize the k-mer count by the total count of all k-mers for a given contig
+        * Add 1 as 0 can not be utilized for CLR
+        * Perform CLR transformation log(norm. value / geometric mean norm. value)
 
     Parameters
     ----------
@@ -378,11 +381,10 @@ def autometa_clr(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         index='contig', cols=[kmer, kmer, ...]
         Columns have been transformed by CLR normalization.
+
     """
     # steps in 1: data cleaning
-    df.dropna(axis="columns", how="all", inplace=True)
-    df.dropna(axis="index", how="all", inplace=True)
-    df.fillna(0, inplace=True)
+    df = df.dropna(axis="columns", how="all").dropna(axis="index", how="all").fillna(0)
     # steps in 2 and 3: normalization and CLR transformation
     step_2a = lambda x: (x + 1) / x.sum()
     step_2b = lambda x: np.log(x / gmean(x))
@@ -540,12 +542,16 @@ def embed(
     # PCA
     n_samples, n_components = df.shape
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
-    df.dropna(axis="index", how="all", inplace=True)
-    df.fillna(0, inplace=True)
-    X = df.to_numpy()
+    X = df.dropna(axis="index", how="all").fillna(0).to_numpy()
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
-
+    if isinstance(pca_dimensions, str):
+        try:
+            int(pca_dimensions)
+        except Exception as e:
+            raise TypeError(
+                f"pca_dimensions must be an integer! given: {pca_dimensions}"
+            )
     if n_components > pca_dimensions and pca_dimensions != 0:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
@@ -574,10 +580,10 @@ def embed(
             data=X, d=embed_dimensions, perplexity=perplexity, random_state=random_state
         )
 
-    def do_densne():
-        return densne.run_densne(
-            X, no_dims=embed_dimensions, perplexity=perplexity, rand_seed=random_state,
-        )
+    # def do_densne():
+    #     return densne.run_densne(
+    #         X, no_dims=embed_dimensions, perplexity=perplexity, rand_seed=random_state,
+    #     )
 
     method_is_densmap = method == "densmap"
 
