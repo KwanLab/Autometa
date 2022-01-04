@@ -6,7 +6,7 @@ options        = initOptions(params.options)
 
 process MOCK_DATA_REPORT {
 
-    tag ' Preparing mock data report'
+    tag 'Preparing mock data report'
     label 'process_low'
 
     publishDir "${params.outdir_internal}/${options.publish_dir}"
