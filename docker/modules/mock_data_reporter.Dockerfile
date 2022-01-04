@@ -12,6 +12,6 @@ RUN conda install -c r r-ggplot2 r-stringi \
     && conda clean --all -y
 
 # Check entrypoints are available
-RUN echo "Checking get_genomes_for_mock.nf module entrypoints" \
+RUN echo "Checking mock_data_reporter.nf module entrypoints" \
     && Rscript --help > /dev/null \
     && Rscript -e "packages <- c('markdown','data.table', 'ggplot2', 'plotly', 'crosstalk', 'magrittr', 'DT', 'stringi');for (i in packages) {library(i, character.only = T)}"
