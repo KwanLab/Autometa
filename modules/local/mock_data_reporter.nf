@@ -11,8 +11,7 @@ process MOCK_DATA_REPORT {
 
     publishDir "${params.outdir_internal}/${options.publish_dir}"
 
-    // container  TODO: The R "Rocker" Docker images don't have ps which is required by Nextflow so this may have to be a custom image?
-    // docker build https://gist.githubusercontent.com/chasemc/818111640daae05beb2b070641aa33fb/raw/41cef10daa98bf9b249eecfd5202b0f42015d726/Dockerfile --tag mock_data_reporter
+    container "jason-c-kwan/autometa-nf-modules-mock_data_reporter"
 
 
     input:
