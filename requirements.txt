@@ -19,7 +19,7 @@ requests
 rsync
 samtools=>1.11
 scikit-bio
-scikit-learn>=0.18
+scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
 tqdm
 tsne
 numba>=0.47
