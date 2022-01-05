@@ -124,9 +124,6 @@ def get_agg_stats(
         index=cluster, columns=[min_{stat_col}, max_{stat_col}, std_{stat_col}, length_weighted_{stat_col}]
     """
 
-    def weighted_average(df, values, weights):
-        return np.average(a=df[values], weights=df[weights])
-
     stats = (
         cluster_groups[stat_col]
         .agg(["min", "max", "std", "median"])
@@ -139,7 +136,10 @@ def get_agg_stats(
             }
         )
     )
-    # stats.assign(range=)
+
+    def weighted_average(df, values, weights):
+        return np.average(a=df[values], weights=df[weights])
+
     length_weighted_avg = cluster_groups.apply(
         weighted_average, values=stat_col, weights="length"
     )
@@ -172,7 +172,7 @@ def get_metabin_stats(
     ------
     TypeError
         markers should be a path to or pd.DataFrame of a markers table corresponding to contigs in `bin_df`
-    
+
     ValueError
         One of the required columns (`cluster_col`, coverage, length, gc_content) was not found in `bin_df`
     """
@@ -192,6 +192,13 @@ def get_metabin_stats(
             raise ValueError(
                 f"Required column ({col}) not in bin_df columns: {bin_df.columns}"
             )
+    # If the indices do not match, marker calculations will fail
+    if bin_df.index.name != "contig":
+        raise ValueError(
+            f"binning dataframe must be indexed by contig. given: {bin_df.index.name}."
+            "\n\tTry:"
+            "\n\t\tbin_df.set_index('contig', inplace=True)"
+        )
 
     df = bin_df[metabin_stat_cols].fillna(value={cluster_col: "unclustered"}).copy()
 
