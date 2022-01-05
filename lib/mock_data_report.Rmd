@@ -1,0 +1,201 @@
+---
+title: "Autometa Mock Data Report"
+output: html_document
+params:
+  bins_path: "binning.main.tsv"
+  assembly_to_locus_path: "assembly_to_locus.txt"
+  assembly_report_path: "assembly_report.txt"
+  genus: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, error=TRUE)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+packages <- c("data.table", "ggplot2", "plotly", "crosstalk", "magrittr", "DT", "ggbeeswarm", "patchwork")
+
+for (i in packages) {
+  if (!requireNamespace(i)) {
+    install.packages(i)
+  }
+  library(i, character.only = T)
+}
+```
+
+
+```{r read-and-clean-bins}
+bins <- fread(params$bins_path)
+
+bins$locus = vapply(bins$contig,
+                    function(x){
+                      paste(strsplit(x, "_")[[1]][1:2],collapse="_")
+                    },
+                    FUN.VALUE = "")
+```
+
+```{r read-and-clean-assembly-to-locus}
+assembly_to_locus <- fread(
+  params$assembly_to_locus_path,
+  sep = "/",
+  header = F,
+  col.names = c("assembly", "locus"))
+
+assembly_to_locus$assembly = vapply(assembly_to_locus$assembly,
+                                    function(x) {
+                                      paste(strsplit(x, "_")[[1]][1:2],
+                                            collapse = "_")
+                                    },
+                                    FUN.VALUE = "")
+```
+
+
+```{r read-and-clean-assembly-report, message=FALSE, warning=FALSE}
+assembly_report <- fread(params$assembly_report_path)
+assembly_report$genus <-  gsub("\\s.*", "", assembly_report$organism_name)
+```
+
+
+```{r merge-all}
+bins <- merge(bins, assembly_to_locus, by = "locus", all.x = T, all.y = F)
+bins <- merge(bins, assembly_report, by.x = "assembly", by.y ="# assembly_accession", all.x = T, all.y = F)
+```
+
+
+## Summary
+
+Summary information about the binning data
+
+```{r summary}
+
+summary_table <- bins[,
+                      list(seqs_in_assembly = length(unique(locus)),
+                           fake_contigs = length(unique(contig)),
+                           genus = unique(genus),
+                           taxid = unique(taxid),
+                           name = unique(organism_name)),
+                      assembly]
+summary_table <- summary_table[order(genus), ]
+
+DT::datatable(summary_table,  options = list(
+  columnDefs = list(list(className = 'dt-center',  targets = "_all"))))
+
+```
+
+
+
+```{r plotly-crosstalk-key}
+bins_copy <- bins
+bins <- highlight_key(bins, ~contig)
+```
+
+
+```{r plotly-xy}
+if (params$genus) {
+  plotly_xy <- plot_ly(bins,
+                       x = ~x_1,
+                       y = ~x_2,
+                       color = ~genus,
+                       hoverinfo ="text",
+                       hovertext = paste("Assembly:", bins_copy$assembly,
+                                         "<br> locus:", bins_copy$locus,
+                                         "<br> contig:", bins_copy$contig)) %>%
+    add_markers()
+
+} else {
+  plotly_xy <- plot_ly(bins,
+                       x = ~x_1,
+                       y = ~x_2,
+                       color = ~assembly,
+                       hoverinfo ="text",
+                       hovertext = paste("Assembly:", bins_copy$assembly,
+                                         "<br> locus:", bins_copy$locus,
+                                         "<br> contig:", bins_copy$contig)) %>%
+    add_markers()
+}
+
+
+```
+
+
+```{r plotly-xyz}
+if (params$genus) {
+  plotly_xyz <- plot_ly(bins,
+                        x = ~x_1,
+                        y = ~x_2,
+                        z = ~gc_content,
+                        color = ~genus,
+                        hoverinfo ="text",
+                        hovertext = paste("Assembly:", bins_copy$assembly,
+                                          "<br> locus:", bins_copy$locus,
+                                          "<br> contig:", bins_copy$contig))%>%
+    add_markers()
+} else {
+
+  plotly_xyz <- plot_ly(bins,
+                        x = ~x_1,
+                        y = ~x_2,
+                        z = ~gc_content,
+                        color = ~assembly,
+                        hoverinfo ="text",
+                        hovertext = paste("Assembly:", bins_copy$assembly,
+                                          "<br> locus:", bins_copy$locus,
+                                          "<br> contig:", bins_copy$contig))%>%
+    add_markers()
+}
+
+```
+
+## Plots
+
+The plots below are linked ("Brushing"/Selecting points in the 2D plot will highlight points in the 3D plot).
+
+
+```{r message=FALSE, warning=FALSE, fig.height=12, fig.width=12}
+
+fig <- subplot(plotly_xy, plotly_xyz,nrows = 2)
+
+fig %>% layout(
+  xaxis = list(domain=list(x=c(0,0.5),y=c(0,0.5))),
+
+  scene = list(domain=list(x=c(0,1),y=c(0,0.5))),
+
+  xaxis2 = list(domain=list(x=c(0,.5),y=c(0,0.5))),
+
+  showlegend=TRUE, showlegend2=FALSE) %>%
+  highlight(on = "plotly_selected", dynamic = TRUE)#, selectize = TRUE)
+
+```
+
+```{r}
+if (params$genus) {
+  p1 <- ggplot(bins, aes(x = genus, y = x_1)) +
+    ggbeeswarm::geom_quasirandom(aes(color= genus), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+  p2 <- ggplot(bins, aes(x = genus, y = x_2)) +
+    ggbeeswarm::geom_quasirandom(aes(color= genus), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+  p3 <- ggplot(bins, aes(x = genus, y = gc_content)) +
+    ggbeeswarm::geom_quasirandom(aes(color= genus), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+} else {
+  p1 <- ggplot(bins, aes(x = assembly, y = x_1)) +
+    ggbeeswarm::geom_quasirandom(aes(color= assembly), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+  p2 <- ggplot(bins, aes(x = assembly, y = x_2)) +
+    ggbeeswarm::geom_quasirandom(aes(color= assembly), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+  p3 <- ggplot(bins, aes(x = assembly, y = gc_content)) +
+    ggbeeswarm::geom_quasirandom(aes(color= assembly), alpha=0.3) +
+    theme(legend.position="none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+}
+p1+p2+p3+ plot_layout(guides = "collect")
+```
