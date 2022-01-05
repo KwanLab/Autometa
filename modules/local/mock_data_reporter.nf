@@ -9,7 +9,8 @@ process MOCK_DATA_REPORT {
     tag 'Preparing mock data report'
     label 'process_low'
 
-    publishDir "${params.outdir_internal}/${options.publish_dir}"
+    publishDir "${params.outdir_internal}/${options.publish_dir}",
+      mode: params.publish_dir_mode
 
     container "jason-c-kwan/autometa-nf-modules-mock_data_reporter"
 
@@ -35,27 +36,31 @@ process MOCK_DATA_REPORT {
           library(i, character.only = T)
         }
 
-        rmarkdown::render("${rmarkdown_file}",
-                        params = list(
-                          bins_path= "${bins_path}",
-                          assembly_to_locus_path = "${assembly_to_locus_path}",
-                          assembly_report_path = "${assembly_report_path}",
-                          genus=FALSE
-                        ),
-                        knit_root_dir=getwd(),
-                        output_dir=getwd(),
-                        output_file="mock_data_report_by_assembly.html")
+        rmarkdown::render(
+          input="${rmarkdown_file}",
+          params=list(
+            bins_path="${bins_path}",
+            assembly_to_locus_path="${assembly_to_locus_path}",
+            assembly_report_path="${assembly_report_path}",
+            genus=FALSE
+          ),
+          knit_root_dir=getwd(),
+          output_dir=getwd(),
+          output_file="mock_data_report_by_assembly.html"
+        )
 
-        rmarkdown::render("${rmarkdown_file}",
-                        params = list(
-                          bins_path= "${bins_path}",
-                          assembly_to_locus_path = "${assembly_to_locus_path}",
-                          assembly_report_path = "${assembly_report_path}",
-                          genus=TRUE
-                        ),
-                        knit_root_dir=getwd(),
-                        output_dir=getwd(),
-                        output_file="mock_data_report_by_genus.html")
+        rmarkdown::render(
+          input="${rmarkdown_file}",
+          params=list(
+            bins_path= "${bins_path}",
+            assembly_to_locus_path = "${assembly_to_locus_path}",
+            assembly_report_path = "${assembly_report_path}",
+            genus=TRUE
+          ),
+          knit_root_dir=getwd(),
+          output_dir=getwd(),
+          output_file="mock_data_report_by_genus.html"
+        )
 
         """
 }

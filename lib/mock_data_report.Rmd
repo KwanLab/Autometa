@@ -2,9 +2,9 @@
 title: "Autometa Mock Data Report"
 output: html_document
 params:
-  bins_path: "/home/chase/Documents/github/Autometa/work/17/90157bfb9474ed23c3e0940a8ad522/fake_spades.bacteria.main.tsv.gz"
-  assembly_to_locus_path: "/home/chase/Documents/github/Autometa/work/13/0696b1e72dce309b4e073669f2fc73/assembly_to_locus.txt"
-  assembly_report_path: "/home/chase/Documents/github/Autometa/work/13/0696b1e72dce309b4e073669f2fc73/assembly_report.txt"
+  bins_path: "binning.main.tsv"
+  assembly_to_locus_path: "assembly_to_locus.txt"
+  assembly_report_path: "assembly_report.txt"
   genus: TRUE
 ---
 
@@ -83,11 +83,6 @@ DT::datatable(summary_table,  options = list(
   columnDefs = list(list(className = 'dt-center',  targets = "_all"))))
 
 ```
-
-
-
-
-
 
 
 
