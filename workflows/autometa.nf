@@ -61,6 +61,7 @@ include { SEQKIT_SPLIT                                          } from '../modul
 include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']                                )
 include { MERGE_FASTA as MERGE_PRODIGAL                         } from '../modules/local/merge_fasta'                 addParams( )
 include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']                                )
+include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']                                )
 
 /*
  * -------------------------------------------------
@@ -81,7 +82,7 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
 include { BINNING                  } from '../subworkflows/local/binning'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
 include { UNCLUSTERED_RECRUITMENT  } from '../subworkflows/local/unclustered_recruitment'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
 include { INPUT_CONTIGS            } from '../subworkflows/local/input_check'      addParams( )
-include { CREATE_MOCK              } from '../subworkflows/local/mock_data'        addParams( )
+include { CREATE_MOCK              } from '../subworkflows/local/mock_data'        addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
 include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
 
 workflow AUTOMETA {
@@ -234,5 +235,20 @@ workflow AUTOMETA {
             BINNING.out.binning
         )
     }
+
+if (params.mock_test){
+    BINNING.out.binning_main
+        .join(
+            CREATE_MOCK.out.assembly_to_locus
+        )
+        .join(
+            CREATE_MOCK.out.assembly_report
+        )
+        .set { mock_input_ch }
+
+    MOCK_DATA_REPORT(mock_input_ch,
+        file("$baseDir/lib/mock_data_report.Rmd")
+    )
+}
 
 }
