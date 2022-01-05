@@ -22,7 +22,7 @@ Guide
    benchmarking
    scripts/usage
    contribution-guidelines
-   API_documentation/modules
+   Autometa_modules/modules
    license
 
 
