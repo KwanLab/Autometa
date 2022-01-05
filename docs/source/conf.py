@@ -47,7 +47,6 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
-    "sphinx.ext.mathjax"
 ]
 
 todo_include_todos = True
