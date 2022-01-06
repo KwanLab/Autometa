@@ -45,12 +45,11 @@ The following workflow is recommended:
    * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
 
-.. TODO: SPAdes info is for python version, currently the Nextflow version assumes everything is from SPAdes. It's not clear how coverage is used.
-    .. note::
+.. note::
 
-        If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
+    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
 
-        Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage.
+    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage.
 
 
 Basic
@@ -180,8 +179,6 @@ would be taken as input by nextflow. The pipeline will organize/name outputs bas
 
 Databases
 ^^^^^^^^^
-
-.. todo::
 
 Autometa uses the following NCBI databases throughout its pipeline:
 
@@ -319,11 +316,6 @@ the repository and then run nextflow directly from the scripts as below:
     # Then run nextflow
     nextflow run $HOME/Autometa/nextflow
 
-Without docker
-^^^^^^^^^^^^^^
-
-.. todo::
-
 Useful options
 ^^^^^^^^^^^^^^
 
@@ -346,15 +338,15 @@ Execution Report
 
 After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, 
 RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report 
-automatically for you in the ``"${params.tracedir}/pipeline_info`` directory (``"${params.tracedir}`` defaults to 
+automatically for you in the ``${params.tracedir}/pipeline_info`` directory (``${params.tracedir}`` defaults to 
 ``autometa_tracedir``). You can read more about this in the 
 `nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
 
-Workflow Visualized
-^^^^^^^^^^^^^^^^^^^
+Visualizing the Workflow 
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also visualize the entire workflow ie. create the DAG from the written DOT file. Install 
-`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) and do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the 
+You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install 
+`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the 
 in the ``png`` format.
 
 Configure nextflow with your 'executor'
@@ -410,9 +402,6 @@ Create a new image by navigating to the top Autometa directory and running ``mak
 Autometa Docker image, tagged with the name of the current Git branch. 
 
 To use this tagged version (or any other Autometa image tag) add the argument ``--autometa_image tag_name`` to the nextflow run command
-
-.. todo:: Below python specific maybe there should be two "running..." files, one for nextflow and one for python?
-
 
 
 Running modules
