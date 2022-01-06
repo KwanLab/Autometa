@@ -31,6 +31,7 @@ import subprocess
 import multiprocessing as mp
 
 from tqdm import tqdm
+from typing import Dict, Set
 
 from autometa.common.utilities import file_length
 
@@ -166,18 +167,22 @@ def blast(
     return outfpath
 
 
-def parse(results: str, bitscore_filter: float = 0.9, verbose: bool = False) -> dict:
+def parse(
+    results: str, bitscore_filter: float = 0.9, verbose: bool = False
+) -> Dict[str, Set[str]]:
     """
     Retrieve diamond results from output table
 
     Parameters
     ----------
     results : str
-        Path to BLASTP output file in outfmt9
+        Path to BLASTP output file in outfmt6
+
     bitscore_filter : 0 < float <= 1, optional
         Bitscore filter applied to each sseqid, by default 0.9
         Used to determine whether the bitscore is above a threshold value.
         For example, if it is 0.9 then only bitscores >= 0.9 * the top bitscore are accepted
+
     verbose : bool, optional
         log progress to terminal, by default False
 
