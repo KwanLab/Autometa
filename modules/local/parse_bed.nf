@@ -28,7 +28,7 @@ process PARSE_BED {
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-parse-bed \\
+        autometa-bedtools-genomecov \\
             --ibam $bam \\
             --lengths $lengths \\
             --bed $bed_out \\

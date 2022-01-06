@@ -30,7 +30,7 @@ setup(
             "autometa-length-filter = autometa.common.metagenome:main",
             "autometa-markers = autometa.common.markers:main",
             "autometa-orfs = autometa.common.external.prodigal:main",
-            "autometa-parse-bed = autometa.common.external.bedtools:main",
+            "autometa-bedtools-genomecov = autometa.common.external.bedtools:main",
             "autometa-hmmsearch-filter = autometa.common.external.hmmsearch:main",
             "autometa-taxonomy = autometa.taxonomy.vote:main",
             "autometa-taxonomy-lca = autometa.taxonomy.lca:main",
