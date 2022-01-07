@@ -191,7 +191,7 @@ This will download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, ``taxon
 - ``taxonomy.tsv.gz``: tab-delimited file containing contigs with Autometa taxon-profiling predictions ``cols: [contig, kingdom, phylum, class, order, family, genus, species, taxid]``
 
 Using ``gdrive``
-----------------
+~~~~~~~~~~~~~~~~
 
 You can download the individual assemblies of different datasests with the help of ``gdown`` using command line
 (This is what ``autometa-download-dataset`` is using behind the scenes). If you have installed ``autometa`` using
@@ -199,7 +199,7 @@ You can download the individual assemblies of different datasests with the help 
 ``conda install -c conda-forge gdown`` or ``pip install gdown``.
 
 Example for the 78Mbp simulated community
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""""""""""""""""""""""
 
 1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
 2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. 
