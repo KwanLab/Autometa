@@ -123,10 +123,16 @@ parameters may be hidden (these can be revealed by selecting
 Parameters to set every time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``--input``: the path to your input metagenome assembly nucleotide FASTA file
-- ``-profile``: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
-    - **standard** (default): runs all process jobs locally, (currently this requires Docker).
-    - **slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
+``--input``: the path to your input metagenome assembly nucleotide FASTA file
+
+``-profile``: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
+    - ``standard`` (default): runs all process jobs locally, (currently this requires Docker).
+    - ``slurm``: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
+
+.. note::
+    Notice the number of hyphens used between ``--input`` and ``-profile``. ``--input`` is an Autometa workflow parameter
+    where as ``-profile`` is a nextflow argument. This difference is true for passing in all arguments to the Autometa 
+    workflow and nextflow, respectively.
 
 Running the pipeline
 --------------------
