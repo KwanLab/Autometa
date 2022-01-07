@@ -2,6 +2,8 @@
 Running Autometa
 ================
 
+.. For description of appropriate header levels see:
+    https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/WritingReST/HeadlinesAndSection.html#headlines-and-sections
 
 Why nextflow?
 =============
@@ -63,7 +65,7 @@ Conda environment to install Nextflow and nf-core tools and then running the Aut
 .. _install-nextflow-nfcore-with-conda:
 
 Installing Nextflow and nf-core tools with Conda
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------
 
 If you have not previously installed/used Conda, you can get it using the 
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
@@ -94,7 +96,7 @@ Once Conda has finished creating the environment be sure to activate it:
 
     
 Launching Autometa using nf-core tools
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------
 
 Download/Launch the Autometa Nextflow pipeline using nf-core tools. 
 The stable version of Autometa will always be the "main" git branch. 
@@ -112,20 +114,22 @@ Use the arrow keys to select one or the other and then press return/enter.
 
 
 Set autometa parameters with nf-core tools web based GUI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------------------------
 
 The GUI will present all available parameters, though some extra 
 parameters may be hidden (these can be revealed by selecting 
 "Show hidden params" on the right side of the page).
 
-* Parameters to set every time
-    - ``--input``: the path to your input metagenome's nucleotide FASTA file
-    - ``-profile``: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
-        - **standard** (default): runs all process jobs locally, (currently this requires Docker).
-        - **slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
+Parameters to set every time
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``--input``: the path to your input metagenome assembly nucleotide FASTA file
+- ``-profile``: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
+    - **standard** (default): runs all process jobs locally, (currently this requires Docker).
+    - **slurm**: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
 
 Running the pipeline
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 After you are finished double-checking your parameter settings, click "Launch" 
 at the top right of web based GUI page, or "Launch workflow" at the bottom of 
 the page. After returning to the terminal you should be provided the option 
@@ -147,7 +151,7 @@ Advanced
 ========
 
 Parallel computing and computer resource allotment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------------------
 
 While you might want to provide Autometa all the compute resources available in order to get results 
 faster, that may or may not actually achieve the fastest run time.
@@ -171,14 +175,14 @@ largest gain in performance and a good rule would be to not exceed the number of
 
 
 Multiple Inputs
-^^^^^^^^^^^^^^^
+---------------
 
 You can input multiple assemblies at once using path wildcards. In the below example all the files with extension ".fna" 
 would be taken as input by nextflow. The pipeline will organize/name outputs based on these filenames.
 :code:`--input /tutorial/test_data/*.fna`
 
 Databases
-^^^^^^^^^
+---------
 
 Autometa uses the following NCBI databases throughout its pipeline:
 
@@ -209,7 +213,7 @@ Make sure that the directory path contains the following databases:
     params.single_db_dir = "/Autometa/autometa/databases/ncbi"
 
 CPUs, Memory, Disk
-^^^^^^^^^^^^^^^^^^
+------------------
 
 .. note::
     
@@ -246,10 +250,8 @@ a :code:`nf-params.json` file) would look something like:
 
 For additional information and examples see `Tuning workflow resources <https://nf-co.re/usage/configuration#running-nextflow-on-your-system>`_
 
-
-
 Additional Autometa parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 Up to date descriptions and default values of Autometa's nextflow parameters can be viewed using the following command: 
 
@@ -302,8 +304,7 @@ See :ref:`advanced-usage-binning` section for details
 
 
 Customizing Autometa's Scripts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+------------------------------
 
 In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone 
 the repository and then run nextflow directly from the scripts as below:
@@ -317,7 +318,7 @@ the repository and then run nextflow directly from the scripts as below:
     nextflow run $HOME/Autometa/nextflow
 
 Useful options
-^^^^^^^^^^^^^^
+--------------
 
 ``-c`` : In case you have configured nextflow with your executor (see :ref:`Configure nextflow with your 'executor'`) 
 and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file 
@@ -327,14 +328,14 @@ To see all of the command line options available you can refer to
 `nexflow CLI documentation <https://www.nextflow.io/docs/latest/cli.html#command-line-interface-cli>`_
 
 Resuming the workflow
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 One of the most powerful features of nextflow is resuming the workflow from the last completed process. If your pipeline 
 was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``). 
 Eg, ``nextflow run KwanLab/Autometa -params-file nf-params.json -c my_other_parameters.config -resume``
 
 Execution Report
-^^^^^^^^^^^^^^^^
+----------------
 
 After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, 
 RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report 
@@ -343,14 +344,14 @@ automatically for you in the ``${params.tracedir}/pipeline_info`` directory (``$
 `nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
 
 Visualizing the Workflow 
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install 
 `Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the 
 in the ``png`` format.
 
 Configure nextflow with your 'executor'
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------
 
 For nextflow to run the Autometa pipeline through a job scheduler you will need to update the respective ``profile`` 
 section in nextflow's config file. Each ``profile`` may be configured with any available scheduler as noted in the 
@@ -366,7 +367,7 @@ and copy this file to your desired location and open it in your favorite text ed
 .. _using-slurm:
 
 SLURM
-^^^^^
+-----
 
 This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the 
 slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo`` 
