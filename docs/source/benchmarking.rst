@@ -47,10 +47,6 @@ Taxon-profiling
 Example benchmarking with simulated communities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note::
-    Using ``--benchmark=classification`` requires the path to a directory containing files (nodes.dmp, names.dmp, merged.dmp) 
-    from NCBI's taxdump tarball. This should be supplied using the ``--ncbi`` parameter.
-
 .. code:: bash
 
     # Set community size (see above for selection/download of other community types)
@@ -75,6 +71,10 @@ Example benchmarking with simulated communities
         --output-wide $output_wide \
         --output-long $output_long \
         --output-classification-reports $reports
+
+.. note::
+    Using ``--benchmark=classification`` requires the path to a directory containing files (nodes.dmp, names.dmp, merged.dmp) 
+    from NCBI's taxdump tarball. This should be supplied using the ``--ncbi`` parameter.
 
 Clustering
 ----------
@@ -135,8 +135,11 @@ Example benchmarking with simulated communities
 Autometa Test Datasets
 ======================
 
+Descriptions
+------------
+
 Simulated Communities
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 .. csv-table:: Autometa Simulated Communities
     :file: simulated_community.csv
@@ -150,7 +153,7 @@ check the `README.md <https://drive.google.com/file/d/1Ti05Qp13FleuMQdnp3C5L-sXn
 located in the ``simulated_communities`` directory.
 
 Synthetic Communities
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 51 bacterial isolates were assembled into synthetic communities which we've titled ``MIX51``.
 
@@ -159,8 +162,11 @@ The synthetic community's DNA was extracted for sequencing, assembly and binning
 
 You can download the MIX51 community using this `link <https://drive.google.com/drive/folders/1x8d0o6HO5N72j7p_D_YxrSurBfpi9zmK?usp=sharing>`__.
 
-Download Test Datasets
-======================
+Download
+--------
+
+Using ``autometa-download-dataset``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Autometa is packaged with a built-in module that allows any user to download any of the available test datasets.
 To use retrieve these datasets one simply needs to run the ``autometa-download-dataset`` command.
@@ -184,8 +190,8 @@ This will download ``reference_assignments.tsv.gz``, ``binning.tsv.gz``, ``taxon
 - ``binning.tsv.gz``: tab-delimited file containing contigs with Autometa binning predictions, ``cols: [contig, cluster]``
 - ``taxonomy.tsv.gz``: tab-delimited file containing contigs with Autometa taxon-profiling predictions ``cols: [contig, kingdom, phylum, class, order, family, genus, species, taxid]``
 
-Using ``gdrive`` via command line
----------------------------------
+Using ``gdrive``
+----------------
 
 You can download the individual assemblies of different datasests with the help of ``gdown`` using command line
 (This is what ``autometa-download-dataset`` is using behind the scenes). If you have installed ``autometa`` using
