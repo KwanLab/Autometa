@@ -21,9 +21,9 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Autometa clustering evaluation benchmarking.
+Autometa taxon-profiling, clustering and binning-classification evaluation benchmarking.
 
-Script to benchmark Autometa clustering results using clustering evaluation metrics.
+Script to benchmark Autometa taxon-profiling, clustering and binning-classification results using clustering and classification evaluation metrics.
 """
 
 
