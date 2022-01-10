@@ -36,7 +36,7 @@ from autometa.common.exceptions import TableFormatError
 logger = logging.getLogger(__name__)
 
 
-def genomecov(ibam, lengths, out, force=False):
+def genomecov(ibam, out, force=False):
     """Run bedtools genomecov with input `ibam` and `lengths` to retrieve
     metagenome coverages.
 
@@ -44,8 +44,6 @@ def genomecov(ibam, lengths, out, force=False):
     ----------
     ibam : str
         </path/to/indexed/BAM/file.ibam>. Note: BAM *must* be sorted by position.
-    lengths : str
-        </path/to/genome/lengths.tsv> tab-delimited cols=[contig,length]
     out : str
         </path/to/alignment.bed>
         The bedtools genomecov output is a tab-delimited file with the following columns:
@@ -71,7 +69,7 @@ def genomecov(ibam, lengths, out, force=False):
         Why the exception is raised.
 
     """
-    cmd = f"bedtools genomecov -ibam {ibam} -g {lengths}"
+    cmd = f"bedtools genomecov -ibam {ibam}"
     if os.path.exists(out) and not force:
         logger.debug(f"{out} already exists. skipping...")
         return out
@@ -126,7 +124,8 @@ def parse(bed, out=None, force=False):
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"{out} written")
-    logger.debug(f"{os.path.basename(out)} shape: {dff.shape}")
+    msg = f"{os.path.basename(out)} shape: {dff.shape}" if out else f"shape: {dff.shape}"
+    logger.debug(msg)
     return dff[["coverage"]]
 
 
@@ -145,12 +144,6 @@ def main():
         "--ibam", metavar="filepath", help="Path to sorted alignment.bam", required=True
     )
     parser.add_argument(
-        "--lengths",
-        metavar="filepath",
-        help="Path to genome lengths.tsv; tab-delimited cols=[contig,length]",
-        required=True,
-    )
-    parser.add_argument(
         "--bed",
         metavar="filepath",
         help="Path to write alignment.bed; tab-delimited cols=[contig,length]",
@@ -167,15 +160,13 @@ def main():
     )
     parser.add_argument(
         "--force-cov",
-        help="force overwrite `--coverage`",
+        help="force overwrite `--output`",
         action="store_true",
         default=False,
     )
     args = parser.parse_args()
-    bed = genomecov(
-        ibam=args.ibam, lengths=args.lengths, out=args.bed, force=args.force_bed
-    )
-    parse(bed=bed, out=args.coverage, force=args.force_cov)
+    bed = genomecov(ibam=args.ibam, out=args.bed, force=args.force_bed)
+    parse(bed=bed, out=args.output, force=args.force_cov)
 
 
 if __name__ == "__main__":

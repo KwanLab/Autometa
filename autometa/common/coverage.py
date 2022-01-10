@@ -69,32 +69,6 @@ def from_spades_names(records):
     return coverages.to_frame()
 
 
-def make_length_table(fasta, out):
-    """Writes a tab-delimited length table to `out` given an input `fasta`.
-
-    Parameters
-    ----------
-    fasta : str
-        </path/to/assembly.fasta>
-    out : str
-        </path/to/lengths.tsv>
-
-    Returns
-    -------
-    str
-        </path/to/lengths.tsv>
-    """
-    seqs = {record.id: len(record) for record in SeqIO.parse(fasta, "fasta")}
-    lengths = pd.Series(seqs, name="length")
-    lengths.index.name = "contig"
-    lengths.to_csv(out, sep="\t", index=True, header=True)
-    return out
-
-
-def normalize(df):
-    raise NotImplementedError
-
-
 @utilities.timeit
 def get(
     fasta,
@@ -105,7 +79,6 @@ def get(
     se_reads=None,
     sam=None,
     bam=None,
-    lengths=None,
     bed=None,
     cpus=1,
 ):
@@ -153,8 +126,6 @@ def get(
         </path/to/alignments.sam>
     bam : str, optional
         </path/to/alignments.bam>
-    lengths : str, optional
-        </path/to/lengths.tsv>
     bed : str, optional
         </path/to/alignments.bed>
     cpus : int, optional
@@ -184,17 +155,14 @@ def get(
         tempdir = tempfile.mkdtemp(suffix=None, prefix="cov-alignments", dir=outdir)
         bed = bed if bed else os.path.join(tempdir, "alignment.bed")
         bam = bam if bam else os.path.join(tempdir, "alignment.bam")
-        lengths = lengths if lengths else os.path.join(tempdir, "lengths.tsv")
         sam = sam if sam else os.path.join(tempdir, "alignment.sam")
         db = os.path.join(tempdir, "alignment.db")
 
         def parse_bed(bed=bed, out=out):
             return bedtools.parse(bed, out)
 
-        def make_bed(lengths=lengths, fasta=fasta, bam=bam, bed=bed):
-            if not os.path.exists(lengths):
-                lengths = make_length_table(fasta, lengths)
-            bedtools.genomecov(bam, lengths, bed)
+        def make_bed(bam=bam, bed=bed):
+            bedtools.genomecov(bam, bed)
 
         def sort_samfile(sam=sam, bam=bam, cpus=cpus):
             samtools.sort(sam, bam, cpus=cpus)
@@ -273,10 +241,6 @@ def main():
     )
     parser.add_argument("--sam", help="</path/to/alignments.sam>")
     parser.add_argument("--bam", help="</path/to/alignments.bam>")
-    parser.add_argument(
-        "--lengths",
-        help="Path to tab-delimited lengths table with columns of contig & length.",
-    )
     parser.add_argument("--bed", help="</path/to/alignments.bed>")
     parser.add_argument(
         "--cpus",
@@ -317,7 +281,6 @@ def main():
         rev_reads=args.rev_reads,
         sam=args.sam,
         bam=args.bam,
-        lengths=args.lengths,
         bed=args.bed,
         cpus=args.cpus,
         out=args.out,
