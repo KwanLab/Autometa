@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process LCA {
+process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_high'
     publishDir "${params.interim_dir_internal}",
@@ -21,16 +21,25 @@ process LCA {
     input:
         tuple val(meta), path(blast)
         path(blastdb_dir)
+        path(lca_cache)
 
     output:
         tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
-        path  '*.version.txt'                      , emit: version
+        path 'lca_error_taxids.tsv'                , emit: error_taxids
+        path 'sseqid2taxid.tsv'                    , emit: sseqid_to_taxids
+        path '*.version.txt'                       , emit: version
 
 
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-lca --blast ${blast} --dbdir ${blastdb_dir} --lca-output ${meta.id}.lca.tsv
+        autometa-taxonomy-lca \\
+            --blast ${blast} \\
+            --dbdir ${blastdb_dir} \\
+            --cache ${lca_cache} \\
+            --lca-error-taxids lca_error_taxids.tsv \\
+            --sseqid2taxid-output sseqid2taxid.tsv \\
+            --lca-output ${meta.id}.lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

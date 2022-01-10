@@ -1,4 +1,5 @@
-params.lca_options = [:]
+params.prepare_lca_options  = [:]
+params.reduce_lca_options    = [:]
 params.majority_vote_options = [:]
 params.split_kingdoms_options = [:]
 params.nr_dmnd_dir = [:]
@@ -13,7 +14,7 @@ params.large_downloads_permission = [:]
 
 include { PREPARE_NR_DB  } from './prepare_nr.nf'                         addParams( debug: params.debug, diamond_makedb_options: params.diamond_makedb_options, nr_dmnd_dir: params.nr_dmnd_dir  )
 include { PREPARE_TAXONOMY_DATABASES  } from './prepare_ncbi_taxinfo.nf'  addParams( debug: params.debug, taxdump_tar_gz_dir: params.taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: params.prot_accession2taxid_gz_dir  )
-include { LCA            } from './../../modules/local/lca.nf'            addParams( options: params.lca_options                 )
+include { LCA            } from './lca.nf'                                addParams( prepare_lca_options: params.prepare_lca_options, reduce_lca_options: params.reduce_lca_options )
 include { MAJORITY_VOTE  } from './../../modules/local/majority_vote.nf'  addParams( options: params.majority_vote_options       )
 include { SPLIT_KINGDOMS } from './../../modules/local/split_kingdoms.nf' addParams( options: params.split_kingdoms_options      )
 include { DIAMOND_BLASTP } from './../../modules/local/diamond_blastp.nf' addParams( options: params.diamond_blastp_options      )

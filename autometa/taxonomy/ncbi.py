@@ -527,6 +527,10 @@ class NCBI:
                 "To achieve greater resolution of your metagenome taxonomy, considering downloading the prot.accession2taxid.FULL.gz database file"
             )
             fpath = choices.get("live")
+            db = "live"
+
+        if not os.path.exists(fpath) or not os.path.getsize(fpath):
+            raise FileNotFoundError(fpath)
 
         # "rt" open the database in text mode instead of binary to be handled like a text file
         fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath)
