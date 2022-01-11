@@ -31,9 +31,26 @@ workflow LCA {
         cache  = PREPARE_LCA.out.cache
 }
 
+/*
+---------------: Test Command :-----------------
+nextflow run -resume $HOME/Autometa/subworkflows/local/lca.nf \\
+    --interim_dir_internal nf-test \\
+    --publish_dir_mode copy \\
+    --input '/path/to/*.blastp.tsv' \\
+    --dbdir '/path/to/ncbi/databases/directory'
+*/
+
 workflow {
-    dbdir = Channel.value('/mnt/autometa_databases/')
-    blastp_results_ch = Channel.from( "~/marine_drugs/marine_drugs/data/interim/binning/*.blastp.tsv" )
+    blastp_results_ch = Channel
+            .fromPath(params.input)
+            .map { row ->
+                    def meta = [:]
+                    meta.id = row.simpleName
+                    return [ meta, row ]
+                }
+
+    dbdir = Channel.value(params.dbdir)
+
     LCA(
         blastp_results_ch,
         dbdir

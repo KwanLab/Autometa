@@ -25,8 +25,8 @@ process REDUCE_LCA {
 
     output:
         tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
-        path 'lca_error_taxids.tsv'                , emit: error_taxids
-        path 'sseqid2taxid.tsv'                    , emit: sseqid_to_taxids
+        path "${meta.id}.error_taxids.tsv"         , emit: error_taxids
+        path "${meta.id}.sseqid2taxid.tsv"         , emit: sseqid_to_taxids
         path '*.version.txt'                       , emit: version
 
 
@@ -37,8 +37,8 @@ process REDUCE_LCA {
             --blast ${blast} \\
             --dbdir ${blastdb_dir} \\
             --cache ${lca_cache} \\
-            --lca-error-taxids lca_error_taxids.tsv \\
-            --sseqid2taxid-output sseqid2taxid.tsv \\
+            --lca-error-taxids ${meta.id}.error_taxids.tsv \\
+            --sseqid2taxid-output ${meta.id}.sseqid2taxid.tsv \\
             --lca-output ${meta.id}.lca.tsv
         echo "TODO" > autometa.version.txt
         """

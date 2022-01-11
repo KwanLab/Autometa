@@ -5,8 +5,8 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process PREPARE_LCA {
-    tag "Preparing db cache for autometa-taxonomy-lca"
-    label 'process_high'
+    tag "Preparing db cache from ${blastdb_dir}"
+    label 'process_low'
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
@@ -18,13 +18,14 @@ process PREPARE_LCA {
         container "jason-c-kwan/autometa:${params.autometa_image_tag}"
     }
 
+    storeDir 'db/lca'
     cache 'lenient'
 
     input:
         path(blastdb_dir)
 
     output:
-        path "lca_cache"       , emit: cache
+        path "cache"       , emit: cache
         path '*.version.txt'   , emit: version
 
     script:
@@ -34,7 +35,7 @@ process PREPARE_LCA {
             --blast . \\
             --lca-output . \\
             --dbdir ${blastdb_dir} \\
-            --cache lca_cache \\
+            --cache cache \\
             --only-prepare-cache
         echo "TODO" > autometa.version.txt
         """
