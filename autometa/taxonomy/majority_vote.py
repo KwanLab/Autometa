@@ -292,7 +292,7 @@ def majority_vote(
 
     """
     outdir = os.path.dirname(os.path.realpath(out))
-    lca = LCA(dbdir=ncbi_dir, verbose=verbose, outdir=outdir)
+    lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
