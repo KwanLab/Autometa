@@ -18,7 +18,7 @@ NCBI
 Markers
 =======
 
-- bacteria single-copy-markers - `link <https://github.com/WiscEvan/Autometa/raw/dev/databases/markers/bacteria.single_copy.hmm>`__
-- bacteria single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/WiscEvan/Autometa/dev/databases/markers/bacteria.single_copy.cutoffs?token=AGF3KQVL3J4STDT4TJQVDBS6GG5FE>`__
-- archaea single-copy-markers - `link <https://github.com/WiscEvan/Autometa/raw/dev/databases/markers/archaea.single_copy.hmm>`__
-- archaea single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/WiscEvan/Autometa/dev/databases/markers/archaea.single_copy.cutoffs?token=AGF3KQXVUDFIH6ECVTYMZQS6GG5KO>`__
+- bacteria single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/bacteria.single_copy.hmm>`__
+- bacteria single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/bacteria.single_copy.cutoffs>`__
+- archaea single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/archaea.single_copy.hmm>`__
+- archaea single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/archaea.single_copy.cutoffs>`__
