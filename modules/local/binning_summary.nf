@@ -17,7 +17,7 @@ process BINNING_SUMMARY {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
+        container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
     input:

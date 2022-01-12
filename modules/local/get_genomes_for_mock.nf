@@ -8,7 +8,7 @@ process GET_GENOMES_FOR_MOCK {
     def genome_count = options.args2.tokenize('|').size()
     tag "fetching ${genome_count} genomes"
     conda (params.enable_conda ? "bioconda::emboss=6.6.0" : null)
-    container "jason-c-kwan/autometa-nf-modules-get_genomes_for_mock"
+    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock"
 
     output:
         path "metagenome.fna.gz", emit: metagenome
