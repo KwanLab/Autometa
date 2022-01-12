@@ -6,7 +6,7 @@ options        = initOptions(params.options)
 
 process PREPARE_LCA {
     tag "Preparing db cache from ${blastdb_dir}"
-    label 'process_low'
+    label 'process_medium'
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
