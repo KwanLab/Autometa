@@ -27,19 +27,11 @@ WorkflowMain.initialise(workflow, params, log)
 ////////////////////////////////////////////////////
 
 
-if (params.use_run_name){
-    params.interim_dir_internal = "${params.interim_dir}/autometa_interim_dir/${workflow.runName}/${workflow.sessionId}" // Intermediate results directory
-    params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.runName}/${workflow.sessionId}"           // Final results directory
-} else {
-    params.interim_dir_internal = "${params.interim_dir}/autometa_interim_dir/${workflow.sessionId}" // Intermediate results directory
-    params.outdir_internal = "${params.outdir}/autometa_outdir/${workflow.sessionId}"           // Final results directory
-}
-
 println """
 --------------------------------------------
 Output files will be found here:
-Intermediate results directory: ${params.interim_dir_internal}
-Binning results directory: ${params.outdir_internal}
+Intermediate results directory: ${params.interim_dir}
+Binning results directory: ${params.outdir}
 --------------------------------------------
 \n
 """

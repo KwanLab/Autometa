@@ -8,9 +8,17 @@ process SEQKIT_FILTER {
     tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.interim_dir_internal}",
+    publishDir "${meta.id}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+        saveAs: {
+            filename -> saveFiles(
+                filename:filename,
+                options:params.options,
+                publish_dir:getSoftwareName(task.process),
+                meta:[:],
+                publish_by_meta:[]
+            )
+        }
 
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -23,8 +31,8 @@ process SEQKIT_FILTER {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("${meta.id}.filtered.fna")  , emit: fasta
-        tuple val(meta), path("${meta.id}.gc_content.tsv"), emit: gc_content
+        tuple val(meta), path("filtered.fna")  , emit: fasta
+        tuple val(meta), path("gc_content.tsv"), emit: gc_content
         path  '*.version.txt'                             , emit: version
 
     script:
@@ -34,14 +42,14 @@ process SEQKIT_FILTER {
         # filter contigs by specified length
         ${metagenomecmd} | \\
             seqkit seq -j ${task.cpus} -m ${params.length_cutoff} | \\
-            seqkit sort -n > "${meta.id}.filtered.fna"
+            seqkit sort -n > "filtered.fna"
 
         # calculate gc content
-        seqkit fx2tab -j ${task.cpus} -n -lg "${meta.id}.filtered.fna" > temp
+        seqkit fx2tab -j ${task.cpus} -n -lg "filtered.fna" > temp
 
         # Extract columns, create tsv
         awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
-        echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${meta.id}.gc_content.tsv"
+        echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "gc_content.tsv"
 
         # Remove temporary files
         rm temp

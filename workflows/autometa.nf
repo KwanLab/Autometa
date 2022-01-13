@@ -28,7 +28,6 @@ if (params.large_downloads_permission) {
     // TODO: check if files exist, if they don't fail the pipeline early at this stage
 }
 
-
 // if these are still null then it means they weren't set, so make them null.
 // this only works because the markov models are inside the docker image.
 // that needs to be changed in future versions
@@ -40,19 +39,15 @@ if (!params.taxonomy_aware) {
     internal_taxdump_tar_gz_dir = null
 }
 
-
-
-
-
 /*
  * -------------------------------------------------
  *  Import local modules
  * -------------------------------------------------
 */
 
-include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers_options']                                       )
+include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers_options']                               )
 include { GET_SOFTWARE_VERSIONS                                 } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]                                   )
-include { HMMER_HMMSEARCH                                       } from '../modules/local/hmmer_hmmsearch'            addParams( options: modules['hmmsearch_options']                                   )
+include { HMMER_HMMSEARCH                                       } from '../modules/local/hmmer_hmmsearch'            addParams( options: modules['hmmsearch_options']                                    )
 include { HMMER_HMMSEARCH_FILTER                                } from '../modules/local/hmmer_hmmsearch_filter'      addParams( options: modules['hmmsearch_filter_options']                            )
 include { SEQKIT_FILTER                                         } from '../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]                                     )
 include { MERGE_TSV_WITH_HEADERS as MERGE_SPADES_COVERAGE_TSV   } from '../modules/local/merge_tsv'                   addParams( options: modules['spades_kmer_coverage']                                )
@@ -61,7 +56,7 @@ include { SEQKIT_SPLIT                                          } from '../modul
 include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']                                )
 include { MERGE_FASTA as MERGE_PRODIGAL                         } from '../modules/local/merge_fasta'                 addParams( )
 include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']                                )
-include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']                                )
+include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']                                    )
 
 /*
  * -------------------------------------------------
@@ -123,22 +118,30 @@ workflow AUTOMETA {
         fasta_ch
     )
 
+    if ( params.num_splits > 0 ) {
+        MERGE_SPADES_COVERAGE_TSV (
+            SPADES_KMER_COVERAGE.out.coverages.groupTuple(),
+            "coverage"
+        )
+        MERGE_SPADES_COVERAGE_TSV.out.merged_tsv
+            .set{coverage_ch}
+    } else {
+        SPADES_KMER_COVERAGE.out.coverages
+            .set{coverage_ch}
+    }
+
 /*
  * -------------------------------------------------
  *  Find open reading frames with Prodigal
  * -------------------------------------------------
+ * -------------------------------------------------
+ *  If running in parallel, merge Prodigal results
 */
 
     PRODIGAL (
         fasta_ch,
         "gbk"
     )
-
-/*
- * -------------------------------------------------
- *  If running in parallel, merge Prodigal results
- * -------------------------------------------------
-*/
 
     if ( params.num_splits > 0 ) {
         MERGE_PRODIGAL (
@@ -160,77 +163,72 @@ workflow AUTOMETA {
 
     if (params.taxonomy_aware) {
         TAXON_ASSIGNMENT (
-            SEQKIT_FILTER.out.fasta,
+            fasta_ch,
             merged_prodigal
         )
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
 
-        TAXON_ASSIGNMENT.out.bacteria
-        ANALYZE_KMERS (
-            TAXON_ASSIGNMENT.out.bacteria
-            )
+        kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
     } else {
-        ANALYZE_KMERS ( SEQKIT_FILTER.out.fasta )
+        kmers_input_ch = fasta_ch
         taxonomy_results = file( "$baseDir/assets/dummy_file.txt", checkIfExists: true )
         taxonomy_results = Channel.fromPath( taxonomy_results )
     }
 
-    ANALYZE_KMERS.out.embedded
-        .set{kmers_embedded_merged_tsv_ch}
+/*
+* -------------------------------------------------
+* Calculate k-mer frequencies
+* -------------------------------------------------
+*/
 
+    ANALYZE_KMERS(
+        kmers_input_ch
+    )
     ANALYZE_KMERS.out.normalized
-        .set{kmers_normalized_tsv_ch}
+        .set{kmers_normalized_ch}
+
+    ANALYZE_KMERS.out.embedded
+        .set{kmers_embedded_ch}
+
 
 // --------------------------------------------------------------------------------
 // Run hmmsearch and look for marker genes in contig orfs
 // --------------------------------------------------------------------------------
+    // To move to hmmsearch instead of hmmscan:
+    // HMMER_HMMSEARCH.out.domtblout
+    //       .join(PRODIGAL.out.amino_acid_fasta)
+    //       .set{hmmsearch_out}
+    // HMMER_HMMSEARCH_FILTER(hmmsearch_out)
     MARKERS(PRODIGAL.out.amino_acid_fasta)
- // To move to hmmsearch instead of hmmscan:
- // HMMER_HMMSEARCH.out.domtblout
- //       .join(PRODIGAL.out.amino_acid_fasta)
- //       .set{hmmsearch_out}
- // HMMER_HMMSEARCH_FILTER(hmmsearch_out)
-
-    // Before binning we need to merge back everything that was run in parallel
     if ( params.num_splits > 0 ) {
-        MERGE_SPADES_COVERAGE_TSV (
-            SPADES_KMER_COVERAGE.out.coverages.groupTuple(),
-            "coverage"
-        )
-        MERGE_SPADES_COVERAGE_TSV.out.merged_tsv
-            .set{spades_coverage_merged_tsv_ch}
-
         MERGE_HMMSEARCH (
             MARKERS.out.markers_tsv.groupTuple(),
             "markers.tsv"
         )
         MERGE_HMMSEARCH.out.merged_tsv
-            .set{markers_tsv_merged_tsv_ch}
+            .set{markers_ch}
     } else {
-        fasta_ch = SEQKIT_FILTER.out.fasta
-        SPADES_KMER_COVERAGE.out.coverages
-            .set{spades_coverage_merged_tsv_ch}
         MARKERS.out.markers_tsv
-            .set{markers_tsv_merged_tsv_ch}
+            .set{markers_ch}
     }
 
     BINNING(
-        SEQKIT_FILTER.out.fasta,
-        kmers_embedded_merged_tsv_ch,
-        spades_coverage_merged_tsv_ch,
+        fasta_ch,
+        kmers_embedded_ch,
+        coverage_ch,
         SEQKIT_FILTER.out.gc_content,
-        markers_tsv_merged_tsv_ch,
+        markers_ch,
         taxonomy_results,
         "cluster"
     )
 
     if (params.unclustered_recruitment) {
         UNCLUSTERED_RECRUITMENT(
-            SEQKIT_FILTER.out.fasta,
-            kmers_normalized_tsv_ch,
-            spades_coverage_merged_tsv_ch,
-            markers_tsv_merged_tsv_ch,
+            fasta_ch,
+            kmers_normalized_ch,
+            coverage_ch,
+            markers_ch,
             taxonomy_results,
             BINNING.out.binning
         )

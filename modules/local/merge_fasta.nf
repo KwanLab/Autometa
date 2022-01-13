@@ -7,9 +7,18 @@ options        = initOptions(params.options)
 process MERGE_FASTA {
     tag "Merging ${meta.id} FASTA"
     label 'process_low'
-    publishDir "${params.interim_dir_internal}",
+
+    publishDir "${meta.id}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+        saveAs: {
+            filename -> saveFiles(
+                filename:filename,
+                options:params.options,
+                publish_dir:getSoftwareName(task.process),
+                meta:[:],
+                publish_by_meta:[]
+            )
+        }
 
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {

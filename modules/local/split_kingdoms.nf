@@ -8,7 +8,7 @@ process SPLIT_KINGDOMS {
     tag "Splitting votes into kingdoms for ${meta.id}"
     label 'process_medium'
 
-    publishDir "${params.interim_dir_internal}",
+    publishDir "${meta.id}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
 
@@ -24,10 +24,10 @@ process SPLIT_KINGDOMS {
         path(ncbi_tax_dir)
 
     output:
-        tuple val(meta), path("${meta.id}.taxonomy.tsv"), emit: taxonomy
-        tuple val(meta), path("${meta.id}.bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("${meta.id}.archaea.fna") , emit: archaea, optional: true
-        path  '*.version.txt'                           , emit: version
+        tuple val(meta), path("taxonomy.tsv"), emit: taxonomy
+        tuple val(meta), path("bacteria.fna"), emit: bacteria, optional: true
+        tuple val(meta), path("archaea.fna") , emit: archaea, optional: true
+        path  '*.version.txt'                , emit: version
 
     script:
         def software = getSoftwareName(task.process)
@@ -35,7 +35,6 @@ process SPLIT_KINGDOMS {
         autometa-taxonomy \\
             --votes "${votes}" \\
             --output . \\
-            --prefix "${meta.id}" \\
             --split-rank-and-write superkingdom \\
             --assembly "${assembly}" \\
             --ncbi "${ncbi_tax_dir}"

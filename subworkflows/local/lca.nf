@@ -34,7 +34,6 @@ workflow LCA {
 /*
 ---------------: Test Command :-----------------
 nextflow run -resume $HOME/Autometa/subworkflows/local/lca.nf \\
-    --interim_dir_internal nf-test \\
     --publish_dir_mode copy \\
     --input '/path/to/*.blastp.tsv' \\
     --dbdir '/path/to/ncbi/databases/directory'
