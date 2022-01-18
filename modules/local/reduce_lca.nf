@@ -6,10 +6,9 @@ options        = initOptions(params.options)
 
 process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
-    label 'process_high'
-    publishDir "${meta.id}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
+    label 'process_medium'
+
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {

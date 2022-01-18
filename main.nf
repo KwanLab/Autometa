@@ -30,8 +30,7 @@ WorkflowMain.initialise(workflow, params, log)
 println """
 --------------------------------------------
 Output files will be found here:
-Intermediate results directory: ${params.interim_dir}
-Binning results directory: ${params.outdir}
+Results directory: ${params.outdir}
 --------------------------------------------
 \n
 """

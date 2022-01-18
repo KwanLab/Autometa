@@ -7,17 +7,7 @@ options        = initOptions(params.options)
 process ANALYZE_KMERS {
     tag "Counting kmers for ${meta.id}"
     label 'process_medium'
-    publishDir "${meta.id}",
-        mode: params.publish_dir_mode,
-        saveAs: {
-            filename -> saveFiles(
-                filename:filename,
-                options:params.options,
-                publish_dir:getSoftwareName(task.process),
-                meta:[:],
-                publish_by_meta:[]
-            )
-        }
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -36,7 +26,6 @@ process ANALYZE_KMERS {
         path  '*.version.txt'                        , emit: version
 
     script:
-        // Add soft-links to original FastQs for consistent naming in pipeline
         def software = getSoftwareName(task.process)
         """
         autometa-kmers \\

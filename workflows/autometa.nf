@@ -118,7 +118,7 @@ workflow AUTOMETA {
         fasta_ch
     )
 
-    if ( params.num_splits > 0 ) {
+    if ( params.num_splits > 1 ) {
         MERGE_SPADES_COVERAGE_TSV (
             SPADES_KMER_COVERAGE.out.coverages.groupTuple(),
             "coverage"
@@ -143,7 +143,7 @@ workflow AUTOMETA {
         "gbk"
     )
 
-    if ( params.num_splits > 0 ) {
+    if ( params.num_splits > 1 ) {
         MERGE_PRODIGAL (
             PRODIGAL.out.amino_acid_fasta.groupTuple(),
             "faa"
@@ -201,7 +201,7 @@ workflow AUTOMETA {
     //       .set{hmmsearch_out}
     // HMMER_HMMSEARCH_FILTER(hmmsearch_out)
     MARKERS(PRODIGAL.out.amino_acid_fasta)
-    if ( params.num_splits > 0 ) {
+    if ( params.num_splits > 1 ) {
         MERGE_HMMSEARCH (
             MARKERS.out.markers_tsv.groupTuple(),
             "markers.tsv"

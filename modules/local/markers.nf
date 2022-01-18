@@ -9,17 +9,7 @@ process MARKERS {
     tag "Finding markers for ${meta.id}"
     label "process_low"
 
-    publishDir "${meta.id}",
-        mode: params.publish_dir_mode,
-        saveAs: {
-            filename -> saveFiles(
-                filename:filename,
-                options:params.options,
-                publish_dir:getSoftwareName(task.process),
-                meta:[:],
-                publish_by_meta:[]
-            )
-        }
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {

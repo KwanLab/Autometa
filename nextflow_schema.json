@@ -22,13 +22,6 @@
                     "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
                     "default": "null"
                 },
-                "interim_dir": {
-                    "type": "string",
-                    "description": "Absolute (full) path of directory for intermediate files",
-                    "default": "~/where/pipeline/is/launched",
-                    "fa_icon": "fas fa-folder-open",
-                    "help_text": "Directory for storing files created during intermediate steps but which are interesting enough to keep for debugging or analyzing with other tools"
-                },
                 "outdir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory where the results will be saved.",
@@ -38,7 +31,7 @@
                 "tracedir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory to keep pipeline Nextflow logs and reports.",
-                    "default": "~/where/pipeline/is/launched",
+                    "default": "outdir/trace",
                     "fa_icon": "fas fa-cogs"
                 },
                 "publish_dir_mode": {
@@ -72,7 +65,7 @@
                 "embedding_method": {
                     "type": "string",
                     "default": "bhsne",
-                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\", \"densne\", \"trimap\""
+                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\", \"densmap\", \"trimap\""
                 },
                 "embedding_dimensions": {
                     "type": "integer",
@@ -240,7 +233,7 @@
                     "type": "string",
                     "default": "latest",
                     "description": "Change which tag of the autometa docker image is used",
-                    "help_text": "Appends input to `jason-c-kwan/autometa`\n\njason-c-kwan/autometa:${params.autometa_image_tag}\""
+                    "help_text": "Appends input to `jasonkwan/autometa`\n\njasonkwan/autometa:${params.autometa_image_tag}\""
                 }
             },
             "required": [
@@ -341,24 +334,6 @@
             "required": [
                 "validate_params"
             ]
-        },
-        "parameters_set_internally": {
-            "title": "Parameters set internally",
-            "type": "object",
-            "description": "These parameters are determined during runtime",
-            "default": "",
-            "properties": {
-                "outdir_internal": {
-                    "type": "string",
-                    "hidden": true,
-                    "description": "These parameters are determined during runtime"
-                },
-                "interim_dir_internal": {
-                    "type": "string",
-                    "hidden": true,
-                    "description": "These parameters are determined during runtime"
-                }
-            }
         }
     },
     "allOf": [
@@ -376,9 +351,6 @@
         },
         {
             "$ref": "#/definitions/generic_nf_core_options"
-        },
-        {
-            "$ref": "#/definitions/parameters_set_internally"
         }
     ]
 }
