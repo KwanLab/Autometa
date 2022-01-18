@@ -51,7 +51,7 @@ The following workflow is recommended:
 
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
 
-    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage. :ref:`coverage`
+    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`
 
 
 Basic
