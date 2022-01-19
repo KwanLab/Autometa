@@ -1,25 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-COPYRIGHT
-Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-Shaurya Chanana, Izaak Miller, Jason C. Kwan
-
-This file is part of Autometa.
-
-Autometa is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Autometa is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-COPYRIGHT
+# License: GNU Affero General Public License v3 or later
+# A copy of GNU AGPL v3 should have been included in this software package in LICENSE.txt.
 Script containing wrapper functions for bedtools.
 """
 
@@ -124,7 +107,9 @@ def parse(bed, out=None, force=False):
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"{out} written")
-    msg = f"{os.path.basename(out)} shape: {dff.shape}" if out else f"shape: {dff.shape}"
+    msg = (
+        f"{os.path.basename(out)} shape: {dff.shape}" if out else f"shape: {dff.shape}"
+    )
     logger.debug(msg)
     return dff[["coverage"]]
 
