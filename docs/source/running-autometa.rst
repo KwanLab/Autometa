@@ -13,12 +13,12 @@ Nextflow helps Autometa produce reproducible results while allowing the pipeline
 System Requirements
 ===================
 
-Currently the nextflow pipeline requires Docker so it must be installed on your system. 
+Currently the nextflow pipeline requires Docker so it must be installed on your system.
 If you don't have Docker installed you can install it from `docs.docker.com/get-docker <https://docs.docker.com/get-docker>`_.
-We plan on removing this dependency in future versions, so that other dependency managers 
+We plan on removing this dependency in future versions, so that other dependency managers
 (e.g. Conda, Singularity, etc) can be used.
 
-Nextflow runs on any Posix compatible system. Detailed system requirements 
+Nextflow runs on any Posix compatible system. Detailed system requirements
 can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest/getstarted.html#requirements>`_
 
 Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
@@ -27,10 +27,10 @@ Nextflow (required) and nf-core tools (optional but highly recommended) installa
 Data preparation
 ================
 
-Autometa takes contigs as input, so you need to have previously assembled your shotgun metagenome. 
+Autometa takes contigs as input, so you need to have previously assembled your shotgun metagenome.
 The following workflow is recommended:
 
-#. Trim adapter sequences from the reads. 
+#. Trim adapter sequences from the reads.
 
    * We usually use Trimmomatic_.
 
@@ -38,40 +38,40 @@ The following workflow is recommended:
 
    * We usually use FastQC_.
 
-#. Assemble the trimmed reads. 
+#. Assemble the trimmed reads.
 
    * We usually use MetaSPAdes which is a part of the SPAdes_ package.
 
-#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step. 
-   
+#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step.
+
    * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
 
-.. note::
+.. attention::
 
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
 
-    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage.
+    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`
 
 
 Basic
 =====
 
-While the Autometa Nextflow pipeline can be run using Nextflow directly, we designed 
-it using nf-core standards and templating to provide an easier user experience through 
-use of the nf-core "tools" python library. The directions below demonstrate using a minimal 
-Conda environment to install Nextflow and nf-core tools and then running the Autometa pipeline. 
+While the Autometa Nextflow pipeline can be run using Nextflow directly, we designed
+it using nf-core standards and templating to provide an easier user experience through
+use of the nf-core "tools" python library. The directions below demonstrate using a minimal
+Conda environment to install Nextflow and nf-core tools and then running the Autometa pipeline.
 
 .. _install-nextflow-nfcore-with-conda:
 
 Installing Nextflow and nf-core tools with Conda
 ------------------------------------------------
 
-If you have not previously installed/used Conda, you can get it using the 
+If you have not previously installed/used Conda, you can get it using the
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
 
 After installing conda, running the following command will create a minimal
- Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
+Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
@@ -83,10 +83,12 @@ If you receive the message...
 
     CondaValueError: prefix already exists:
 
-...it means you have already created the environment. If you want to overwrite/update 
-the environment then add the force flag to the end of the 
-command: :code:`conda env create... --force`
+...it means you have already created the environment. If you want to overwrite/update
+the environment then add the :code:`--force` flag to the end of the command.
 
+.. code-block:: bash
+
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -94,14 +96,14 @@ Once Conda has finished creating the environment be sure to activate it:
 
     conda activate autometa-nf
 
-    
+
 Launching Autometa using nf-core tools
 --------------------------------------
 
-Download/Launch the Autometa Nextflow pipeline using nf-core tools. 
-The stable version of Autometa will always be the "main" git branch. 
-To use an in-development git branch switch "main" in the command with 
-the name of the desired branch. After the pipeline downloads nf-core will 
+Download/Launch the Autometa Nextflow pipeline using nf-core tools.
+The stable version of Autometa will always be the "main" git branch.
+To use an in-development git branch switch "main" in the command with
+the name of the desired branch. After the pipeline downloads nf-core will
 start the pipeline launch process.
 
 .. code-block:: bash
@@ -113,37 +115,38 @@ While it is possible to use the command line version, it is preferred and easier
 Use the arrow keys to select one or the other and then press return/enter.
 
 
-Set autometa parameters with nf-core tools web based GUI
+Set Autometa parameters with nf-core tools web based GUI
 --------------------------------------------------------
 
-The GUI will present all available parameters, though some extra 
-parameters may be hidden (these can be revealed by selecting 
+The GUI will present all available parameters, though some extra
+parameters may be hidden (these can be revealed by selecting
 "Show hidden params" on the right side of the page).
 
 Parameters to set every time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``--input``: the path to your input metagenome assembly nucleotide FASTA file
+:code:`--input`: the path to your input metagenome assembly nucleotide FASTA file
 
-``-profile``: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
-    - ``standard`` (default): runs all process jobs locally, (currently this requires Docker).
-    - ``slurm``: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
+:code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
+    - :code:`standard` (default): runs all process jobs locally, (currently this requires Docker).
+    - :code:`slurm`: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
 
-.. note::
-    Notice the number of hyphens used between ``--input`` and ``-profile``. ``--input`` is an Autometa workflow parameter
-    where as ``-profile`` is a nextflow argument. This difference is true for passing in all arguments to the Autometa 
-    workflow and nextflow, respectively.
+.. caution::
+
+    Notice the number of hyphens used between ``--input`` and ``-profile``. ``--input`` is an `Autometa` workflow parameter
+    where as ``-profile`` is a `nextflow` argument. This difference is true for passing in all arguments to the `Autometa`
+    workflow and `nextflow`, respectively.
 
 Running the pipeline
 --------------------
-After you are finished double-checking your parameter settings, click "Launch" 
-at the top right of web based GUI page, or "Launch workflow" at the bottom of 
-the page. After returning to the terminal you should be provided the option 
+After you are finished double-checking your parameter settings, click "Launch"
+at the top right of web based GUI page, or "Launch workflow" at the bottom of
+the page. After returning to the terminal you should be provided the option
 :code:`Do you want to run this command now?  [y/n]`  enter :code:`y` to begin the pipeline.
 
 .. note::
 
-    This process will lead to nf-core tools creating a file named :code:`nf-params.json`. 
+    This process will lead to nf-core tools creating a file named :code:`nf-params.json`.
     This file contains your specified parameters that differed from the pipeline's defaults.
     This file can also be manually modified and/or shared to allow reproducible configuration
     of settings (e.g. among members within a lab sharing the same server).
@@ -159,31 +162,31 @@ Advanced
 Parallel computing and computer resource allotment
 --------------------------------------------------
 
-While you might want to provide Autometa all the compute resources available in order to get results 
+While you might want to provide Autometa all the compute resources available in order to get results
 faster, that may or may not actually achieve the fastest run time.
 
-Within the Autometa pipeline, parallelization happens two ways: 1) by providing all the contigs at once 
-to software that handles parallelization internally; 2) by splitting the input FASTA into batches of contigs 
+Within the Autometa pipeline, parallelization happens two ways: 1) by providing all the contigs at once
+to software that handles parallelization internally; 2) by splitting the input FASTA into batches of contigs
 which are provided in parallel to non-parallelized software.
 
-In regards to the first method: The Autometa pipeline will try and use all resources available to individual 
-pipeline modules. Each module/process has been pre-assigned resource allotments via a low/medium/high tag. 
-This means that even if you don't select for the pipeline to run in parallel some modules (e.g. DIAMOND BLAST) 
-may still use multiple cores. The maximum number of CPUs that any single module can use is defined with 
-the :code:`--max_cpus` option (default: 4). You can also set :code:`--max_memory` (default: 16GB) and/or 
-:code:`--max_time` (default: 240h). :code:`--max_time` refers to the maximum time *each process* is allowed to run, 
+In regards to the first method: The Autometa pipeline will try and use all resources available to individual
+pipeline modules. Each module/process has been pre-assigned resource allotments via a low/medium/high tag.
+This means that even if you don't select for the pipeline to run in parallel some modules (e.g. DIAMOND BLAST)
+may still use multiple cores. The maximum number of CPUs that any single module can use is defined with
+the :code:`--max_cpus` option (default: 4). You can also set :code:`--max_memory` (default: 16GB) and/or
+:code:`--max_time` (default: 240h). :code:`--max_time` refers to the maximum time *each process* is allowed to run,
 *not* the execution time for the the entire pipeline.
 
-In regards to the 2nd method: The Autometa pipeline will split the input metagenome FASTA file into the specified 
-number of files which can be set by providing an integer value to the option: :code:`--num_splits` (default: 
-:code:`1`- no splits, not run in parallel). Choosing the largest number of parallel processes possible may not provide 
-largest gain in performance and a good rule would be to not exceed the number of avaliable cores available.
+In regards to the 2nd method: The Autometa pipeline will split the input metagenome FASTA file into the specified
+number of files which can be set by providing an integer value to the option: :code:`--num_splits` (default:
+:code:`1`- no splits, not run in parallel). Choosing the largest number of parallel processes possible may not provide
+largest gain in performance and a good rule would be to not exceed the number of available cores available.
 
 
 Multiple Inputs
 ---------------
 
-You can input multiple assemblies at once using path wildcards. In the below example all the files with extension ".fna" 
+You can input multiple assemblies at once using path wildcards. In the below example all the files with extension ".fna"
 would be taken as input by nextflow. The pipeline will organize/name outputs based on these filenames.
 :code:`--input /tutorial/test_data/*.fna`
 
@@ -197,15 +200,15 @@ Autometa uses the following NCBI databases throughout its pipeline:
 - prot.accession2taxid.gz
     - `ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz <https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`_
 - nodes.dmp, names.dmp and merged.dmp - Found within
-    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_ 
+    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
 
-If you are running autometa for the first time you'll have to download these databases. 
-You may use ``autometa-update-databases --update-ncbi``. This will download the databases to the default path. You can check 
-the default paths using ``autometa-config --print``. If you need to change the default download directory you can use 
-``autometa-config --section databases --option ncbi --value <path/to/new/ncbi_database_directory>``. 
+If you are running autometa for the first time you'll have to download these databases.
+You may use ``autometa-update-databases --update-ncbi``. This will download the databases to the default path. You can check
+the default paths using ``autometa-config --print``. If you need to change the default download directory you can use
+``autometa-config --section databases --option ncbi --value <path/to/new/ncbi_database_directory>``.
 See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-In your ``parameters.config`` file you also need to specify the directory where the different databases are present. 
+In your ``parameters.config`` file you also need to specify the directory where the different databases are present.
 Make sure that the directory path contains the following databases:
 
 - Diamond formatted nr file => nr.dmnd
@@ -222,35 +225,40 @@ CPUs, Memory, Disk
 ------------------
 
 .. note::
-    
-    Like nf-core pipelines, we have set some automatic defaults for Autometa's processes. These are dynamic and each 
-    process will try a second attempt using more resources if the first fails due to resources. Resources are always 
+
+    Like nf-core pipelines, we have set some automatic defaults for Autometa's processes. These are dynamic and each
+    process will try a second attempt using more resources if the first fails due to resources. Resources are always
     capped by the parameters (show with defaults):
 
- - :code:`-max_cpus = 2` 
- - :code:`-max_memory = 6.GB`
- - :code:`-max_time = 48.h`
+    - :code:`--max_cpus = 2`
+    - :code:`--max_memory = 6.GB`
+    - :code:`--max_time = 48.h`
 
-The best practice to change the resources is to create a new config file and point to it at runtime by adding the 
+The best practice to change the resources is to create a new config file and point to it at runtime by adding the
 flag :code:`-c path/to/config_file`
 
 
-For example, to give all resource-intensive jobs more memory, create a file called :code:`process_high_mem.config` and insert
+For example, to give all resource-intensive (i.e. having ``label process_high``) jobs additional memory and cpus, create a file called :code:`process_high_mem.config` and insert
 
-.. code-block:: bash
-    
-    process {
-      withLabel:process_high {
+.. code-block:: groovy
+
+process {
+    withLabel:process_high {
         memory = 200.GB
-      }
+        cpus = 32
     }
+}
 
-Then your command to run the pipeline (assuming you've already run :code:`nf-core launch KwanLab/Autometa` which created 
+Then your command to run the pipeline (assuming you've already run :code:`nf-core launch KwanLab/Autometa` which created
 a :code:`nf-params.json` file) would look something like:
 
 .. code-block:: bash
-    
+
     nextflow run KwanLab/Autometa -params-file nf-params.json -c process_high_mem.config
+
+.. attention::
+
+    If you are restarting from a previous run, do not forget to also add the ``-resume`` flag to the nextflow run command
 
 
 
@@ -259,7 +267,7 @@ For additional information and examples see `Tuning workflow resources <https://
 Additional Autometa parameters
 ------------------------------
 
-Up to date descriptions and default values of Autometa's nextflow parameters can be viewed using the following command: 
+Up to date descriptions and default values of Autometa's nextflow parameters can be viewed using the following command:
 
 .. code-block:: bash
 
@@ -272,53 +280,53 @@ You can also adjust other pipeline parameters that ultimately control how the bi
 
 ``params.kmer_size`` : kmer size to use
 
-``params.norm_method`` : Which kmer frequency normalization method to use. See 
+``params.norm_method`` : Which kmer frequency normalization method to use. See
 :ref:`advanced-usage-kmers` section for details
 
-``params.pca_dimensions`` : Number of dimensions of which to reduce the initial k-mer frequencies 
+``params.pca_dimensions`` : Number of dimensions of which to reduce the initial k-mer frequencies
 matrix (default is ``50``). See :ref:`advanced-usage-kmers` section for details
 
-``params.embedding_method`` :  Choices are ``sksne``, ``bhsne``, ``umap``, ``densmap``, ``trimap`` 
+``params.embedding_method`` :  Choices are ``sksne``, ``bhsne``, ``umap``, ``densmap``, ``trimap``
 (default is ``bhsne``) See :ref:`advanced-usage-kmers` section for details
 
-``params.embedding_dimensions`` : Final dimensions of the kmer frequencies matrix (default is ``2``). 
+``params.embedding_dimensions`` : Final dimensions of the kmer frequencies matrix (default is ``2``).
 See :ref:`advanced-usage-kmers` section for details
 
-``params.kingdom`` : Bin contigs belonging to this kingdom. Choices are ``bacteria`` and ``archaea`` 
+``params.kingdom`` : Bin contigs belonging to this kingdom. Choices are ``bacteria`` and ``archaea``
 (default is ``bacteria``).
 
-``params.clustering_method`` : Cluster contigs using which clustering method. Choices are "dbscan" and "hdbscan" 
+``params.clustering_method`` : Cluster contigs using which clustering method. Choices are "dbscan" and "hdbscan"
 (default is "dbscan"). See :ref:`advanced-usage-binning` section for details
 
-``params.binning_starting_rank`` : Which taxonomic rank to start the binning from. Choices are ``superkingdom``, ``phylum``, 
+``params.binning_starting_rank`` : Which taxonomic rank to start the binning from. Choices are ``superkingdom``, ``phylum``,
 ``class``, ``order``, ``family``, ``genus``, ``species`` (default is ``superkingdom``). See :ref:`advanced-usage-binning` section for details
 
-``params.classification_method`` : Which clustering method to use for unclustered recruitment step. 
+``params.classification_method`` : Which clustering method to use for unclustered recruitment step.
 Choices are ``decision_tree`` and ``random_forest`` (default is ``decision_tree``). See :ref:`advanced-usage-unclustered-recruitment` section for details
 
-``params.completeness`` :  Minimum completeness needed to keep a cluster (default is at least 20% complete, e.g. ``20``). 
+``params.completeness`` :  Minimum completeness needed to keep a cluster (default is at least 20% complete, e.g. ``20``).
 See :ref:`advanced-usage-binning` section for details
 
-``params.purity`` : Minimum purity needed to keep a cluster (default is atleast 95% pure, e.g. ``95``). 
+``params.purity`` : Minimum purity needed to keep a cluster (default is atleast 95% pure, e.g. ``95``).
 See :ref:`advanced-usage-binning` section for details
 
-``params.cov_stddev_limit`` : Which clusters to keep depending on the covergae std.dev (default is 25%, e.g. ``25``). 
+``params.cov_stddev_limit`` : Which clusters to keep depending on the covergae std.dev (default is 25%, e.g. ``25``).
 See :ref:`advanced-usage-binning` section for details
 
-``params.gc_stddev_limit`` : Which clusters to keep depending on the GC% std.dev (default is 5%, e.g. ``5``). 
+``params.gc_stddev_limit`` : Which clusters to keep depending on the GC% std.dev (default is 5%, e.g. ``5``).
 See :ref:`advanced-usage-binning` section for details
 
 
 Customizing Autometa's Scripts
 ------------------------------
 
-In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone 
+In case you want to tweak some of the scripts, run on your own scheduling system or modify the pipeline you can clone
 the repository and then run nextflow directly from the scripts as below:
 
 .. code-block:: bash
 
     # Clone the autometa repository into current directory
-    git clone -b dev git@github.com:KwanLab/Autometa.git 
+    git clone -b dev git@github.com:KwanLab/Autometa.git
     # Modify some code
     # Then run nextflow
     nextflow run $HOME/Autometa/nextflow
@@ -326,47 +334,46 @@ the repository and then run nextflow directly from the scripts as below:
 Useful options
 --------------
 
-``-c`` : In case you have configured nextflow with your executor (see :ref:`Configure nextflow with your 'executor'`) 
-and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file 
+``-c`` : In case you have configured nextflow with your executor (see :ref:`Configure nextflow with your 'executor'`)
+and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file
 using the ``-c`` flag
 
-To see all of the command line options available you can refer to 
+To see all of the command line options available you can refer to
 `nexflow CLI documentation <https://www.nextflow.io/docs/latest/cli.html#command-line-interface-cli>`_
 
 Resuming the workflow
 ---------------------
 
-One of the most powerful features of nextflow is resuming the workflow from the last completed process. If your pipeline 
-was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``). 
+One of the most powerful features of nextflow is resuming the workflow from the last completed process. If your pipeline
+was interrupted for some reason you can resume it from the last completed process using the resume flag (``-resume``).
 Eg, ``nextflow run KwanLab/Autometa -params-file nf-params.json -c my_other_parameters.config -resume``
 
 Execution Report
 ----------------
 
-After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used, 
-RAM used, etc separately for each process. Nextflow would generate a summary report, a timeline report and a trace report 
-automatically for you in the ``${params.tracedir}/pipeline_info`` directory (``${params.tracedir}`` defaults to 
-``autometa_tracedir``). You can read more about this in the 
-`nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_. 
+After running nextflow you can see the execution statistics of your autometa run, including the time taken, CPUs used,
+RAM used, etc separately for each process. Nextflow will generate summary, timeline and trace reports automatically for
+you in the ``${params.outdir}/trace`` directory. You can read more about this in the
+`nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_.
 
-Visualizing the Workflow 
+Visualizing the Workflow
 ------------------------
 
-You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install 
-`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the 
+You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install
+`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
 in the ``png`` format.
 
 Configure nextflow with your 'executor'
 ---------------------------------------
 
-For nextflow to run the Autometa pipeline through a job scheduler you will need to update the respective ``profile`` 
-section in nextflow's config file. Each ``profile`` may be configured with any available scheduler as noted in the 
-`nextflow executors docs <https://www.nextflow.io/docs/latest/executor.html>`_. By default nextflow will use your 
-local computer as the 'executor'. The next section briefly walks through nextflow executor configuration to run 
+For nextflow to run the Autometa pipeline through a job scheduler you will need to update the respective ``profile``
+section in nextflow's config file. Each ``profile`` may be configured with any available scheduler as noted in the
+`nextflow executors docs <https://www.nextflow.io/docs/latest/executor.html>`_. By default nextflow will use your
+local computer as the 'executor'. The next section briefly walks through nextflow executor configuration to run
 with the slurm job scheduler.
 
-We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this 
-`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead 
+We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this
+`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead
 and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
 
 
@@ -375,14 +382,14 @@ and copy this file to your desired location and open it in your favorite text ed
 SLURM
 -----
 
-This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the 
-slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo`` 
+This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the
+slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo``
 on our cluster we get the following:
 
 .. image:: ../img/slurm_partitions.png
-    :alt: Screen shot of ``sinfo`` output showing ``queue`` listed under partition  
+    :alt: Screen shot of ``sinfo`` output showing ``queue`` listed under partition
 
-The slurm partition available on our cluster is ``queue``.  You'll need to update this in ``nextflow.config``. 
+The slurm partition available on our cluster is ``queue``.  You'll need to update this in ``nextflow.config``.
 
 .. code-block:: groovy
 
@@ -396,7 +403,7 @@ The slurm partition available on our cluster is ``queue``.  You'll need to updat
     // See https://www.nextflow.io/docs/latest/executor.html#slurm for more details.
     }
 
-More parameters that are available for the slurm executor are listed in the nextflow 
+More parameters that are available for the slurm executor are listed in the nextflow
 `executor docs for slurm <https://www.nextflow.io/docs/latest/executor.html#slurm>`_.
 
 
@@ -404,9 +411,9 @@ Using a different Autometa docker image
 =======================================
 
 
-Especially when developing new features it may be necessary to run the pipeline with a custom docker image. 
-Create a new image by navigating to the top Autometa directory and running ``make image``. This will create a new 
-Autometa Docker image, tagged with the name of the current Git branch. 
+Especially when developing new features it may be necessary to run the pipeline with a custom docker image.
+Create a new image by navigating to the top Autometa directory and running ``make image``. This will create a new
+Autometa Docker image, tagged with the name of the current Git branch.
 
 To use this tagged version (or any other Autometa image tag) add the argument ``--autometa_image tag_name`` to the nextflow run command
 
@@ -421,17 +428,53 @@ running an Autometa *module*.
 
 I.e. ``python -m autometa.common.kmers -h``
 
-Running functions
-=================
+Using Autometa's Python API
+===========================
 
-Many of the Autometa functions may be run standalone as well. It is same as importing any other python
-function.
+Autometa's classes and functions are available after installation.
+To access these, do the same as importing any other python library.
+
+Examples
+--------
+
+samtools wrapper
+~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
     from autometa.common.external import samtools
+    from autometa.common.metagenome import Metagenome
 
-    samtools.sort(sam=<path/to/sam/file>, out=<path/to/output/file>, nproc=4)
+    # To see samtools.sort parameters
+    samtools.sort?
+    # Run samtools sort command in ipython interpreter
+    samtools.sort(sam="<path/to/alignment.sam>", out="<path/to/output/alignment.bam>", cpus=4)
+
+Metagenome Description
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # To see input parameters, instance attributes and methods
+    Metagenome?
+    # Create a metagenome instance
+    mg = Metagenome(assembly="/path/to/metagenome.fasta")
+    # To see available methods (ignore any elements in the list with a double underscore)
+    dir(mg)
+    # Get pandas dataframe of metagenome details.
+    metagenome_df = mg.describe()
+
+k-mer frequency counting, normalization, embedding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # Count kmers
+    counts = kmers.count(assembly="/path/to/metagenome.fasta", size=5)
+    # Normalize kmers
+    norm_df = kmers.normalize(df=counts, method="ilr")
+    # Embed kmers
+    kmers.embed(norm_df, pca_dimensions=50, embed_dimensions=3, method="densmap")
 
 
 .. _nextflow: https://www.nextflow.io/

@@ -8,9 +8,7 @@ process RECRUIT {
     tag "Performing Autometa unclustered recruitment on ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.outdir_internal}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -23,9 +21,9 @@ process RECRUIT {
         tuple val(meta), path(kmers), path(coverage), path(binning), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path ("${meta.id}.${params.kingdom}.recruitment.tsv.gz")     , emit: binning, optional: true
-        tuple val(meta), path ("${meta.id}.${params.kingdom}.recruitment.main.tsv.gz"), emit: main, optional: true
-        path  '*.version.txt'                                                         , emit: version
+        tuple val(meta), path ("${params.kingdom}.recruitment.tsv.gz")     , emit: binning, optional: true
+        tuple val(meta), path ("${params.kingdom}.recruitment.main.tsv.gz"), emit: main, optional: true
+        path  '*.version.txt'                                              , emit: version
 
     script:
         // Add soft-links to original FastQs for consistent naming in pipeline
@@ -40,8 +38,8 @@ process RECRUIT {
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${meta.id}.${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${meta.id}.${params.kingdom}.recruitment.main.tsv.gz
+            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${params.kingdom}.recruitment.main.tsv.gz
         echo "TODO" > autometa.version.txt
         """
         else
@@ -55,8 +53,8 @@ process RECRUIT {
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${meta.id}.${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${meta.id}.${params.kingdom}.recruitment.main.tsv.gz
+            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${params.kingdom}.recruitment.main.tsv.gz
 
         echo "TODO" > autometa.version.txt
         """

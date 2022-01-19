@@ -6,10 +6,9 @@ options        = initOptions(params.options)
 
 process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
-    label 'process_high'
-    publishDir "${params.interim_dir_internal}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
+    label 'process_medium'
+
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -24,10 +23,10 @@ process REDUCE_LCA {
         path(lca_cache)
 
     output:
-        tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
-        path "${meta.id}.error_taxids.tsv"         , emit: error_taxids
-        path "${meta.id}.sseqid2taxid.tsv"         , emit: sseqid_to_taxids
-        path '*.version.txt'                       , emit: version
+        tuple val(meta), path("lca.tsv"), emit: lca
+        path "lca_error_taxids.tsv"     , emit: error_taxids
+        path "sseqid2taxid.tsv"         , emit: sseqid_to_taxids
+        path '*.version.txt'            , emit: version
 
 
     script:
@@ -37,9 +36,9 @@ process REDUCE_LCA {
             --blast ${blast} \\
             --dbdir ${blastdb_dir} \\
             --cache ${lca_cache} \\
-            --lca-error-taxids ${meta.id}.error_taxids.tsv \\
-            --sseqid2taxid-output ${meta.id}.sseqid2taxid.tsv \\
-            --lca-output ${meta.id}.lca.tsv
+            --lca-error-taxids lca_error_taxids.tsv \\
+            --sseqid2taxid-output sseqid2taxid.tsv \\
+            --lca-output lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

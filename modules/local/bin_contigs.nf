@@ -7,9 +7,7 @@ options        = initOptions(params.options)
 process BIN_CONTIGS {
     tag "Performing Autometa binning on ${meta.id}"
     label 'process_high'
-    publishDir "${params.outdir_internal}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -22,8 +20,8 @@ process BIN_CONTIGS {
         tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path("${meta.id}.${params.kingdom}.binning.tsv.gz"), emit: binning
-        tuple val(meta), path("${meta.id}.${params.kingdom}.main.tsv.gz")   , emit: main
+        tuple val(meta), path("${params.kingdom}.binning.tsv.gz"), emit: binning
+        tuple val(meta), path("${params.kingdom}.main.tsv.gz")   , emit: main
         path  '*.version.txt'                                               , emit: version
 
     script:
@@ -35,8 +33,8 @@ process BIN_CONTIGS {
             --coverages $coverage \\
             --gc-content $gc_content \\
             --markers $markers \\
-            --output-binning ${meta.id}.${params.kingdom}.binning.tsv.gz \\
-            --output-main ${meta.id}.${params.kingdom}.main.tsv.gz \\
+            --output-binning ${params.kingdom}.binning.tsv.gz \\
+            --output-main ${params.kingdom}.main.tsv.gz \\
             --clustering-method ${params.clustering_method} \\
             --completeness ${params.completeness} \\
             --purity ${params.purity} \\

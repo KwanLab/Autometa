@@ -60,6 +60,8 @@ The above command generates the following files:
 | 78mbp_metagenome.gc_content.tsv | Table of GC content and length of each contig in the filtered assembly |
 +---------------------------------+------------------------------------------------------------------------+
 
+.. _coverage-calculation:
+
 2. Coverage calculation
 -----------------------
 

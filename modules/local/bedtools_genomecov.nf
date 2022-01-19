@@ -5,11 +5,10 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process BEDTOOLS_GENOMECOV {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir_internal}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:meta, publish_by_meta:['id']) }
+
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::bedtools=2.30.0" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
