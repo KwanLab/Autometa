@@ -50,6 +50,8 @@ workflow TAXON_ASSIGNMENT {
                 } else {
                        throw new Exception("Neither nr.dmnd or nr.gz was found")
                 }
+            } else {
+                diamond_db = file("${params.nr_dmnd_dir}/nr.dmnd", checkIfExists: true)
             }
         }
 
