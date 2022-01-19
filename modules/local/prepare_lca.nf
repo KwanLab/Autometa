@@ -4,11 +4,9 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-
-process MAJORITY_VOTE {
+process PREPARE_LCA {
+    tag "Preparing db cache from ${blastdb_dir}"
     label 'process_medium'
-
-    tag "Performing taxon majority vote on ${meta.id}"
     publishDir "${params.interim_dir_internal}",
         mode: params.publish_dir_mode,
         saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
@@ -20,20 +18,25 @@ process MAJORITY_VOTE {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    storeDir 'db/lca'
+    cache 'lenient'
+
     input:
-        tuple val(meta), path(lca)
-        path(ncbi_tax_dir)
+        path(blastdb_dir)
 
     output:
-        tuple val(meta), path("${meta.id}.votes.tsv"), emit: votes
-        path  '*.version.txt'                        , emit: version
+        path "cache"       , emit: cache
+        path '*.version.txt'   , emit: version
 
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-majority-vote --lca ${lca} --output ${meta.id}.votes.tsv --dbdir "${ncbi_tax_dir}"
-
+        autometa-taxonomy-lca \\
+            --blast . \\
+            --lca-output . \\
+            --dbdir ${blastdb_dir} \\
+            --cache cache \\
+            --only-prepare-cache
         echo "TODO" > autometa.version.txt
         """
 }
-

@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process LCA {
+process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_high'
     publishDir "${params.interim_dir_internal}",
@@ -15,22 +15,31 @@ process LCA {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
+        container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
     input:
         tuple val(meta), path(blast)
         path(blastdb_dir)
+        path(lca_cache)
 
     output:
         tuple val(meta), path("${meta.id}.lca.tsv"), emit: lca
-        path  '*.version.txt'                      , emit: version
+        path "${meta.id}.error_taxids.tsv"         , emit: error_taxids
+        path "${meta.id}.sseqid2taxid.tsv"         , emit: sseqid_to_taxids
+        path '*.version.txt'                       , emit: version
 
 
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-lca --blast ${blast} --dbdir ${blastdb_dir} --output ${meta.id}.lca.tsv
+        autometa-taxonomy-lca \\
+            --blast ${blast} \\
+            --dbdir ${blastdb_dir} \\
+            --cache ${lca_cache} \\
+            --lca-error-taxids ${meta.id}.error_taxids.tsv \\
+            --sseqid2taxid-output ${meta.id}.sseqid2taxid.tsv \\
+            --lca-output ${meta.id}.lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

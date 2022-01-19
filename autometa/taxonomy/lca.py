@@ -29,11 +29,10 @@ Note: LCA will assume the BLAST results table is in output format 6.
 
 
 import functools
-import gzip
 import logging
 import os
 
-from typing import Dict
+from typing import Dict, Set, Tuple
 from itertools import chain
 
 import pandas as pd
@@ -60,11 +59,9 @@ class LCA(NCBI):
     Parameters
     ----------
     dbdir : str
-        </path/to/ncbi/databases/directory>
+        Path to directory containing files: nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz
     outdir : str
-        </path/to/output/directory>
-    usepickle : bool, optional
-        Whether to serialize intermediate files to disk for later lookup (the default is True).
+        Output directory path to to serialize intermediate files to disk for later lookup
     verbose : bool, optional
         Add verbosity to logging stream (the default is False).
 
@@ -94,18 +91,22 @@ class LCA(NCBI):
 
     """
 
-    def __init__(self, dbdir: str, verbose: bool = False):
+    def __init__(self, dbdir: str, verbose: bool = False, cache: str = None):
         super().__init__(dbdir, verbose=verbose)
         self.verbose = verbose
         self.dbdir = dbdir
+        self.cache = cache
         self.disable = False if verbose else True
-        self.tour_fp = os.path.join(self.dbdir, "tour.pkl.gz")
+        if self.cache and not os.path.exists(self.cache):
+            logger.info(f"Created LCA cache dir: {self.cache}")
+            os.makedirs(self.cache)
+        self.tour_fp = os.path.join(self.cache, "tour.pkl.gz")
         self.tour = None
-        self.level_fp = os.path.join(self.dbdir, "level.pkl.gz")
+        self.level_fp = os.path.join(self.cache, "level.pkl.gz")
         self.level = None
-        self.occurrence_fp = os.path.join(self.dbdir, "occurrence.pkl.gz")
+        self.occurrence_fp = os.path.join(self.cache, "occurrence.pkl.gz")
         self.occurrence = None
-        self.sparse_fp = os.path.join(self.dbdir, "precomputed_lcas.pkl.gz")
+        self.sparse_fp = os.path.join(self.cache, "precomputed_lcas.pkl.gz")
         self.sparse = None
         self.lca_prepared = False
 
@@ -206,9 +207,10 @@ class LCA(NCBI):
         self.tour = tour
         self.level = level
         self.occurrence = occurrence
-        make_pickle(obj=self.tour, outfpath=self.tour_fp)
-        make_pickle(obj=self.level, outfpath=self.level_fp)
-        make_pickle(obj=self.occurrence, outfpath=self.occurrence_fp)
+        if self.cache:
+            make_pickle(obj=self.tour, outfpath=self.tour_fp)
+            make_pickle(obj=self.level, outfpath=self.level_fp)
+            make_pickle(obj=self.occurrence, outfpath=self.occurrence_fp)
         return
 
     def preprocess_minimums(self):
@@ -219,9 +221,10 @@ class LCA(NCBI):
         For more information on these data structures see :func:`~lca.LCA.prepare_tree`.
 
         Sparse table size:
-            n = number of elements in level list
-            rows range = (0 to n)
-            columns range = (0 to logn)
+
+        * n = number of elements in level list
+        * rows range = (0 to n)
+        * columns range = (0 to logn)
 
         Returns
         -------
@@ -269,7 +272,8 @@ class LCA(NCBI):
                     sparse_array[row, col] = lower_index
                 else:
                     sparse_array[row, col] = upper_index
-        make_pickle(obj=sparse_array, outfpath=self.sparse_fp)
+        if self.cache:
+            make_pickle(obj=sparse_array, outfpath=self.sparse_fp)
         self.sparse = sparse_array
         return
 
@@ -287,6 +291,7 @@ class LCA(NCBI):
         self.prepare_tree()
         self.preprocess_minimums()
         self.lca_prepared = True
+        logger.debug(f"LCA data structures prepared")
         # tour, level, occurrence, sparse all ready
         return
 
@@ -297,6 +302,7 @@ class LCA(NCBI):
         ----------
         node1 : int
             taxid
+
         node2 : int
             taxid
 
@@ -346,15 +352,18 @@ class LCA(NCBI):
         # (parent, child)
         return lca_node[1]
 
-    def convert_sseqids_to_taxids(self, sseqids: Dict[str, str]) -> Dict[str, int]:
+    def convert_sseqids_to_taxids(
+        self,
+        sseqids: Dict[str, Set[str]],
+    ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
         """
-        Translates subject sequence ids to taxids from prot.accession2taxid.gz.
+        Translates subject sequence ids to taxids from prot.accession2taxid.gz and dead_prot.accession2taxid.gz.
 
-        Note
-        ----
-        If an accession number is no longer available in prot.accesssion2taxid.gz
-        (either due to being suppressed, deprecated or removed by NCBI),
-        then root taxid (1) is returned as the taxid for the corresponding sseqid.
+        .. note::
+
+            If an accession number is no longer available in prot.accesssion2taxid.gz
+            (either due to being suppressed, deprecated or removed by NCBI),
+            then root taxid (1) is returned as the taxid for the corresponding sseqid.
 
         Parameters
         ----------
@@ -363,8 +372,8 @@ class LCA(NCBI):
 
         Returns
         -------
-        dict
-            {qseqid: {taxid, taxid, ...}, ...}
+        Tuple[Dict[str, Set[int]], pd.DataFrame]
+            {qseqid: {taxid, taxid, ...}, ...}, index=range, cols=[qseqid, sseqid, raw_taxid, merged_taxid, cleaned_taxid]
 
         Raises
         -------
@@ -372,50 +381,76 @@ class LCA(NCBI):
             prot.accession2taxid.gz database is required for sseqid to taxid conversion.
 
         """
-        # We first retrieve all possible sseqids that we will need to convert.
-        accessions = set(
+        # We first get all unique sseqids that were retrieved from the blast output
+        recovered_sseqids = set(
             chain.from_iterable([qseqid_sseqids for qseqid_sseqids in sseqids.values()])
         )
-        # "rt" open the database in text mode instead of binary to be handled like a text file
-        fh = (
-            gzip.open(self.accession2taxid_fpath, "rt")
-            if self.accession2taxid_fpath.endswith(".gz")
-            else open(self.accession2taxid_fpath)
-        )
-        __ = fh.readline()  # remove the first line as it just gives the description
-        if self.verbose:
-            logger.debug(
-                f"Searching for {len(accessions):,} accessions in {os.path.basename(self.accession2taxid_fpath)}. This may take a while..."
-            )
-        n_lines = (
-            file_length(self.accession2taxid_fpath, approximate=True)
-            if self.verbose
-            else None
-        )
-        desc = f"Parsing {os.path.basename(self.accession2taxid_fpath)}"
-        sseqids_to_taxids = {}
-        for line in tqdm(
-            fh, disable=self.disable, desc=desc, total=n_lines, leave=False
-        ):
-            acc_num, acc_ver, taxid, _ = line.split("\t")
-            taxid = int(taxid)
-            if acc_num in accessions:
-                sseqids_to_taxids.update({acc_num: taxid})
-            if acc_ver in accessions:
-                sseqids_to_taxids.update({acc_ver: taxid})
-        fh.close()
-        # Now translate qseqid sseqids to taxids
-        root_taxid = 1
-        # Will place taxid as root (i.e. 1) if sseqid is not found in prot.accession2taxid
-        taxids = {}
-        for qseqid, qseqid_sseqids in sseqids.items():
-            qseqid_taxids = [
-                sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
-            ]
-            taxids.update({qseqid: qseqid_taxids})
-        return taxids
 
-    def reduce_taxids_to_lcas(self, taxids: Dict[str, int]) -> Dict[str, int]:
+        # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+        # Any accessions not found in live prot.accession2taxid db *may* be here.
+        # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
+        try:
+            sseqids_to_taxids = self.search_prot_accessions(
+                accessions=recovered_sseqids,
+                db="dead",
+                sseqids_to_taxids=None,
+            )
+            dead_sseqids_found = set(sseqids_to_taxids.keys())
+        except FileNotFoundError as db_fpath:
+            logger.warn(f"Skipping taxid conversion from {db_fpath}")
+            sseqids_to_taxids = None
+            dead_sseqids_found = set()
+
+        # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
+        # Possibly overwriting any merged accessions to live accessions
+        sseqids_to_taxids = self.search_prot_accessions(
+            accessions=recovered_sseqids,
+            db="full",
+            sseqids_to_taxids=sseqids_to_taxids,
+        )
+
+        # Remove sseqids: Ignore any sseqids already found
+        live_sseqids_found = set(sseqids_to_taxids.keys())
+        live_sseqids_found -= dead_sseqids_found
+        recovered_sseqids -= live_sseqids_found
+        if recovered_sseqids:
+            logger.warn(
+                f"sseqids without corresponding taxid: {len(recovered_sseqids):,}"
+            )
+        root_taxid = 1
+        taxids = {}
+        sseqid_not_found = pd.NA
+        sseqid_to_taxid_df = pd.DataFrame(
+            [
+                {
+                    "qseqid": qseqid,
+                    "sseqid": sseqid,
+                    "raw_taxid": sseqids_to_taxids.get(sseqid, sseqid_not_found),
+                }
+                for qseqid, qseqid_sseqids in sseqids.items()
+                for sseqid in qseqid_sseqids
+            ]
+        )
+        # Update taxids if they are old.
+        sseqid_to_taxid_df["merged_taxid"] = sseqid_to_taxid_df.raw_taxid.map(
+            lambda tid: self.merged.get(tid, tid)
+        )
+        # If we still have missing taxids, we will set the sseqid value to the root taxid
+        # fill missing taxids with root_taxid
+        sseqid_to_taxid_df["cleaned_taxid"] = sseqid_to_taxid_df.merged_taxid.fillna(
+            root_taxid
+        )
+        for qseqid, qseqid_sseqids in sseqids.items():
+            # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
+            qseqid_taxids = {
+                sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
+            }
+            taxids[qseqid] = qseqid_taxids
+        return taxids, sseqid_to_taxid_df
+
+    def reduce_taxids_to_lcas(
+        self, taxids: Dict[str, Set[int]]
+    ) -> Tuple[Dict[str, int], pd.DataFrame]:
         """Retrieves the lowest common ancestor for each set of taxids in of the taxids
 
         Parameters
@@ -425,36 +460,86 @@ class LCA(NCBI):
 
         Returns
         -------
-        dict
-            {qseqid: lca, qseqid: lca, ...}
+        Tuple[Dict[str, int], pd.DataFrame]
+            {qseqid: lca, qseqid: lca, ...}, pd.DataFrame(index=range, cols=[qseqid, taxids])
 
         """
         lca_taxids = {}
+        missing_taxids = []
         root_taxid = 1
+        logger.debug(f"Assigning LCAs to {len(taxids):,} ORFs")
         for qseqid, qseqid_taxids in taxids.items():
             # This will convert any deprecated taxids to their current taxids before reduction to LCA.
-            qseqid_taxids = [self.merged.get(taxid, taxid) for taxid in qseqid_taxids]
+            # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
+            qseqid_taxids = {self.merged.get(taxid, taxid) for taxid in qseqid_taxids}
             lca_taxid = False
             num_taxids = len(qseqid_taxids)
             while not lca_taxid:
+                # Reduce all qseqid taxids to LCA
                 if num_taxids >= 2:
                     try:
                         lca_taxid = functools.reduce(
                             lambda taxid1, taxid2: self.lca(node1=taxid1, node2=taxid2),
                             qseqid_taxids,
                         )
-                    except ValueError:
-                        logger.error(f"Missing either taxid(s), during LCA retrieval")
+                    except ValueError as err:
+                        logger.warn(
+                            f"Missing taxids during LCA retrieval. Setting {qseqid} ({len(qseqid_taxids):,} ORF taxids) to root taxid."
+                        )
                         lca_taxid = root_taxid
-                if num_taxids == root_taxid:
+                        missing_taxids.append(
+                            {
+                                "qseqid": qseqid,
+                                "taxids": ",".join(
+                                    [str(taxid) for taxid in qseqid_taxids]
+                                ),
+                            }
+                        )
+                # If only one taxid was recovered... This is our LCA
+                elif num_taxids == 1:
                     lca_taxid = qseqid_taxids.pop()
-                # Exception handling where input for qseqid contains no taxids
-                if num_taxids == 0:
+                else:
+                    # Exception handling where input for qseqid contains no taxids e.g. num_taxids == 0:
                     lca_taxid = root_taxid
             lca_taxids.update({qseqid: lca_taxid})
-        return lca_taxids
+        missing_df = pd.DataFrame(missing_taxids)
+        return lca_taxids, missing_df
 
-    def blast2lca(self, blast: str, out: str, force: bool = False) -> str:
+    def read_sseqid_to_taxid_table(
+        self, sseqid_to_taxid_filepath: str
+    ) -> Dict[str, Set[int]]:
+        """Retrieve each qseqid's set of taxids from `sseqid_to_taxid_filepath` for reduction by LCA
+
+        Parameters
+        ----------
+        sseqid_to_taxid_filepath : str
+            Path to sseqid to taxid table with columns: qseqid, sseqid, raw_taxid, merged_taxid, clean_taxid
+
+        Returns
+        -------
+        Dict[str, Set[int]]
+            Dictionary keyed by qseqid containing sets of respective `clean` taxid
+        """
+        taxids = {}
+        with open(sseqid_to_taxid_filepath) as fh:
+            __ = fh.readline()
+            for line in fh:
+                qseqid, *__, clean_taxid = line.strip().split("\t")
+                clean_taxid = int(clean_taxid)
+                if qseqid in taxids:
+                    taxids[qseqid].add(clean_taxid)
+                else:
+                    taxids[qseqid] = set([clean_taxid])
+        return taxids
+
+    def blast2lca(
+        self,
+        blast: str,
+        out: str,
+        sseqid_to_taxid_output: str = "",
+        lca_reduction_log: str = "",
+        force: bool = False,
+    ) -> str:
         """Determine lowest common ancestor of provided amino-acid ORFs.
 
         Parameters
@@ -463,6 +548,8 @@ class LCA(NCBI):
             </path/to/diamond/outfmt6/blastp.tsv>.
         out : str
             </path/to/output/lca.tsv>.
+        sseqid_to_taxid_output : str
+            Path to write qseqids' sseqids and their taxid designations from NCBI databases
         force : bool, optional
             Force overwrite of existing `out`.
 
@@ -475,12 +562,33 @@ class LCA(NCBI):
         if os.path.exists(out) and os.path.getsize(out) and not force:
             logger.warning(f"FileAlreadyExists {out}")
             return out
-        if not os.path.exists(blast) or not os.path.getsize(blast):
-            raise FileNotFoundError(blast)
         blast = os.path.realpath(blast)
-        sseqids = diamond.parse(results=blast, verbose=self.verbose)
-        taxids = self.convert_sseqids_to_taxids(sseqids)
-        lcas = self.reduce_taxids_to_lcas(taxids)
+        # If sseqid_to_taxid_output exists then we'll retrieve sseqid taxids from this...
+        if (
+            sseqid_to_taxid_output
+            and os.path.exists(sseqid_to_taxid_output)
+            and os.path.getsize(sseqid_to_taxid_output)
+        ):
+            logger.debug(f"Retrieving taxids from {sseqid_to_taxid_output}")
+            taxids = self.read_sseqid_to_taxid_table(sseqid_to_taxid_output)
+        elif not os.path.exists(blast) or not os.path.getsize(blast):
+            raise FileNotFoundError(blast)
+        elif os.path.exists(blast) and os.path.getsize(blast):
+            logger.debug(f"Retrieving taxids from {blast}")
+            sseqids = diamond.parse(results=blast, verbose=self.verbose)
+            taxids, sseqid_to_taxid_df = self.convert_sseqids_to_taxids(sseqids)
+            if sseqid_to_taxid_output:
+                sseqid_to_taxid_df.to_csv(
+                    sseqid_to_taxid_output, sep="\t", index=False, header=True
+                )
+                logger.info(
+                    f"Wrote {sseqid_to_taxid_df.shape[0]:,} qseqids to {sseqid_to_taxid_output}"
+                )
+        # TODO: merge sseqid_to_taxid_output table with err_qseqids_df
+        # Alluvial diagrams may be interesting here...
+        lcas, err_qseqids_df = self.reduce_taxids_to_lcas(taxids)
+        if lca_reduction_log:
+            err_qseqids_df.to_csv(lca_reduction_log, sep="\t", index=False, header=True)
         written_lcas = self.write_lcas(lcas=lcas, out=out)
         return written_lcas
 
@@ -520,6 +628,7 @@ class LCA(NCBI):
             nlines += 1
         fh.write(lines)
         fh.close()
+        logger.info(f"Assigned LCA to {len(lcas):,} ORFs: {out}")
         return out
 
     def parse(
@@ -546,10 +655,13 @@ class LCA(NCBI):
         -------
         FileNotFoundError
             `lca_fpath` does not exist.
+
         FileNotFoundError
             `orfs_fpath` does not exist.
+
         ValueError
             If prodigal version is under 2.6, `orfs_fpath` is a required input.
+
         """
         logger.debug(f"Parsing LCA table: {lca_fpath}")
         if not os.path.exists(lca_fpath):
@@ -562,7 +674,7 @@ class LCA(NCBI):
             version = float(".".join(version.split(".")[:2]))
         else:
             version = float(version)
-        if version < 2.6:
+        if version < 2.6 and not orfs_fpath:
             raise ValueError("Prodigal version under 2.6 requires orfs_fpath input!")
         # Create a contig translation dictionary with or without ORFs
         if orfs_fpath:
@@ -605,20 +717,48 @@ class LCA(NCBI):
 
 def main():
     import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
 
     parser = argparse.ArgumentParser(
         description="Script to determine Lowest Common Ancestor",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--output", help="Path to write LCA results.", required=True)
     parser.add_argument(
         "--blast",
         help="Path to BLAST results table respective to `orfs`. "
         "(Note: The table provided must be in outfmt=6)",
+        metavar="filepath",
         required=True,
     )
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
+        "--dbdir",
+        help="Path to NCBI databases directory.",
+        metavar="dirpath",
+        default=NCBI_DIR,
+    )
+    parser.add_argument(
+        "--lca-output",
+        help="Path to write LCA results.",
+        metavar="filepath",
+        required=True,
+    )
+    parser.add_argument(
+        "--sseqid2taxid-output",
+        help="Path to write qseqids sseqids to taxids translations table",
+        required=False,
+        metavar="filepath",
+    )
+    parser.add_argument(
+        "--lca-error-taxids",
+        help="Path to write table of blast table qseqids that were assigned root due to a missing taxid",
+        required=False,
+        metavar="filepath",
     )
     parser.add_argument(
         "--verbose",
@@ -632,13 +772,43 @@ def main():
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "--cache", help="Path to cache pickled LCA database objects.", metavar="dirpath"
+    )
+    parser.add_argument(
+        "--only-prepare-cache",
+        help="Only prepare the LCA database objects and write to provided --cache parameter",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--force-cache-overwrite",
+        help="Force overwrite if results already exist.",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
-    lca = LCA(dbdir=args.dbdir, verbose=args.verbose)
+    lca = LCA(dbdir=args.dbdir, verbose=args.verbose, cache=args.cache)
+
+    # The pkl objects will be recomputed if the respective process cache file does not exist
+    if args.force_cache_overwrite:
+        logger.info("Overwriting cache")
+        if os.path.exists(lca.tour_fp):
+            os.remove(lca.tour_fp)
+        if os.path.exists(lca.sparse_fp):
+            os.remove(lca.sparse_fp)
+
+    if args.only_prepare_cache:
+        lca.prepare_lca()
+        logger.info("Cache prepared")
+        return
 
     lca.blast2lca(
         blast=args.blast,
-        out=args.output,
+        out=args.lca_output,
+        sseqid_to_taxid_output=args.sseqid2taxid_output,
+        lca_reduction_log=args.lca_error_taxids,
         force=args.force,
     )
 
