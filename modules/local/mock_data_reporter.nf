@@ -9,10 +9,9 @@ process MOCK_DATA_REPORT {
     tag 'Preparing mock data report'
     label 'process_low'
 
-    publishDir "${params.outdir_internal}/${options.publish_dir}",
-      mode: params.publish_dir_mode
+    publishDir "${options.publish_dir}", mode: params.publish_dir_mode
 
-    container "jason-c-kwan/autometa-nf-modules-mock_data_reporter"
+    container "jasonkwan/autometa-nf-modules-mock_data_reporter"
 
 
     input:

@@ -4,16 +4,18 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-// TODO: For faster results/ les I/O this could be replaced with hmmsearch
+// TODO: For faster results/ less I/O this could be replaced with hmmsearch
 process MARKERS {
     tag "Finding markers for ${meta.id}"
     label "process_low"
+
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
+        container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
     input:
@@ -22,8 +24,9 @@ process MARKERS {
         //path(cutoffs) currently only inside docker
 
     output:
-        tuple val(meta), path("${meta.id}.markers.tsv"), emit: markers_tsv
-        path  '*.version.txt'                          , emit: version
+        tuple val(meta), path("${params.kingdom}.markers.tsv"), emit: markers_tsv
+        tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmscan_tsv
+        path  '*.version.txt'               , emit: version
 
     script:
         def software = getSoftwareName(task.process)
@@ -35,8 +38,8 @@ process MARKERS {
         """
         autometa-markers \\
             --orfs $orfs \\
-            --hmmscan ${meta.id}.hmmscan.tsv \\
-            --out ${meta.id}.markers.tsv \\
+            --hmmscan ${params.kingdom}.hmmscan.tsv \\
+            --out ${params.kingdom}.markers.tsv \\
             --kingdom ${params.kingdom} \\
             --parallel \\
             --cpus ${task.cpus} \\

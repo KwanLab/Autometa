@@ -42,7 +42,7 @@ process HMMER_HMMSEARCH {
         def fastacmd = fasta.getExtension() == 'gz' ? "gunzip -c $fasta" : "cat $fasta"
         """
         hmmsearch \\
-            --domtblout "${meta.id}.domtblout" \\
+            --domtblout "${hmm.simpleName}.domtblout" \\
             ${options.args} \\
             ${options.args2} \\
             $hmm \\

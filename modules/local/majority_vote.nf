@@ -6,18 +6,15 @@ options        = initOptions(params.options)
 
 
 process MAJORITY_VOTE {
-    label 'process_medium'
-
     tag "Performing taxon majority vote on ${meta.id}"
-    publishDir "${params.interim_dir_internal}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName(task.process), meta:[:], publish_by_meta:[]) }
+    label 'process_medium'
+    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
+        container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
     input:
@@ -25,13 +22,13 @@ process MAJORITY_VOTE {
         path(ncbi_tax_dir)
 
     output:
-        tuple val(meta), path("${meta.id}.votes.tsv"), emit: votes
-        path  '*.version.txt'                        , emit: version
+        tuple val(meta), path("votes.tsv"), emit: votes
+        path  '*.version.txt'             , emit: version
 
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-majority-vote --lca ${lca} --output ${meta.id}.votes.tsv --dbdir "${ncbi_tax_dir}"
+        autometa-taxonomy-majority-vote --lca ${lca} --output votes.tsv --dbdir "${ncbi_tax_dir}"
 
         echo "TODO" > autometa.version.txt
         """

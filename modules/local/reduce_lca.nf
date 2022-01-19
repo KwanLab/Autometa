@@ -4,8 +4,8 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process SPLIT_KINGDOMS {
-    tag "Splitting votes into kingdoms for ${meta.id}"
+process REDUCE_LCA {
+    tag "Finding LCA for ${meta.id}"
     label 'process_medium'
 
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
@@ -18,25 +18,27 @@ process SPLIT_KINGDOMS {
     }
 
     input:
-        tuple val(meta), path(assembly), path(votes)
-        path(ncbi_tax_dir)
+        tuple val(meta), path(blast)
+        path(blastdb_dir)
+        path(lca_cache)
 
     output:
-        tuple val(meta), path("taxonomy.tsv"), emit: taxonomy
-        tuple val(meta), path("bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("archaea.fna") , emit: archaea, optional: true
-        path  '*.version.txt'                , emit: version
+        tuple val(meta), path("lca.tsv"), emit: lca
+        path "lca_error_taxids.tsv"     , emit: error_taxids
+        path "sseqid2taxid.tsv"         , emit: sseqid_to_taxids
+        path '*.version.txt'            , emit: version
+
 
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy \\
-            --votes "${votes}" \\
-            --output . \\
-            --split-rank-and-write superkingdom \\
-            --assembly "${assembly}" \\
-            --ncbi "${ncbi_tax_dir}"
-
+        autometa-taxonomy-lca \\
+            --blast ${blast} \\
+            --dbdir ${blastdb_dir} \\
+            --cache ${lca_cache} \\
+            --lca-error-taxids lca_error_taxids.tsv \\
+            --sseqid2taxid-output sseqid2taxid.tsv \\
+            --lca-output lca.tsv
         echo "TODO" > autometa.version.txt
         """
 }

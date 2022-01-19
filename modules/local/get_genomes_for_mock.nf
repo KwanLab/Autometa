@@ -7,8 +7,12 @@ options        = initOptions(params.options)
 process GET_GENOMES_FOR_MOCK {
     def genome_count = options.args2.tokenize('|').size()
     tag "fetching ${genome_count} genomes"
+
+    storeDir = 'mock_data/genomes'
+    cache 'lenient'
+
     conda (params.enable_conda ? "bioconda::emboss=6.6.0" : null)
-    container "jason-c-kwan/autometa-nf-modules-get_genomes_for_mock"
+    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock"
 
     output:
         path "metagenome.fna.gz", emit: metagenome
@@ -17,6 +21,7 @@ process GET_GENOMES_FOR_MOCK {
         path "assembly_to_locus.txt", emit: assembly_to_locus
         path "assemblies.txt", emit: assemblies
         path "assembly_report.txt", emit: assembly_report
+
     """
     curl -s ${options.args} > assembly_report.txt
 

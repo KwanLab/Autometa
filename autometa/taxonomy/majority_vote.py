@@ -1,24 +1,7 @@
 #!/usr/bin/env python
 """
-COPYRIGHT
-Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-Shaurya Chanana, Izaak Miller, Jason C. Kwan
-
-This file is part of Autometa.
-
-Autometa is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Autometa is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-COPYRIGHT
+# License: GNU Affero General Public License v3 or later
+# A copy of GNU AGPL v3 should have been included in this software package in LICENSE.txt.
 
 This script contains the modified majority vote algorithm used in Autometa version 1.0
 """
@@ -267,7 +250,6 @@ def majority_vote(
     ncbi_dir: str,
     verbose: bool = False,
     orfs: str = None,
-    force: bool = False,
 ) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
@@ -292,7 +274,8 @@ def majority_vote(
         Path to assigned taxids table.
 
     """
-    lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+    outdir = os.path.dirname(os.path.realpath(out))
+    lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
@@ -304,7 +287,6 @@ def majority_vote(
 def main():
     import argparse
 
-    basedir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     parser = argparse.ArgumentParser(
         description="Script to assign taxonomy via a modified majority voting"
         " algorithm.",

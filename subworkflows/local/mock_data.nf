@@ -42,21 +42,21 @@ workflow CREATE_MOCK {
         GET_GENOMES_FOR_MOCK.out.fake_spades_coverage
         .map { row ->
                     def meta = [:]
-                    meta.id = 'mock_data'
+                    meta.id = "mock_data"
                     return [ meta, row ]
             }
         .set { ch_fasta }
         GET_GENOMES_FOR_MOCK.out.assembly_to_locus
         .map { row ->
                     def meta = [:]
-                    meta.id = 'mock_data'
+                    meta.id = "mock_data"
                     return [ meta, row ]
             }
         .set { assembly_to_locus }
         GET_GENOMES_FOR_MOCK.out.assembly_report
         .map { row ->
                     def meta = [:]
-                    meta.id = 'mock_data'
+                    meta.id = "mock_data"
                     return [ meta, row ]
             }
         .set { assembly_report }
@@ -65,5 +65,5 @@ workflow CREATE_MOCK {
         fasta = ch_fasta
         reads = SAMTOOLS_WGSIM.out.fastq
         assembly_to_locus = assembly_to_locus
-        assembly_report =   assembly_report
+        assembly_report = assembly_report
 }

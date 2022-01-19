@@ -1,25 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-COPYRIGHT
-Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
-Shaurya Chanana, Izaak Miller, Jason C. Kwan
-
-This file is part of Autometa.
-
-Autometa is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Autometa is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with Autometa. If not, see <http://www.gnu.org/licenses/>.
-COPYRIGHT
+# License: GNU Affero General Public License v3 or later
+# A copy of GNU AGPL v3 should have been included in this software package in LICENSE.txt.
 
 Script to split metagenome assembly by kingdoms given the input votes. The lineages of the provided voted taxids will also be added and written to taxonomy.tsv
 """
@@ -124,14 +107,14 @@ def assign(
 
     def blast2lca():
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
         lca.blast2lca(
             orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
         )
 
     def majority_vote_lca(out=out):
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose)
+            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
         votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca, verbose=verbose)
         out = majority_vote.write_votes(results=votes, out=out)
