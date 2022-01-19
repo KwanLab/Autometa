@@ -193,7 +193,7 @@ def get(
         )
 
     if not os.path.exists(out) or not os.path.getsize(out):
-        out = hmmscan.filter_markers(
+        df = hmmscan.filter_tblout_markers(
             infpath=scans,
             outfpath=out,
             cutoffs=cutoffs,

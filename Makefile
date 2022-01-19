@@ -63,9 +63,14 @@ install: setup.py
 test_environment: tests/requirements.txt
 	python3 -m pip install --requirement=tests/requirements.txt
 
-## Build docker image from Dockerfile (auto-taggged as jason-c-kwan/autometa:<current-branch>)
+## Build docker image from Dockerfile (auto-taggged as jasonkwan/autometa:<current-branch>)
 image: Dockerfile
-	docker build . -t jason-c-kwan/autometa:`git branch --show-current`
+	docker build . -t jasonkwan/autometa:`git branch --show-current`
+
+## Build necessary docker images for nextflow modules from Dockerfiles in docker/modules
+modules-images: docker/modules/get_genomes_for_mock.Dockerfile docker/modules/mock_data_reporter.Dockerfile
+	docker build docker/modules/ -t jasonkwan/autometa-nf-modules-get_genomes_for_mock -f docker/modules/get_genomes_for_mock.Dockerfile
+	docker build docker/modules/ -t jasonkwan/autometa-nf-modules-mock_data_reporter -f docker/modules/mock_data_reporter.Dockerfile
 
 ## Build documentation for autometa.readthedocs.io
 docs:

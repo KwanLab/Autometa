@@ -80,16 +80,18 @@ def mock_hmmscan_run(monkeypatch, scans_fpath):
     monkeypatch.setattr(hmmscan, name="run", value=return_args, raising=True)
 
 
-@pytest.fixture(name="mock_hmmscan_filter_markers")
-def mock_hmmscan_filter_markers(monkeypatch, filtered_markers_fpath):
+@pytest.fixture(name="mock_hmmscan_filter_tblout_markers")
+def mock_hmmscan_filter_tblout_markers(monkeypatch, filtered_markers_fpath):
     def return_args(*args, **kwargs):
         return filtered_markers_fpath
 
-    monkeypatch.setattr(hmmscan, name="filter_markers", value=return_args, raising=True)
+    monkeypatch.setattr(
+        hmmscan, name="filter_tblout_markers", value=return_args, raising=True
+    )
 
 
 def test_marker_get(
-    markers_dbdir, orfs, mock_hmmscan_run, mock_hmmscan_filter_markers, tmp_path
+    markers_dbdir, orfs, mock_hmmscan_run, mock_hmmscan_filter_tblout_markers, tmp_path
 ):
     kingdom = "archaea"
     markers_fpath = tmp_path / f"{kingdom}.markers.tsv"

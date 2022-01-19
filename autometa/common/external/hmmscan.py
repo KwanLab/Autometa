@@ -132,7 +132,7 @@ def run(
     parallel=True,
     gnu_parallel=False,
     seed=42,
-):
+) -> str:
     """Runs hmmscan on dataset ORFs and provided hmm database.
 
     Note
@@ -226,17 +226,124 @@ def hmmpress(fpath):
     return fpath
 
 
-def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
-    """Filter markers from hmmscan output table that are above cutoff values.
+def read_tblout(infpath: str) -> pd.DataFrame:
+    """Read hmmscan tblout-format results into pd.DataFrame
+
+    For more detailed column descriptions see the 'tabular output formats'
+    section in the [HMMER manual](http://eddylab.org/software/hmmer/Userguide.pdf#tabular-output-formats "HMMER Manual")
 
     Parameters
     ----------
     infpath : str
-        </path/to/hmmscan.tsv>
-    outfpath : str
-        </path/to/output.markers.tsv>
+        Path to hmmscan_results.tblout
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame of raw hmmscan results
+
+    Raises
+    ------
+    FileNotFoundError
+        Path to `infpath` was not found
+    """
+    if not os.path.exists(infpath):
+        raise FileNotFoundError(infpath)
+    return pd.read_csv(
+        infpath,
+        sep="\s+",
+        usecols=range(0, 18),
+        names=[
+            "sname",
+            "sacc",
+            "qname",
+            "qacc",
+            "full_seq_evalue",
+            "full_seq_score",
+            "full_seq_bias",
+            "best_domain_evalue",
+            "best_domain_score",
+            "best_domain_bias",
+            "domain_number_exp",
+            "domain_number_reg",
+            "domain_number_clu",
+            "domain_number_ov",
+            "domain_number_env",
+            "domain_number_dom",
+            "domain_number_rep",
+            "domain_number_inc",
+        ],
+        comment="#",
+    )
+
+
+def read_domtblout(fpath: str) -> pd.DataFrame:
+    """Read hmmscan domtblout-format results into pandas DataFrame
+
+    For more detailed column descriptions see the 'tabular output formats'
+    section in the [HMMER manual](http://eddylab.org/software/hmmer/Userguide.pdf#tabular-output-formats "HMMER Manual")
+
+    Parameters
+    ----------
+    fpath : str
+        Path to hmmscan domtblout file
+
+    Returns
+    -------
+    pd.DataFrame
+        index=range(0,n_hits) cols=...
+    """
+    if not os.path.exists(fpath):
+        raise FileNotFoundError(fpath)
+    return pd.read_csv(
+        fpath,
+        sep="\s+",
+        usecols=range(0, 22),
+        names=[
+            "sname",
+            "sacc",
+            "slen",
+            "qname",
+            "qacc",
+            "qlen",
+            "full_seq_evalue",
+            "full_seq_score",
+            "full_seq_bias",
+            "this_domain_count",
+            "total_domain_count",
+            "domain_conditional_evalue",
+            "domain_independent_evalue",
+            "domain_score",
+            "domain_bias",
+            "hmm_coord_from",
+            "hmm_coord_to",
+            "ali_coord_from",
+            "ali_coord_to",
+            "env_coord_from",
+            "env_coord_to",
+            "mean_posterior_probability_of_aligned_residues",
+        ],
+        comment="#",
+    )
+
+
+def filter_tblout_markers(
+    infpath: str,
+    cutoffs: str,
+    outfpath: str = None,
+    orfs: str = None,
+    force: bool = False,
+) -> pd.DataFrame:
+    """Filter markers from hmmscan tblout output table using provided cutoff values file.
+
+    Parameters
+    ----------
+    infpath : str
+        Path to hmmscan tblout output file
     cutoffs : str
-        </path/to/cutoffs.tsv>
+        Path to marker set inclusion cutoffs
+    outfpath : str, optional
+        Path to write filtered markers to tab-delimited file
     orfs : str, optional
         Default will attempt to translate recovered qseqids to contigs
         </path/to/prodigal/called/orfs.fasta>
@@ -245,7 +352,7 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
 
     Returns
     -------
-    str
+    pd.DataFrame
         </path/to/output.markers.tsv>
 
     Raises
@@ -260,33 +367,33 @@ def filter_markers(infpath, outfpath, cutoffs, orfs=None, force=False):
     for fp in [infpath, cutoffs]:
         if not os.path.exists(fp):
             raise FileNotFoundError(fp)
-    if os.path.exists(outfpath) and os.path.getsize(outfpath) and not force:
+    if (
+        outfpath
+        and os.path.exists(outfpath)
+        and os.path.getsize(outfpath)
+        and not force
+    ):
         raise FileExistsError(f"{outfpath} already exists")
 
-    col_indices = [0, 1, 2, 5]
-    df = pd.read_csv(infpath, sep="\s+", usecols=col_indices, header=None, comment="#")
-    hmmtab_header = ["sname", "sacc", "orf", "score"]
-    columns = {i: k for i, k in zip(col_indices, hmmtab_header)}
-    df.rename(columns=columns, inplace=True)
-    # NaN may result from parsing issues while merging parallel results
-    df.dropna(inplace=True)
-    df["cleaned_sacc"] = df["sacc"].map(lambda acc: acc.split(".")[0])
+    df = read_tblout(infpath).dropna()
+    df["cleaned_sacc"] = df.sacc.map(lambda acc: acc.split(".")[0])
     dff = pd.read_csv(cutoffs, sep="\t", index_col="accession")
     mdf = pd.merge(df, dff, how="left", left_on="cleaned_sacc", right_on="accession")
-    mdf = mdf[mdf["score"] >= mdf["cutoff"]]
+    # Filter markers using cutoffs compared to full seq score
+    mdf = mdf.loc[mdf.full_seq_score.ge(mdf.cutoff)]
     if mdf.empty:
         raise AssertionError(f"No markers in {infpath} pass cutoff thresholds")
-    cols = ["orf", "sacc", "sname", "score", "cutoff"]
-    mdf = mdf[cols]
-    translations = prodigal.contigs_from_headers(orfs)
+
+    translations = prodigal.contigs_from_headers(orfs) if orfs else {}
 
     def translater(x):
         return translations.get(x, x.rsplit("_", 1)[0])
 
-    mdf["contig"] = mdf["orf"].map(translater)
+    mdf["contig"] = mdf.qname.map(translater)
     mdf.set_index("contig", inplace=True)
-    mdf.to_csv(outfpath, sep="\t", index=True, header=True)
-    return outfpath
+    if outfpath:
+        mdf.to_csv(outfpath, sep="\t", index=True, header=True)
+    return mdf
 
 
 def main():
@@ -304,7 +411,7 @@ def main():
     parser.add_argument("orfs", help="</path/to/assembly.orfs.faa>")
     parser.add_argument("hmmdb", help="</path/to/hmmpressed/hmmdb>")
     parser.add_argument("cutoffs", help="</path/to/hmm/cutoffs.tsv>")
-    parser.add_argument("hmmscan", help="</path/to/hmmscan.out>")
+    parser.add_argument("hmmscan", help="</path/to/hmmscan.tblout>")
     parser.add_argument("markers", help="</path/to/markers.tsv>")
     parser.add_argument(
         "--force", help="force overwrite of out filepath", action="store_true"
@@ -338,13 +445,16 @@ def main():
             gnu_parallel=args.gnu_parallel,
         )
 
-    result = filter_markers(
+    df = filter_tblout_markers(
         infpath=result,
         outfpath=args.markers,
         cutoffs=args.cutoffs,
         orfs=args.orfs,
         force=args.force,
     )
+
+    # markers_df format -> index=contig, cols=[PF\d+\.?\d+, ...], values=count
+    # markers_df = df.groupby("contig")["sacc"].value_counts().unstack().convert_dtypes()
 
 
 if __name__ == "__main__":

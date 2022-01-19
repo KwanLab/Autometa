@@ -1,88 +1,69 @@
-process GET_ASSEMBLY_SUMMARY {
+include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-    output:
-      path "assembly_summary_refseq.txt"
+params.get_genomes_for_mock = [:]
+include { GET_GENOMES_FOR_MOCK  } from './../../modules/local/get_genomes_for_mock.nf' addParams( options: params.get_genomes_for_mock )
 
-    """
-    curl -s https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refseq.txt > assembly_summary_refseq.txt
-    """
-}
+process SAMTOOLS_WGSIM {
+    // This process is used to create simulated reads from an input FASTA file
+    label 'process_low'
 
-
-process GET_FTP_DIRS {
-
-    input:
-      path assembly_summary_refseq
-      val x
-
-    output:
-      path "outfile"
-    """
-    cat "${assembly_summary_refseq}" |\
-        grep "${x}" |\
-        awk -F '\\t' '{print \$20}' > outfile
-    """
-
-}
-
-
-process DOWNLOAD_MOCK_DATA {
+    conda (params.enable_conda ? "bioconda::samtools=1.13" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/samtools:1.12--hd5e65b6_0"
+    } else {
+        container "quay.io/biocontainers/samtools:1.12--hd5e65b6_0"
+    }
 
     input:
-      path url
+    path fasta
 
     output:
-        path "**_genomic.fna.gz", emit: nucleotide
-        path "**_protein.faa.gz", emit: protein
+    path("*.fastq"), emit: fastq
+    path "*.version.txt"          , emit: version
 
     """
-    cat outfile | sed 's,ftp://,rsync://,' | xargs -n 1 -I {} rsync -am --exclude='*_rna_from_genomic.fna.gz' --exclude='*_cds_from_genomic.fna.gz' --include="*_genomic.fna.gz" --include="*_protein.faa.gz" --include='*/' --exclude='*' {} .
-    """
-}
+    # https://sarahpenir.github.io/bioinformatics/Simulating-Sequence-Reads-with-wgsim/
+    wgsim -1 300 -2 300 -r 0 -R 0 -X 0 -e 0 ${fasta} reads_1.fastq reads_2.fastq
 
-process WRITE_FILE_APPEND_COV {
-
-    input:
-        path x
-        val y
-
-    output:
-        path "${y}"  , emit: fasta
-
-    """
-    cat "${x}" | awk '/^>/ {\$0=\$1} 1' | sed 's/>.*/&_length_1_cov_1/' > "${y}"
+    echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > samtools.version.txt
     """
 }
-
-assemblies = Channel.fromList(
-    [
-        "GCF_008124965.1"
-    ]
-)
 
 workflow CREATE_MOCK {
 
     main:
-        GET_ASSEMBLY_SUMMARY()
-        GET_FTP_DIRS(
-            GET_ASSEMBLY_SUMMARY.out,
-            assemblies.flatten()
-            )
-        DOWNLOAD_MOCK_DATA(GET_FTP_DIRS.out)
-        WRITE_FILE_APPEND_COV(
-            DOWNLOAD_MOCK_DATA.out.nucleotide.splitFasta(by:1).collectFile(),
-            "mock_metagenome.fna"
-        )
+        // Download and format fasta files from specfied whole genome assemblies (genomes set from "get_genomes_for_mock" parameter in ~Autometa/conf/modules.config)
+        GET_GENOMES_FOR_MOCK()
 
-        WRITE_FILE_APPEND_COV.out.fasta
+        // Create fake reads from input genome sequences
+        SAMTOOLS_WGSIM(GET_GENOMES_FOR_MOCK.out.metagenome)
+
+        // Format everything with a meta map for use in the main Autometa pipeline
+        GET_GENOMES_FOR_MOCK.out.fake_spades_coverage
         .map { row ->
                     def meta = [:]
-                    meta.id           = row.simpleName
+                    meta.id = 'mock_data'
                     return [ meta, row ]
             }
         .set { ch_fasta }
+        GET_GENOMES_FOR_MOCK.out.assembly_to_locus
+        .map { row ->
+                    def meta = [:]
+                    meta.id = 'mock_data'
+                    return [ meta, row ]
+            }
+        .set { assembly_to_locus }
+        GET_GENOMES_FOR_MOCK.out.assembly_report
+        .map { row ->
+                    def meta = [:]
+                    meta.id = 'mock_data'
+                    return [ meta, row ]
+            }
+        .set { assembly_report }
 
     emit:
         fasta = ch_fasta
+        reads = SAMTOOLS_WGSIM.out.fastq
+        assembly_to_locus = assembly_to_locus
+        assembly_report =   assembly_report
 }
-

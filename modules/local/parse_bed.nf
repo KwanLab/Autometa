@@ -15,7 +15,7 @@ process PARSE_BED {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/bedtools:2.30.0--hc088bd4_0"
     } else {
-        container "jason-c-kwan/autometa:${params.autometa_image_tag}"
+        container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
     input:
@@ -28,7 +28,7 @@ process PARSE_BED {
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-parse-bed \\
+        autometa-bedtools-genomecov \\
             --ibam $bam \\
             --lengths $lengths \\
             --bed $bed_out \\

@@ -3,16 +3,16 @@ Contributing Guidelines
 =======================
 
 Autometa is an open-source project developed on GitHub. If you would like to help develop
-Autometa or have ideas for new features please see `our list of areas where we would love some help <https://github.com/KwanLab/Autometa/contribute>`__.
-You will also see our `Contributing Guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__ for getting started with
-Autometa development.
+Autometa or have ideas for new features please see our `contributing guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__
 
-If you are wanting to help develop autometa, you will need these additional dependencies:
+Some good first issues are available on the KwanLab Autometa GitHub repository `good first issues 🥇💡 <https://github.com/KwanLab/Autometa/contribute>`__
+
+If you are wanting to help develop Autometa, you will need these additional dependencies:
 
 Documentation
 =============
 
-Autometa builds documentation using readthedocs. You have to install the following to be able to build the docs
+Autometa builds documentation using `readthedocs <https://readthedocs.org/>`__. You have to install the following to be able to build the docs
 
 .. code-block:: bash
 
