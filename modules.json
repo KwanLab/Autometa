@@ -6,9 +6,6 @@
             "bowtie2/align": {
                 "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
             },
-            "bowtie2/build": {
-                "git_sha": "e3285528aca2733ff2d544cb5e5fcc34599226f3"
-            },
             "fastqc": {
                 "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
             },
