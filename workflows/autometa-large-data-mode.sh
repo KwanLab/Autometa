@@ -121,9 +121,16 @@ done
 
 # output:
 lca="${outdir}/${simpleName}.orfs.lca.tsv"
+sseqid2taxid="${outdir}/${simpleName}.orfs.sseqid2taxid.tsv"
+errorTaxids="${outdir}/${simpleName}.orfs.errortaxids.tsv"
 
 # script:
-autometa-taxonomy-lca --blast $blast --dbdir $ncbi --output $lca
+autometa-taxonomy-lca \
+    --blast $blast \
+    --dbdir $ncbi \
+    --lca-output $lca \
+    --sseqid2taxid-output $sseqid2taxid \
+    --lca-error-taxids $errorTaxids
 
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 
@@ -225,7 +232,7 @@ for kingdom in ${kingdoms[@]};do
     fi
 
     # script:
-    autometa-large-data-mode-binning \
+    autometa-ldm-binning \
         --kmers $kmers \
         --coverages $coverages \
         --gc-content $gc_content \
