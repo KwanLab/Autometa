@@ -18,18 +18,20 @@ process SAMTOOLS_VIEW_AND_SORT {
     }
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(meta), path(sam)
 
     output:
-        tuple val(meta), path("*.bam"), emit: bam
-        path "*.version.txt"          , emit: version
+        tuple val(meta), path("alignments.bam"), emit: bam
+        path "*.version.txt"                   , emit: version
+
+    when:
+        !meta.cov_from_spades
 
     script:
         def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
         """
-        samtools view ${options.args} -@ ${task.cpus} ${bam} |\
-            samtools sort ${options.args2} -@ ${task.cpus} -o ${prefix}.bam -T $prefix
+        samtools view ${options.args} -@ ${task.cpus} ${sam} \\
+            | samtools sort ${options.args2} -@ ${task.cpus} -o alignments.bam
 
         echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > ${software}.version.txt
         """

@@ -48,7 +48,7 @@ workflow TAXON_ASSIGNMENT {
                     PREPARE_NR_DB.out.diamond_db
                         .set{diamond_db}
                 } else {
-                       throw new Exception("Neither nr.dmnd or nr.gz was found")
+                    throw new Exception("Neither nr.dmnd or nr.gz was found")
                 }
             } else {
                 diamond_db = file("${params.nr_dmnd_dir}/nr.dmnd", checkIfExists: true)

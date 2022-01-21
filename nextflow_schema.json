@@ -18,14 +18,14 @@
                 "input": {
                     "type": "string",
                     "fa_icon": "fas fa-dna",
-                    "description": "Absolute (full) path of the metagenome assembly FASTA (.fna) file(s)",
-                    "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
+                    "description": "Path to an input comma-delimited sample sheet.",
+                    "help_text": "Use this to specify the your inputs names, metagenomes, (optionally) reads and whether to calculate coverage from the assembly headers or from read alignments.\n\nFor example:\n\nsample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers\n\nexample_sample_name,/path/to/assembly.fna,/path/to/fwd_reads.fastq.gz,/path/to/rev_reads.fastq.gz,,0\n\nNOTE: Use 1 and 0 to specify whether or not to calculate coverage from contig headers, respectively.",
                     "default": "null"
                 },
                 "outdir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory where the results will be saved.",
-                    "default": "~/where/pipeline/is/launched",
+                    "default": "autometa-nxf-output",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "tracedir": {
@@ -189,12 +189,6 @@
             "description": "These paramters control how the pipeline is executed",
             "default": "",
             "properties": {
-                "num_splits": {
-                    "type": "integer",
-                    "default": 1,
-                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss",
-                    "help_text": "Values over 2 will result in splitting the input metagenome into X-number of FASTA files, to be processed in parallel where applicable. This will result in a doubling of disk space occupied by your input metagenome."
-                },
                 "max_cpus": {
                     "type": "integer",
                     "default": 16,

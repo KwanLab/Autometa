@@ -4,10 +4,10 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-// TODO: For faster results/ less I/O this could be replaced with hmmsearch
+// TODO: For faster results/less I/O this could be replaced with hmmsearch
 process MARKERS {
     tag "Finding markers for ${meta.id}"
-    label "process_low"
+    label "process_medium"
 
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
@@ -25,7 +25,7 @@ process MARKERS {
 
     output:
         tuple val(meta), path("${params.kingdom}.markers.tsv"), emit: markers_tsv
-        tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmscan_tsv
+        tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmmscan_tsv
         path  '*.version.txt'               , emit: version
 
     script:

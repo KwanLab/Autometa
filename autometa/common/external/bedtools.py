@@ -19,7 +19,7 @@ from autometa.common.exceptions import TableFormatError
 logger = logging.getLogger(__name__)
 
 
-def genomecov(ibam, out, force=False):
+def genomecov(ibam: str, out: str, force: bool = False) -> str:
     """Run bedtools genomecov with input `ibam` and `lengths` to retrieve
     metagenome coverages.
 
@@ -27,6 +27,7 @@ def genomecov(ibam, out, force=False):
     ----------
     ibam : str
         </path/to/indexed/BAM/file.ibam>. Note: BAM *must* be sorted by position.
+
     out : str
         </path/to/alignment.bed>
         The bedtools genomecov output is a tab-delimited file with the following columns:
@@ -36,6 +37,7 @@ def genomecov(ibam, out, force=False):
         4. Size of chromosome
         5. Fraction of bases on that chromosome with that coverage
         See also: http://bedtools.readthedocs.org/en/latest/content/tools/genomecov.html
+
     force : bool
         force overwrite of `out` if it already exists (default is False).
 
@@ -63,15 +65,17 @@ def genomecov(ibam, out, force=False):
     return out
 
 
-def parse(bed, out=None, force=False):
+def parse(bed: str, out: str = None, force: bool = False) -> pd.DataFrame:
     """Calculate coverages from bed file.
 
     Parameters
     ----------
     bed : str
         </path/to/file.bed>
+
     out : str
         if provided will write to `out`. I.e. </path/to/coverage.tsv>
+
     force : bool
         force overwrite of `out` if it already exists (default is False).
 
