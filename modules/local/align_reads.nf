@@ -46,6 +46,6 @@ process ALIGN_READS {
             -1 $fwd_reads \\
             -2 $rev_reads
 
-        \$(echo \$(bowtie2 --version 2>&1) | sed -n 's/^.*bowtie2-align-s version //p; s/ .*\$//' > bowtie2.version.txt
+        echo \$(bowtie2 --version 2>&1) | sed -n 's/^.*bowtie2-align-s version //p; s/ .*\$//' > bowtie2.version.txt
         """
 }
