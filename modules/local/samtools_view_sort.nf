@@ -30,7 +30,7 @@ process SAMTOOLS_VIEW_AND_SORT {
     script:
         def software = getSoftwareName(task.process)
         """
-        samtools view ${options.args} -@ ${task.cpus} ${sam} \\
+        samtools view ${options.args} -@ ${task.cpus} -bS ${sam} \\
             | samtools sort ${options.args2} -@ ${task.cpus} -o alignments.bam
 
         echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > ${software}.version.txt

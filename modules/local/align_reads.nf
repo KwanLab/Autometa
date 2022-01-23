@@ -25,7 +25,7 @@ process ALIGN_READS {
 
     output:
         tuple val(meta), path("alignments.sam"), emit: sam
-        path "*.db"                            , emit: bt2_db
+        path "*.db*.bt2"                       , emit: bt2_db
         path "*.version.txt"                   , emit: version
 
     when:
