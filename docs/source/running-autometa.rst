@@ -131,13 +131,13 @@ Once Conda has finished creating the environment be sure to activate it:
     conda activate autometa-nf
 
 
-Using nf-core tools
-*******************
+Using nf-core
+*************
 
 Download/Launch the Autometa Nextflow pipeline using nf-core tools.
 The stable version of Autometa will always be the "main" git branch.
 To use an in-development git branch switch "main" in the command with
-the name of the desired branch. After the pipeline downloads nf-core will
+the name of the desired branch. After the pipeline downloads, nf-core will
 start the pipeline launch process.
 
 .. code-block:: bash
