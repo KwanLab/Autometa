@@ -46,9 +46,12 @@ The following workflow is recommended:
 
 .. attention::
 
-    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names. If you have used any other assembler, then you first have to make a coverage table.
+    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
 
-    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``. Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`
+    If you have used any other assembler, then you may also provide a coverage table (See ``example_2`` in the example sheet below). Fortunately, Autometa can construct this table for you with: ``autometa-coverage``.
+    Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`.
+
+    Finally, if you have paired-end read information, you can also supply these file paths within the sample sheet and the coverage table will be computed for you (See ``example_1`` in the example sheet below).
 
 
 Preparing a Sample Sheet
