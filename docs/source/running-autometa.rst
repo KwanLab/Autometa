@@ -422,14 +422,25 @@ The slurm partition available on our cluster is ``queue``.  You'll need to updat
 
 .. code-block:: groovy
 
-    // Find this section of code in nextflow.config
-    }
-    cluster {
-    process.executor = "slurm"
-    // queue is the slurm partition to use in our case
-    // Set SLURM partition with queue directive.
-    process.queue = "queue" // <<-- change this to whatever your partition is called
-    // See https://www.nextflow.io/docs/latest/executor.html#slurm for more details.
+    profiles {
+        // Find this section of code in nextflow.config
+        slurm {
+            process.executer       = "slurm"
+            // NOTE: You can determine your slurm partition (e.g. process.queue) with the `sinfo` command
+            // Set SLURM partition with queue directive.
+            process.queue = "queue" // <<-- change this to whatever your partition is called
+            // queue is the slurm partition to use in our case
+            // See https://www.nextflow.io/docs/latest/executor.html#slurm for more details.
+            docker.enabled         = true
+            docker.userEmulation   = true
+            singularity.enabled    = false
+            podman.enabled         = false
+            shifter.enabled        = false
+            charliecloud.enabled   = false
+            executor {
+                queueSize = 8
+            }
+        }
     }
 
 More parameters that are available for the slurm executor are listed in the nextflow
