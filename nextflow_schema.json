@@ -18,14 +18,14 @@
                 "input": {
                     "type": "string",
                     "fa_icon": "fas fa-dna",
-                    "description": "Absolute (full) path of the metagenome assembly FASTA (.fna) file(s)",
-                    "help_text": "Use this to specify the location of your input FASTA files. For example:\n\nA single FASTA file: \n```bash\n--input path/to/data/sample.fna\n```\n\nMultiple FASTA files: \n\n```bash\n--input path/to/data/sample_*.fna\n```\n\nNote:\nDo not surround with quotes",
+                    "description": "Path to input comma-delimited sample sheet(s).",
+                    "help_text": "Use this to specify your inputs' names, metagenomes, reads, coverage table and whether to calculate coverage from the assembly headers or from read alignments.\n\nAn example samplesheet.csv of four rows is below (notice the first row is the required header):\n\nsample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers\n\nsample_1,/path/to/sample_1/assembly.fna,/path/to/fwd_reads.fastq.gz,/path/to/rev_reads.fastq.gz,,0\n\nsample_2,/path/to/sample_2/assembly.fna,,,,1\n\nsample_3,/path/to/sample_3/assembly.fna,,,/path/to/sample_3/coverage.tsv,0\n\n\n\nNOTE: Use 1 and 0 for the 'cov_from_contig_headers' column to specify whether or not to calculate coverage from contig headers, respectively.\n\n\n\nNotice each row specifies how to retrieve contig coverages. From the example samplesheet above, sample 1 will calculate coverage from the provided reads, sample 2 from the contig headers and sample 3 from the provided coverage table.",
                     "default": "null"
                 },
                 "outdir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory where the results will be saved.",
-                    "default": "~/where/pipeline/is/launched",
+                    "default": "autometa-nxf-output",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "tracedir": {
@@ -189,12 +189,6 @@
             "description": "These paramters control how the pipeline is executed",
             "default": "",
             "properties": {
-                "num_splits": {
-                    "type": "integer",
-                    "default": 1,
-                    "description": "How many parallel splits should be ceated. Should never be more than total CPUss",
-                    "help_text": "Values over 2 will result in splitting the input metagenome into X-number of FASTA files, to be processed in parallel where applicable. This will result in a doubling of disk space occupied by your input metagenome."
-                },
                 "max_cpus": {
                     "type": "integer",
                     "default": 16,

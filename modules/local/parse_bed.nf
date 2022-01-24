@@ -18,19 +18,23 @@ process PARSE_BED {
     }
 
     input:
-        tuple val(meta), path(bam), path(lengths), path(bed_out)
+        tuple val(meta), path(bed)
 
     output:
         tuple val(meta), path("coverage.tsv"), emit: coverage
         path  "*.version.txt"                , emit: version
 
+    when:
+        !meta.cov_from_spades
+
     script:
         def software = getSoftwareName(task.process)
         """
+        # NOTE: Here we supply an argument to ibam to prevent raising an error
+        # However, bed is the only arg required for nextflow since bed is generated from BEDTOOLS_GENOMECOV...
         autometa-bedtools-genomecov \\
-            --ibam $bam \\
-            --lengths $lengths \\
-            --bed $bed_out \\
+            --ibam . \\
+            --bed $bed \\
             --output coverage.tsv
 
         echo "TODO" > autometa.version.txt
