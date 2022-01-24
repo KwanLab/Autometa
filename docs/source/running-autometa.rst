@@ -149,25 +149,25 @@ While it is possible to use the command line version, it is preferred and easier
 Use the arrow keys to select one or the other and then press return/enter.
 
 
-Setting parameters a web-based GUI
-**********************************
+Setting parameters with a web-based GUI
+***************************************
 
 The GUI will present all available parameters, though some extra
 parameters may be hidden (these can be revealed by selecting
 "Show hidden params" on the right side of the page).
 
-Parameters to set every time
-****************************
+Required parameters
+*******************
 
-:code:`--input`: the path to your input sample sheet
-:code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
+1. :code:`--input`: the path to your input sample sheet
+2. :code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
     - :code:`standard` (default): runs all process jobs locally, (currently this requires Docker).
     - :code:`slurm`: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
 
 .. caution::
 
     Notice the number of hyphens used between ``--input`` and ``-profile``. ``--input`` is an `Autometa` workflow parameter
-    where as ``-profile`` is a `nextflow` argument. This difference is true for passing in all arguments to the `Autometa`
+    where as ``-profile`` is a `nextflow` argument. This difference in hyphens is true for passing in all arguments to the `Autometa`
     workflow and `nextflow`, respectively.
 
 Running the pipeline
@@ -262,12 +262,12 @@ For example, to give all resource-intensive (i.e. having ``label process_high``)
 
 .. code-block:: groovy
 
-process {
-    withLabel:process_high {
-        memory = 200.GB
-        cpus = 32
+    process {
+        withLabel:process_high {
+            memory = 200.GB
+            cpus = 32
+        }
     }
-}
 
 Then your command to run the pipeline (assuming you've already run :code:`nf-core launch KwanLab/Autometa` which created
 a :code:`nf-params.json` file) would look something like:
@@ -294,7 +294,7 @@ Up to date descriptions and default values of Autometa's nextflow parameters can
     nextflow run KwanLab/Autometa -r main --help
 
 
-You can also adjust other pipeline parameters that ultimately control how the binning is performed.
+You can also adjust other pipeline parameters that ultimately control how binning is performed.
 
 ``params.length_cutoff`` : Smallest contig you want binned (default is 3000bp)
 
@@ -348,8 +348,10 @@ the repository and then run nextflow directly from the scripts as below:
     # Clone the autometa repository into current directory
     git clone -b dev git@github.com:KwanLab/Autometa.git
     # Modify some code
+    # e.g. one of the local modules
+    code /$HOME/Autometa/modules/local/align_reads.nf
     # Then run nextflow
-    nextflow run $HOME/Autometa/nextflow
+    nextflow run $HOME/Autometa
 
 Useful options
 **************
@@ -377,14 +379,14 @@ you in the ``${params.outdir}/trace`` directory. You can read more about this in
 `nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_.
 
 Visualizing the Workflow
-************************
+========================
 
 You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install
 `Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
 in the ``png`` format.
 
-Configure nextflow with your 'executor'
-***************************************
+Configuring your nextflow Executor
+**********************************
 
 For nextflow to run the Autometa pipeline through a job scheduler you will need to update the respective ``profile``
 section in nextflow's config file. Each ``profile`` may be configured with any available scheduler as noted in the
@@ -400,7 +402,7 @@ and copy this file to your desired location and open it in your favorite text ed
 .. _using-slurm:
 
 SLURM
-*****
+=====
 
 This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the
 slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo``
@@ -427,8 +429,8 @@ More parameters that are available for the slurm executor are listed in the next
 `executor docs for slurm <https://www.nextflow.io/docs/latest/executor.html#slurm>`_.
 
 
-Using a different Autometa docker image
-#######################################
+Docker image selection
+######################
 
 
 Especially when developing new features it may be necessary to run the pipeline with a custom docker image.
@@ -444,9 +446,13 @@ Running modules
 Many of the Autometa modules may be run standalone.
 
 Simply pass in the ``-m`` flag when calling a script to signify to python you are
-running an Autometa *module*.
+running the script as an Autometa *module*.
 
 I.e. ``python -m autometa.common.kmers -h``
+
+.. note::
+    Autometa has many *entrypoints* available that are utilized by the nextflow workflow. If you have installed autometa,
+    all of these entrypoints will be available to you.
 
 Using Autometa's Python API
 ###########################
@@ -463,8 +469,6 @@ samtools wrapper
 .. code-block:: python
 
     from autometa.common.external import samtools
-    from autometa.common.metagenome import Metagenome
-
     # To see samtools.sort parameters
     samtools.sort?
     # Run samtools sort command in ipython interpreter
@@ -475,6 +479,7 @@ Metagenome Description
 
 .. code-block:: python
 
+    from autometa.common.metagenome import Metagenome
     # To see input parameters, instance attributes and methods
     Metagenome?
     # Create a metagenome instance
@@ -489,6 +494,7 @@ k-mer frequency counting, normalization, embedding
 
 .. code-block:: python
 
+    from autometa.common import kmers
     # Count kmers
     counts = kmers.count(assembly="/path/to/metagenome.fasta", size=5)
     # Normalize kmers
