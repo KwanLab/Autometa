@@ -187,7 +187,7 @@ the page. After returning to the terminal you should be provided the option
 
     Additionally all Autometa specific pipeline parameters can be used as command line arguments
     using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens
-    (e.g. :code:`--input "my/file/path/assembly.fasta"`)
+    (e.g. :code:`--outdir /path/to/output/workflow/results`)
 
 
 Advanced
