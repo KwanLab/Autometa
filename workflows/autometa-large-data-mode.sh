@@ -232,7 +232,7 @@ for kingdom in ${kingdoms[@]};do
     fi
 
     # script:
-    autometa-ldm-binning \
+    autometa-binning-ldm \
         --kmers $kmers \
         --coverages $coverages \
         --gc-content $gc_content \
