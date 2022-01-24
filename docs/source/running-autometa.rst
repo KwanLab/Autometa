@@ -114,7 +114,7 @@ Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
 
 If you receive the message...
 
@@ -127,7 +127,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -356,7 +356,7 @@ the repository and then run nextflow directly from the scripts as below:
 .. code-block:: bash
 
     # Clone the autometa repository into current directory
-    git clone -b dev git@github.com:KwanLab/Autometa.git
+    git clone git@github.com:KwanLab/Autometa.git
     # Modify some code
     # e.g. one of the local modules
     code /$HOME/Autometa/modules/local/align_reads.nf
@@ -405,7 +405,7 @@ local computer as the 'executor'. The next section briefly walks through nextflo
 with the slurm job scheduler.
 
 We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this
-`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead
+`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow.config>`_. Go ahead
 and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
 
 
