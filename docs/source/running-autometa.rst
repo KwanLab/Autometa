@@ -430,7 +430,6 @@ The slurm partition available on our cluster is ``queue``.  You'll need to updat
             // Set SLURM partition with queue directive.
             process.queue = "queue" // <<-- change this to whatever your partition is called
             // queue is the slurm partition to use in our case
-            // See https://www.nextflow.io/docs/latest/executor.html#slurm for more details.
             docker.enabled         = true
             docker.userEmulation   = true
             singularity.enabled    = false
