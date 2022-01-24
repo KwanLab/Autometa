@@ -478,8 +478,10 @@ samtools wrapper
 .. code-block:: python
 
     from autometa.common.external import samtools
-    # To see samtools.sort parameters
-    samtools.sort?
+
+    # To see samtools.sort parameters try the commented command below:
+    # samtools.sort?
+
     # Run samtools sort command in ipython interpreter
     samtools.sort(sam="<path/to/alignment.sam>", out="<path/to/output/alignment.bam>", cpus=4)
 
@@ -489,14 +491,21 @@ Metagenome Description
 .. code-block:: python
 
     from autometa.common.metagenome import Metagenome
+
     # To see input parameters, instance attributes and methods
-    Metagenome?
+    # Metagenome?
+
     # Create a metagenome instance
     mg = Metagenome(assembly="/path/to/metagenome.fasta")
+
     # To see available methods (ignore any elements in the list with a double underscore)
     dir(mg)
+
     # Get pandas dataframe of metagenome details.
     metagenome_df = mg.describe()
+
+    metagenome_df.to_csv("path/to/metagenome_description.tsv", sep='\t', index=True, header=True)
+
 
 k-mer frequency counting, normalization, embedding
 ==================================================
@@ -504,12 +513,26 @@ k-mer frequency counting, normalization, embedding
 .. code-block:: python
 
     from autometa.common import kmers
+
     # Count kmers
-    counts = kmers.count(assembly="/path/to/metagenome.fasta", size=5)
+    counts = kmers.count(
+        assembly="/path/to/metagenome.fasta",
+        size=5
+    )
+
     # Normalize kmers
-    norm_df = kmers.normalize(df=counts, method="ilr")
+    norm_df = kmers.normalize(
+        df=counts,
+        method="ilr"
+    )
+
     # Embed kmers
-    kmers.embed(norm_df, pca_dimensions=50, embed_dimensions=3, method="densmap")
+    embed_df = kmers.embed(
+        norm_df,
+        pca_dimensions=50,
+        embed_dimensions=3,
+        method="densmap"
+    )
 
 
 .. _nextflow: https://www.nextflow.io/
