@@ -75,9 +75,7 @@ The third example retrieves coverage information from the assembly contig header
    or coverage information will be calculated by read alignments using the provided paired-end reads. If both paired-end reads and a coverage table are provided,
    the pipeline will prioritize the coverage table.
 
-.. note::
-    If you are providing a coverage table with your input metagenome, it must contain at least two columns of information, ``contig`` and ``coverage`` and
-    be tab-delimited.
+   If you are providing a coverage table to ``coverage_tab`` with your input metagenome, it must be tab-delimited and contain *at least* the header columns, ``contig`` and ``coverage``.
 
 You may copy the below table as a csv and paste it into a file to begin your sample sheet. You will need to update your input parameters, accordingly.
 
