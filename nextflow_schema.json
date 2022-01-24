@@ -17,10 +17,10 @@
             "properties": {
                 "input": {
                     "type": "string",
-                    "fa_icon": "fas fa-dna",
+                    "fa_icon": "fas fa-file-csv",
                     "description": "Path to input comma-delimited sample sheet(s).",
-                    "help_text": "Use this to specify your inputs' names, metagenomes, reads, coverage table and whether to calculate coverage from the assembly headers or from read alignments.\n\nAn example samplesheet.csv of four rows is below (notice the first row is the required header):\n\nsample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers\n\nsample_1,/path/to/sample_1/assembly.fna,/path/to/fwd_reads.fastq.gz,/path/to/rev_reads.fastq.gz,,0\n\nsample_2,/path/to/sample_2/assembly.fna,,,,1\n\nsample_3,/path/to/sample_3/assembly.fna,,,/path/to/sample_3/coverage.tsv,0\n\n\n\nNOTE: Use 1 and 0 for the 'cov_from_contig_headers' column to specify whether or not to calculate coverage from contig headers, respectively.\n\n\n\nNotice each row specifies how to retrieve contig coverages. From the example samplesheet above, sample 1 will calculate coverage from the provided reads, sample 2 from the contig headers and sample 3 from the provided coverage table.",
-                    "default": "null"
+                    "help_text": "Use this to specify your inputs' names, metagenomes, reads, coverage table and whether to calculate coverage from the assembly headers or from read alignments.\n\n\nSee https://autometa.readthedocs.io/en/latest/running-autometa.html#preparing-a-sample-sheet for information on preparing an input samplesheet.",
+                    "default": ""
                 },
                 "outdir": {
                     "type": "string",
@@ -31,12 +31,13 @@
                 "tracedir": {
                     "type": "string",
                     "description": "Absolute (full) path of directory to keep pipeline Nextflow logs and reports.",
-                    "default": "outdir/trace",
-                    "fa_icon": "fas fa-cogs"
+                    "default": "autometa-nxf-output/trace",
+                    "fa_icon": "fas fa-folder-open"
                 },
                 "publish_dir_mode": {
                     "type": "string",
                     "default": "copy",
+                    "fa_icon": "fas fa-apple-alt",
                     "description": "How should output files be stored?",
                     "help_text": "\nImportant note: Using a linking method (anything ending in 'link') and then deleting the nextflow run's working/cache directory will result in the loss of all output files. Links will remain but will only point to non-existent file(s).\n\nUse one of the following\ncopy\n    Copies the output files into the published directory. (default)\nsymlink\n    Creates an absolute symbolic link in the published directory for each process output file.\nrellink\n    Creates a relative symbolic link in the published directory for each process output file.\nlink\n    Creates a hard link in the published directory for each process output file.\ncopyNoFollow\n    Copies the output files into the published directory without following symlinks ie. copies the links themselves.\nmove\n    Moves the output files into the published directory. Note: this is only supposed to be used for a terminating process i.e. a process whose output is not consumed by any other downstream process.\n\nFor more information see:\nhttps://www.nextflow.io/docs/latest/process.html#publishdir"
                 }
@@ -45,75 +46,95 @@
         "autometa_binning_parameters": {
             "title": "Autometa Binning Parameters",
             "type": "object",
+            "fa_icon": "fas fa-pencil",
             "default": "",
             "properties": {
                 "length_cutoff": {
                     "type": "integer",
                     "default": 3000,
-                    "description": "Minimum contig length to use as input to Autometa"
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Minimum contig length to use as input to Autometa.",
+                    "help_text": "Additional info found at https://autometa.readthedocs.io/en/latest/step-by-step-tutorial.html#length-filter"
                 },
                 "norm_method": {
                     "type": "string",
                     "default": "am_clr",
-                    "description": "Kmer count normalization transformation method to use. Choices are \"am_clr\", \"clr\", and \"ilr\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Kmer count normalization transformation method to use. Choices are am_clr, clr, and ilr.",
+                    "help_text": "For more details, see: https://autometa.readthedocs.io/en/latest/step-by-step-tutorial.html#advanced-usage"
                 },
                 "pca_dimensions": {
                     "type": "integer",
                     "default": 50,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix"
                 },
                 "embedding_method": {
                     "type": "string",
                     "default": "bhsne",
-                    "description": "Embedding method to use. Choices are \"sksne\", \"bhsne\", \"umap\", \"densmap\", \"trimap\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Embedding method to use. Choices are sksne, bhsne, umap, densmap, trimap.",
+                    "help_text": "For more details, see: https://autometa.readthedocs.io/en/latest/step-by-step-tutorial.html#advanced-usage"
                 },
                 "embedding_dimensions": {
                     "type": "integer",
                     "default": 2,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Final dimensions of the kmer frequencies matrix"
                 },
                 "kmer_size": {
                     "type": "integer",
                     "default": 5,
+                    "fa_icon": "fas fa-cogs",
                     "description": "kmer length to use during kmer counting"
                 },
                 "clustering_method": {
                     "type": "string",
                     "default": "dbscan",
-                    "description": "Cluster contigs using specified clustering method. Choices are \"dbscan\" and \"hdbscan\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Cluster contigs using specified clustering method. Choices are dbscan and hdbscan",
+                    "help_text": "For more details, see: https://autometa.readthedocs.io/en/latest/step-by-step-tutorial.html#advanced-usage-binning"
                 },
                 "classification_method": {
                     "type": "string",
                     "default": "decision_tree",
-                    "description": "Classification method to use for unclustered recruitment step. Choices are \"decision_tree\" and \"random_forest\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Classification method to use for unclustered recruitment step. Choices are decision_tree and random_forest.",
+                    "help_text": "For more details, see: https://autometa.readthedocs.io/en/latest/step-by-step-tutorial.html#advanced-usage-binning"
                 },
                 "classification_kmer_pca_dimensions": {
                     "type": "integer",
                     "default": 50,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Number of dimensions of which to reduce the initial k-mer frequencies matrix by PCA"
                 },
                 "completeness": {
                     "type": "number",
                     "default": 20,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Minimum completeness needed to keep a cluster (default is at least 20% complete)"
                 },
                 "purity": {
                     "type": "number",
                     "default": 95,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
                 },
                 "gc_stddev_limit": {
                     "type": "number",
                     "default": 5,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Maximum GC% standard deviation under which a cluster is kept (default is 5%)"
                 },
                 "cov_stddev_limit": {
                     "type": "number",
                     "default": 25,
+                    "fa_icon": "fas fa-cogs",
                     "description": "Maximum coverage standard deviation under which a cluster is kept (default is  25%)"
                 },
                 "unclustered_recruitment": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-check-square",
                     "description": "Set to true for unclustered recruitment"
                 }
             },
@@ -136,33 +157,38 @@
         "autometa_taxonomy_aware_binning_parameters": {
             "title": "Autometa Taxonomy-Aware Binning Parameters",
             "type": "object",
+            "fa_icon": "fas fa-drafting-compass",
             "description": "",
             "default": "",
             "properties": {
                 "taxonomy_aware": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-check-square",
                     "description": "Turn taxonomy-aware clustering on/off"
                 },
                 "single_db_dir": {
                     "type": "string",
-                    "default": "null",
+                    "default": "",
                     "fa_icon": "fas fa-folder-open",
                     "description": "Directory containing databases required for taxonomy assignment"
                 },
                 "nr_dmnd_dir": {
                     "type": "string",
+                    "fa_icon": "fas fa-folder-open",
                     "description": "Currently not used do not set",
                     "default": "Currently not used do not set",
                     "hidden": true
                 },
                 "prot_accession2taxid_gz_dir": {
                     "type": "string",
+                    "fa_icon": "fas fa-folder-open",
                     "description": "Currently not used do not set",
                     "default": "Currently not used do not set",
                     "hidden": true
                 },
                 "taxdump_tar_gz_dir": {
                     "type": "string",
+                    "fa_icon": "fas fa-folder-open",
                     "description": "Currently not used do not set",
                     "default": "Currently not used do not set",
                     "hidden": true
@@ -170,62 +196,75 @@
                 "binning_starting_rank": {
                     "type": "string",
                     "default": "superkingdom",
-                    "description": "Which taxonomic rank to start the binning from. Choices are \"superkingdom\", \"phylum\", \"class\", \"order\", \"family\", \"genus\", \"species\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Which taxonomic rank to start the binning from. Choices are superkingdom, phylum, class, order, family, genus, species"
                 },
                 "kingdom": {
                     "type": "string",
                     "default": "bacteria",
-                    "description": "Bin contigs belonging to this kingdom. Choices are \"bacteria\" and \"archaea\""
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Bin contigs belonging to this kingdom. Choices are bacteria and archaea"
                 },
                 "large_downloads_permission": {
                     "type": "boolean",
-                    "description": "Can Autometa download nr.gz if needed? (It's >100Gb)"
+                    "description": "Can Autometa download nr.gz if needed? (It's >100Gb)",
+                    "fa_icon": "fas fa-database",
+                    "help_text": "For more information on required databases and configuration...\n\nsee: https://autometa.readthedocs.io/en/latest/running-autometa.html#databases"
                 }
             }
         },
         "autometa_nextflow_parameters": {
             "title": "Autometa Nextflow Parameters",
             "type": "object",
+            "fa_icon": "fas fa-server",
             "description": "These paramters control how the pipeline is executed",
             "default": "",
             "properties": {
                 "max_cpus": {
                     "type": "integer",
                     "default": 16,
+                    "fa_icon": "fas fa-microchip",
                     "description": "Max cpus to use/request"
                 },
                 "max_memory": {
                     "type": "string",
                     "default": "16 GB",
+                    "fa_icon": "fas fa-memory",
                     "description": "Max RAM to use/request"
                 },
                 "max_time": {
                     "type": "string",
                     "default": "2d",
+                    "fa_icon": "fas fa-clock",
                     "description": "Max time a *single* process is allowed to run"
                 },
                 "enable_conda": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-snake",
                     "description": "Use conda?"
                 },
                 "use_run_name": {
                     "type": "boolean",
                     "hidden": true,
+                    "fa_icon": "fas fa-check-square",
                     "description": "If TRUE, run-name will be used in the output directory structure"
                 },
                 "debug": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-check-square",
                     "description": "Run pipeline with small defaults (e.g. not the entire nr.gz download)",
                     "hidden": true
                 },
                 "mock_test": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-check-square",
                     "description": "Run with minimal dataset",
                     "hidden": true
                 },
                 "autometa_image_tag": {
                     "type": "string",
                     "default": "latest",
+                    "fa_icon": "fas fa-whale",
                     "description": "Change which tag of the autometa docker image is used",
                     "help_text": "Appends input to `jasonkwan/autometa`\n\njasonkwan/autometa:${params.autometa_image_tag}\""
                 }
