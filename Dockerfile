@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 LABEL maintainer="jason.kwan@wisc.edu"
 
-# Copyright 2021 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+# Copyright 2022 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
 # Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
@@ -57,8 +57,12 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-taxonomy -h > /dev/null \
     && autometa-taxonomy-lca -h > /dev/null \
     && autometa-taxonomy-majority-vote -h > /dev/null \
-    && autometa-binning -h > /dev/null \
     && autometa-unclustered-recruitment -h > /dev/null \
-    && autometa-benchmark -h > /dev/null \
+    && autometa-hmmsearch-filter -h > /dev/null \
+    && autometa-bedtools-genomecov -h > /dev/null \
+    && autometa-binning -h > /dev/null \
     && autometa-binning-summary -h > /dev/null \
+    && autometa-binning-ldm -h > /dev/null \
+    && autometa-binning-ldm-loginfo -h > /dev/null \
+    && autometa-benchmark -h > /dev/null \
     && autometa-download-dataset -h > /dev/null
