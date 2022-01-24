@@ -386,7 +386,7 @@ you in the ``${params.outdir}/trace`` directory. You can read more about this in
 `nextflow docs on execution reports <https://www.nextflow.io/docs/latest/tracing.html#execution-report>`_.
 
 Visualizing the Workflow
-========================
+------------------------
 
 You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install
 `Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
@@ -409,7 +409,7 @@ and copy this file to your desired location and open it in your favorite text ed
 .. _using-slurm:
 
 SLURM
-=====
+-----
 
 This allows you to run the pipeline using the SLURM resource manager. To do this you'll first needed to identify the
 slurm partition to use. You can find the available slurm partitions by running ``sinfo``. Example: On running ``sinfo``
@@ -472,7 +472,7 @@ Examples
 
 
 Samtools wrapper
-================
+----------------
 
 To incorporate a call to ``samtools sort`` inside of your python code using the Autometa samtools wrapper.
 
@@ -488,7 +488,7 @@ To incorporate a call to ``samtools sort`` inside of your python code using the 
 
 
 Metagenome Description
-======================
+----------------------
 
 Here is an example to easily assess your metagenome's characteristics using Autometa's Metagenome class
 
@@ -512,7 +512,7 @@ Here is an example to easily assess your metagenome's characteristics using Auto
 
 
 k-mer frequency counting, normalization, embedding
-==================================================
+--------------------------------------------------
 
 To quickly perform a k-mer frequency counting, normalization and embedding pipeline...
 
