@@ -44,17 +44,6 @@ The following workflow is recommended:
    * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
 
 
-.. attention::
-    If you have paired-end read information, you can also supply these file paths within the sample sheet and the coverage
-    table will be computed for you (See ``example_1`` in the example sheet below).
-
-    If you have used any other assembler, then you may also provide a coverage table (See ``example_2`` in the example sheet below).
-    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``.
-    Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`.
-
-    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
-
-
 Preparing a Sample Sheet
 ************************
 
@@ -62,6 +51,16 @@ An example sample sheet for three possible ways to provide a sample as an input 
 provides a metagenome with paired-end read information, such that contig coverages may be determined using a read-based alignment
 sub-workflow. The second example uses pre-calculated coverage information by providing a coverage table *with* the input metagenome assembly.
 The third example retrieves coverage information from the assembly contig headers (Currently, this is only available with metagenomes assembled using SPAdes)
+
+.. attention::
+    If you have paired-end read information, you can supply these file paths within the sample sheet and the coverage
+    table will be computed for you (See ``example_1`` in the example sheet below).
+
+    If you have used any other assembler, then you may also provide a coverage table (See ``example_2`` in the example sheet below).
+    Fortunately, Autometa can construct this table for you with: ``autometa-coverage``.
+    Use ``--help`` to get the complete usage or for a few examples see :ref:`coverage-calculation`.
+
+    If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
 
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 | sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_contig_headers |
