@@ -205,10 +205,11 @@ to software that internally handles parallelization.
 The Autometa pipeline will try and use all resources available to individual
 pipeline modules. Each module/process has been pre-assigned resource allotments via a low/medium/high tag.
 This means that even if you don't select for the pipeline to run in parallel some modules (e.g. DIAMOND BLAST)
-may still use multiple cores. The maximum number of CPUs that any single module can use is defined with
-the :code:`--max_cpus` option (default: 4). You can also set :code:`--max_memory` (default: 16GB) and/or
-:code:`--max_time` (default: 240h). :code:`--max_time` refers to the maximum time *each process* is allowed to run,
-*not* the execution time for the the entire pipeline.
+may still use multiple cores.
+
+* The maximum number of CPUs that any single module can use is defined with the :code:`--max_cpus` option (default: 4).
+* You can also set :code:`--max_memory` (default: 16GB)
+* :code:`--max_time` (default: 240h). :code:`--max_time` refers to the maximum time *each process* is allowed to run, *not* the execution time for the the entire pipeline.
 
 Databases
 *********
