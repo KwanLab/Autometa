@@ -125,7 +125,60 @@ parameters may be hidden (these can be revealed by selecting
 Parameters to set every time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:code:`--input`: the path to your input metagenome assembly nucleotide FASTA file
+:code:`--input`: the path to your input sample sheet
+
+An example sample sheet for three possible ways to provide a sample as an input is provided below. The first example
+provides a metagenome with paired-end read information, such that contig coverages are determine using a read-based alignment
+sub-workflow. The second example uses pre-calculated coverage information by providing a coverage table with the input metagenome assembly.
+The third example retrieves coverage information from the assembly contig headers (Currently, this is only available assemblies constructed using SPAdes)
+
+.. list-table:: Sample Sheet Example Table
+    :widths: 25 25 50
+    :header-rows: 1
+
+    * - sample
+      - assembly
+      - fastq_1
+      - fastq_2
+      - coverage_tab
+      - cov_from_contig_headers
+    * - example_1
+      - /path/to/example/1/metagenome.fna.gz
+      - /path/to/paired-end/fwd_reads.fastq.gz
+      - /path/to/paired-end/rev_reads.fastq.gz
+      -
+      - 0
+    * - example_2
+      - /path/to/example/2/metagenome.fna.gz
+      -
+      -
+      - /path/to/coverage.tsv
+      - 0
+    * - example_3
+      - /path/to/example/3/metagenome.fna.gz
+      -
+      -
+      -
+      - 1
+
+.. note::
+   To retrieve coverage information from a sample's contig headers, provide a 1 value to the ``cov_from_contig_headers``.
+   Using a 0 in this column will designate to the workflow to try to retrieve coverage information from the provided coverage table (if it is provided)
+   or coverage information will be calculated by read alignments using the provided paired-end reads.
+
+.. note::
+    If you are providing a coverage table with your input metagenome, it must contain at least two columns of information, ``contig`` and ``coverage`` and
+    be tab-delimited.
+
+You may copy the below table as a csv and paste it into a file to begin your sample sheet. You will need to update your input parameters, accordingly.
+
+.. code-block: bash
+
+    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers
+    example_1,/path/to/example/1/metagenome.fna.gz,/path/to/paired-end/fwd_reads.fastq.gz,/path/to/paired-end/rev_reads.fastq.gz,,0
+    example_2,/path/to/example/2/metagenome.fna.gz,,,/path/to/coverage.tsv,0
+    example_3,/path/to/example/3/metagenome.fna.gz,,,,1
+
 
 :code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
     - :code:`standard` (default): runs all process jobs locally, (currently this requires Docker).
