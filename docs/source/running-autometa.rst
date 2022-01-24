@@ -101,7 +101,7 @@ Conda environment to install Nextflow and nf-core tools and then running the Aut
 .. _install-nextflow-nfcore-with-conda:
 
 Installing Nextflow and nf-core tools with Conda
-h
+************************************************
 
 If you have not previously installed/used Conda, you can get it using the
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
