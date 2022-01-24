@@ -55,9 +55,9 @@ Preparing a Sample Sheet
 ************************
 
 An example sample sheet for three possible ways to provide a sample as an input is provided below. The first example
-provides a metagenome with paired-end read information, such that contig coverages are determine using a read-based alignment
-sub-workflow. The second example uses pre-calculated coverage information by providing a coverage table with the input metagenome assembly.
-The third example retrieves coverage information from the assembly contig headers (Currently, this is only available assemblies constructed using SPAdes)
+provides a metagenome with paired-end read information, such that contig coverages may be determined using a read-based alignment
+sub-workflow. The second example uses pre-calculated coverage information by providing a coverage table *with* the input metagenome assembly.
+The third example retrieves coverage information from the assembly contig headers (Currently, this is only available with metagenomes assembled using SPAdes)
 
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 | sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_contig_headers |
@@ -70,15 +70,19 @@ The third example retrieves coverage information from the assembly contig header
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 
 .. note::
-   To retrieve coverage information from a sample's contig headers, provide a 1 value to the ``cov_from_contig_headers``.
-   Using a 0 in this column will designate to the workflow to try to retrieve coverage information from the provided coverage table (if it is provided)
-   or coverage information will be calculated by read alignments using the provided paired-end reads.
+   To retrieve coverage information from a sample's contig headers, provide a ``1`` value in the row under the ``cov_from_contig_headers`` column.
+   Using a ``0`` will designate to the workflow to try to retrieve coverage information from the coverage table (if it is provided)
+   or coverage information will be calculated by read alignments using the provided paired-end reads. If both paired-end reads and a coverage table are provided,
+   the pipeline will prioritize the coverage table.
 
 .. note::
     If you are providing a coverage table with your input metagenome, it must contain at least two columns of information, ``contig`` and ``coverage`` and
     be tab-delimited.
 
 You may copy the below table as a csv and paste it into a file to begin your sample sheet. You will need to update your input parameters, accordingly.
+
+Example ``sample_sheet.csv``
+----------------------------
 
 .. code-block:: bash
 
