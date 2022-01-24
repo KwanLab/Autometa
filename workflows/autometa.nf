@@ -6,12 +6,6 @@
 
 def modules = params.modules.clone()
 
-def check_for_file(path) {
-    return
-}
-
-// check if user wants to separate contigs based on taxonomy before binning
-
 if (params.single_db_dir) {
     internal_nr_dmnd_dir = params.single_db_dir
     internal_prot_accession2taxid_gz_dir = params.single_db_dir
@@ -45,18 +39,12 @@ if (!params.taxonomy_aware) {
  * -------------------------------------------------
 */
 
-include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers_options']                               )
-include { GET_SOFTWARE_VERSIONS                                 } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]                                   )
-include { HMMER_HMMSEARCH                                       } from '../modules/local/hmmer_hmmsearch'            addParams( options: modules['hmmsearch_options']                                    )
-include { HMMER_HMMSEARCH_FILTER                                } from '../modules/local/hmmer_hmmsearch_filter'      addParams( options: modules['hmmsearch_filter_options']                            )
-include { SEQKIT_FILTER                                         } from '../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]                                     )
-include { MERGE_TSV_WITH_HEADERS as MERGE_SPADES_COVERAGE_TSV   } from '../modules/local/merge_tsv'                   addParams( options: modules['spades_kmer_coverage']                                )
-include { MERGE_TSV_WITH_HEADERS as MERGE_HMMSEARCH             } from '../modules/local/merge_tsv'                   addParams( options: modules['merge_hmmsearch_options']                             )
-include { SEQKIT_SPLIT                                          } from '../modules/local/seqkit_split'                addParams( options: modules['seqkit_split_options'], num_splits: params.num_splits )
-include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']                                )
-include { MERGE_FASTA as MERGE_PRODIGAL                         } from '../modules/local/merge_fasta'                 addParams( )
-include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']                                )
-include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']                                    )
+include { ANALYZE_KMERS                                         } from '../modules/local/analyze_kmers'               addParams( options: modules['analyze_kmers_options'] )
+include { GET_SOFTWARE_VERSIONS                                 } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]     )
+include { SEQKIT_FILTER                                         } from '../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]       )
+include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']  )
+include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']  )
+include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']      )
 
 /*
  * -------------------------------------------------
@@ -66,7 +54,7 @@ include { MOCK_DATA_REPORT                                      } from '../modul
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
-include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParams( options: modules['prodigal_options']                         )
+include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParams( options: modules['prodigal_options'] )
 
 /*
  * -------------------------------------------------
@@ -74,97 +62,92 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
  * -------------------------------------------------
 */
 
-include { BINNING                  } from '../subworkflows/local/binning'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
-include { UNCLUSTERED_RECRUITMENT  } from '../subworkflows/local/unclustered_recruitment'      addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
-include { INPUT_CONTIGS            } from '../subworkflows/local/input_check'      addParams( )
-include { CREATE_MOCK              } from '../subworkflows/local/mock_data'        addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
-include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission    )
+include { CREATE_MOCK              } from '../subworkflows/local/mock_data'                addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
+include { INPUT_CHECK              } from '../subworkflows/local/input_check'              addParams( )
+include { CONTIG_COVERAGE          } from '../subworkflows/local/contig_coverage'          addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
+include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment'         addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
+include { BINNING                  } from '../subworkflows/local/binning'                  addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
+include { UNCLUSTERED_RECRUITMENT  } from '../subworkflows/local/unclustered_recruitment'  addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
+    samplesheet_ch = Channel.fromPath(params.input)
 
     if (params.mock_test){
         CREATE_MOCK()
         CREATE_MOCK.out.fasta
-            .set{input_ch}
+            .set{metagenome_ch}
+        coverage_tab_ch = Channel.empty()
     } else {
-        INPUT_CONTIGS()
-        INPUT_CONTIGS.out.metagenome
-            .set{input_ch}
+        INPUT_CHECK(samplesheet_ch)
+        INPUT_CHECK.out.metagenome
+            .set{metagenome_ch}
+        INPUT_CHECK.out.coverage
+            .set{coverage_tab_ch}
     }
 
 
     SEQKIT_FILTER(
-        input_ch
+        metagenome_ch
     )
+    fasta_ch = SEQKIT_FILTER.out.fasta
 
-    // Split contigs FASTA if running in parallel
-    if ( params.num_splits > 1 ) {
-        SEQKIT_SPLIT (
-            SEQKIT_FILTER.out.fasta
-        )
-        fasta_ch = SEQKIT_SPLIT.out.fasta.transpose()
+    /*
+    * -------------------------------------------------
+    *  Find coverage, currently only pulling from SPADES output
+    * -------------------------------------------------
+    */
+
+
+    if (!params.mock_test) {
+        coverage_input_ch = fasta_ch.join(INPUT_CHECK.out.reads)
     } else {
-        fasta_ch = SEQKIT_FILTER.out.fasta
+        coverage_input_ch = Channel.empty()
     }
 
-/*
- * -------------------------------------------------
- *  Find coverage, currently only pulling from SPADES output
- * -------------------------------------------------
-*/
+    CONTIG_COVERAGE (
+        coverage_input_ch
+    )
+    CONTIG_COVERAGE.out.coverage
+        .set{contig_coverage_ch}
 
     SPADES_KMER_COVERAGE (
-        fasta_ch
+        fasta_ch,
     )
+    SPADES_KMER_COVERAGE.out.coverage
+        .set{spades_kmer_coverage_ch}
+    // https://nextflow-io.github.io/patterns/index.html#_conditional_process_executions
+    contig_coverage_ch
+        .mix(spades_kmer_coverage_ch)
+        .mix(coverage_tab_ch)
+        .set{coverage_ch}
 
-    if ( params.num_splits > 1 ) {
-        MERGE_SPADES_COVERAGE_TSV (
-            SPADES_KMER_COVERAGE.out.coverages.groupTuple(),
-            "coverage"
-        )
-        MERGE_SPADES_COVERAGE_TSV.out.merged_tsv
-            .set{coverage_ch}
-    } else {
-        SPADES_KMER_COVERAGE.out.coverages
-            .set{coverage_ch}
-    }
-
-/*
- * -------------------------------------------------
- *  Find open reading frames with Prodigal
- * -------------------------------------------------
- * -------------------------------------------------
- *  If running in parallel, merge Prodigal results
-*/
+    /*
+    * -------------------------------------------------
+    *  Find open reading frames with Prodigal
+    * -------------------------------------------------
+    * -------------------------------------------------
+    *  If running in parallel, merge Prodigal results
+    */
 
     PRODIGAL (
         fasta_ch,
         "gbk"
     )
 
-    if ( params.num_splits > 1 ) {
-        MERGE_PRODIGAL (
-            PRODIGAL.out.amino_acid_fasta.groupTuple(),
-            "faa"
-        )
-        MERGE_PRODIGAL.out.merged
-            .set{merged_prodigal}
-    } else {
-        PRODIGAL.out.amino_acid_fasta
-            .set{merged_prodigal}
-    }
+    PRODIGAL.out.amino_acid_fasta
+        .set{orfs_ch}
 
-/*
- * -------------------------------------------------
- *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
- * -------------------------------------------------
-*/
+    /*
+    * -------------------------------------------------
+    *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
+    * -------------------------------------------------
+    */
 
     if (params.taxonomy_aware) {
         TAXON_ASSIGNMENT (
             fasta_ch,
-            merged_prodigal
+            orfs_ch
         )
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
@@ -176,11 +159,11 @@ workflow AUTOMETA {
         taxonomy_results = Channel.fromPath( taxonomy_results )
     }
 
-/*
-* -------------------------------------------------
-* Calculate k-mer frequencies
-* -------------------------------------------------
-*/
+    /*
+    * -------------------------------------------------
+    * Calculate k-mer frequencies
+    * -------------------------------------------------
+    */
 
     ANALYZE_KMERS(
         kmers_input_ch
@@ -192,26 +175,13 @@ workflow AUTOMETA {
         .set{kmers_embedded_ch}
 
 
-// --------------------------------------------------------------------------------
-// Run hmmsearch and look for marker genes in contig orfs
-// --------------------------------------------------------------------------------
-    // To move to hmmsearch instead of hmmscan:
-    // HMMER_HMMSEARCH.out.domtblout
-    //       .join(PRODIGAL.out.amino_acid_fasta)
-    //       .set{hmmsearch_out}
-    // HMMER_HMMSEARCH_FILTER(hmmsearch_out)
+    // --------------------------------------------------------------------------------
+    // Run hmmscan and look for marker genes in contig orfs
+    // --------------------------------------------------------------------------------
+
     MARKERS(PRODIGAL.out.amino_acid_fasta)
-    if ( params.num_splits > 1 ) {
-        MERGE_HMMSEARCH (
-            MARKERS.out.markers_tsv.groupTuple(),
-            "markers.tsv"
-        )
-        MERGE_HMMSEARCH.out.merged_tsv
-            .set{markers_ch}
-    } else {
-        MARKERS.out.markers_tsv
-            .set{markers_ch}
-    }
+    MARKERS.out.markers_tsv
+        .set{markers_ch}
 
     BINNING(
         fasta_ch,
@@ -234,19 +204,20 @@ workflow AUTOMETA {
         )
     }
 
-if (params.mock_test){
-    BINNING.out.binning_main
-        .join(
-            CREATE_MOCK.out.assembly_to_locus
-        )
-        .join(
-            CREATE_MOCK.out.assembly_report
-        )
-        .set { mock_input_ch }
+    if (params.mock_test){
+        BINNING.out.binning_main
+            .join(
+                CREATE_MOCK.out.assembly_to_locus
+            )
+            .join(
+                CREATE_MOCK.out.assembly_report
+            )
+            .set { mock_input_ch }
 
-    MOCK_DATA_REPORT(mock_input_ch,
-        file("$baseDir/lib/mock_data_report.Rmd")
-    )
-}
+        MOCK_DATA_REPORT(
+            mock_input_ch,
+            file("$baseDir/lib/mock_data_report.Rmd")
+        )
+    }
 
 }

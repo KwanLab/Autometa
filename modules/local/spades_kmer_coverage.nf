@@ -20,9 +20,13 @@ process SPADES_KMER_COVERAGE {
     input:
         tuple val(meta), path(metagenome)
 
+
     output:
-        tuple val(meta), path("coverage.tsv")     , emit: coverages
+        tuple val(meta), path("coverage.tsv")     , emit: coverage
         path  '*.version.txt'                     , emit: version
+
+    when:
+        meta.cov_from_headers
 
     script:
         def software = getSoftwareName(task.process)

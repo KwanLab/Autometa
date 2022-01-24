@@ -18,22 +18,23 @@ process BEDTOOLS_GENOMECOV {
     }
 
     input:
-        tuple val(meta), path(bam), path(lengths)
+        tuple val(meta), path(bam)
 
     output:
-        tuple val(meta), path("*.bed"), emit: bed
-        path  "*.version.txt"         , emit: version
+        tuple val(meta), path("alignments.bed"), emit: bed
+        path  "*.version.txt"                  , emit: version
+
+    when:
+        !meta.cov_from_spades
 
     script:
         def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
         """
         bedtools \\
             genomecov \\
             -ibam ${bam} \\
-            -g "${lengths}" \\
-            $options.args  > ${prefix}.bed
+            $options.args  > alignments.bed
 
-        bedtools --version | sed -e "s/bedtools v//g" > bedtools.version.txt
+        bedtools --version | sed -e "s/bedtools v//g" > ${software}.version.txt
         """
 }
