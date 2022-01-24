@@ -229,18 +229,21 @@ the default paths using ``autometa-config --print``. If you need to change the d
 ``autometa-config --section databases --option ncbi --value <path/to/new/ncbi_database_directory>``.
 See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-In your ``parameters.config`` file you also need to specify the directory where the different databases are present.
+In your ``nf-params.json`` file you also need to specify the directory where the different databases are present.
 Make sure that the directory path contains the following databases:
 
 - Diamond formatted nr file => nr.dmnd
 - Extracted files from tarball taxdump.tar.gz
 - prot.accession2taxid.gz
 
-.. code-block:: groovy
+.. code-block:: json
+    {
+        "single_db_dir" = "$HOME/Autometa/autometa/databases/ncbi"
+    }
 
-    // Find this section of code in parameters.config
-    // Update this path to folder with all NCBI databases
-    params.single_db_dir = "/Autometa/autometa/databases/ncbi"
+.. note::
+    Find the above section of code in ``nf-params.json`` and update this path to the folder
+    with all of the downloaded/formatted NCBI databases.
 
 CPUs, Memory, Disk
 ******************
