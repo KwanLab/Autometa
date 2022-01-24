@@ -470,8 +470,11 @@ To access these, do the same as importing any other python library.
 Examples
 ********
 
-samtools wrapper
+
+Samtools wrapper
 ================
+
+To incorporate a call to ``samtools sort`` inside of your python code using the Autometa samtools wrapper.
 
 .. code-block:: python
 
@@ -483,8 +486,11 @@ samtools wrapper
     # Run samtools sort command in ipython interpreter
     samtools.sort(sam="<path/to/alignment.sam>", out="<path/to/output/alignment.bam>", cpus=4)
 
+
 Metagenome Description
 ======================
+
+Here is an example to easily assess your metagenome's characteristics using Autometa's Metagenome class
 
 .. code-block:: python
 
@@ -507,6 +513,8 @@ Metagenome Description
 
 k-mer frequency counting, normalization, embedding
 ==================================================
+
+To quickly perform a k-mer frequency counting, normalization and embedding pipeline...
 
 .. code-block:: python
 
