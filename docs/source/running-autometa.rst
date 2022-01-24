@@ -280,10 +280,11 @@ a :code:`nf-params.json` file) would look something like:
 
     nextflow run KwanLab/Autometa -params-file nf-params.json -c process_high_mem.config
 
-.. attention::
+.. caution::
 
-    If you are restarting from a previous run, do not forget to also add the ``-resume`` flag to the nextflow run command
+    If you are restarting from a previous run, **DO NOT FORGET** to also add the ``-resume`` flag to the nextflow run command.
 
+    **Notice only 1 hyphen is used with ``-resume``**
 
 
 For additional information and examples see `Tuning workflow resources <https://nf-co.re/usage/configuration#running-nextflow-on-your-system>`_
