@@ -235,7 +235,8 @@ for kingdom in ${kingdoms[@]};do
         --gc-stddev-limit $gc_stddev_limit \
         --taxonomy $taxonomy \
         --starting-rank superkingdom \
-        --domain $kingdom
+        --rank-filter superkingdom \
+        --rank-name-filter $kingdom
 done
 
 # Step 7: Create binning summary files

@@ -41,7 +41,9 @@ process BIN_CONTIGS {
             --cov-stddev-limit ${params.cov_stddev_limit} \\
             --gc-stddev-limit ${params.gc_stddev_limit} \\
             --starting-rank ${params.binning_starting_rank} \\
-            --domain ${params.kingdom}
+            --cpus ${task.cpus} \\
+            --rank-filter superkingdom \\
+            --rank-name-filter ${params.kingdom}
 
         echo "TODO" > autometa.version.txt
         """
