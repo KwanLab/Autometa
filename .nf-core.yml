@@ -33,5 +33,7 @@ lint:
 
   actions_ci:
     - .github/workflows/ci.yml
+
+  schema_lint: true
   template_strings: false
   nextflow_config: false
