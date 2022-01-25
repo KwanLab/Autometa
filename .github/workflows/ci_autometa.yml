@@ -31,6 +31,7 @@ jobs:
           conda-channels: anaconda, conda-forge, bioconda
       - run: conda --version
       - run: conda install --file=requirements.txt
+      - run: pythom -m pip install trimap
       - run: conda install pytest codecov pytest-cov pytest-variables gdown
       - name: Generate coverage report
         run: |
