@@ -26,7 +26,7 @@ process SPADES_KMER_COVERAGE {
         path  '*.version.txt'                     , emit: version
 
     when:
-        meta.cov_from_headers
+        meta.cov_from_assembly == 'spades'
 
     script:
         def software = getSoftwareName(task.process)

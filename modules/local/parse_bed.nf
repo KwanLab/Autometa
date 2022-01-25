@@ -25,7 +25,7 @@ process PARSE_BED {
         path  "*.version.txt"                , emit: version
 
     when:
-        !meta.cov_from_spades
+        meta.cov_from_assembly == '0'
 
     script:
         def software = getSoftwareName(task.process)
