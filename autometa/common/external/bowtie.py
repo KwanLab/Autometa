@@ -70,9 +70,9 @@ def build(assembly: str, out: str) -> str:
 def align(
     db: str,
     sam: str,
-    fwd_reads: List = None,
-    rev_reads: List = None,
-    se_reads: List = None,
+    fwd_reads: List[str] = None,
+    rev_reads: List[str] = None,
+    se_reads: List[str] = None,
     cpus: int = 0,
     **kwargs,
 ) -> str:
