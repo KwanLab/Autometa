@@ -9,6 +9,7 @@ Script to summarize Autometa binning results
 
 import logging
 import os
+from pathlib import Path
 from typing import Union
 
 import pandas as pd
@@ -160,13 +161,13 @@ def get_metabin_stats(
         One of the required columns (`cluster_col`, coverage, length, gc_content) was not found in `bin_df`
     """
     logger.info(f"Retrieving metabins' stats for {cluster_col}")
-    if isinstance(markers, str):
+    if isinstance(markers, str) or isinstance(markers, Path):
         markers_df = load_markers(markers)
     elif isinstance(markers, pd.DataFrame):
         markers_df = markers
     else:
         raise TypeError(
-            f"`markers` should be a path to or pd.DataFrame of a markers table corresponding to contigs in `bin_df`. Provided: {markers}"
+            f"`markers` should be a path to or pd.DataFrame of a markers table corresponding to contigs in `bin_df`. Provided: {type(markers)}, {markers}"
         )
 
     metabin_stat_cols = [cluster_col, "coverage", "length", "gc_content"]

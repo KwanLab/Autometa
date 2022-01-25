@@ -47,7 +47,7 @@ def fixture_markers_fpath(markers, tmp_path):
 @pytest.fixture(name="disjoint_markers_fpath")
 def fixture_disjoint_markers_fpath(markers, bin_df, tmp_path):
     fpath = tmp_path / "disjoint_markers.tsv"
-    markers[~markers.index.isin(bin_df.index)].iloc[:1, :].to_csv(
+    markers.loc[~markers.index.isin(bin_df.index)].iloc[:1, :].to_csv(
         fpath, sep="\t", index=False, header=True
     )
     return fpath
@@ -153,17 +153,16 @@ def test_get_metabin_taxonomies(
         assert rank in df.columns
 
 
-@pytest.mark.skip
 def test_get_metabin_stats(bin_df, markers_fpath):
-    df = summary.get_metabin_stats(bin_df=bin_df, markers_fpath=markers_fpath)
+    df = summary.get_metabin_stats(bin_df=bin_df, markers=markers_fpath)
     assert df.index.name == "cluster"
-    assert df.shape == (5, 20)
+    assert df.shape == (5, 24)
 
 
 def test_get_metabin_stats_disjoint_markers(disjoint_markers_fpath, bin_df):
-    df = summary.get_metabin_stats(bin_df=bin_df, markers_fpath=disjoint_markers_fpath)
+    df = summary.get_metabin_stats(bin_df=bin_df, markers=disjoint_markers_fpath)
     assert df.index.name == "cluster"
-    assert df.shape == (5, 20)
+    assert df.shape == (5, 24)
 
 
 @pytest.mark.skip

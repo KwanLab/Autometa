@@ -7,6 +7,7 @@
 Script to test autometa/common/markers.py
 """
 
+import os
 import pytest
 import argparse
 import pandas as pd
@@ -34,7 +35,7 @@ def fixture_scans_fpath(variables, tmp_path):
     df = pd.read_json(markers_test_data["scans"])
     # There should be 24 columns in the hmmscan output file.
     assert df.shape[1] == 24
-    out = tmp_path / "hmmscan_output.tsv"
+    out = tmp_path / "archaea.markers.tsv"
     df.to_csv(out, sep="\t", index=False, header=True)
     return out.as_posix()
 
@@ -66,18 +67,22 @@ def mock_hmmscan_run(monkeypatch, scans_fpath):
 @pytest.fixture(name="mock_hmmscan_filter_tblout_markers")
 def mock_hmmscan_filter_tblout_markers(monkeypatch, filtered_markers_fpath):
     def return_args(*args, **kwargs):
-        return filtered_markers_fpath
+        return pd.read_csv(filtered_markers_fpath, sep="\t", index_col="contig")
 
     monkeypatch.setattr(
         hmmscan, name="filter_tblout_markers", value=return_args, raising=True
     )
 
 
-def test_marker_get(
-    markers_dbdir, orfs, mock_hmmscan_run, mock_hmmscan_filter_tblout_markers, tmp_path
+def test_markers_get(
+    markers_dbdir,
+    orfs,
+    mock_hmmscan_run,
+    mock_hmmscan_filter_tblout_markers,
+    tmp_path,
 ):
     kingdom = "archaea"
-    markers_fpath = tmp_path / f"{kingdom}.markers.tsv"
+    markers_fpath = tmp_path / "test.markers.tsv"
     df = markers.get(
         kingdom=kingdom,
         orfs=orfs,
@@ -85,7 +90,6 @@ def test_marker_get(
         out=markers_fpath,
         force=False,
         seed=42,
-        format="wide",
     )
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
@@ -141,6 +145,8 @@ def fixture_mock_parser(monkeypatch):
         kingdom = "bacteria"
         orfs = "orfs.faa"
         dbdir = "autometa/databases/markers"
+        hmmdb = "autometa/databases/markers/bacteria.single_copy.hmm"
+        cutoffs = "autometa/databases/markers/bacteria.single_copy.cutoffs"
         hmmscan = "bacteria.hmmscan.tsv"
         out = "bacteria.markers.tsv"
         force = True

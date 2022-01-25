@@ -591,10 +591,6 @@ def taxon_guided_binning(
     gc_content_stddev : float, optional
         cluster GC content threshold to retain cluster (the default is 5.0).
 
-    taxonomy : bool, optional
-        Split canonical ranks and subset based on rank then attempt to find clusters (the default is True).
-        taxonomic_levels = [superkingdom,phylum,class,order,family,genus,species]
-
     starting_rank : str, optional
         Starting canonical rank at which to begin subsetting taxonomy (the default is superkingdom).
         Choices are superkingdom, phylum, class, order, family, genus, species.
