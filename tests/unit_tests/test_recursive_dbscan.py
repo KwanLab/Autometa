@@ -98,23 +98,16 @@ def fixture_main_df(kmers, coverage, gc_content, taxonomy):
     return main_df
 
 
-@pytest.mark.parametrize("usetaxonomy", [True, False])
-@pytest.mark.parametrize("method", ["dbscan", "hdbscan"])
-def test_binning(main_df, markers, usetaxonomy, method):
+def test_taxon_guided_binning(main_df, markers):
     num_contigs = main_df.shape[0]
-    df = recursive_dbscan.binning(
+    df = recursive_dbscan.taxon_guided_binning(
         main=main_df,
         markers=markers,
-        taxonomy=usetaxonomy,
-        starting_rank="superkingdom",
-        reverse_ranks=False,
-        domain="bacteria",
-        completeness=20.0,
-        purity=95.0,
+        completeness=10.0,
+        purity=80.0,
         coverage_stddev=25.0,
         gc_content_stddev=5.0,
-        method=method,
-        verbose=True,
+        method="dbscan",
     )
     assert isinstance(df, pd.DataFrame)
     assert "cluster" in df.columns
@@ -122,39 +115,40 @@ def test_binning(main_df, markers, usetaxonomy, method):
     assert "completeness" in df.columns
     assert "coverage_stddev" in df.columns
     assert "gc_content_stddev" in df.columns
+    assert df.shape[0] == num_contigs
+
+
+@pytest.mark.parametrize("method", ["dbscan", "hdbscan"])
+def test_get_clusters(main_df, markers, method):
+    num_contigs = main_df.shape[0]
+    df = recursive_dbscan.get_clusters(
+        main=main_df,
+        markers_df=markers,
+        completeness=20.0,
+        purity=95.0,
+        coverage_stddev=25.0,
+        gc_content_stddev=5.0,
+        method=method,
+    )
+    assert isinstance(df, pd.DataFrame)
+    assert "cluster" in df.columns
+    assert "purity" in df.columns
     assert "completeness" in df.columns
+    assert "coverage_stddev" in df.columns
+    assert "gc_content_stddev" in df.columns
     assert df.shape[0] == num_contigs
 
 
 def test_binning_invalid_clustering_method(main_df, markers):
     with pytest.raises(ValueError):
-        recursive_dbscan.binning(
+        recursive_dbscan.get_clusters(
             main=main_df,
-            markers=markers,
-            taxonomy=False,
-            starting_rank="superkingdom",
-            reverse_ranks=False,
-            domain="bacteria",
+            markers_df=markers,
             completeness=20.0,
             purity=95.0,
+            coverage_stddev=5.0,
+            gc_content_stddev=5.0,
             method="invalid_clustering_method",
-            verbose=False,
-        )
-
-
-def test_binning_empty_markers_table(main_df):
-    invalid_dict = {
-        "contig": ["invalid_contig_1", "invalid_contig_2", "invalid_contig_3"],
-        "markers": ["invalid_marker1", "invalid_marker2", "invalid_marker3"],
-    }
-    df = pd.DataFrame(invalid_dict)
-    with pytest.raises(TableFormatError):
-        recursive_dbscan.binning(
-            main=main_df,
-            markers=df,
-            domain="bacteria",
-            method="hdbscan",
-            taxonomy=False,
         )
 
 
@@ -186,9 +180,12 @@ def test_recursive_dbscan_main(
             self.cov_stddev_limit = 25.0
             self.gc_stddev_limit = 5.0
             self.taxonomy = taxonomy
+            self.rank_filter = "superkingdom"
+            self.rank_name_filter = "bacteria"
             self.starting_rank = "superkingdom"
             self.reverse_ranks = False
             self.verbose = True
+            self.cpus = -1
 
     class MockParser:
         def add_argument(self, *args, **kwargs):

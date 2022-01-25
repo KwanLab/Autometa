@@ -78,13 +78,12 @@ def load(fpath, format="wide"):
 def get(
     kingdom: str,
     orfs: str,
-    hmmdb: str,
-    cutoffs: str,
+    hmmdb: str = None,
+    cutoffs: str = None,
     dbdir: str = MARKERS_DIR,
     scans: str = None,
     out: str = None,
     force: bool = False,
-    format: str = "wide",
     cpus: int = 8,
     parallel: bool = True,
     gnu_parallel: bool = False,
@@ -111,11 +110,6 @@ def get(
         Path to write annotated markers table.
     force : bool, optional
         Whether to overwrite existing `out` file path, by default False.
-    format : str, optional
-        * wide - returns wide dataframe of contig PFAM counts (default)
-        * long - returns long dataframe of contig PFAM counts
-        * list - returns list of pfams for each contig
-        * counts - returns count of pfams for each contig
     cpus: int, optional
         Number of cores to use if running in parallel, by default all available.
     parallel : bool, optional
@@ -185,7 +179,10 @@ def get(
             force=force,
         )
         logger.debug(f"marker gene cutoff filter finished: {out}")
-    return load(fpath=out, format=format)
+        grouped_df = df.groupby("contig")["sacc"]
+        return grouped_df.value_counts().unstack().convert_dtypes()
+    else:
+        return load(fpath=out, format="wide")
 
 
 def main():

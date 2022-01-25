@@ -118,6 +118,7 @@ def test_coverage_get_from_bed(metagenome, bed_alignment, tmp_path):
     assert out.exists()
 
 
+@pytest.mark.skip
 def test_coverage_get_from_reads(metagenome, fwd_reads, rev_reads, tmp_path):
     out = tmp_path / "covs_from_bed.tsv"
     df = coverage.get(

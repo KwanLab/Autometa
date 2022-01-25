@@ -61,12 +61,12 @@
                 "type": "integer",
                 "errorMessage": "Must supply either a 0 or 1",
                 "pattern": "^\\[0,1]$"
-            },
+            }
         },
         "required": [
             "sample",
             "assembly",
-            "cov_from_contig_headers",
+            "cov_from_contig_headers"
         ]
     }
 }
