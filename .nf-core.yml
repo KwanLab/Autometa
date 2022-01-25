@@ -1,12 +1,19 @@
 lint:
   files_exist:
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/workflows/branch.yml
+    - .github/workflows/ci.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
-    - .travis.yml
+    - assets/nf-core-autometa_logo_light.png
     - docs/usage.md
     - docs/output.md
     - docs/images/nf-core-autometa_logo.png
+    - docs/images/nf-core-autometa_logo_light.png
+    - docs/images/nf-core-autometa_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.md
+    - .github/ISSUE_TEMPLATE/feature_request.md
 
   files_unchanged:
     - manifest
@@ -23,5 +30,8 @@ lint:
     - LICENSE
     - .github/PULL_REQUEST_TEMPLATE.md
     - lib/NfcoreTemplate.groovy
+
+  actions_ci:
+    - .github/workflows/ci.yml
   template_strings: false
   nextflow_config: false
