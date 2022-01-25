@@ -58,8 +58,9 @@
                 ]
             },
             "cov_from_contig_headers": {
-                "type": "number",
-                "errorMessage": "Must supply either a 0 or 1"
+                "type": "integer",
+                "errorMessage": "Must supply either a 0 or 1",
+                "pattern": "^\\[0,1]$"
             },
         },
         "required": [
