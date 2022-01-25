@@ -20,7 +20,7 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
-    name: Python ${{ matrix.python-version }} pytest
+    name: Python ${{ matrix.python-version }} - ${{ matrix.os }} pytest
     steps:
       - uses: actions/checkout@v2
       - name: Setup conda
@@ -31,7 +31,7 @@ jobs:
           conda-channels: anaconda, conda-forge, bioconda
       - run: conda --version
       - run: conda install --file=requirements.txt
-      - run: pythom -m pip install trimap
+      - run: python -m pip install trimap
       - run: conda install pytest codecov pytest-cov pytest-variables gdown
       - name: Generate coverage report
         run: |
