@@ -46,16 +46,16 @@ def create_fastq_channel(LinkedHashMap row) {
     meta.cov_from_assembly = row.cov_from_assembly
 
     def array = []
-    if (meta.cov_from_assembly != '0' || file(row.coverage_tab).exists()) {
+    if (!meta.cov_from_assembly.equals('0') || file(row.coverage_tab).exists()) {
         return
     }
-    if (meta.cov_from_assembly == '0' and !file(row.fastq_1).exists()) {
+    if (meta.cov_from_assembly.equals('0') and !file(row.fastq_1).exists()) {
         exit 1, "ERROR: Please check input samplesheet -> Read 1 FastQ file does not exist and this sample was specified to compute coverage using reads!\n${row.fastq_1}"
     }
     if (meta.single_end) {
         array = [ meta, file(row.fastq_1), "0" ]
     } else {
-        if (!file(row.fastq_2).exists() and meta.cov_from_assembly == '0') {
+        if (!file(row.fastq_2).exists() and meta.cov_from_assembly.equals('0')) {
             exit 1, "ERROR: Please check input samplesheet -> Read 2 FastQ file does not exist and this sample was specified to compute coverage using reads!\n${row.fastq_2}"
         }
         array = [ meta, file(row.fastq_1), file(row.fastq_2) ]
@@ -86,10 +86,10 @@ def create_coverage_channel(LinkedHashMap row) {
     meta.cov_from_assembly = row.cov_from_assembly
 
     def array = []
-    if (meta.cov_from_assembly == '0' and !file(row.fastq_1).exists() and !file(row.coverage_tab).exists()) {
+    if (meta.cov_from_assembly.equals('0') and !file(row.fastq_1).exists() and !file(row.coverage_tab).exists()) {
         exit 1, "ERROR: Please check input samplesheet -> Coverage file does not exist!\n${row.coverage_tab}"
     }
-    if (meta.cov_from_assembly != '0' || !file(row.coverage_tab).exists()) {
+    if (!meta.cov_from_assembly.equals('0') || !file(row.coverage_tab).exists()) {
         // e.g. get coverage from headers or read alignments...
         // Don't create a coverage tab channel for the sample if it was not provided...
         return
