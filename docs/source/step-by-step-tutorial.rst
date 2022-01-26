@@ -1,5 +1,7 @@
+.. _step-by-step-tutorial:
+
 ===========================
-📓 Step by step tutorial 📓
+📓 Step by Step Tutorial 📓
 ===========================
 
 Here is the step by step tutorial of the entire pipeline. This is helpful in case you have your own files or just want to run a specific step.
