@@ -470,7 +470,7 @@ The slurm partition available on our cluster is ``queue``.  You'll need to updat
     profiles {
         // Find this section of code in nextflow.config
         slurm {
-            process.executer       = "slurm"
+            process.executor       = "slurm"
             // NOTE: You can determine your slurm partition (e.g. process.queue) with the `sinfo` command
             // Set SLURM partition with queue directive.
             process.queue = "queue" // <<-- change this to whatever your partition is called
