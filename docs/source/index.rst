@@ -14,9 +14,10 @@ Guide
 .. toctree::
    :maxdepth: 1
 
-   install
-   running-autometa-nextflow-workflow
-   running-autometa-bash-workflow
+   installation
+   getting-started
+   autometa-nextflow-workflow
+   autometa-bash-workflow
    step-by-step-tutorial
    databases
    examining-results

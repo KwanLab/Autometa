@@ -1,6 +1,8 @@
-==================================
-Running Autometa Nextflow Workflow
-==================================
+================================
+🍏 Autometa Nextflow Workflow 🍏
+================================
+
+.. _autometa-nextflow-workflow:
 
 Why nextflow?
 #############
@@ -10,7 +12,7 @@ Nextflow helps Autometa produce reproducible results while allowing the pipeline
 System Requirements
 ###################
 
-Currently the nextflow pipeline requires Docker so it must be installed on your system.
+Currently the nextflow pipeline requires Docker 🐳 so it must be installed on your system.
 If you don't have Docker installed you can install it from `docs.docker.com/get-docker <https://docs.docker.com/get-docker>`_.
 We plan on removing this dependency in future versions, so that other dependency managers
 (e.g. Conda, Singularity, etc) can be used.
@@ -20,9 +22,13 @@ can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest
 
 Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
 
+🍏 Data Preparation 🍏
+######################
 
-Data preparation
-################
+#. [Metagenome](:ref:`metagenome-assembly`)
+#. [Sample Sheet](:ref:`sample-sheet-preparation`)
+
+.. _metagenome-assembly:
 
 Metagenome Assembly
 *******************
@@ -49,7 +55,7 @@ The following is a typical workflow for metagenome assembly:
     This tool can compute a variety of assembly statistics one of which is N50.
     This can often be useful for selecting an appropriate length cutoff value for pre-processing the metagenome.
 
-
+.. _sample-sheet-preparation:
 
 Preparing a Sample Sheet
 ************************
@@ -70,7 +76,7 @@ The third example retrieves coverage information from the assembly contig header
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
 
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
-| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_assembly |
+| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_assembly       |
 +===========+======================================+========================================+========================================+=======================+=========================+
 | example_1 | /path/to/example/1/metagenome.fna.gz | /path/to/paired-end/fwd_reads.fastq.gz | /path/to/paired-end/rev_reads.fastq.gz |                       | 0                       |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
@@ -80,6 +86,7 @@ The third example retrieves coverage information from the assembly contig header
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 
 .. note::
+
    To retrieve coverage information from a sample's contig headers, provide the ``assembler`` used for the sample value in the row under the ``cov_from_assembly`` column.
    Using a ``0`` will designate to the workflow to try to retrieve coverage information from the coverage table (if it is provided)
    or coverage information will be calculated by read alignments using the provided paired-end reads. If both paired-end reads and a coverage table are provided,
@@ -114,6 +121,7 @@ Example ``sample_sheet.csv``
     example_3,/path/to/example/3/metagenome.fna.gz,,,,spades
 
 .. caution::
+
     Paths to any of the file inputs **must be absolute file paths**.
 
     e.g.
@@ -274,7 +282,7 @@ Make sure that the directory path contains the following databases:
 - Extracted files from tarball taxdump.tar.gz
 - prot.accession2taxid.gz
 
-.. code-block:: json
+.. code-block::
     {
         "single_db_dir" = "$HOME/Autometa/autometa/databases/ncbi"
     }
@@ -399,7 +407,7 @@ the repository and then run nextflow directly from the scripts as below:
 Useful options
 **************
 
-``-c`` : In case you have configured nextflow with your executor (see :ref:`Configure nextflow with your 'executor'`)
+``-c`` : In case you have configured nextflow with your executor (see :ref:`Configuring your nextflow Executor`)
 and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file
 using the ``-c`` flag
 
