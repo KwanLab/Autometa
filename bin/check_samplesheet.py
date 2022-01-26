@@ -126,7 +126,7 @@ def check_samplesheet(file_in, file_out):
                 )
             if cov_from_assembly not in cov_from_assembly_choices:
                 print_error(
-                    f"cov_from_assembly column must be one of {', '.join(cov_from_assembly_choices)}!",
+                    f"{cov_from_assembly} is not supported\n\nChoices for cov_from_assembly are: {', '.join(cov_from_assembly_choices)}!",
                     "Line",
                     line,
                 )

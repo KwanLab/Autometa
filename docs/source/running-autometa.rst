@@ -63,22 +63,36 @@ The third example retrieves coverage information from the assembly contig header
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
 
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
-| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_contig_headers |
+| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_assembly |
 +===========+======================================+========================================+========================================+=======================+=========================+
 | example_1 | /path/to/example/1/metagenome.fna.gz | /path/to/paired-end/fwd_reads.fastq.gz | /path/to/paired-end/rev_reads.fastq.gz |                       | 0                       |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 | example_2 | /path/to/example/2/metagenome.fna.gz |                                        |                                        | /path/to/coverage.tsv | 0                       |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
-| example_3 | /path/to/example/3/metagenome.fna.gz |                                        |                                        |                       | 1                       |
+| example_3 | /path/to/example/3/metagenome.fna.gz |                                        |                                        |                       | spades                  |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 
 .. note::
-   To retrieve coverage information from a sample's contig headers, provide a ``1`` value in the row under the ``cov_from_contig_headers`` column.
+   To retrieve coverage information from a sample's contig headers, provide the ``assembler`` used for the sample value in the row under the ``cov_from_assembly`` column.
    Using a ``0`` will designate to the workflow to try to retrieve coverage information from the coverage table (if it is provided)
    or coverage information will be calculated by read alignments using the provided paired-end reads. If both paired-end reads and a coverage table are provided,
    the pipeline will prioritize the coverage table.
 
    If you are providing a coverage table to ``coverage_tab`` with your input metagenome, it must be tab-delimited and contain *at least* the header columns, ``contig`` and ``coverage``.
+
+Supported Assemblers for ``cov_from_assembly``
+----------------------------------------------
+
++--------------+-----------------+-----------------------+
+|    Assembler | Supported (Y/N) | ``cov_from_assembly`` |
++==============+=================+=======================+
+| [meta]SPAdes |        Y        |       ``spades``      |
++--------------+-----------------+-----------------------+
+|    Unicycler |        N        |     ``unicycler``     |
++--------------+-----------------+-----------------------+
+|      Megahit |        N        |      ``megahit``      |
++--------------+-----------------+-----------------------+
+
 
 You may copy the below table as a csv and paste it into a file to begin your sample sheet. You will need to update your input parameters, accordingly.
 
@@ -87,10 +101,10 @@ Example ``sample_sheet.csv``
 
 .. code-block:: bash
 
-    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers
+    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly
     example_1,/path/to/example/1/metagenome.fna.gz,/path/to/paired-end/fwd_reads.fastq.gz,/path/to/paired-end/rev_reads.fastq.gz,,0
     example_2,/path/to/example/2/metagenome.fna.gz,,,/path/to/coverage.tsv,0
-    example_3,/path/to/example/3/metagenome.fna.gz,,,,1
+    example_3,/path/to/example/3/metagenome.fna.gz,,,,spades
 
 
 Basic
