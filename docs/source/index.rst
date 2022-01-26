@@ -22,6 +22,7 @@ Guide
    examining-results
    benchmarking
    installation
+   autometa-python-api
    scripts/usage
    contribution-guidelines
    Autometa_modules/modules
