@@ -16,6 +16,7 @@ Guide
 
    install
    running-autometa-nextflow-workflow
+   running-autometa-bash-workflow
    step-by-step-tutorial
    databases
    examining-results
