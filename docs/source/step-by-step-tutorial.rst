@@ -7,7 +7,7 @@ Here is the step by step tutorial of the entire pipeline. This is helpful in cas
 Before running anything make sure you have activated the conda environment using
 ``conda activate autometa``.
 
-See the :ref:`Install` page for details on setting up your conda environment.
+See the :ref:`Autometa Package Installation` page for details on setting up your conda environment.
 
 I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_.
 You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/tutorial/test_data/``.
