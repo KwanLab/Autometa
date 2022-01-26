@@ -57,12 +57,14 @@ via curl
 --------
 
 .. code-block:: bash
+
     curl -o autometa.sh https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
 
 via wget
 --------
 
 .. code-block:: bash
+
     wget https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
 
 .. note::
