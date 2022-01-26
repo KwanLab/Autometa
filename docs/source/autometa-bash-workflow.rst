@@ -7,6 +7,10 @@
 Getting Started
 ###############
 
+#. :ref:`Compute Environment Setup`
+#. :ref:`Download Workflow Template`
+#. :ref:`Configure Required Inputs`
+
 Compute Environment Setup
 *************************
 
@@ -38,8 +42,35 @@ Once Conda has finished creating the environment be sure to activate it:
 
     conda activate autometa
 
-Required Inputs
-***************
+Download Workflow Template
+**************************
+
+To run Autometa using the bash workflow you will simply need to download and configure the workflow template to your
+metagenomes specifications.
+
+* `autometa.sh https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa.sh`_
+* `autometa-large-data-mode.sh https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa-large-data-mode.sh`_
+
+Here are a few download commands if you do not want to navigate to the workflow on GitHub
+
+via curl
+--------
+
+.. code-block:: bash
+    curl -o autometa.sh https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
+
+via wget
+--------
+
+.. code-block:: bash
+    wget https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
+
+.. note::
+
+    The ``autometa-large-data-mode`` workflow is also available and is configured similarly to the ``autometa`` bash workflow.
+
+Configure Required Inputs
+*************************
 
 The Autometa bash workflow requires the following input file and directory paths. To see how to prepare each input, see :ref:`bash-workflow-data-preparation`
 
@@ -223,7 +254,7 @@ You may run the pipeline via bash:
 
 .. code-block:: bash
 
-    bash your_configured_autometa_workflow.sh
+    bash autometa.sh
 
 or submit the pipeline into a queue:
 
@@ -231,7 +262,7 @@ For example, with slurm:
 
 .. code-block:: bash
 
-    sbatch your_configured_autometa_workflow.sh
+    sbatch autometa.sh
 
 .. caution::
 
@@ -280,6 +311,12 @@ See :ref:`advanced-usage-binning` section for details
 ``gc_stddev_limit`` : Which clusters to keep depending on the GC% std.dev (default is 5%, e.g. ``5``).
 See :ref:`advanced-usage-binning` section for details
 
+.. note::
+
+    If you are configuring an autometa job using the ``autometa-large-data-mode.sh`` template,
+    there will be an additional parameter called, ``max_partition_size`` (default=10,000). This is the maximum size
+    partition the Autometa clustering algorithm will consider. Any taxon partitions larger than this setting
+    will be skipped.
 
 .. _SPAdes: http://cab.spbu.ru/software/spades/
 .. _Trimmomatic: http://www.usadellab.org/cms/?page=trimmomatic
