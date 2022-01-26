@@ -48,8 +48,8 @@ Download Workflow Template
 To run Autometa using the bash workflow you will simply need to download and configure the workflow template to your
 metagenomes specifications.
 
-* `autometa.sh https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa.sh`_
-* `autometa-large-data-mode.sh https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa-large-data-mode.sh`_
+* `autometa.sh <https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa.sh>`_
+* `autometa-large-data-mode.sh <https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa-large-data-mode.sh>`_
 
 Here are a few download commands if you do not want to navigate to the workflow on GitHub
 
