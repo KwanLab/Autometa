@@ -1,6 +1,9 @@
-================
-Running Autometa
-================
+.. _autometa-nextflow-workflow:
+
+================================
+🍏 Autometa Nextflow Workflow 🍏
+================================
+
 
 Why nextflow?
 #############
@@ -10,7 +13,7 @@ Nextflow helps Autometa produce reproducible results while allowing the pipeline
 System Requirements
 ###################
 
-Currently the nextflow pipeline requires Docker so it must be installed on your system.
+Currently the nextflow pipeline requires Docker 🐳 so it must be installed on your system.
 If you don't have Docker installed you can install it from `docs.docker.com/get-docker <https://docs.docker.com/get-docker>`_.
 We plan on removing this dependency in future versions, so that other dependency managers
 (e.g. Conda, Singularity, etc) can be used.
@@ -20,29 +23,40 @@ can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest
 
 Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
 
-
-Data preparation
+Data Preparation
 ################
 
-Autometa takes contigs as input, so you need to have previously assembled your shotgun metagenome.
-The following workflow is recommended:
+#. :ref:`metagenome-assembly`
+#. :ref:`sample-sheet-preparation`
 
-#. Trim adapter sequences from the reads.
+.. _metagenome-assembly:
+
+Metagenome Assembly
+*******************
+
+You will first need to assemble your shotgun metagenome, to provide to Autometa as input.
+
+The following is a typical workflow for metagenome assembly:
+
+#. Trim adapter sequences from the reads
 
    * We usually use Trimmomatic_.
 
-#. Quality check of reads to make sure that the adapters have been removed.
+#. Quality check the trimmed reads to ensure the adapters have been removed
 
    * We usually use FastQC_.
 
-#. Assemble the trimmed reads.
+#. Assemble the trimmed reads
 
    * We usually use MetaSPAdes which is a part of the SPAdes_ package.
 
-#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step.
+#. Check the quality of your assembly (Optional)
 
    * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
+    This tool can compute a variety of assembly statistics one of which is N50.
+    This can often be useful for selecting an appropriate length cutoff value for pre-processing the metagenome.
 
+.. _sample-sheet-preparation:
 
 Preparing a Sample Sheet
 ************************
@@ -63,22 +77,37 @@ The third example retrieves coverage information from the assembly contig header
     If you use SPAdes then Autometa can use the k-mer coverage information in the contig names (``example_3`` in the example sample sheet below).
 
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
-| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_contig_headers |
+| sample    | assembly                             | fastq_1                                | fastq_2                                | coverage_tab          | cov_from_assembly       |
 +===========+======================================+========================================+========================================+=======================+=========================+
 | example_1 | /path/to/example/1/metagenome.fna.gz | /path/to/paired-end/fwd_reads.fastq.gz | /path/to/paired-end/rev_reads.fastq.gz |                       | 0                       |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 | example_2 | /path/to/example/2/metagenome.fna.gz |                                        |                                        | /path/to/coverage.tsv | 0                       |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
-| example_3 | /path/to/example/3/metagenome.fna.gz |                                        |                                        |                       | 1                       |
+| example_3 | /path/to/example/3/metagenome.fna.gz |                                        |                                        |                       | spades                  |
 +-----------+--------------------------------------+----------------------------------------+----------------------------------------+-----------------------+-------------------------+
 
 .. note::
-   To retrieve coverage information from a sample's contig headers, provide a ``1`` value in the row under the ``cov_from_contig_headers`` column.
+
+   To retrieve coverage information from a sample's contig headers, provide the ``assembler`` used for the sample value in the row under the ``cov_from_assembly`` column.
    Using a ``0`` will designate to the workflow to try to retrieve coverage information from the coverage table (if it is provided)
    or coverage information will be calculated by read alignments using the provided paired-end reads. If both paired-end reads and a coverage table are provided,
    the pipeline will prioritize the coverage table.
 
    If you are providing a coverage table to ``coverage_tab`` with your input metagenome, it must be tab-delimited and contain *at least* the header columns, ``contig`` and ``coverage``.
+
+Supported Assemblers for ``cov_from_assembly``
+----------------------------------------------
+
++--------------+-----------------+-----------------------+
+|    Assembler | Supported (Y/N) | ``cov_from_assembly`` |
++==============+=================+=======================+
+| [meta]SPAdes |        Y        |       ``spades``      |
++--------------+-----------------+-----------------------+
+|    Unicycler |        N        |     ``unicycler``     |
++--------------+-----------------+-----------------------+
+|      Megahit |        N        |      ``megahit``      |
++--------------+-----------------+-----------------------+
+
 
 You may copy the below table as a csv and paste it into a file to begin your sample sheet. You will need to update your input parameters, accordingly.
 
@@ -87,11 +116,24 @@ Example ``sample_sheet.csv``
 
 .. code-block:: bash
 
-    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers
+    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly
     example_1,/path/to/example/1/metagenome.fna.gz,/path/to/paired-end/fwd_reads.fastq.gz,/path/to/paired-end/rev_reads.fastq.gz,,0
     example_2,/path/to/example/2/metagenome.fna.gz,,,/path/to/coverage.tsv,0
-    example_3,/path/to/example/3/metagenome.fna.gz,,,,1
+    example_3,/path/to/example/3/metagenome.fna.gz,,,,spades
 
+.. caution::
+
+    Paths to any of the file inputs **must be absolute file paths**.
+
+    e.g.
+
+    #. Replacing any instance of the ``$HOME`` variable with the real path
+
+        (``$HOME/Autometa/tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
+
+    #. Using the entire file path of the input
+
+        (``tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
 
 Basic
 #####
@@ -241,7 +283,7 @@ Make sure that the directory path contains the following databases:
 - Extracted files from tarball taxdump.tar.gz
 - prot.accession2taxid.gz
 
-.. code-block:: json
+.. code-block::
     {
         "single_db_dir" = "$HOME/Autometa/autometa/databases/ncbi"
     }
@@ -366,7 +408,7 @@ the repository and then run nextflow directly from the scripts as below:
 Useful options
 **************
 
-``-c`` : In case you have configured nextflow with your executor (see :ref:`Configure nextflow with your 'executor'`)
+``-c`` : In case you have configured nextflow with your executor (see :ref:`Configuring your nextflow Executor`)
 and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file
 using the ``-c`` flag
 
@@ -428,7 +470,7 @@ The slurm partition available on our cluster is ``queue``.  You'll need to updat
     profiles {
         // Find this section of code in nextflow.config
         slurm {
-            process.executer       = "slurm"
+            process.executor       = "slurm"
             // NOTE: You can determine your slurm partition (e.g. process.queue) with the `sinfo` command
             // Set SLURM partition with queue directive.
             process.queue = "queue" // <<-- change this to whatever your partition is called
@@ -458,100 +500,6 @@ Create a new image by navigating to the top Autometa directory and running ``mak
 Autometa Docker image, tagged with the name of the current Git branch.
 
 To use this tagged version (or any other Autometa image tag) add the argument ``--autometa_image tag_name`` to the nextflow run command
-
-
-Running modules
-###############
-
-Many of the Autometa modules may be run standalone.
-
-Simply pass in the ``-m`` flag when calling a script to signify to python you are
-running the script as an Autometa *module*.
-
-I.e. ``python -m autometa.common.kmers -h``
-
-.. note::
-    Autometa has many *entrypoints* available that are utilized by the nextflow workflow. If you have installed autometa,
-    all of these entrypoints will be available to you.
-
-Using Autometa's Python API
-###########################
-
-Autometa's classes and functions are available after installation.
-To access these, do the same as importing any other python library.
-
-Examples
-********
-
-
-Samtools wrapper
-----------------
-
-To incorporate a call to ``samtools sort`` inside of your python code using the Autometa samtools wrapper.
-
-.. code-block:: python
-
-    from autometa.common.external import samtools
-
-    # To see samtools.sort parameters try the commented command below:
-    # samtools.sort?
-
-    # Run samtools sort command in ipython interpreter
-    samtools.sort(sam="<path/to/alignment.sam>", out="<path/to/output/alignment.bam>", cpus=4)
-
-
-Metagenome Description
-----------------------
-
-Here is an example to easily assess your metagenome's characteristics using Autometa's Metagenome class
-
-.. code-block:: python
-
-    from autometa.common.metagenome import Metagenome
-
-    # To see input parameters, instance attributes and methods
-    # Metagenome?
-
-    # Create a metagenome instance
-    mg = Metagenome(assembly="/path/to/metagenome.fasta")
-
-    # To see available methods (ignore any elements in the list with a double underscore)
-    dir(mg)
-
-    # Get pandas dataframe of metagenome details.
-    metagenome_df = mg.describe()
-
-    metagenome_df.to_csv("path/to/metagenome_description.tsv", sep='\t', index=True, header=True)
-
-
-k-mer frequency counting, normalization, embedding
---------------------------------------------------
-
-To quickly perform a k-mer frequency counting, normalization and embedding pipeline...
-
-.. code-block:: python
-
-    from autometa.common import kmers
-
-    # Count kmers
-    counts = kmers.count(
-        assembly="/path/to/metagenome.fasta",
-        size=5
-    )
-
-    # Normalize kmers
-    norm_df = kmers.normalize(
-        df=counts,
-        method="ilr"
-    )
-
-    # Embed kmers
-    embed_df = kmers.embed(
-        norm_df,
-        pca_dimensions=50,
-        embed_dimensions=3,
-        method="densmap"
-    )
 
 
 .. _nextflow: https://www.nextflow.io/

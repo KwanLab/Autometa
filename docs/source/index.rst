@@ -14,12 +14,15 @@ Guide
 .. toctree::
    :maxdepth: 1
 
-   install
-   running-autometa
+   getting-started
+   autometa-nextflow-workflow
+   autometa-bash-workflow
    step-by-step-tutorial
    databases
    examining-results
    benchmarking
+   installation
+   autometa-python-api
    scripts/usage
    contribution-guidelines
    Autometa_modules/modules

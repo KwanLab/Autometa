@@ -1,9 +1,13 @@
-=======
-Install
-=======
+=============================
+Autometa Package Installation
+=============================
 
-Currently installation is supported by conda_ and docker_.
+Currently Autometa package installation is supported by conda_ and docker_.
 For installation using conda, we suggest downloading miniconda_.
+
+.. attention::
+
+    If you are only trying to run the Autometa workflow, you should start at :ref:`Getting Started` before proceeding.
 
 Direct installation (Quickest)
 ==============================
@@ -58,10 +62,10 @@ Download and install miniconda_. Now run the following commands:
     # Install the autometa code base from source
     python setup.py install
 
-Docker image
-============
+Building the Docker image
+=========================
 
-You can build a docker image for your clone of Autometa repository.
+You can build a docker image for your clone of the Autometa repository.
 
 #. Install Docker_
 #. Run the following commands
@@ -74,7 +78,7 @@ You can build a docker image for your clone of Autometa repository.
     git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
-    # This will tag the image as jason-c-kwan/autometa:<your current branch>
+    # This will tag the image as jasonkwan/autometa:<your current branch>
     make image
 
 Testing Autometa

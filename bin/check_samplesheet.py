@@ -50,7 +50,7 @@ def check_samplesheet(file_in, file_out):
      *and* although for sample 2 reads were provided, the input is specifying to
     retrieve the coverage information from the assembly's contigs' headers.
 
-    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_contig_headers
+    sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly
     SAMPLE_1,ASSEMBLY_1,fwd_reads.fastq.gz,rev_reads.fastq.gz,,0
     SAMPLE_2,ASSEMBLY_2,fwd_reads.fastq.gz,rev_reads.fastq.gz,,1
     SAMPLE_3,ASSEMBLY_3,,,,1
@@ -61,7 +61,7 @@ def check_samplesheet(file_in, file_out):
     """
 
     samples = {}
-    min_col_names = ["sample", "assembly", "cov_from_contig_headers"]
+    min_col_names = ["sample", "assembly", "cov_from_assembly"]
     min_num_cols = len(min_col_names)
     req_header_cols = [
         "sample",
@@ -69,7 +69,7 @@ def check_samplesheet(file_in, file_out):
         "fastq_1",
         "fastq_2",
         "coverage_tab",
-        "cov_from_contig_headers",
+        "cov_from_assembly",
     ]
     num_required_cols = len(req_header_cols)
     with open(file_in, "r") as fh:
@@ -110,22 +110,25 @@ def check_samplesheet(file_in, file_out):
                 fastq_1,
                 fastq_2,
                 coverage_tab,
-                cov_from_headers,
+                cov_from_assembly,
             ) = sample_cols
 
             sample = sample.replace(" ", "_")
             if not sample:
                 print_error("Sample entry has not been specified!", "Line", line)
 
-            if not cov_from_headers:
+            cov_from_assembly_choices = set(["0", "spades"])
+            if not cov_from_assembly:
                 print_error(
-                    "Must provide a value ('0' or '1') for cov_from_contig_headers column!",
+                    f"Must provide a value ({', '.join(cov_from_assembly_choices)}) for cov_from_assembly column!",
                     "Line",
                     line,
                 )
-            if cov_from_headers not in {"0", "1"}:
+            if cov_from_assembly not in cov_from_assembly_choices:
                 print_error(
-                    "cov_from_contig_headers column must be '0' or '1'!", "Line", line
+                    f"{cov_from_assembly} is not supported\n\nChoices for cov_from_assembly are: {', '.join(cov_from_assembly_choices)}!",
+                    "Line",
+                    line,
                 )
 
             ## Check FastQ file extension
@@ -145,7 +148,7 @@ def check_samplesheet(file_in, file_out):
             # Same goes for the fastq_* files
             coverage_tab = coverage_tab if coverage_tab else "0"
             ## Auto-detect paired-end/single-end
-            ## [ assembly, single_end, fastq_1, fastq_2, coverage_tab, cov_from_contig_headers ]
+            ## [ assembly, single_end, fastq_1, fastq_2, coverage_tab, cov_from_assembly ]
             sample_info = []
             if fastq_1 and fastq_2:  ## Paired-end short reads
                 sample_info = [
@@ -154,7 +157,7 @@ def check_samplesheet(file_in, file_out):
                     fastq_1,
                     fastq_2,
                     coverage_tab,
-                    cov_from_headers,
+                    cov_from_assembly,
                 ]
             elif fastq_1 and not fastq_2:  ## Single-end short reads
                 sample_info = [
@@ -163,12 +166,12 @@ def check_samplesheet(file_in, file_out):
                     fastq_1,
                     "0",
                     coverage_tab,
-                    cov_from_headers,
+                    cov_from_assembly,
                 ]
             else:
-                sample_info = [assembly, "0", "0", "0", coverage_tab, cov_from_headers]
+                sample_info = [assembly, "0", "0", "0", coverage_tab, cov_from_assembly]
 
-            ## Create sample mapping dictionary = { sample: [ assembly, single_end, fastq_1, fastq_2, cov_from_contig_headers ] }
+            ## Create sample mapping dictionary = { sample: [ assembly, single_end, fastq_1, fastq_2, cov_from_assembly ] }
             if sample in samples:
                 print_error("Samplesheet contains duplicate samples!", "Line", line)
             samples[sample] = sample_info
@@ -193,7 +196,7 @@ def check_samplesheet(file_in, file_out):
                 "fastq_1",
                 "fastq_2",
                 "coverage_tab",
-                "cov_from_contig_headers",
+                "cov_from_assembly",
             ]
         )
         + "\n"
