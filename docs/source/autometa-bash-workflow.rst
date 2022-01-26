@@ -1,8 +1,8 @@
+.. _autometa-bash-workflow:
+
 ============================
 🐚 Autometa Bash Workflow 🐚
 ============================
-
-.. _autometa-bash-workflow:
 
 Getting Started
 ###############
@@ -53,8 +53,8 @@ The Autometa bash workflow requires the following input file and directory paths
 
 .. _bash-workflow-data-preparation:
 
-🐚 Data preparation 🐚
-######################
+Data preparation
+################
 
 #. :ref:`metagenome-preparation` (``assembly``)
 #. :ref:`alignments-preparation` (``bam``)
@@ -127,13 +127,11 @@ ORFs
 ****
 
 .. note::
-    The following example requires ``prodigal``
-
-    ``conda install -c bioconda prodigal``
+    The following example requires ``prodigal``. e.g. ``conda install -c bioconda prodigal``
 
 .. code-block:: bash
 
-    prodigal -i ${assembly} \\
+    prodigal -i metagenome.fna \\
         -f "gbk" \\
         -d "metagenome.orfs.fna" \\
         -o "metagenome.orfs.gbk" \\
@@ -142,13 +140,11 @@ ORFs
 
 .. _blastp-preparation:
 
-Diamond BlastP Preparation
+Diamond blastp Preparation
 **************************
 
 .. note::
-    The following example requires ``diamond``
-
-    ``conda install -c bioconda diamond``
+    The following example requires ``diamond``. e.g. ``conda install -c bioconda diamond``
 
 .. code-block:: bash
 
@@ -160,8 +156,8 @@ Diamond BlastP Preparation
 
 .. _ncbi-preparation:
 
-NCBI
-*****
+NCBI Preparation
+****************
 
 If you are running Autometa for the first time you'll have to download the NCBI databases.
 
@@ -177,6 +173,7 @@ If you are running Autometa for the first time you'll have to download the NCBI 
 
 .. note::
     You can check the default config paths using ``autometa-config --print``.
+
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
 The previous command will download the following NCBI databases:

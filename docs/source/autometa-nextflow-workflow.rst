@@ -1,8 +1,9 @@
+.. _autometa-nextflow-workflow:
+
 ================================
 🍏 Autometa Nextflow Workflow 🍏
 ================================
 
-.. _autometa-nextflow-workflow:
 
 Why nextflow?
 #############
@@ -22,11 +23,11 @@ can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest
 
 Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
 
-🍏 Data Preparation 🍏
-######################
+Data Preparation
+################
 
-#. [Metagenome](:ref:`metagenome-assembly`)
-#. [Sample Sheet](:ref:`sample-sheet-preparation`)
+#. :ref:`metagenome-assembly`
+#. :ref:`sample-sheet-preparation`
 
 .. _metagenome-assembly:
 

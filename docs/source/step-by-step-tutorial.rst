@@ -1,6 +1,6 @@
-=====================
-Step by step tutorial
-=====================
+===========================
+📓 Step by step tutorial 📓
+===========================
 
 Here is the step by step tutorial of the entire pipeline. This is helpful in case you have your own files or just want to run a specific step.
 
@@ -14,10 +14,14 @@ I will be going through this tutorial using the 78Mbp test dataset which can be 
 1. Length filter
 ----------------
 
-The first step when running autometa is the legth filtering. This would remove any contigs that are below the length cutoff. This is useful in removing the noise from the data, as small contigs may have ambigious kmer frequencies. The default cutoff if 3,000bp, ie. any contig that is smaller than 3,000bp would be removed.
+The first step when running Autometa is the length filtering. This would remove any contigs that are below the length cutoff. This is useful in removing the noise from the data,
+as small contigs may have ambiguous kmer frequencies. The default cutoff if 3,000bp, ie. any contig that is smaller than 3,000bp would be removed.
 
 .. note::
-    It is important that you alter the cutoff based on your N50. If your N50 is really small, e.g. 500bp (pretty common for soil assemblies), then you might want to lower your cutoff to somehwere near N50. The tradeoff with lowing the length cutoff, however, is a greater number of contigs which may make it more difficult for the dataset to be binned. As was shown in the `Autometa <https://academic.oup.com/nar/article/47/10/e57/5369936>`_ paper, as assembly quality degrades so does the binning performance.
+    It is important that you alter the cutoff based on your N50. If your N50 is really small, e.g. 500bp (pretty common for soil assemblies),
+    then you might want to lower your cutoff to somewhere near N50. The tradeoff with lowing the length cutoff, however, is a greater number of
+    contigs which may make it more difficult for the dataset to be binned. As was shown in the `Autometa <https://academic.oup.com/nar/article/47/10/e57/5369936>`_ paper,
+    as assembly quality degrades so does the binning performance.
 
 Use the following command to run the length-filter step:
 
