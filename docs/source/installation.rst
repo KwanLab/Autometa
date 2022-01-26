@@ -1,9 +1,14 @@
-=======
-Install
-=======
+=============================
+Autometa Package Installation
+=============================
 
-Currently installation is supported by conda_ and docker_.
+Currently the Autometa package installation is supported by conda_ and docker_.
 For installation using conda, we suggest downloading miniconda_.
+
+.. attention::
+
+    If you are only trying to run the Autometa workflow, you should start at :ref:`Getting Started` before proceeding
+    with installation of the Autometa package.
 
 Direct installation (Quickest)
 ==============================

@@ -14,7 +14,6 @@ Guide
 .. toctree::
    :maxdepth: 1
 
-   installation
    getting-started
    autometa-nextflow-workflow
    autometa-bash-workflow
@@ -22,6 +21,7 @@ Guide
    databases
    examining-results
    benchmarking
+   installation
    scripts/usage
    contribution-guidelines
    Autometa_modules/modules

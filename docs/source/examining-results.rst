@@ -9,8 +9,8 @@ An interactive interface for exploration and refinement of metagenomes Automappa
 
 For details, see the `Automappa page <https://github.com/WiscEvan/Automappa>`__
 
-.. note:: 
-    The performance of of Automappa may slow down when trying to visualize highly complex communities. 
+.. note::
+    The performance of Automappa may slow down when trying to visualize highly complex communities.
 
 Visualize bins
 ==============
@@ -27,12 +27,12 @@ You can now run the following R scripts (preferably in RStudio) to examine your 
     # Read the main binning table
     filepath="/Users/sidd/Research/simulated/78mbp_metagenome.main.tsv"
     data = read.table(filepath, header=TRUE, sep='\t')
-    
+
     # Fill empty cells as unclustered
     data$cluster <- sub("^$", "Unclustered", data$cluster)
 
     ggplot(data, aes(x=x_1, y=x_2, color=cluster, group=cluster)) +
-        geom_point(size=(sqrt(data$length))/100, shape=20, alpha=0.5) + 
+        geom_point(size=(sqrt(data$length))/100, shape=20, alpha=0.5) +
         theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') +
         guides( color = guide_legend( title = 'Genome Bin' ))
 
@@ -46,14 +46,14 @@ In addition to using nucleotide composition, Autometa uses coverage and can also
 .. code-block:: R
 
     ggplot(data, aes(x=x_1, y=x_2, color=phylum, group=phylum)) +
-        geom_point(size=(sqrt(data$length))/100, shape=20, alpha=0.5) + 
+        geom_point(size=(sqrt(data$length))/100, shape=20, alpha=0.5) +
         theme_classic() + xlab('BH-tSNE X') + ylab('BH-tSNE Y') +
-        guides( color = guide_legend( title = 'Phylum' )) 
+        guides( color = guide_legend( title = 'Phylum' ))
 
 .. image:: ../img/78Mbp_col_phylum.svg
     :alt: 78Mbp_col_phylum
 
-In the above plot, we have now colored the points by taxonomic phylum, and this reveals that several clusters that are close together in BH-tSNE space are in fact quite divergent from one another (like bottom left). This is probably the basis for Autometa's assignment of separate bins in these cases. 
+In the above plot, we have now colored the points by taxonomic phylum, and this reveals that several clusters that are close together in BH-tSNE space are in fact quite divergent from one another (like bottom left). This is probably the basis for Autometa's assignment of separate bins in these cases.
 
 In some cases, the contigs in a bin may in fact look divergent. You may want to manually examine cases such as these, but they could well be real if, for example, some contigs have few protein coding genes, or the organism is highly divergent from known sequences (see our paper `here <https://www.nature.com/articles/srep34362>`__ for some examples).
 
@@ -64,7 +64,7 @@ In this particular dataset, the coverages of all genomes are fairly similar, as 
     ggplot(data, aes(x=coverage, y=gc_content, color=cluster, group=cluster)) +
         geom_point(size=(sqrt(data$length))/100, shape=20, alpha=0.5) +
         theme_classic() + xlab('Coverage') + ylab('GC content') +
-        guides( color = guide_legend( title = 'Genome Bin' )) 
+        guides( color = guide_legend( title = 'Genome Bin' ))
 
 
 .. image:: ../img/78Mbp_col_coverage.svg
