@@ -75,6 +75,7 @@ docs/_build/
 docs/source/_build/
 docs/source/scripts
 docs/source/API_documentation
+docs/source/Autometa_modules
 
 # PyBuilder
 target/
