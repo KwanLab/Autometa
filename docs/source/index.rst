@@ -15,7 +15,7 @@ Guide
    :maxdepth: 1
 
    install
-   running-autometa
+   running-autometa-nextflow-workflow
    step-by-step-tutorial
    databases
    examining-results

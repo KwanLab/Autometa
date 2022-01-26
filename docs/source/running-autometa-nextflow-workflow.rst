@@ -1,6 +1,6 @@
-================
-Running Autometa
-================
+==================================
+Running Autometa Nextflow Workflow
+==================================
 
 Why nextflow?
 #############
@@ -24,24 +24,31 @@ Nextflow (required) and nf-core tools (optional but highly recommended) installa
 Data preparation
 ################
 
-Autometa takes contigs as input, so you need to have previously assembled your shotgun metagenome.
-The following workflow is recommended:
+Metagenome Assembly
+*******************
 
-#. Trim adapter sequences from the reads.
+You will first need to assemble your shotgun metagenome, to provide to Autometa as input.
+
+The following is a typical workflow for metagenome assembly:
+
+#. Trim adapter sequences from the reads
 
    * We usually use Trimmomatic_.
 
-#. Quality check of reads to make sure that the adapters have been removed.
+#. Quality check the trimmed reads to ensure the adapters have been removed
 
    * We usually use FastQC_.
 
-#. Assemble the trimmed reads.
+#. Assemble the trimmed reads
 
    * We usually use MetaSPAdes which is a part of the SPAdes_ package.
 
-#. An optional thing to do here would be to check the quality of your assembly as well. This would give you a variety of assembly statistics one of which is N50 which will be useful in selecting the cutoff value during the Autometa length-filter step.
+#. Check the quality of your assembly (Optional)
 
    * We usually use metaQuast_ for this (use ``--min-contig 1`` option to get an accurate N50).
+    This tool can compute a variety of assembly statistics one of which is N50.
+    This can often be useful for selecting an appropriate length cutoff value for pre-processing the metagenome.
+
 
 
 Preparing a Sample Sheet
@@ -106,6 +113,18 @@ Example ``sample_sheet.csv``
     example_2,/path/to/example/2/metagenome.fna.gz,,,/path/to/coverage.tsv,0
     example_3,/path/to/example/3/metagenome.fna.gz,,,,spades
 
+.. caution::
+    Paths to any of the file inputs **must be absolute file paths**.
+
+    e.g.
+
+    #. Replacing any instance of the ``$HOME`` variable with the real path
+
+        (``$HOME/Autometa/tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
+
+    #. Using the entire file path of the input
+
+        (``tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
 
 Basic
 #####
