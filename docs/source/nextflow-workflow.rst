@@ -126,15 +126,13 @@ Example ``sample_sheet.csv``
 
     Paths to any of the file inputs **must be absolute file paths**.
 
-    e.g.
-
-    #. Replacing any instance of the ``$HOME`` variable with the real path
-
-        (``$HOME/Autometa/tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
-
-    #. Using the entire file path of the input
-
-        (``tests/data/metagenome.fna.gz`` --> ``/home/user/Autometa/tests/data/metagenome.fna.gz``)
+    +-------------------------------------------------+------------------------------------------------------+---------------------------------------------------------------------+
+    |                        ❌                        |                           ✅                          |                             Description                             |
+    +=================================================+======================================================+=====================================================================+
+    | ``$HOME/Autometa/tests/data/metagenome.fna.gz`` | ``/home/user/Autometa/tests/data/metagenome.fna.gz`` | Replacing any instance of the ``$HOME`` variable with the real path |
+    +-------------------------------------------------+------------------------------------------------------+---------------------------------------------------------------------+
+    |         ``tests/data/metagenome.fna.gz``        | ``/home/user/Autometa/tests/data/metagenome.fna.gz`` |               Using the entire file path of the input               |
+    +-------------------------------------------------+------------------------------------------------------+---------------------------------------------------------------------+
 
 Basic
 #####
