@@ -254,6 +254,12 @@ the page. After returning to the terminal you should be provided the option
     using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens
     (e.g. :code:`--outdir /path/to/output/workflow/results`)
 
+.. caution::
+
+    If you are restarting from a previous run, **DO NOT FORGET** to also add the ``-resume`` flag to the nextflow run command.
+
+    **Notice only 1 hyphen is used** with the ``-resume`` nextflow parameter!
+
 
 Advanced
 ########
@@ -326,7 +332,7 @@ CPUs, Memory, Disk
     - :code:`--max_time = 48.h`
 
 The best practice to change the resources is to create a new config file and point to it at runtime by adding the
-flag :code:`-c path/to/config_file`
+flag :code:`-c path/to/custom/file.config`
 
 
 For example, to give all resource-intensive (i.e. having ``label process_high``) jobs additional memory and cpus, create a file called :code:`process_high_mem.config` and insert

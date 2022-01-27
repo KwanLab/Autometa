@@ -304,10 +304,10 @@ Choices are ``decision_tree`` and ``random_forest`` (default is ``decision_tree`
 ``completeness`` :  Minimum completeness needed to keep a cluster (default is at least 20% complete, e.g. ``20``).
 See :ref:`advanced-usage-binning` section for details
 
-``purity`` : Minimum purity needed to keep a cluster (default is atleast 95% pure, e.g. ``95``).
+``purity`` : Minimum purity needed to keep a cluster (default is at least 95% pure, e.g. ``95``).
 See :ref:`advanced-usage-binning` section for details
 
-``cov_stddev_limit`` : Which clusters to keep depending on the covergae std.dev (default is 25%, e.g. ``25``).
+``cov_stddev_limit`` : Which clusters to keep depending on the coverage std.dev (default is 25%, e.g. ``25``).
 See :ref:`advanced-usage-binning` section for details
 
 ``gc_stddev_limit`` : Which clusters to keep depending on the GC% std.dev (default is 5%, e.g. ``5``).
