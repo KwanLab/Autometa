@@ -399,10 +399,10 @@ Choices are ``decision_tree`` and ``random_forest`` (default is ``decision_tree`
 ``params.completeness`` :  Minimum completeness needed to keep a cluster (default is at least 20% complete, e.g. ``20``).
 See :ref:`advanced-usage-binning` section for details
 
-``params.purity`` : Minimum purity needed to keep a cluster (default is atleast 95% pure, e.g. ``95``).
+``params.purity`` : Minimum purity needed to keep a cluster (default is at least 95% pure, e.g. ``95``).
 See :ref:`advanced-usage-binning` section for details
 
-``params.cov_stddev_limit`` : Which clusters to keep depending on the covergae std.dev (default is 25%, e.g. ``25``).
+``params.cov_stddev_limit`` : Which clusters to keep depending on the coverage std.dev (default is 25%, e.g. ``25``).
 See :ref:`advanced-usage-binning` section for details
 
 ``params.gc_stddev_limit`` : Which clusters to keep depending on the GC% std.dev (default is 5%, e.g. ``5``).
@@ -428,7 +428,7 @@ the repository and then run nextflow directly from the scripts as below:
     nf-core launch $HOME/Autometa
 
     # Then run nextflow
-    nextflow run $HOME/Autometa -params-file nf-params.json
+    nextflow run $HOME/Autometa -params-file nf-params.json -profile slurm
 
 .. note::
 
