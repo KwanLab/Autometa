@@ -15,8 +15,8 @@ Guide
    :maxdepth: 1
 
    getting-started
-   autometa-nextflow-workflow
-   autometa-bash-workflow
+   nextflow-workflow
+   bash-workflow
    step-by-step-tutorial
    databases
    examining-results
@@ -26,6 +26,7 @@ Guide
    scripts/usage
    contribution-guidelines
    Autometa_modules/modules
+   legacy-autometa
    license
 
 

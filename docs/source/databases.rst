@@ -17,7 +17,7 @@ NCBI
 
 If you are running Autometa for the first time you will need to download the NCBI databases.
 You may do this manually or using a few Autometa helper scripts. If you would like to use Autometa's
-scripts for this, you will first need to download Autometa (See :ref:`Autometa Package Installation`).
+scripts for this, you will first need to download Autometa (See :ref:`Installation`).
 
 .. code-block:: bash
 

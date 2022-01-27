@@ -1,8 +1,8 @@
 .. _autometa-bash-workflow:
 
-============================
-🐚 Autometa Bash Workflow 🐚
-============================
+===================
+🐚 Bash Workflow 🐚
+===================
 
 Getting Started
 ###############

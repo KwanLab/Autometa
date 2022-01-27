@@ -1,8 +1,8 @@
 .. _autometa-nextflow-workflow:
 
-================================
-🍏 Autometa Nextflow Workflow 🍏
-================================
+=======================
+🍏 Nextflow Workflow 🍏
+=======================
 
 
 Why nextflow?
