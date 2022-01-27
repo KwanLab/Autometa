@@ -151,8 +151,13 @@ workflow AUTOMETA {
         )
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
+        if (params.kingdom.equals('bacteria')) {
+            kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
+        } else {
+            // params.kingdom.equals('archaea')
+            kmers_input_ch = TAXON_ASSIGNMENT.out.archaea
+        }
 
-        kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
     } else {
         kmers_input_ch = fasta_ch
         taxonomy_results = file( "$baseDir/assets/dummy_file.txt", checkIfExists: true )
