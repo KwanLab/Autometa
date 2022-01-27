@@ -26,7 +26,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate to the directory where you would like to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone https://github.com/KwanLab/Autometa.git
+    git clone -b dev https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # List all make commands
@@ -36,7 +36,7 @@ Download and install miniconda_. Now run the following commands:
     # activate autometa conda environment
     conda activate autometa
     # install trimap for kmer embedding
-    pip install trimap
+    python -m pip install trimap
     # install autometa source code in autometa environment
     make install
 

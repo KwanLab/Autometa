@@ -67,6 +67,7 @@ sub-workflow. The second example uses pre-calculated coverage information by pro
 The third example retrieves coverage information from the assembly contig headers (Currently, this is only available with metagenomes assembled using SPAdes)
 
 .. attention::
+
     If you have paired-end read information, you can supply these file paths within the sample sheet and the coverage
     table will be computed for you (See ``example_1`` in the example sheet below).
 
@@ -156,7 +157,7 @@ Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml
 
 If you receive the message...
 
@@ -169,7 +170,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -182,14 +183,14 @@ Using nf-core
 *************
 
 Download/Launch the Autometa Nextflow pipeline using nf-core tools.
-The stable version of Autometa will always be the "main" git branch.
-To use an in-development git branch switch "main" in the command with
+The stable version of Autometa will always be the "dev" git branch.
+To use an in-development git branch switch "dev" in the command with
 the name of the desired branch. After the pipeline downloads, nf-core will
 start the pipeline launch process.
 
 .. code-block:: bash
 
-    nf-core launch KwanLab/Autometa -r main
+    nf-core launch KwanLab/Autometa -r dev
 
 You will then be asked to choose "Web based" or "Command line" for selecting/providing options.
 While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
@@ -206,10 +207,27 @@ parameters may be hidden (these can be revealed by selecting
 Required parameters
 *******************
 
-1. :code:`--input`: the path to your input sample sheet
-2. :code:`-profile`: this sets options specified within the "profiles" section in the pipeline's nextflow.config file
-    - :code:`standard` (default): runs all process jobs locally, (currently this requires Docker).
+The first required parameter is the input sample sheet for the Autometa workflow, specified using :code:`--input`. This is the path to your input sample sheet.
+See :ref:`Preparing a Sample Sheet` for additional details.
+
+The other parameter is a nextflow argument, specified with :code:`-profile`. This configures nextflow and the Autometa workflow as outlined in the respective
+"profiles" section in the pipeline's ``nextflow.config`` file.
+
+    - :code:`standard` (default): runs all process jobs locally, (currently this requires Docker, i.e. docker is enabled for all processes the default profile).
     - :code:`slurm`: submits all process jobs into the slurm queue. See :ref:`using-slurm` before using
+    - :code:`docker`: enables docker for all processes
+
+.. caution::
+
+    Additional profiles exists in the ``nextflow.config`` file, however these have not yet been tested. If you
+    are able to successfully configure these profiles, please get in touch or submit a pull request and we will add these configurations
+    to the repository.
+
+    - :code:`conda`: Enables running all processes using `conda <https://www.nextflow.io/docs/latest/conda.html>`_
+    - :code:`singularity`: Enables running all processes using `singularity <https://www.nextflow.io/docs/latest/singularity.html>`_
+    - :code:`podman`: Enables running all processes using `podman <https://www.nextflow.io/docs/latest/podman.html>`_
+    - :code:`shifter`: Enables running all processes using `shifter <https://www.nextflow.io/docs/latest/shifter.html>`_
+    - :code:`charliecloud`: Enables running all processes using `charliecloud <https://www.nextflow.io/docs/latest/charliecloud.html>`_
 
 .. caution::
 
@@ -284,11 +302,13 @@ Make sure that the directory path contains the following databases:
 - prot.accession2taxid.gz
 
 .. code-block::
+
     {
         "single_db_dir" = "$HOME/Autometa/autometa/databases/ncbi"
     }
 
 .. note::
+
     Find the above section of code in ``nf-params.json`` and update this path to the folder
     with all of the downloaded/formatted NCBI databases.
 
@@ -331,7 +351,7 @@ a :code:`nf-params.json` file) would look something like:
 
     If you are restarting from a previous run, **DO NOT FORGET** to also add the ``-resume`` flag to the nextflow run command.
 
-    **Notice only 1 hyphen is used with the :code:`-resume` nextflow parameter**
+    **Notice only 1 hyphen is used** with the ``-resume`` nextflow parameter!
 
 
 For additional information and examples see `Tuning workflow resources <https://nf-co.re/usage/configuration#running-nextflow-on-your-system>`_
@@ -343,7 +363,7 @@ Up to date descriptions and default values of Autometa's nextflow parameters can
 
 .. code-block:: bash
 
-    nextflow run KwanLab/Autometa -r main --help
+    nextflow run KwanLab/Autometa -r dev --help
 
 
 You can also adjust other pipeline parameters that ultimately control how binning is performed.
@@ -398,17 +418,27 @@ the repository and then run nextflow directly from the scripts as below:
 .. code-block:: bash
 
     # Clone the autometa repository into current directory
-    git clone git@github.com:KwanLab/Autometa.git
+    git clone -b dev git@github.com:KwanLab/Autometa.git
+
     # Modify some code
     # e.g. one of the local modules
-    code /$HOME/Autometa/modules/local/align_reads.nf
+    code $HOME/Autometa/modules/local/align_reads.nf
+
+    # Generate nf-params.json file using nf-core
+    nf-core launch $HOME/Autometa
+
     # Then run nextflow
-    nextflow run $HOME/Autometa
+    nextflow run $HOME/Autometa -params-file nf-params.json
+
+.. note::
+
+    If you only have a few metagenomes to process and you would like to customize Autometa's behavior, it may be easier
+    to first try customization of the :ref:`autometa-bash-workflow`
 
 Useful options
 **************
 
-``-c`` : In case you have configured nextflow with your executor (see :ref:`Configuring your nextflow Executor`)
+``-c`` : In case you have configured nextflow with your executor (see :ref:`Configuring your process executor`)
 and have made other modifications on how to run nextflow using your ``nexflow.config`` file, you can specify that file
 using the ``-c`` flag
 
@@ -437,7 +467,7 @@ You can visualize the entire workflow ie. create the directed acyclic graph (DAG
 `Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
 in the ``png`` format.
 
-Configuring your nextflow Executor
+Configuring your process executor
 **********************************
 
 For nextflow to run the Autometa pipeline through a job scheduler you will need to update the respective ``profile``
@@ -447,7 +477,7 @@ local computer as the 'executor'. The next section briefly walks through nextflo
 with the slurm job scheduler.
 
 We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this
-`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow.config>`_. Go ahead
+`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead
 and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
 
 
@@ -492,8 +522,7 @@ More parameters that are available for the slurm executor are listed in the next
 
 
 Docker image selection
-######################
-
+**********************
 
 Especially when developing new features it may be necessary to run the pipeline with a custom docker image.
 Create a new image by navigating to the top Autometa directory and running ``make image``. This will create a new
