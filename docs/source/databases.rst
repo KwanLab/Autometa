@@ -7,10 +7,10 @@ Markers
 
 Autometa comes packaged with the necessary markers files. Links to these markers files and their associated cutoff values are below:
 
-- bacteria single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/bacteria.single_copy.hmm>`__
-- bacteria single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/bacteria.single_copy.cutoffs>`__
-- archaea single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/archaea.single_copy.hmm>`__
-- archaea single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/dev/autometa/databases/markers/archaea.single_copy.cutoffs>`__
+- bacteria single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/bacteria.single_copy.hmm>`__
+- bacteria single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/bacteria.single_copy.cutoffs>`__
+- archaea single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/archaea.single_copy.hmm>`__
+- archaea single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/archaea.single_copy.cutoffs>`__
 
 NCBI
 ####

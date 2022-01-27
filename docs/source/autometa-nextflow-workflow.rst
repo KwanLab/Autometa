@@ -157,7 +157,7 @@ Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
 
 If you receive the message...
 
@@ -170,7 +170,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -183,14 +183,14 @@ Using nf-core
 *************
 
 Download/Launch the Autometa Nextflow pipeline using nf-core tools.
-The stable version of Autometa will always be the "dev" git branch.
-To use an in-development git branch switch "dev" in the command with
+The stable version of Autometa will always be the "main" git branch.
+To use an in-development git branch switch "main" in the command with
 the name of the desired branch. After the pipeline downloads, nf-core will
 start the pipeline launch process.
 
 .. code-block:: bash
 
-    nf-core launch KwanLab/Autometa -r dev
+    nf-core launch KwanLab/Autometa -r main
 
 You will then be asked to choose "Web based" or "Command line" for selecting/providing options.
 While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
@@ -363,7 +363,7 @@ Up to date descriptions and default values of Autometa's nextflow parameters can
 
 .. code-block:: bash
 
-    nextflow run KwanLab/Autometa -r dev --help
+    nextflow run KwanLab/Autometa -r main --help
 
 
 You can also adjust other pipeline parameters that ultimately control how binning is performed.
@@ -418,7 +418,7 @@ the repository and then run nextflow directly from the scripts as below:
 .. code-block:: bash
 
     # Clone the autometa repository into current directory
-    git clone -b dev git@github.com:KwanLab/Autometa.git
+    git clone git@github.com:KwanLab/Autometa.git
 
     # Modify some code
     # e.g. one of the local modules
@@ -477,7 +477,7 @@ local computer as the 'executor'. The next section briefly walks through nextflo
 with the slurm job scheduler.
 
 We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this
-`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead
+`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow.config>`_. Go ahead
 and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
 
 
