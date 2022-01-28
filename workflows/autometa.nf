@@ -183,7 +183,9 @@ workflow AUTOMETA {
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------
 
-    MARKERS(PRODIGAL.out.amino_acid_fasta)
+    MARKERS(
+        orfs_ch
+    )
     MARKERS.out.markers_tsv
         .set{markers_ch}
 
@@ -207,9 +209,8 @@ workflow AUTOMETA {
         binning_ch
     )
 
-    ncbi = file(params.single_db_dir)
     if (params.unclustered_recruitment) {
-        // Prepare inputs for binning channel
+        // Prepare inputs for recruitment channel
         kmers_normalized_ch
             .join(coverage_ch)
             .join(BIN_CONTIGS.out.binning)
@@ -227,20 +228,22 @@ workflow AUTOMETA {
         RECRUIT(
             recruitment_ch
         )
-        // Set inputs for binning summary
         RECRUIT.out.main
-            .join(markers_ch)
-            .join(fasta_ch)
-            .set{binning_summary_ch}
+            .set{binning_results_ch}
         binning_col = Channel.value("recruited_cluster")
     } else {
-        // Set inputs for binning summary
         BIN_CONTIGS.out.main
-            .join(markers_ch)
-            .join(fasta_ch)
-            .set{binning_summary_ch}
+            .set{binning_results_ch}
         binning_col = Channel.value("cluster")
     }
+
+    // Set inputs for binning summary
+    binning_results_ch
+        .join(markers_ch)
+        .join(fasta_ch)
+        .set{binning_summary_ch}
+
+    ncbi = file(params.single_db_dir)
 
     BINNING_SUMMARY(
         binning_summary_ch,
@@ -249,13 +252,9 @@ workflow AUTOMETA {
     )
 
     if (params.mock_test){
-        BIN_CONTIGS.out.main
-            .join(
-                CREATE_MOCK.out.assembly_to_locus
-            )
-            .join(
-                CREATE_MOCK.out.assembly_report
-            )
+        binning_results_ch
+            .join(CREATE_MOCK.out.assembly_to_locus)
+            .join(CREATE_MOCK.out.assembly_report)
             .set { mock_input_ch }
 
         MOCK_DATA_REPORT(
