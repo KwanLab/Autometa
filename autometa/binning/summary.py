@@ -186,7 +186,7 @@ def get_metabin_stats(
 
     df = bin_df[metabin_stat_cols].fillna(value={cluster_col: "unclustered"}).copy()
 
-    clusters = df.join(markers_df, how="outer").groupby("cluster")
+    clusters = df.join(markers_df, how="outer").groupby(cluster_col)
 
     percent_metagenome_size = clusters.length.sum() / df.length.sum() * 100
     percent_metagenome_seqs = clusters.size() / df.shape[0] * 100

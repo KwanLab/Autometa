@@ -58,7 +58,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
 from autometa.common.markers import load as load_markers
-from autometa.common.exceptions import BinningError
 
 
 logger = logging.getLogger(__name__)
@@ -239,7 +238,7 @@ def train_test_split_and_subset(
 
     Returns
     -------
-    (TrainingData, pd.DataFrame)
+    Tuple(TrainingData, pd.DataFrame)
         0th: Features and bin labels split and subset by clustered/unclustered contigs
         1st: Unclustered contigs features
     """
@@ -251,7 +250,7 @@ def train_test_split_and_subset(
     labels = get_labels(clustered)
     # Finally retrieve features for the subset of clustered contigs
     clustered_features_index = features.index.isin(clustered.index)
-    clustered_features = features[clustered_features_index]
+    clustered_features = features.loc[clustered_features_index].copy()
     # Store features, targets and target_names in TrainingData for namespace lookup later.
     train_data = TrainingData(
         features=clustered_features,
@@ -261,7 +260,7 @@ def train_test_split_and_subset(
     # Now retrieve features for unclustered contigs
     unclustered = binning[binning.cluster.isnull()]
     unclustered_features_index = features.index.isin(unclustered.index)
-    unclustered_features = features[unclustered_features_index]
+    unclustered_features = features.loc[unclustered_features_index].copy()
     return train_data, unclustered_features
 
 
@@ -518,6 +517,11 @@ def main():
         help="Path to write Autometa main table used during/after unclustered recruitment.",
         required=False,
     )
+    parser.add_argument(
+        "--output-features",
+        help="Path to write Autometa features table used during unclustered recruitment.",
+        required=False,
+    )
     parser.add_argument("--taxonomy", help="Path to taxonomy table.")
     parser.add_argument(
         "--taxa-dimensions",
@@ -619,22 +623,33 @@ def main():
         f"unclustered {prev_num_unclustered} -> {now_num_unclustered} (recruited {n_recruited} contigs) in {n_runs} runs"
     )
     # Re-read in the binning dataframe to merge with the newly recruited contigs
-    prev_bin_df = pd.read_csv(
-        args.binning, sep="\t", index_col="contig", usecols=["contig", "cluster"]
-    )
+    prev_bin_df = pd.read_csv(args.binning, sep="\t", index_col="contig")
     bin_df.rename(columns={"cluster": "recruited_cluster"}, inplace=True)
-    main_df = pd.merge(
-        prev_bin_df, bin_df[["recruited_cluster"]], left_index=True, right_index=True
+    binning_df = pd.merge(
+        prev_bin_df[["cluster"]],
+        bin_df[["recruited_cluster"]],
+        left_index=True,
+        right_index=True,
     )
-    # Write unclustered recruitment results into main bin df
-    # index = 'contig', cols = [..., 'cluster', 'recruited_cluster', ...]
-    main_df.to_csv(
+    # Write unclustered recruitment results into binning df
+    # index = 'contig', cols = ['cluster', 'recruited_cluster']
+    binning_df.to_csv(
         args.output_binning, sep="\t", index=True, header=True, float_format="%.5f"
     )
     if args.output_main:
+        main_df = pd.merge(
+            prev_bin_df,
+            bin_df[["recruited_cluster"]],
+            left_index=True,
+            right_index=True,
+        )
+        main_df.to_csv(
+            args.output_main, sep="\t", index=True, header=True, float_format="%.5f"
+        )
+    if args.output_features:
         # Outputs features matrix used as input to recruitment algorithm
         features.to_csv(
-            args.output_main, sep="\t", index=True, header=True, float_format="%.5f"
+            args.output_features, sep="\t", index=True, header=True, float_format="%.5f"
         )
 
 

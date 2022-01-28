@@ -4,8 +4,8 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process BIN_CONTIGS {
-    tag "Performing Autometa binning on ${meta.id}"
+process BINNING {
+    tag "sample:${meta.id}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 

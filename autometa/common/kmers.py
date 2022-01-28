@@ -621,7 +621,6 @@ def main():
         datefmt="%m/%d/%Y %I:%M:%S %p",
         level=logger.DEBUG,
     )
-    skip_desc = "(will skip if file exists)"
     cpus = mp.cpu_count()
     parser = argparse.ArgumentParser(
         description="Count k-mer frequencies of given `fasta`",
@@ -631,20 +630,18 @@ def main():
         "--fasta",
         help="Metagenomic assembly fasta file",
         metavar="filepath",
-        required=True,
     )
     parser.add_argument(
         "--kmers",
-        help=f"K-mers frequency tab-delimited table {skip_desc}",
+        help=f"K-mers frequency tab-delimited table (will skip if file exists)",
         metavar="filepath",
-        required=True,
     )
     parser.add_argument(
         "--size", help="k-mer size in bp", default=5, metavar="int", type=int
     )
     parser.add_argument(
         "--norm-output",
-        help=f"Path to normalized kmers table {skip_desc}",
+        help=f"Path to normalized kmers table (will skip if file exists)",
         metavar="filepath",
     )
     parser.add_argument(
@@ -666,7 +663,7 @@ def main():
     )
     parser.add_argument(
         "--embedding-output",
-        help=f"Path to write embedded kmers table {skip_desc}",
+        help=f"Path to write embedded kmers table (will skip if file exists)",
         metavar="filepath",
     )
     parser.add_argument(
@@ -704,8 +701,20 @@ def main():
     )
     args = parser.parse_args()
 
-    if os.path.exists(args.kmers) and not args.force:
+    if not args.fasta and not args.kmers and not args.norm_output:
+        raise ValueError("One of --fasta, --kmers or --norm-output are required!")
+
+    # First check if we simply need to do embedding from the normalized kmer frequencies
+    if args.norm_output and os.path.exists(args.norm_output) and not args.force:
+        df = pd.read_csv(args.norm_output, sep="\t", index_col="contig")
+    # Next check if we already have the kmer counts
+    elif args.kmers and os.path.exists(args.kmers) and not args.force:
         df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+        if args.norm_output:
+            df = normalize(
+                df=df, method=args.norm_method, out=args.norm_output, force=args.force
+            )
+    # Start from counting the kmers from our fasta
     else:
         df = count(
             assembly=args.fasta,
@@ -714,11 +723,10 @@ def main():
             force=args.force,
             cpus=args.cpus,
         )
-
-    if args.norm_output:
-        df = normalize(
-            df=df, method=args.norm_method, out=args.norm_output, force=args.force
-        )
+        if args.norm_output:
+            df = normalize(
+                df=df, method=args.norm_method, out=args.norm_output, force=args.force
+            )
 
     if args.embedding_output:
         embedded_df = embed(
