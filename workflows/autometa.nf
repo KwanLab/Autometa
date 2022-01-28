@@ -44,6 +44,9 @@ include { GET_SOFTWARE_VERSIONS                                 } from '../modul
 include { SEQKIT_FILTER                                         } from '../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]       )
 include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']  )
 include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']  )
+include { BIN_CONTIGS                                           } from '../modules/local/bin_contigs'                 addParams( options: modules['bin_contigs_options']   )
+include { RECRUIT                                               } from '../modules/local/unclustered_recruitment'     addParams( options: modules['unclustered_recruitment_options'])
+include { BINNING_SUMMARY                                       } from '../modules/local/binning_summary'             addParams( options: modules['binning_summary_options']   )
 include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']      )
 
 /*
@@ -66,8 +69,6 @@ include { CREATE_MOCK              } from '../subworkflows/local/mock_data'     
 include { INPUT_CHECK              } from '../subworkflows/local/input_check'              addParams( )
 include { CONTIG_COVERAGE          } from '../subworkflows/local/contig_coverage'          addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
 include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment'         addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
-include { BINNING                  } from '../subworkflows/local/binning'                  addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
-include { UNCLUSTERED_RECRUITMENT  } from '../subworkflows/local/unclustered_recruitment'  addParams( binning_options: modules['binning_options'], unclustered_recruitment_options: modules['unclustered_recruitment_options'], binning_summary_options: modules['binning_summary_options'], taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
@@ -126,8 +127,6 @@ workflow AUTOMETA {
     * -------------------------------------------------
     *  Find open reading frames with Prodigal
     * -------------------------------------------------
-    * -------------------------------------------------
-    *  If running in parallel, merge Prodigal results
     */
 
     PRODIGAL (
@@ -188,29 +187,69 @@ workflow AUTOMETA {
     MARKERS.out.markers_tsv
         .set{markers_ch}
 
-    BINNING(
-        fasta_ch,
-        kmers_embedded_ch,
-        coverage_ch,
-        SEQKIT_FILTER.out.gc_content,
-        markers_ch,
-        taxonomy_results,
-        "cluster"
-    )
-
-    if (params.unclustered_recruitment) {
-        UNCLUSTERED_RECRUITMENT(
-            fasta_ch,
-            kmers_normalized_ch,
-            coverage_ch,
-            markers_ch,
-            taxonomy_results,
-            BINNING.out.binning
-        )
+    // Prepare inputs for binning channel
+    kmers_embedded_ch
+        .join(coverage_ch)
+        .join(SEQKIT_FILTER.out.gc_content)
+        .join(markers_ch)
+        .set{binning_ch}
+    if (params.taxonomy_aware) {
+        binning_ch
+            .join(taxonomy_results)
+            .set{binning_ch}
+    } else {
+        binning_ch
+            .combine(taxonomy_results)
+            .set{binning_ch}
     }
 
+    BIN_CONTIGS(
+        binning_ch
+    )
+
+    ncbi = file(params.single_db_dir)
+    if (params.unclustered_recruitment) {
+        // Prepare inputs for binning channel
+        kmers_normalized_ch
+            .join(coverage_ch)
+            .join(BIN_CONTIGS.out.binning)
+            .join(markers_ch)
+            .set{recruitment_ch}
+        if (params.taxonomy_aware) {
+            recruitment_ch
+                .join(taxonomy_results)
+                .set{recruitment_ch}
+        } else {
+            recruitment_ch
+                .combine(taxonomy_results)
+                .set{recruitment_ch}
+        }
+        RECRUIT(
+            recruitment_ch
+        )
+        // Set inputs for binning summary
+        RECRUIT.out.main
+            .join(markers_ch)
+            .join(fasta_ch)
+            .set{binning_summary_ch}
+        binning_col = Channel.value("recruited_cluster")
+    } else {
+        // Set inputs for binning summary
+        BIN_CONTIGS.out.main
+            .join(markers_ch)
+            .join(fasta_ch)
+            .set{binning_summary_ch}
+        binning_col = Channel.value("cluster")
+    }
+
+    BINNING_SUMMARY(
+        binning_summary_ch,
+        binning_col,
+        ncbi,
+    )
+
     if (params.mock_test){
-        BINNING.out.binning_main
+        BIN_CONTIGS.out.main
             .join(
                 CREATE_MOCK.out.assembly_to_locus
             )
