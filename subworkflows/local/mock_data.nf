@@ -43,6 +43,7 @@ workflow CREATE_MOCK {
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
+                    meta.cov_from_assembly = "spades"
                     return [ meta, row ]
             }
         .set { ch_fasta }
@@ -50,6 +51,7 @@ workflow CREATE_MOCK {
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
+                    meta.cov_from_assembly = "spades"
                     return [ meta, row ]
             }
         .set { assembly_to_locus }
@@ -57,6 +59,7 @@ workflow CREATE_MOCK {
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
+                    meta.cov_from_assembly = "spades"
                     return [ meta, row ]
             }
         .set { assembly_report }
