@@ -702,33 +702,49 @@ def main():
     args = parser.parse_args()
 
     if not args.fasta and not args.kmers and not args.norm_output:
-        raise ValueError("One of --fasta, --kmers or --norm-output are required!")
+        raise ValueError(
+            "At least one of --fasta, --kmers or --norm-output are required!"
+        )
 
-    # First check if we simply need to do embedding from the normalized kmer frequencies
-    if args.norm_output and os.path.exists(args.norm_output) and not args.force:
-        df = pd.read_csv(args.norm_output, sep="\t", index_col="contig")
-    # Next check if we already have the kmer counts
+    norm_df = pd.DataFrame()
+
+    if (
+        args.norm_output
+        and not os.path.exists(args.norm_output)
+        and not args.fasta
+        and not args.kmers
+    ):
+        # only normalized kmers were provided
+        raise FileNotFoundError(args.norm_output)
+    elif args.kmers and not os.path.exists(args.kmers) and not args.fasta:
+        # only kmer counts were provided
+        raise FileNotFoundError(args.args.kmers)
+    elif args.norm_output and os.path.exists(args.norm_output) and not args.force:
+        # We already have the normalized kmers
+        norm_df = pd.read_csv(args.norm_output, sep="\t", index_col="contig")
     elif args.kmers and os.path.exists(args.kmers) and not args.force:
-        df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
-        if args.norm_output:
-            df = normalize(
-                df=df, method=args.norm_method, out=args.norm_output, force=args.force
-            )
-    # Start from counting the kmers from our fasta
+        # We already have the kmer counts
+        kmers_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
     else:
-        df = count(
+        # Start with counting kmers
+        kmers_df = count(
             assembly=args.fasta,
             size=args.size,
             out=args.kmers,
             force=args.force,
             cpus=args.cpus,
         )
-        if args.norm_output:
-            df = normalize(
-                df=df, method=args.norm_method, out=args.norm_output, force=args.force
-            )
+
+    if args.norm_output and norm_df.empty:
+        norm_df = normalize(
+            df=kmers_df,
+            method=args.norm_method,
+            out=args.norm_output,
+            force=args.force,
+        )
 
     if args.embedding_output:
+        df = kmers_df if norm_df.empty else norm_df
         embedded_df = embed(
             kmers=df,
             out=args.embedding_output,

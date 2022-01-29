@@ -7,6 +7,7 @@
 Script to test autometa/common/kmers.py
 """
 
+from multiprocessing.sharedctypes import Value
 import pytest
 import argparse
 
@@ -209,7 +210,7 @@ def test_embed_empty_dataframe(tmp_path):
 
 
 @pytest.mark.entrypoint
-def test_kmers_main(monkeypatch, tmp_path, assembly):
+def test_kmers_main_starting_at_fasta(monkeypatch, tmp_path, assembly):
     norm_method = "am_clr"
     embed_method = "bhsne"
     counts_out = tmp_path / "kmers.tsv"
@@ -250,3 +251,196 @@ def test_kmers_main(monkeypatch, tmp_path, assembly):
     assert f"x_{embed_dimensions}" in df.columns
     # Make sure we have all of our embedding dimensions and need to account for our contig column
     assert embed_dimensions + 1 == df.shape[1]
+
+
+@pytest.mark.entrypoint
+@pytest.mark.wip
+@pytest.mark.skip
+def test_kmers_main_starting_at_counts(monkeypatch, tmp_path, assembly):
+    norm_method = "am_clr"
+    embed_method = "bhsne"
+    counts_out = tmp_path / "kmers.tsv"
+    normalized = tmp_path / f"kmers.{norm_method}.tsv"
+    embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
+    embed_dimensions = 2
+
+    class MockArgs:
+        def __init__(self):
+            self.fasta = assembly
+            self.size = 4
+            self.kmers = counts_out
+            self.force = True
+            self.norm_method = norm_method
+            self.norm_output = normalized
+            self.embedding_method = embed_method
+            self.embedding_dimensions = embed_dimensions
+            self.embedding_output = embedded
+            self.pca_dimensions = 3
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    kmers.main()
+    assert embedded.exists()
+    df = pd.read_csv(embedded, sep="\t")
+    assert "contig" in df.columns
+    assert f"x_{embed_dimensions}" in df.columns
+    # Make sure we have all of our embedding dimensions and need to account for our contig column
+    assert embed_dimensions + 1 == df.shape[1]
+
+
+@pytest.mark.entrypoint
+@pytest.mark.skip
+def test_kmers_main_starting_at_norm(monkeypatch, tmp_path, assembly):
+    norm_method = "am_clr"
+    embed_method = "bhsne"
+    counts_out = tmp_path / "kmers.tsv"
+    normalized = tmp_path / f"kmers.{norm_method}.tsv"
+    embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
+    embed_dimensions = 2
+
+    class MockArgs:
+        def __init__(self):
+            self.fasta = assembly
+            self.size = 4
+            self.kmers = counts_out
+            self.force = True
+            self.norm_method = norm_method
+            self.norm_output = normalized
+            self.embedding_method = embed_method
+            self.embedding_dimensions = embed_dimensions
+            self.embedding_output = embedded
+            self.pca_dimensions = 3
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    kmers.main()
+    assert embedded.exists()
+    df = pd.read_csv(embedded, sep="\t")
+    assert "contig" in df.columns
+    assert f"x_{embed_dimensions}" in df.columns
+    # Make sure we have all of our embedding dimensions and need to account for our contig column
+    assert embed_dimensions + 1 == df.shape[1]
+
+
+@pytest.mark.entrypoint
+def test_kmers_main_norm_not_found_error(monkeypatch, tmp_path):
+    normalized = tmp_path / f"kmers.norm.tsv"
+
+    class MockArgs:
+        def __init__(self):
+            self.fasta = None
+            self.size = 4
+            self.kmers = None
+            self.force = True
+            self.norm_method = "ilr"
+            self.norm_output = normalized
+            self.embedding_method = "bhsne"
+            self.embedding_dimensions = 2
+            self.embedding_output = None
+            self.pca_dimensions = 3
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    with pytest.raises(FileNotFoundError):
+        kmers.main()
+
+
+@pytest.mark.entrypoint
+@pytest.mark.wip
+@pytest.mark.skip
+def test_kmers_main_kmers_not_found_error(monkeypatch, tmp_path):
+    counts_out = tmp_path / "kmers.tsv"
+
+    class MockArgs:
+        def __init__(self):
+            self.fasta = None
+            self.size = 4
+            self.kmers = counts_out
+            self.force = True
+            self.norm_method = "ilr"
+            self.norm_output = None
+            self.embedding_method = "bhsne"
+            self.embedding_dimensions = 2
+            self.embedding_output = None
+            self.pca_dimensions = 3
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    with pytest.raises(FileNotFoundError):
+        kmers.main()
+
+
+@pytest.mark.entrypoint
+def test_kmers_main_not_enough_inputs_error(monkeypatch):
+    class MockArgs:
+        def __init__(self):
+            self.fasta = None
+            self.size = 4
+            self.kmers = None
+            self.force = True
+            self.norm_method = "am_clr"
+            self.norm_output = None
+            self.embedding_method = "bhsne"
+            self.embedding_dimensions = 2
+            self.embedding_output = None
+            self.pca_dimensions = 3
+            self.cpus = 1
+            self.seed = 42
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    with pytest.raises(ValueError):
+        kmers.main()
