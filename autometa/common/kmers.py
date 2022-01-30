@@ -718,7 +718,7 @@ def main():
         raise FileNotFoundError(args.norm_output)
     elif args.kmers and not os.path.exists(args.kmers) and not args.fasta:
         # only kmer counts were provided
-        raise FileNotFoundError(args.args.kmers)
+        raise FileNotFoundError(args.kmers)
     elif args.norm_output and os.path.exists(args.norm_output) and not args.force:
         # We already have the normalized kmers
         norm_df = pd.read_csv(args.norm_output, sep="\t", index_col="contig")

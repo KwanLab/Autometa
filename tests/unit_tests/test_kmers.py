@@ -7,7 +7,6 @@
 Script to test autometa/common/kmers.py
 """
 
-from multiprocessing.sharedctypes import Value
 import pytest
 import argparse
 
@@ -54,6 +53,13 @@ def fixture_norm_df(variables):
     df = pd.read_json(kmer_test_data["am_clr_normalized_counts"])
     df.set_index("contig", inplace=True)
     return df
+
+
+@pytest.fixture(name="norm_output_fpath", scope="module")
+def fixture_norm_df(norm_df, tmp_path_factory):
+    fpath = tmp_path_factory.mktemp("kmers") / "kmers.norm.tsv"
+    norm_df.to_csv(fpath, sep="\t", index=True, header=True)
+    return str(fpath)
 
 
 @pytest.fixture(name="invalid_df_fpath")
@@ -254,22 +260,19 @@ def test_kmers_main_starting_at_fasta(monkeypatch, tmp_path, assembly):
 
 
 @pytest.mark.entrypoint
-@pytest.mark.wip
-@pytest.mark.skip
-def test_kmers_main_starting_at_counts(monkeypatch, tmp_path, assembly):
+def test_kmers_main_starting_at_counts(monkeypatch, tmp_path, counts_fpath):
     norm_method = "am_clr"
     embed_method = "bhsne"
-    counts_out = tmp_path / "kmers.tsv"
     normalized = tmp_path / f"kmers.{norm_method}.tsv"
     embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
     embed_dimensions = 2
 
     class MockArgs:
         def __init__(self):
-            self.fasta = assembly
+            self.fasta = None
             self.size = 4
-            self.kmers = counts_out
-            self.force = True
+            self.kmers = counts_fpath
+            self.force = False
             self.norm_method = norm_method
             self.norm_output = normalized
             self.embedding_method = embed_method
@@ -300,23 +303,20 @@ def test_kmers_main_starting_at_counts(monkeypatch, tmp_path, assembly):
 
 
 @pytest.mark.entrypoint
-@pytest.mark.skip
-def test_kmers_main_starting_at_norm(monkeypatch, tmp_path, assembly):
+def test_kmers_main_starting_at_norm(monkeypatch, tmp_path, norm_output_fpath):
     norm_method = "am_clr"
     embed_method = "bhsne"
-    counts_out = tmp_path / "kmers.tsv"
-    normalized = tmp_path / f"kmers.{norm_method}.tsv"
     embedded = tmp_path / f"kmers.{norm_method}.{embed_method}.tsv"
     embed_dimensions = 2
 
     class MockArgs:
         def __init__(self):
-            self.fasta = assembly
+            self.fasta = None
             self.size = 4
-            self.kmers = counts_out
-            self.force = True
+            self.kmers = None
+            self.force = False
             self.norm_method = norm_method
-            self.norm_output = normalized
+            self.norm_output = norm_output_fpath
             self.embedding_method = embed_method
             self.embedding_dimensions = embed_dimensions
             self.embedding_output = embedded
@@ -353,7 +353,7 @@ def test_kmers_main_norm_not_found_error(monkeypatch, tmp_path):
             self.fasta = None
             self.size = 4
             self.kmers = None
-            self.force = True
+            self.force = False
             self.norm_method = "ilr"
             self.norm_output = normalized
             self.embedding_method = "bhsne"
@@ -379,8 +379,6 @@ def test_kmers_main_norm_not_found_error(monkeypatch, tmp_path):
 
 
 @pytest.mark.entrypoint
-@pytest.mark.wip
-@pytest.mark.skip
 def test_kmers_main_kmers_not_found_error(monkeypatch, tmp_path):
     counts_out = tmp_path / "kmers.tsv"
 
@@ -389,7 +387,7 @@ def test_kmers_main_kmers_not_found_error(monkeypatch, tmp_path):
             self.fasta = None
             self.size = 4
             self.kmers = counts_out
-            self.force = True
+            self.force = False
             self.norm_method = "ilr"
             self.norm_output = None
             self.embedding_method = "bhsne"
