@@ -4,8 +4,6 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-params.taxdump_tar_gz_dir =  [:]
-
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
     label 'process_high'
@@ -22,6 +20,7 @@ process BINNING_SUMMARY {
     input:
         tuple val(meta), path(binning_main), path(markers), path(metagenome)
         val(binning_column)
+        path(ncbi)
 
     output:
         tuple val(meta), path("metabin_stats.tsv")   , emit: stats
@@ -33,7 +32,7 @@ process BINNING_SUMMARY {
         def software = getSoftwareName(task.process)
         """
         autometa-binning-summary \\
-            --ncbi ${params.taxdump_tar_gz_dir} \\
+            --ncbi $ncbi \\
             --binning-main $binning_main \\
             --markers $markers \\
             --metagenome $metagenome \\

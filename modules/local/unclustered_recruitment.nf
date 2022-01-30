@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process RECRUIT {
-    tag "Performing Autometa unclustered recruitment on ${meta.id}"
+    tag "sample:${meta.id}, classifier:${params.classification_method}, kmer dims:${params.classification_kmer_pca_dimensions}"
     label 'process_high'
 
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
@@ -17,16 +17,19 @@ process RECRUIT {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    // All contigs in binning have already assigned a MAG prior to recruitment
+    errorStrategy { task.exitStatus in 204 ? 'ignore' : 'terminate' }
+
     input:
         tuple val(meta), path(kmers), path(coverage), path(binning), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path ("${params.kingdom}.recruitment.tsv.gz")     , emit: binning, optional: true
-        tuple val(meta), path ("${params.kingdom}.recruitment.main.tsv.gz"), emit: main, optional: true
-        path  '*.version.txt'                                              , emit: version
+        tuple val(meta), path ("${params.kingdom}.recruitment.tsv.gz")         , emit: binning, optional: true
+        tuple val(meta), path ("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
+        tuple val(meta), path ("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
+        path  '*.version.txt'                                                  , emit: version
 
     script:
-        // Add soft-links to original FastQs for consistent naming in pipeline
         def software = getSoftwareName(task.process)
         if (!params.taxonomy_aware)
         """
@@ -39,7 +42,9 @@ process RECRUIT {
             --binning $binning \\
             --markers $markers \\
             --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz
+            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${params.kingdom}.recruitment.features.tsv.gz
+
         echo "TODO" > autometa.version.txt
         """
         else
@@ -54,7 +59,8 @@ process RECRUIT {
             --binning $binning \\
             --markers $markers \\
             --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz
+            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${params.kingdom}.recruitment.features.tsv.gz
 
         echo "TODO" > autometa.version.txt
         """

@@ -180,6 +180,7 @@ def test_main(
 ):
     output_binning = tmp_path / "unclustered_recruitment.tsv"
     output_main = tmp_path / "unclustered_recruitment.main.tsv"
+    output_features = tmp_path / "unclustered_recruitment.features.tsv"
 
     class MockArgs:
         def __init__(self):
@@ -189,6 +190,7 @@ def test_main(
             self.markers: str = markers_fpath
             self.output_binning: str = output_binning
             self.output_main: str = output_main
+            self.output_features: str = output_features
             self.additional_features = []
             self.taxonomy: str = taxonomy
             self.kmer_dimensions: int = 50
