@@ -580,7 +580,7 @@ def main():
     prev_num_unclustered = bin_df[bin_df.cluster.isnull()].shape[0]
     if not prev_num_unclustered:
         logger.warning("No unclustered contigs are available to recruit!")
-        sys.exit(0)
+        sys.exit(204)
     markers_df = load_markers(fpath=args.markers, format="wide")
 
     logger.debug(

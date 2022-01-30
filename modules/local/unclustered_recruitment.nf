@@ -17,6 +17,9 @@ process RECRUIT {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    // All contigs in binning have already assigned a MAG prior to recruitment
+    errorStrategy { task.exitStatus in 204 ? 'ignore' : 'terminate' }
+
     input:
         tuple val(meta), path(kmers), path(coverage), path(binning), path(markers), path(taxonomy)
 
