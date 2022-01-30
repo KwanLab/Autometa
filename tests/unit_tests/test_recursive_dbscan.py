@@ -13,7 +13,6 @@ import argparse
 import pandas as pd
 
 from autometa.binning import recursive_dbscan
-from autometa.common.exceptions import TableFormatError
 from autometa.common.markers import load as load_markers
 
 
