@@ -13,6 +13,7 @@ import argparse
 import pandas as pd
 
 from autometa.binning import recursive_dbscan
+from autometa.common.exceptions import TableFormatError
 from autometa.common.markers import load as load_markers
 
 
@@ -78,6 +79,19 @@ def fixture_markers_fpath(variables, binning_testdir):
     binning_test_data = variables["binning"]
     df = pd.read_json(binning_test_data["markers"])
     fpath = binning_testdir / "markers.tsv"
+    df.to_csv(fpath, sep="\t", index=False, header=True)
+    return str(fpath)
+
+
+@pytest.fixture(name="disjoint_markers_fpath", scope="module")
+def fixture_disjoint_markers_fpath(binning_testdir):
+    df = pd.DataFrame(
+        {
+            "contig": ["invalid_contig", "invalid_contig", "invalid_contig"],
+            "sacc": ["sacc", "sacc", "sacc"],
+        }
+    )
+    fpath = binning_testdir / "invalid_markers.tsv"
     df.to_csv(fpath, sep="\t", index=False, header=True)
     return str(fpath)
 
@@ -202,3 +216,53 @@ def test_recursive_dbscan_main(
     df = pd.read_csv(output_binning, sep="\t")
     assert "contig" in df.columns
     assert "cluster" in df.columns
+
+
+@pytest.mark.entrypoint
+def test_recursive_dbscan_main_tableformaterror(
+    monkeypatch,
+    kmers,
+    coverage,
+    gc_content,
+    disjoint_markers_fpath,
+    taxonomy,
+    tmp_path,
+):
+    output_binning = tmp_path / "binning.tsv"
+    output_main = tmp_path / "binning_main.tsv"
+
+    class MockArgs:
+        def __init__(self):
+            self.domain = "bacteria"
+            self.kmers = kmers
+            self.coverages = coverage
+            self.gc_content = gc_content
+            self.markers = disjoint_markers_fpath
+            self.output_binning = output_binning
+            self.output_main = output_main
+            self.clustering_method = "dbscan"
+            self.completeness = 20.0
+            self.purity = 95.0
+            self.cov_stddev_limit = 25.0
+            self.gc_stddev_limit = 5.0
+            self.taxonomy = taxonomy
+            self.rank_filter = "superkingdom"
+            self.rank_name_filter = "bacteria"
+            self.starting_rank = "superkingdom"
+            self.reverse_ranks = False
+            self.verbose = True
+            self.cpus = -1
+
+    class MockParser:
+        def add_argument(self, *args, **kwargs):
+            pass
+
+        def parse_args(self):
+            return MockArgs()
+
+    def return_mock_parser(*args, **kwargs):
+        return MockParser()
+
+    monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
+    with pytest.raises(TableFormatError):
+        recursive_dbscan.main()

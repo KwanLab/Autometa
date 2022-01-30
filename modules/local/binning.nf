@@ -16,6 +16,9 @@ process BINNING {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    // No markers were annotated for contigs in the table
+    errorStrategy { task.exitStatus in 204 ? 'ignore' : 'terminate' }
+
     input:
         tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers), path(taxonomy)
 
