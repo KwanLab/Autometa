@@ -56,7 +56,7 @@ def fixture_norm_df(variables):
 
 
 @pytest.fixture(name="norm_output_fpath", scope="module")
-def fixture_norm_df(norm_df, tmp_path_factory):
+def fixture_norm_output_fpath(norm_df, tmp_path_factory):
     fpath = tmp_path_factory.mktemp("kmers") / "kmers.norm.tsv"
     norm_df.to_csv(fpath, sep="\t", index=True, header=True)
     return str(fpath)
