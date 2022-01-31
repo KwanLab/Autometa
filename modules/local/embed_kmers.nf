@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process EMBED_KMERS {
-    tag "PCA dims:${params.pca_dimensions}, embed dims:${params.embedding_dimensions}, embed method:${params.embedding_method} for ${meta.id}"
+    tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}"
     label 'process_medium'
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 

@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process NORMALIZE_KMERS {
-    tag "${params.norm_method} normalization on ${meta.id} kmer counts"
+    tag "method:${params.norm_method}, sample:${meta.id}"
     label 'process_medium'
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
