@@ -71,14 +71,23 @@ include { KMERS                       } from '../subworkflows/local/kmers'      
 include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
 
 workflow AUTOMETA {
-    ch_software_versions = Channel.empty()
-    samplesheet_ch = Channel.fromPath(params.input)
+    // Software versions channel
+    Channel
+        .empty()
+        .set{ch_software_versions}
+    // Samplesheet channel
+    Channel
+        .fromPath(params.input)
+        .set{samplesheet_ch}
 
+    // Set the metagenome and coverage channels
     if (params.mock_test){
         CREATE_MOCK()
         CREATE_MOCK.out.fasta
             .set{metagenome_ch}
-        coverage_tab_ch = Channel.empty()
+        Channel
+            .empty()
+            .set{coverage_tab_ch}
     } else {
         INPUT_CHECK(samplesheet_ch)
         INPUT_CHECK.out.metagenome
