@@ -13,7 +13,7 @@ See the :ref:`Autometa Package Installation` page for details on setting up your
 
 I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_.
 You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/tutorial/test_data/``.
-For instructions on how to download the dataset using command line see the "Using command line" section on :ref:`Benchmarking` page.
+For instructions on how to download the dataset using command-line see the "Using command-line" section on :ref:`Benchmarking` page.
 
 1. Length filter
 ----------------
@@ -23,7 +23,7 @@ as small contigs may have ambiguous kmer frequencies. The default cutoff if 3,00
 
 .. note::
     It is important that you alter the cutoff based on your N50. If your N50 is really small, e.g. 500bp (pretty common for soil assemblies),
-    then you might want to lower your cutoff to somewhere near N50. The tradeoff with lowing the length cutoff, however, is a greater number of
+    then you might want to lower your cutoff to somewhere near N50. The tradeoff with lowering the length cutoff, however, is a greater number of
     contigs which may make it more difficult for the dataset to be binned. As was shown in the `Autometa <https://academic.oup.com/nar/article/47/10/e57/5369936>`_ paper,
     as assembly quality degrades so does the binning performance.
 
@@ -54,7 +54,7 @@ Let us dissect the above command:
 | ``--output-gc-content`` | Path to assembly contigs' GC content and length stats table          | Optional    |
 +-------------------------+----------------------------------------------------------------------+-------------+
 
-You can view the complete command line options using ``autometa-length-filter -h``
+You can view the complete command-line options using ``autometa-length-filter -h``
 
 The above command generates the following files:
 
@@ -74,7 +74,11 @@ The above command generates the following files:
 -----------------------
 
 Coverage calculation for each contig is done to provide another parameter to use while clustering contigs.
-If you have used SPades to assemble your metagenome, you can use the following command to generate the coverage table:
+
+from SPAdes
+^^^^^^^^^^^
+
+If you have used SPAdes to assemble your metagenome, you can use the following command to generate the coverage table:
 
 .. code-block:: bash
 
@@ -82,6 +86,9 @@ If you have used SPades to assemble your metagenome, you can use the following c
         --assembly $HOME/tutorial/78mbp_metagenome.fna \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --from-spades
+
+from alignments.bed
+^^^^^^^^^^^^^^^^^^^
 
 If you have assembled your metagenome using some other assembler you can use one of the following commands to generate the coverage table.
 
@@ -94,12 +101,22 @@ If you have assembled your metagenome using some other assembler you can use one
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
+from alignments.bam
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
     # If you have already made an alignment (bam file)
     autometa-coverage \
         --assembly $HOME/tutorial/78mbp_metagenome.filtered.fna \
         --bam 78mbp_metagenome.bam \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
+
+from alignments.sam
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
 
     # If you have already made an alignment (sam file)
     autometa-coverage \
@@ -108,20 +125,35 @@ If you have assembled your metagenome using some other assembler you can use one
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
-    # If you just have forward and reverse reads
+from paired-end reads
+^^^^^^^^^^^^^^^^^^^^^
+
+You may calculate coverage using forward and reverse reads with the assembled metagenome.
+
+.. code-block:: bash
+
     autometa-coverage \
         --assembly $HOME/tutorial/78mbp_metagenome.filtered.fna \
-        --fwd-reads fwd_reads_1.fastq--rev-reads rev_reads_1.fastq \
+        --fwd-reads fwd_reads_1.fastq \
+        --rev-reads rev_reads_1.fastq \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
 
-    # In case you have multiple fwd and rev read pairs supply a comma-delimited list (no spaces, fwd and rev lists should be in the same order)
+In case you have multiple forward and reverse read pairs supply a comma-delimited list.
+
+.. code-block:: bash
+
     autometa-coverage \
         --assembly $HOME/tutorial/78mbp_metagenome.filtered.fna \
         --fwd-reads fwd_reads_1.fastq,fwd_reads_2.fastq \
         --rev-reads rev_reads_1.fastq,rev_reads_2.fastq \
         --out $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --cpus 40
+
+.. note::
+
+    1. No spaces should be used when providing the forward and reverse reads.
+    2. The lists of forward and reverse reads should be in the order corresponding to their respective reads pair.
 
 Let us dissect the above commands:
 
@@ -132,11 +164,11 @@ Let us dissect the above commands:
 +-------------------+----------------------------------------------------------------------------------------------+
 | ``--from-spades`` | If the input assembly is generated using SPades then extract k-mer coverages from contig IDs |
 +-------------------+----------------------------------------------------------------------------------------------+
-| ``--bed``         | Path to pre-prepared bed file                                                                |
+| ``--bed``         | Path to alignments BED file                                                                  |
 +-------------------+----------------------------------------------------------------------------------------------+
-| ``--bed``         | Path to pre-prepared bam file                                                                |
+| ``--bed``         | Path to alignments BAM file                                                                  |
 +-------------------+----------------------------------------------------------------------------------------------+
-| ``--sam``         | Path to pre-prepared sam file                                                                |
+| ``--sam``         | Path to alignments SAM file                                                                  |
 +-------------------+----------------------------------------------------------------------------------------------+
 | ``--fwd-reads``   | Path to forward reads                                                                        |
 +-------------------+----------------------------------------------------------------------------------------------+
@@ -147,7 +179,7 @@ Let us dissect the above commands:
 | ``--out``         | Path to coverage table of each contig                                                        |
 +-------------------+----------------------------------------------------------------------------------------------+
 
-You can view the complete command line options using ``autometa-coverage -h``
+You can view the complete command-line options using ``autometa-coverage -h``
 
 The above command would generate the following files:
 
@@ -186,7 +218,7 @@ Let us dissect the above command:
 | ``--cpus``         | Number of CPUs to use (default is to use all available CPUs) |
 +--------------------+--------------------------------------------------------------+
 
-You can view the complete command line options using ``autometa-orfs -h``
+You can view the complete command-line options using ``autometa-orfs -h``
 
 The above command would generate the following files:
 
@@ -207,15 +239,21 @@ Autometa uses single-copy markers to guide clustering, and does not assume that 
 
     # Create a markers directory to hold the marker genes
     mkdir -p $HOME/Autometa/autometa/databases/markers
+
     # Change the default download path to the directory created above
-    autometa-config --section databases --option markers --value $HOME/Autometa/autometa/databases/markers
+    autometa-config \
+        --section databases \
+        --option markers \
+        --value $HOME/Autometa/autometa/databases/markers
+
     # Download single-copy marker genes
     autometa-update-databases --update-markers
+
     # hmmpress the marker genes
     hmmpress -f $HOME/Autometa/autometa/databases/markers/bacteria.single_copy.hmm
     hmmpress -f $HOME/Autometa/autometa/databases/markers/archaea.single_copy.hmm
 
-Use the following command to annotate contigs containing single copy marker genes:
+Use the following command to annotate contigs containing single-copy marker genes:
 
 .. code-block:: bash
 
@@ -248,7 +286,7 @@ Let us dissect the above command:
 | ``--seed``     | Seed to set random state for hmmscan. (default: 42)                                           | Optional    |
 +----------------+-----------------------------------------------------------------------------------------------+-------------+
 
-You can view the complete command line options using ``autometa-markers -h``
+You can view the complete command-line options using ``autometa-markers -h``
 
 The above command would generate the following files:
 
@@ -268,15 +306,18 @@ The above command would generate the following files:
 
 Autometa assigns a taxonomic rank to each contig and then takes only the contig belonging to the specified kingdom (either bacteria or archaea) for binning.
 We found that in host-associated metagenomes, this step vastly improves the binning performance of Autometa (and other pipelines) because less eukaryotic
-or viral contigs will be binned into bacterial bins.
+or viral contigs will be placed into bacterial bins.
 
 The first step for contig taxonomy assignment is a local alignment search of the ORFs against a reference database. This can be accelerated using `diamond <https://github.com/bbuchfink/diamond>`_.
 
-Create a diamond formatted database of the NCBI non-redundant (nr) protein database.
+Create a diamond formatted database of the NCBI non-redundant (nr.gz) protein database.
 
 .. code-block:: bash
 
-    diamond makedb --in $HOME/Autometa/autometa/databases/ncbi/nr --db $HOME/Autometa/autometa/databases/ncbi/nr -p 40
+    diamond makedb \
+        --in $HOME/Autometa/autometa/databases/ncbi/nr.gz \
+        --db $HOME/Autometa/autometa/databases/ncbi/nr \
+        --threads 40
 
 Breaking down the above command:
 
@@ -289,6 +330,12 @@ Breaking down the above command:
 +------+--------------------------------------+
 | -p   | Number of processors to use          |
 +------+--------------------------------------+
+
+.. note::
+
+    ``diamond makedb`` will append ``.dmnd`` to the provided path of ``--db``.
+
+    i.e. ``--db /path/to/nr`` will become ``/path/to/nr.dmnd``
 
 Run diamond blastp using the following command:
 
@@ -323,9 +370,10 @@ Breaking down the above command:
 | --out             | Path to BLASTP results                                                |
 +-------------------+-----------------------------------------------------------------------+
 
-To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`__. A complete list of all command line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`__.
+To see the complete list of acceptable output formats see Diamond `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#output-options>`__. A complete list of all command-line options for Diamond can be found on its `GitHub Wiki <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options>`__.
 
-.. note::
+.. caution::
+
     Autometa only parses output format 6 provided above as: ``--outfmt 6``
 
 The above command would generate the blastP table (``78mbp_metagenome.blastp.tsv``) in output format 6
@@ -333,7 +381,18 @@ The above command would generate the blastP table (``78mbp_metagenome.blastp.tsv
 5.2 Lowest Common Ancestor (LCA)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The second step in taxon assignment is finding out the lowest common ancestor (LCA). The lowest common ancestor refers to the ORF most closely associated with other given ORFs parsed from a BLAST query that is lowest on the tree of life. This step uses the blastp results generated in the previous step to generate a table having the LCA of each ORF. As a default only the blast hits which are within 10% of the top bitscore are used.
+The second step in taxon assignment is determining each ORF's lowest common ancestor (LCA).
+This step uses the blastp results generated in the previous step to generate a table having the LCA of each ORF. As a default only
+the blastp hits (subject accessions) which are within 10% of the top bitscore are used. These subject accessions are translated to
+their respective taxids (``prot.accession2taxid.gz``) to be looked up in NCBI's taxonomy database (``nodes.dmp``). Each ORFs' list of taxids
+are then reduced to its lowest common ancestor via a range minimum query.
+
+.. note::
+
+    For more details on the range minimum query algorithm, see `the closed issue (#170) on Github <https://github.com/KwanLab/Autometa/issues/170>`_
+    and a `walkthrough on topcoder <https://www.topcoder.com/thrive/articles/Range%20Minimum%20Query%20and%20Lowest%20Common%20Ancestor>`_
+
+
 
 Use the following command to get the LCA of each ORF:
 
@@ -362,7 +421,7 @@ Let us dissect the above command:
 | ``--lca-error-taxids``    | Path to write table of blast table qseqids that were assigned root due to a missing taxid | N              |
 +---------------------------+-------------------------------------------------------------------------------------------+----------------+
 
-You can view the complete command line options using ``autometa-taxonomy-lca -h``
+You can view the complete command-line options using ``autometa-taxonomy-lca -h``
 
 The above command would generate a table (``78mbp_metagenome.lca.tsv``) having the name, rank and taxid of the LCA for each ORF.
 
@@ -392,14 +451,14 @@ Let us dissect the above command:
 | --dbdir  | Path to ncbi database directory   |
 +----------+-----------------------------------+
 
-You can view the complete command line options using ``autometa-taxonomy-majority-vote -h``
+You can view the complete command-line options using ``autometa-taxonomy-majority-vote -h``
 
 The above command would generate a table (``78mbp_metagenome.votes.tsv``) having the taxid of each contig identified as per majority vote.
 
 5.4 Split kingdoms
 ^^^^^^^^^^^^^^^^^^
 
-In this final step of taxon assignment we use the voted taxid of each contig to split the contigs in different kingdoms and write them as per the provided canonical rank.
+In this final step of taxon assignment we use the voted taxid of each contig to split the contigs into different kingdoms and write them as per the provided canonical rank.
 
 .. code-block:: bash
 
@@ -429,11 +488,11 @@ Let us dissect the above command:
 | ``--ncbi``                 | Path to ncbi database directory                                                | Optional    |
 +----------------------------+--------------------------------------------------------------------------------+-------------+
 
-Other options available for ``--split-rank-and-write`` are phylum, class, order, family, genus and species
+Other options available for ``--split-rank-and-write`` are ``phylum``, ``class``, ``order``, ``family``, ``genus`` and ``species``
 
-If --split-rank-and-write is specified then it will split contigs by provided canonical-rank column then write a file corresponding that rank. Eg. Bacteria.fasta, Archaea.fasta, etc for superkingdom.
+If ``--split-rank-and-write`` is specified then it will split contigs by provided canonical-rank column then write a file corresponding that rank. Eg. Bacteria.fasta, Archaea.fasta, etc for ``superkingdom``.
 
-You can view the complete command line options using ``autometa-taxonomy -h``
+You can view the complete command-line options using ``autometa-taxonomy -h``
 
 +-----------------------------------+------------------------------------------------------------------------------------------+
 | File                              | Description                                                                              |
@@ -501,7 +560,7 @@ Let us dissect the above command:
 | ``--seed``             | Set random seed for dimension reduction determinism (default 42). Useful in replicating the results                      | Optional    |
 +------------------------+--------------------------------------------------------------------------------------------------------------------------+-------------+
 
-You can view the complete command line options using ``autometa-kmers -h``
+You can view the complete command-line options using ``autometa-kmers -h``
 
 The above command generates the following files:
 
@@ -542,14 +601,14 @@ flag and the number of dimensions of which to reduce k-mer frequencies can be al
     1. Even though ``bhsne`` and ``sksne`` are the same embedding method (but different implementations)
     they appear to give very different results. We recommend using the former.
 
-    2. In case you put ``--pca-dimensions`` as zero then autometa will skip PCA.
+    2. Providing a ``0`` to ``--pca-dimensions`` will skip the PCA step.
 
 7. Binning
 -----------
 
 This is the step where contigs are binned into genomes via clustering.
 Autometa assesses genome bins by examining their completeness, purity,
-GC content std.dev. and coverage std.dev. A taxonomy table may also used
+GC content std.dev. and coverage std.dev. A taxonomy table may also be used
 to selectively iterate through contigs based on their profiled taxon.
 
 This step does the following:
@@ -624,7 +683,7 @@ Let us dissect the above command:
 | ``--domain``            | Kingdom to consider. Choices bacteria (default) and archaea                             | Optional    |
 +-------------------------+-----------------------------------------------------------------------------------------+-------------+
 
-You can view the complete command line options using ``autometa-binning -h``
+You can view the complete command-line options using ``autometa-binning -h``
 
 The above command generates the following files:
 
@@ -682,7 +741,8 @@ In addition to the above columns ``78mbp_metagenome.main.tsv`` file has the foll
 | x_2          | The second coordinate after dimension reduction |
 +--------------+-------------------------------------------------+
 
-You can attempt to improve your genome bins with an unclustered recruitment step which uses features from existing genome bins to recruit unbinned contigs. Alternatively you can use these initial genome bin predictions and continue to the :ref:`Examining Results` section.
+You can attempt to improve your genome bins with an unclustered recruitment step which uses features from existing genome bins to recruit unbinned contigs.
+Alternatively you can use these initial genome bin predictions and continue to the :ref:`Examining Results` section.
 
 .. _advanced-usage-binning:
 
@@ -698,21 +758,23 @@ Advanced Usage
 These are default parameters that autometa uses to accept clusters are 20% complete, 95% pure, below 25% coverage standard deviation
 and below 5% GC content standard deviation. These parameters can be altered using the flags, ``--completeness``, ``--purity``, ``--cov-stddev-limit`` and ``--gc-stddev-limit``.
 
-There are two binning algorithms to chose from Density-Based Spatial Clustering of Applications with Noise (`DBSCAN <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_)
+There are two binning algorithms to choose from Density-Based Spatial Clustering of Applications with Noise (`DBSCAN <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html>`_)
 and Hierarchical Density-Based Spatial Clustering of Applications with Noise (`HDBSCAN <https://hdbscan.readthedocs.io/en/latest/index.html>`_). The default is DBSCAN.
 
 It is important to note that if recursively binning with taxonomy, only contigs at the specific taxonomic rank are analyzed and once the binning algorithm has moved on to the next rank, these
 are not considered until they fall under another taxonomic rank under consideration. I.e. Iterate through phyla. Contig of one phylum is only considered for that phylum then not
-for the rest of the phyla. If it is still unbinned at Class rank, then it will be considered only at its respective Class's class. The taxonomic rank to start the binning
-from can be changed using the ``--starting-rank`` flag. The default is ``superkingdom``.
+for the rest of the phyla. If it is still unbinned at the Class rank, then it will be considered only during its respective Class's iteration. The canonical rank from which to start
+binning can be changed using the ``--starting-rank`` flag. The default is ``superkingdom``.
 
 8. Unclustered recruitment (Optional)
 -------------------------------------
 
-An unclustered recruitment step which uses features from existing genome bins is used to classify the unbinned contigs to the genome bins that we have produced. This step is optional and the results should be verified (see Note below) before proceeding with these results.
+An unclustered recruitment step which uses features from existing genome bins is used to classify the unbinned contigs to the genome bins that were produced in the previous step.
+This step is optional and the results should be verified before proceeding with these results.
 
 .. note::
-    The machine learning step has been observed to bin contigs that do not necessary belong to the predicted genome. Careful inspection of coverage and taxonomy should be done before proceeding with these results.
+
+    The machine learning step has been observed to bin contigs that do not necessarily belong to the predicted genome. Careful inspection of coverage and taxonomy should be done before proceeding with these results.
 
 Use the following command to run the unclustered recruitment step:
 
@@ -724,42 +786,48 @@ Use the following command to run the unclustered recruitment step:
         --binning $HOME/tutorial/78mbp_metagenome.binning.tsv \
         --markers $HOME/tutorial/78mbp_metagenome.markers.tsv \
         --taxonomy $HOME/tutorial/78mbp_metagenome.taxonomy.tsv \
-        --output-binning $HOME/tutorial/78mbp_metagenome.recruitment.tsv \
+        --output-binning $HOME/tutorial/78mbp_metagenome.recruitment.binning.tsv \
+        --output-features $HOME/tutorial/78mbp_metagenome.recruitment.features.tsv \
         --output-main $HOME/tutorial/78mbp_metagenome.recruitment.main.tsv \
         --classifier decision_tree \
         --seed 42
 
 Let us dissect the above command:
 
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| Flag                 | Function                                                                                        | Requirement |
-+======================+=================================================================================================+=============+
-| ``--kmers``          | Path to normalized k-mer frequencies table                                                      | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--coverages``      | Path to metagenome coverages table                                                              | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--binning``        | Path to autometa binning output                                                                 | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--markers``        | Path to Autometa annotated markers table                                                        | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--taxonomy``       | Path to taxonomy table                                                                          | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--output-binning`` | Path to write Autometa unclustered recruitment table                                            | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--output-main``    | Path to write Autometa main table used during/after unclustered recruitment                     | Required    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--classifier``     | classifier to use for recruitment of contigs. Choices decision_tree (default) and random_forest | Optional    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
-| ``--seed``           | Seed to use for RandomState when initializing classifiers (default: 42)                         | Optional    |
-+----------------------+-------------------------------------------------------------------------------------------------+-------------+
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| Flag                  | Function                                                                                        | Required (Y/N) |
++=======================+=================================================================================================+================+
+| ``--kmers``           | Path to normalized k-mer frequencies table                                                      |        Y       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--coverages``       | Path to metagenome coverages table                                                              |        Y       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--binning``         | Path to autometa binning output                                                                 |        Y       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--markers``         | Path to Autometa annotated markers table                                                        |        Y       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--output-binning``  | Path to write Autometa unclustered recruitment table                                            |        Y       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--taxonomy``        | Path to taxonomy table                                                                          |        N       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--output-features`` | Path to write Autometa main table used during/after unclustered recruitment                     |        N       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--output-main``     | Path to write Autometa main table used during/after unclustered recruitment                     |        N       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--classifier``      | classifier to use for recruitment of contigs. Choices decision_tree (default) and random_forest |        N       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
+| ``--seed``            | Seed to use for RandomState when initializing classifiers (default: 42)                         |        N       |
++-----------------------+-------------------------------------------------------------------------------------------------+----------------+
 
-You can view the complete command line options using ``autometa-unclustered-recruitment -h``
+You can view the complete command-line options using ``autometa-unclustered-recruitment -h``
 
-The above command would generate ``78mbp_metagenome.recruitment.tsv`` and ``78mbp_metagenome.recruitment.main.tsv``.
+The above command would generate ``78mbp_metagenome.recruitment.binning.tsv`` and ``78mbp_metagenome.recruitment.main.tsv``.
 
-``78mbp_metagenome.recruitment.tsv`` contains the final predictions of ``autometa-unclustered-recruitment``. ``78mbp_metagenome.recruitment.main.tsv`` is the feature table with corresponding predictions utilized during/after the unclustered recruitment algorithm. This represents unbinned contigs with their respective annotations and output predictions of their recruitment into a genome bin. The taxonomic features have been encoded using “one-hot encoding” or a presence/absence matrix where each column is a canonical taxonomic rank and its respective value for each row represents its presence or absence. Presence and absence are denoted with 1 and 0, respectively. Hence ‘one-hot’ encoding being an encoding of presence and absence of the respective annotation type. In our case taxonomic designation.
+``78mbp_metagenome.recruitment.binning.tsv`` contains the final predictions of ``autometa-unclustered-recruitment``. ``78mbp_metagenome.recruitment.features.tsv``
+is the feature table utilized during/after the unclustered recruitment algorithm. This represents unbinned contigs with their respective annotations and output predictions of their recruitment into a genome bin.
+The taxonomic features have been encoded using “one-hot encoding” or a presence/absence matrix where each column is a canonical taxonomic rank and its respective value for each row represents its presence or absence.
+Presence and absence are denoted with 1 and 0, respectively. Hence "one-hot" encoding being an encoding of presence and absence of the respective annotation type. In our case taxonomic designation.
 
-The ``78mbp_metagenome.recruitment.tsv`` file contains the following columns:
+The ``78mbp_metagenome.recruitment.binning.tsv`` file contains the following columns:
 
 +-------------------+----------------------------------------------------------------------------------+
 | Column            | Description                                                                      |

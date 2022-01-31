@@ -19,7 +19,7 @@
                     "type": "string",
                     "fa_icon": "fas fa-file-csv",
                     "description": "Path to input comma-delimited sample sheet(s).",
-                    "help_text": "Use this to specify your inputs' names, metagenomes, reads, coverage table and whether to calculate coverage from the assembly headers or from read alignments.\n\n\nSee https://autometa.readthedocs.io/en/latest/running-autometa.html#preparing-a-sample-sheet for information on preparing an input samplesheet.",
+                    "help_text": "Use this to specify your inputs' names, metagenomes, reads, coverage table and whether to calculate coverage from the assembly headers or from read alignments.\n\n\nSee https://autometa.readthedocs.io/en/latest/nextflow-workflow.html#sample-sheet-preparation for information on preparing an input sample sheet.",
                     "default": ""
                 },
                 "outdir": {
@@ -209,7 +209,7 @@
                     "type": "boolean",
                     "description": "Can Autometa download nr.gz if needed? (It's >100Gb)",
                     "fa_icon": "fas fa-database",
-                    "help_text": "For more information on required databases and configuration...\n\nsee: https://autometa.readthedocs.io/en/latest/running-autometa.html#databases"
+                    "help_text": "For more information on required databases and configuration...\n\nsee: https://autometa.readthedocs.io/en/latest/autometa-nextflow-workflow.html#databases"
                 }
             }
         },
