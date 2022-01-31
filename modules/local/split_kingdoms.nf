@@ -24,7 +24,8 @@ process SPLIT_KINGDOMS {
     output:
         tuple val(meta), path("taxonomy.tsv"), emit: taxonomy
         tuple val(meta), path("bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("archaea.fna") , emit: archaea, optional: true
+        tuple val(meta), path("archaea.fna") , emit: archaea,  optional: true
+        tuple val(meta), path("*.fna")       , emit: kingdoms, optional: true
         path  '*.version.txt'                , emit: version
 
     script:

@@ -48,30 +48,6 @@ workflow BINNING {
             binning_ch
         )
 
-        kmers_embedded
-            .join(
-                coverage
-            ).join(
-                BIN_CONTIGS.out.binning
-            ).join(
-                markers
-            )
-            .set{coverage_binningout_markers}
-
-        if (params.taxonomy_aware) {
-            coverage_binningout_markers
-                .join(
-                    taxon_assignments
-                )
-                .set{unclustered_recruitment_ch}
-        } else {
-            coverage_binningout_markers
-                .combine(
-                    taxon_assignments
-                )
-                .set{unclustered_recruitment_ch}
-        }
-
         BIN_CONTIGS.out.main
             .join(
                 markers
@@ -80,9 +56,12 @@ workflow BINNING {
             )
             .set{binning_summary_ch}
 
+        ncbi_tax_dir = file(params.taxdump_tar_gz_dir)
+
         BINNING_SUMMARY (
             binning_summary_ch,
-            binning_column
+            binning_column,
+            ncbi_tax_dir
         )
 
     emit:

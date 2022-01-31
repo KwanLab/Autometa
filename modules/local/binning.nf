@@ -4,8 +4,8 @@ include { initOptions; saveFiles; getSoftwareName } from './functions'
 params.options = [:]
 options        = initOptions(params.options)
 
-process BIN_CONTIGS {
-    tag "Performing Autometa binning on ${meta.id}"
+process BINNING {
+    tag "sample:${meta.id}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
@@ -15,6 +15,9 @@ process BIN_CONTIGS {
     } else {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
+
+    // No markers were annotated for contigs in the table
+    errorStrategy { task.exitStatus in 204 ? 'ignore' : 'terminate' }
 
     input:
         tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers), path(taxonomy)

@@ -878,7 +878,6 @@ def main():
 
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
-    # Perform clustering w/o taxonomy
     if args.taxonomy:
         main_out = taxon_guided_binning(
             main=main_df,
@@ -894,6 +893,7 @@ def main():
             verbose=args.verbose,
         )
     else:
+        # Perform clustering w/o taxonomy
         main_out = get_clusters(
             main=main_df,
             markers_df=markers_df,
@@ -914,4 +914,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    # Using an http error status code...
+    # From: https://kinsta.com/blog/http-status-codes/#200-status-codes
+    # 204: “No Content.”
+    # This code means that the server has successfully processed the request
+    # but is not going to return any content.
+
+    try:
+        main()
+    except (TableFormatError, BinningError) as err:
+        logger.warn(err)
+        sys.exit(204)
