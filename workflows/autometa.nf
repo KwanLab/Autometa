@@ -39,14 +39,14 @@ if (!params.taxonomy_aware) {
  * -------------------------------------------------
 */
 
-include { GET_SOFTWARE_VERSIONS                                 } from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['csv':'']]     )
-include { SEQKIT_FILTER                                         } from '../modules/local/seqkit_filter'               addParams( options: [publish_files : ['*':'']]       )
-include { SPADES_KMER_COVERAGE                                  } from '../modules/local/spades_kmer_coverage'        addParams( options: modules['spades_kmer_coverage']  )
-include { MARKERS                                               } from '../modules/local/markers'                     addParams( options: modules['seqkit_split_options']  )
-include { BINNING                                               } from '../modules/local/binning'                     addParams( options: modules['binning_options']   )
-include { RECRUIT                                               } from '../modules/local/unclustered_recruitment'     addParams( options: modules['unclustered_recruitment_options'])
-include { BINNING_SUMMARY                                       } from '../modules/local/binning_summary'             addParams( options: modules['binning_summary_options']   )
-include { MOCK_DATA_REPORT                                      } from '../modules/local/mock_data_reporter'          addParams( options: modules['mock_data_report']      )
+include { GET_SOFTWARE_VERSIONS                   } from '../modules/local/get_software_versions'   addParams( options: [publish_files : ['csv':'']]     )
+include { SEQKIT_FILTER                           } from '../modules/local/seqkit_filter'           addParams( options: [publish_files : ['*':'']]       )
+include { SPADES_KMER_COVERAGE as COV_FROM_SPADES } from '../modules/local/spades_kmer_coverage'    addParams( options: modules['spades_kmer_coverage']  )
+include { MARKERS                                 } from '../modules/local/markers'                 addParams( options: modules['seqkit_split_options']  )
+include { BINNING                                 } from '../modules/local/binning'                 addParams( options: modules['binning_options']   )
+include { RECRUIT                                 } from '../modules/local/unclustered_recruitment' addParams( options: modules['unclustered_recruitment_options'])
+include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'         addParams( options: modules['binning_summary_options']   )
+include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'      addParams( options: modules['mock_data_report']      )
 
 /*
  * -------------------------------------------------
@@ -64,11 +64,11 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
  * -------------------------------------------------
 */
 
-include { CREATE_MOCK              } from '../subworkflows/local/mock_data'                addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
-include { INPUT_CHECK              } from '../subworkflows/local/input_check'              addParams( )
-include { CONTIG_COVERAGE          } from '../subworkflows/local/contig_coverage'          addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
-include { KMERS                    } from '../subworkflows/local/kmers'                    addParams( count_kmers_options: modules['count_kmers_options'], normalize_kmers_options: modules['normalize_kmers_options'], embed_kmers_options: modules['embed_kmers_options'])
-include { TAXON_ASSIGNMENT         } from '../subworkflows/local/taxon_assignment'         addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
+include { CREATE_MOCK                 } from '../subworkflows/local/mock_data'        addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
+include { INPUT_CHECK                 } from '../subworkflows/local/input_check'      addParams( )
+include { CONTIG_COVERAGE as COVERAGE } from '../subworkflows/local/contig_coverage'  addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
+include { KMERS                       } from '../subworkflows/local/kmers'            addParams( count_kmers_options: modules['count_kmers_options'], normalize_kmers_options: modules['normalize_kmers_options'], embed_kmers_options: modules['embed_kmers_options'])
+include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
 
 workflow AUTOMETA {
     ch_software_versions = Channel.empty()
@@ -91,7 +91,8 @@ workflow AUTOMETA {
     SEQKIT_FILTER(
         metagenome_ch
     )
-    fasta_ch = SEQKIT_FILTER.out.fasta
+    SEQKIT_FILTER.out.fasta
+        .set{fasta_ch}
 
     /*
     * -------------------------------------------------
@@ -101,21 +102,25 @@ workflow AUTOMETA {
 
 
     if (!params.mock_test) {
-        coverage_input_ch = fasta_ch.join(INPUT_CHECK.out.reads)
+        fasta_ch
+            .join(INPUT_CHECK.out.reads)
+            .set{coverage_input_ch}
     } else {
-        coverage_input_ch = Channel.empty()
+        Channel
+            .empty()
+            .set{coverage_input_ch}
     }
 
-    CONTIG_COVERAGE (
+    COVERAGE (
         coverage_input_ch
     )
-    CONTIG_COVERAGE.out.coverage
+    COVERAGE.out.coverage
         .set{contig_coverage_ch}
 
-    SPADES_KMER_COVERAGE (
+    COV_FROM_SPADES (
         fasta_ch,
     )
-    SPADES_KMER_COVERAGE.out.coverage
+    COV_FROM_SPADES.out.coverage
         .set{spades_kmer_coverage_ch}
     // https://nextflow-io.github.io/patterns/index.html#_conditional_process_executions
     contig_coverage_ch
@@ -151,16 +156,19 @@ workflow AUTOMETA {
         TAXON_ASSIGNMENT.out.taxonomy
             .set{taxonomy_results}
         if (params.kingdom.equals('bacteria')) {
-            kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
+            TAXON_ASSIGNMENT.out.bacteria
+                .set{kmers_input_ch}
         } else {
             // params.kingdom.equals('archaea')
-            kmers_input_ch = TAXON_ASSIGNMENT.out.archaea
+            TAXON_ASSIGNMENT.out.archaea
+                .set{kmers_input_ch}
         }
-
     } else {
-        kmers_input_ch = fasta_ch
-        taxonomy_results = file( "$baseDir/assets/dummy_file.txt", checkIfExists: true )
-        taxonomy_results = Channel.fromPath( taxonomy_results )
+        fasta_ch
+            .set{kmers_input_ch}
+        Channel
+            .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
+            .set{taxonomy_results}
     }
 
     /*
@@ -230,11 +238,15 @@ workflow AUTOMETA {
         )
         RECRUIT.out.main
             .set{binning_results_ch}
-        binning_col = Channel.value("recruited_cluster")
+        Channel
+            .value("recruited_cluster")
+            .set{binning_col}
     } else {
         BINNING.out.main
             .set{binning_results_ch}
-        binning_col = Channel.value("cluster")
+        Channel
+            .value("cluster")
+            .set{binning_col}
     }
 
     // Set inputs for binning summary
@@ -244,10 +256,12 @@ workflow AUTOMETA {
         .set{binning_summary_ch}
 
     if (params.single_db_dir) {
-        file(params.single_db_dir)
+        Channel
+            .fromPath(file(params.single_db_dir), type: 'dir')
             .set{ncbi}
     } else {
-        Channel.fromPath(file("$baseDir/assets/dummy_file.txt"))
+        Channel
+            .fromPath(file("$baseDir/assets/dummy_file.txt"))
             .set{ncbi}
     }
 
