@@ -278,4 +278,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    try:
+        main()
+    except AssertionError as err:
+        logger.warn(err)
+        sys.exit(204)

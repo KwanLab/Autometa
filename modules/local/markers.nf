@@ -18,6 +18,9 @@ process MARKERS {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    // No markers in kingdom.hmmscan.tsv pass cutoff thresholds
+    errorStrategy { task.exitStatus in 204 ? 'ignore' : 'terminate' }
+
     input:
         tuple val(meta), path(orfs)
         //path(hmmdb) currently only inside docker
