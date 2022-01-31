@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/autometa/main/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/autometa/dev/nextflow_schema.json",
     "title": "autometa pipeline parameters",
     "description": "Autometa: Automated Extraction of Microbial Genomes from Shotgun Metagenomes",
     "type": "object",

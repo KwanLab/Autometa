@@ -26,7 +26,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate to the directory where you would like to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone https://github.com/KwanLab/Autometa.git
+    git clone -b dev https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # List all make commands
@@ -50,7 +50,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone https://github.com/KwanLab/Autometa.git
+    git clone -b dev https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # Construct the autometa environment from requirements.txt
@@ -75,7 +75,7 @@ You can build a docker image for your clone of the Autometa repository.
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone https://github.com/KwanLab/Autometa.git
+    git clone -b dev https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # This will tag the image as jasonkwan/autometa:<your current branch>

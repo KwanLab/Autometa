@@ -156,7 +156,7 @@ Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml
 
 If you receive the message...
 
@@ -169,7 +169,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/environment.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -189,7 +189,7 @@ start the pipeline launch process.
 
 .. code-block:: bash
 
-    nf-core launch KwanLab/Autometa -r main
+    nf-core launch KwanLab/Autometa -r dev
 
 You will then be asked to choose "Web based" or "Command line" for selecting/providing options.
 While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
@@ -368,7 +368,7 @@ Up to date descriptions and default values of Autometa's nextflow parameters can
 
 .. code-block:: bash
 
-    nextflow run KwanLab/Autometa -r main --help
+    nextflow run KwanLab/Autometa -r dev --help
 
 
 You can also adjust other pipeline parameters that ultimately control how binning is performed.
@@ -482,7 +482,7 @@ local computer as the 'executor'. The next section briefly walks through nextflo
 with the slurm job scheduler.
 
 We have prepared a template for ``nextflow.config`` which you can access from the KwanLab/Autometa GitHub repository using this
-`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow.config>`_. Go ahead
+`nextflow.config template <https://raw.githubusercontent.com/KwanLab/Autometa/dev/nextflow.config>`_. Go ahead
 and copy this file to your desired location and open it in your favorite text editor (eg. Vim, nano, VSCode, etc).
 
 
