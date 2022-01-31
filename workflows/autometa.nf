@@ -265,13 +265,9 @@ workflow AUTOMETA {
         .set{binning_summary_ch}
 
     if (params.single_db_dir) {
-        Channel
-            .fromPath(file(params.single_db_dir), type: 'dir')
-            .set{ncbi}
+        ncbi = file(params.single_db_dir)
     } else {
-        Channel
-            .fromPath(file("$baseDir/assets/dummy_file.txt"))
-            .set{ncbi}
+        ncbi = file("$baseDir/assets/dummy_file.txt")
     }
 
     BINNING_SUMMARY(
