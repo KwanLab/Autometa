@@ -24,10 +24,10 @@ process RECRUIT {
         tuple val(meta), path(kmers), path(coverage), path(binning), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path ("${params.kingdom}.recruitment.tsv.gz")         , emit: binning, optional: true
-        tuple val(meta), path ("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
-        tuple val(meta), path ("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
-        path  '*.version.txt'                                                  , emit: version
+        tuple val(meta), path("${params.kingdom}.recruitment.tsv.gz")         , emit: binning, optional: true
+        tuple val(meta), path("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
+        tuple val(meta), path("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
+        path  '*.version.txt'                                                 , emit: version
 
     script:
         def software = getSoftwareName(task.process)

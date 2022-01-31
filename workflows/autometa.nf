@@ -243,7 +243,13 @@ workflow AUTOMETA {
         .join(fasta_ch)
         .set{binning_summary_ch}
 
-    ncbi = file(params.single_db_dir)
+    if (params.single_db_dir) {
+        file(params.single_db_dir)
+            .set{ncbi}
+    } else {
+        Channel.fromPath(file("$baseDir/assets/dummy_file.txt"))
+            .set{ncbi}
+    }
 
     BINNING_SUMMARY(
         binning_summary_ch,
