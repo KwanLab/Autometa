@@ -9,6 +9,7 @@ Cluster contigs recursively searching for bins with highest completeness and pur
 
 import logging
 import shutil
+import sys
 import tempfile
 from typing import List, Tuple
 
@@ -869,13 +870,21 @@ def main():
     markers_df = load_markers(args.markers, format="wide")
 
     # Ensure we have marker-containing contigs available to check binning quality...
-    if main_df.loc[main_df.index.isin(markers_df.index)].empty:
-        raise TableFormatError(
-            "No markers for contigs in table. Unable to assess binning quality"
-        )
-    if main_df.shape[0] <= 1:
-        raise BinningError("Not enough contigs in table for binning")
-
+    try:
+        if main_df.loc[main_df.index.isin(markers_df.index)].empty:
+            raise TableFormatError(
+                "No markers for contigs in table. Unable to assess binning quality"
+            )
+        if main_df.shape[0] <= 1:
+            raise BinningError("Not enough contigs in table for binning")
+    except (TableFormatError, BinningError) as err:
+        logger.warn(err)
+        # Using an http error status code...
+        # From: https://kinsta.com/blog/http-status-codes/#200-status-codes
+        # 204: “No Content.”
+        # This code means that the server has successfully processed the request
+        # but is not going to return any content.
+        sys.exit(204)
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
     if args.taxonomy:
@@ -914,16 +923,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
-    # Using an http error status code...
-    # From: https://kinsta.com/blog/http-status-codes/#200-status-codes
-    # 204: “No Content.”
-    # This code means that the server has successfully processed the request
-    # but is not going to return any content.
-
-    try:
-        main()
-    except (TableFormatError, BinningError) as err:
-        logger.warn(err)
-        sys.exit(204)
+    main()

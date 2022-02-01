@@ -10,6 +10,7 @@ marker sets depending on sequence set taxonomy
 
 import logging
 import os
+import sys
 
 import pandas as pd
 
@@ -261,27 +262,25 @@ def main():
     )
     args = parser.parse_args()
 
-    get(
-        kingdom=args.kingdom,
-        orfs=args.orfs,
-        hmmdb=args.hmmdb,
-        dbdir=args.dbdir,
-        cutoffs=args.cutoffs,
-        scans=args.hmmscan,
-        out=args.out,
-        force=args.force,
-        cpus=args.cpus,
-        parallel=args.parallel,
-        gnu_parallel=args.gnu_parallel,
-        seed=args.seed,
-    )
-
-
-if __name__ == "__main__":
-    import sys
-
     try:
-        main()
+        get(
+            kingdom=args.kingdom,
+            orfs=args.orfs,
+            hmmdb=args.hmmdb,
+            dbdir=args.dbdir,
+            cutoffs=args.cutoffs,
+            scans=args.hmmscan,
+            out=args.out,
+            force=args.force,
+            cpus=args.cpus,
+            parallel=args.parallel,
+            gnu_parallel=args.gnu_parallel,
+            seed=args.seed,
+        )
     except AssertionError as err:
         logger.warn(err)
         sys.exit(204)
+
+
+if __name__ == "__main__":
+    main()
