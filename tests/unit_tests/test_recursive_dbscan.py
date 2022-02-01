@@ -264,5 +264,7 @@ def test_recursive_dbscan_main_tableformaterror(
         return MockParser()
 
     monkeypatch.setattr(argparse, "ArgumentParser", return_mock_parser, raising=True)
-    with pytest.raises(TableFormatError):
+    with pytest.raises(SystemExit) as err:
         recursive_dbscan.main()
+    assert err.type == SystemExit
+    assert err.value.code == 204
