@@ -21,7 +21,7 @@ After installing conda, running the following command will create a minimal Cond
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/requirements.txt
+    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/requirements.txt
 
 If you receive the message...
 
@@ -34,7 +34,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/dev/requirements.txt --force
+    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/requirements.txt --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
@@ -48,8 +48,8 @@ Download Workflow Template
 To run Autometa using the bash workflow you will simply need to download and configure the workflow template to your
 metagenomes specifications.
 
-* `autometa.sh <https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa.sh>`_
-* `autometa-large-data-mode.sh <https://github.com/KwanLab/Autometa/blob/dev/workflows/autometa-large-data-mode.sh>`_
+* `autometa.sh <https://github.com/KwanLab/Autometa/blob/main/workflows/autometa.sh>`_
+* `autometa-large-data-mode.sh <https://github.com/KwanLab/Autometa/blob/main/workflows/autometa-large-data-mode.sh>`_
 
 Here are a few download commands if you do not want to navigate to the workflow on GitHub
 
@@ -58,14 +58,14 @@ via curl
 
 .. code-block:: bash
 
-    curl -o autometa.sh https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
+    curl -o autometa.sh https://raw.githubusercontent.com/KwanLab/Autometa/main/workflows/autometa.sh
 
 via wget
 --------
 
 .. code-block:: bash
 
-    wget https://raw.githubusercontent.com/KwanLab/Autometa/dev/workflows/autometa.sh
+    wget https://raw.githubusercontent.com/KwanLab/Autometa/main/workflows/autometa.sh
 
 .. note::
 

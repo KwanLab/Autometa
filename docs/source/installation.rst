@@ -26,7 +26,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate to the directory where you would like to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone -b dev https://github.com/KwanLab/Autometa.git
+    git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # List all make commands
@@ -50,7 +50,7 @@ Download and install miniconda_. Now run the following commands:
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone -b dev https://github.com/KwanLab/Autometa.git
+    git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # Construct the autometa environment from requirements.txt
@@ -75,7 +75,7 @@ You can build a docker image for your clone of the Autometa repository.
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
     # Clone the Autometa repository
-    git clone -b dev https://github.com/KwanLab/Autometa.git
+    git clone https://github.com/KwanLab/Autometa.git
     # Navigate into the cloned repository
     cd Autometa
     # This will tag the image as jasonkwan/autometa:<your current branch>
@@ -84,7 +84,9 @@ You can build a docker image for your clone of the Autometa repository.
 Testing Autometa
 ================
 
-You can also check the installation using autometa's built-in unit tests. This is not at all necessary and is primarily meant for development and debugging purposes. To run the tests, however, you'll first need to install the following packages and download the test dataset.
+You can also check the installation using autometa's built-in unit tests.
+This is not at all necessary and is primarily meant for development and debugging purposes.
+To run the tests, however, you'll first need to install the following packages and download the test dataset.
 
 .. code-block:: bash
 
@@ -111,7 +113,8 @@ You can now run different unit tests using the following commands:
 .. note::
     As a shortcut you can also create the test environment and run **all** the unit tests using ``make unit_test`` command.
 
-For more information about the above commands see the :ref:`Contributing Guidelines` page. Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
+For more information about the above commands see the :ref:`Contributing Guidelines` page.
+Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
 
 .. _conda: https://docs.conda.io/en/latest/
 .. _miniconda: https://docs.conda.io/en/latest/miniconda.html
