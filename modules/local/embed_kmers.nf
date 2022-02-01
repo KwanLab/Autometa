@@ -16,6 +16,9 @@ process EMBED_KMERS {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
+    // Not enough contigs to perform embedding with current parameter settings...
+    errorStrategy { task.exitStatus in 153 ? 'ignore' : 'terminate' }
+
     input:
         tuple val(meta), path(normalized)
 
