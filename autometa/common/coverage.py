@@ -12,10 +12,12 @@ import gzip
 import logging
 import os
 import tempfile
+from typing import List
 
 import pandas as pd
 
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from autometa.common.external import bowtie
 from autometa.common.external import samtools
@@ -26,19 +28,19 @@ from autometa.common import utilities
 logger = logging.getLogger(__name__)
 
 
-def from_spades_names(records):
+def from_spades_names(records: List[SeqRecord]) -> pd.DataFrame:
     """Retrieve coverages from SPAdes scaffolds headers.
 
     Example SPAdes header : NODE_83_length_162517_cov_224.639
 
     Parameters
     ----------
-    records : list
+    records : List[SeqRecord]
         [SeqRecord,...]
 
     Returns
     -------
-    pd.Series
+    pd.DataFrame
         index=contig, name='coverage', dtype=float
 
     """
@@ -54,17 +56,17 @@ def from_spades_names(records):
 
 @utilities.timeit
 def get(
-    fasta,
-    out,
-    from_spades=False,
-    fwd_reads=None,
-    rev_reads=None,
-    se_reads=None,
-    sam=None,
-    bam=None,
-    bed=None,
-    cpus=1,
-):
+    fasta: str,
+    out: str,
+    from_spades: bool = False,
+    fwd_reads: List[str] = None,
+    rev_reads: List[str] = None,
+    se_reads: List[str] = None,
+    sam: str = None,
+    bam: str = None,
+    bed: str = None,
+    cpus: int = 1,
+) -> pd.DataFrame:
     """Get coverages for assembly `fasta` file using provided files or
     if the metagenome assembly was generated from SPAdes, use the k-mer coverages
     provided in each contig's header by specifying `from_spades=True`.
@@ -72,45 +74,62 @@ def get(
     Either `fwd_reads` and `rev_reads` and/or `se_reads` or,`sam`, or `bam`, or `bed`
     must be provided if `from_spades=False`.
 
-    Notes
-    -----
+    Note
+    ----
+
         Will begin coverage calculation based on files provided checking in the
         following order:
 
         #. `bed`
+
         #. `bam`
+
         #. `sam`
+
         #. `fwd_reads` and `rev_reads` and `se_reads`
 
         Event sequence to calculate contig coverages:
 
         #. align reads to generate alignment.sam
+
         #. sort samfile to generate alignment.bam
+
         #. calculate assembly coverages to generate alignment.bed
+
         #. calculate contig coverages to generate coverage.tsv
 
 
     Parameters
     ----------
+
     fasta : str
         </path/to/assembly.fasta>
+
     out : str
         </path/to/output/coverages.tsv>
+
     from_spades : bool, optional
         If True, will attempt to parse record ids for coverage information.
         This is only compatible with SPAdes assemblies. (the Default is False).
-    fwd_reads : list, optional
+
+    fwd_reads : List[str], optional
         [</path/to/forward_reads.fastq>, ...]
-    rev_reads : list, optional
+
+    rev_reads : List[str], optional
         [</path/to/reverse_reads.fastq>, ...]
-    se_reads : list, optional
+
+    se_reads : List[str], optional
         [</path/to/single_end_reads.fastq>, ...]
+
     sam : str, optional
         </path/to/alignments.sam>
+
     bam : str, optional
         </path/to/alignments.bam>
+
     bed : str, optional
         </path/to/alignments.bed>
+
     cpus : int, optional
         Number of cpus to use for coverage calculation.
 
@@ -121,7 +140,6 @@ def get(
     """
 
     if os.path.exists(out) and os.path.getsize(out):
-        # COMBAK: checksum comparison [checkpoint]
         logger.debug(f"coverage ({out}) already exists. skipping...")
         cols = ["contig", "coverage"]
         return pd.read_csv(out, sep="\t", usecols=cols, index_col="contig")
@@ -135,6 +153,7 @@ def get(
 
     with tempfile.TemporaryDirectory() as tempdir:
         outdir = os.path.dirname(out)
+        os.makedirs(outdir, exist_ok=True)
         tempdir = tempfile.mkdtemp(suffix=None, prefix="cov-alignments", dir=outdir)
         bed = bed if bed else os.path.join(tempdir, "alignment.bed")
         bam = bam if bam else os.path.join(tempdir, "alignment.bam")
