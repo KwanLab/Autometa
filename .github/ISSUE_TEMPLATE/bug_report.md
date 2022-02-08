@@ -35,10 +35,9 @@ your issue, and it is not provided (in a timely manner), your issue may be close
 
 ## Environment Information
 
-<details>
+<details><summary><code>autometa-configure --dryrun --debug</code></summary><p>
 
-<!-- between the ticks below, please place in any system environment information. 
-If you are using conda try `conda list -n <your environment>` and paste below. -->
+<!-- between the ticks below, paste the output of 'autometa-configure --dryrun --debug' -->
 
 ```bash
 
@@ -48,9 +47,19 @@ If you are using conda try `conda list -n <your environment>` and paste below. -
 
 ## Run Information
 
-<details><summary>contents of <code>run_autometa.log</code></summary><p>
-<!-- between the ticks below, paste the information from your run_autometa.log file
-'cat </path/to/your/run_autometa.log file>' -->
+<details><summary>contents of <code>parameters.config</code></summary><p>
+<!-- between the ticks below, paste the information from your input config file
+'cat </path/to/your/input/parameters.config>' -->
+
+```bash
+
+```
+
+</p></details>
+
+<details><summary>contents of <code>.nextflow.log</code></summary><p>
+<!-- between the ticks below, paste the information from the autometa written config file
+within the output directory of the autometa run. 'cat </path/to/your/outdir/metagenome.config>' -->
 
 ```bash
 

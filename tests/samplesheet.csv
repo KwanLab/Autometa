@@ -1,0 +1,2 @@
+sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly
+test,$HOME/Autometa/tests/data/metagenome.fna,,,,spades
