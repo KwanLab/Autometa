@@ -1,0 +1,4 @@
+sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly
+example_1,/path/to/example/1/metagenome.fna.gz,/path/to/paired-end/fwd_reads.fastq.gz,/path/to/paired-end/rev_reads.fastq.gz,,0
+example_2,/path/to/example/2/metagenome.fna.gz,,,/path/to/coverage.tsv,0
+example_3,/path/to/example/3/metagenome.fna.gz,,,,spades

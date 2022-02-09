@@ -1,10 +1,6 @@
 ---
 name: Support request
 about: Need clarification on a few scripts or the pipeline in general? Ask us!
-title: ''
-labels: help wanted
-assignees: ''
-
 ---
 
 <!--
@@ -17,7 +13,7 @@ Autometa here.
 ### User checklist
 
 - [ ] Are you using the latest release?
-- [ ] Are you using python 2.7?
+- [ ] Are you using python 3?
 - [ ] Did you check previous issues to see if this has already been mentioned?
 - [ ] Are you using a Mac or Linux machine?
 

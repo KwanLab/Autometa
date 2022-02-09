@@ -1,18 +1,26 @@
 # For information on available operators see https://pip.pypa.io/en/stable/user_guide/#fixing-conflicting-dependencies
+python-annoy>=1.11 # trimap requirement: https://github.com/eamid/trimap#installing
+attrs # test-data requirement
 bedtools
 biopython
 bowtie2
-cython
-diamond==2.*
+diamond>=2.0
+gdown
+hdbscan
 hmmer
-joblib
-numpy
+libiconv
+make
+nextflow>=20.10
+numpy>=1.13
 pandas>=1.1
 parallel
-prodigal
+prodigal>=2.5 # 2.5 and 2.6 output format is different for sequence headers
 requests
 rsync
-samtools==1.11
-scikit-learn
+samtools=>1.11
+scikit-bio
+scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
 tqdm
 tsne
+numba>=0.47
+umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap

@@ -1,8 +1,8 @@
 FROM continuumio/miniconda3
 LABEL maintainer="jason.kwan@wisc.edu"
 
-# Copyright 2021 Copyright 2021 Ian J. Miller, Evan R. Rees, Siddharth Uppal,
-# Chase Clark, Andrew Lail, Kyle Wolf, Shaurya Chanana, Izaak Miller, Jason C. Kwan
+# Copyright 2022 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
+# Shaurya Chanana, Izaak Miller, Jason C. Kwan
 #
 # This file is part of Autometa.
 #
@@ -13,37 +13,56 @@ LABEL maintainer="jason.kwan@wisc.edu"
 #
 # Autometa is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 RUN apt-get update --allow-releaseinfo-change \
-    && apt-get install -y build-essential \
+    && apt-get install -y procps \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY requirements.txt ./
-RUN conda install -c bioconda -c conda-forge python=3.7 --file=requirements.txt \
-    && conda clean --all -y
+RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
+    && conda clean --all -y \
+    && python -m pip install trimap
 
-COPY . ./
-RUN cd pipeline \
-    && python setup_lca_functions.py build_ext --inplace \
-    && cd - \
-    && hmmpress -f single-copy_markers/Bacteria_single_copy.hmm \
-    && hmmpress -f single-copy_markers/Archaea_single_copy.hmm
 
-ENV PATH="/pipeline:/validation:${PATH}"
-# Test pipeline entrypoints
-RUN recursive_dbscan.py -h \
-    && calculate_read_coverage.py -h \
-    && run_autometa.py -h \
-    && make_contig_table.py -h \
-    && make_marker_table.py -h \
-    && cluster_taxonomy.py -h \
-    && lca.py -h \
-    && cluster_process.py -h \
-    && make_taxonomy_table.py -h \
-    && add_contig_taxonomy.py &> /dev/null
+COPY . .
+RUN make install && make clean
+
+# NOTE: DB_DIR must be an absolute path (not a relative path)
+ENV DB_DIR="/scratch/dbs"
+RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
+    && hmmpress -f autometa/databases/markers/archaea.single_copy.hmm \
+    && mkdir -p $DB_DIR \
+    && mv autometa/databases/* ${DB_DIR}/. \
+    && autometa-config --section databases --option base --value ${DB_DIR} \
+    && echo "databases base directory set in ${DB_DIR}/"
+
+RUN echo "Testing autometa import" \
+    && python -c "import autometa"
+
+# Check entrypoints are available
+RUN echo "Checking autometa entrypoints" \
+    && autometa-config -h > /dev/null \
+    && autometa-update-databases -h > /dev/null \
+    && autometa-length-filter -h > /dev/null \
+    && autometa-orfs -h > /dev/null  \
+    && autometa-coverage -h > /dev/null  \
+    && autometa-kmers -h > /dev/null \
+    && autometa-markers -h > /dev/null \
+    && autometa-taxonomy -h > /dev/null \
+    && autometa-taxonomy-lca -h > /dev/null \
+    && autometa-taxonomy-majority-vote -h > /dev/null \
+    && autometa-unclustered-recruitment -h > /dev/null \
+    && autometa-hmmsearch-filter -h > /dev/null \
+    && autometa-bedtools-genomecov -h > /dev/null \
+    && autometa-binning -h > /dev/null \
+    && autometa-binning-summary -h > /dev/null \
+    && autometa-binning-ldm -h > /dev/null \
+    && autometa-binning-ldm-loginfo -h > /dev/null \
+    && autometa-benchmark -h > /dev/null \
+    && autometa-download-dataset -h > /dev/null

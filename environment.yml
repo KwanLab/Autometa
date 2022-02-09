@@ -1,0 +1,11 @@
+name: autometa-nf
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - nextflow>=20.10
+  - bioconda::nf-core==2.1
+  - python>=3.8
