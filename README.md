@@ -1,5 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/autometa/badge/?version=latest)](https://autometa.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/KwanLab/Autometa/branch/master/graph/badge.svg?token=N2X4F6P6M5)](https://codecov.io/gh/KwanLab/Autometa)
+[![codecov](https://codecov.io/gh/KwanLab/Autometa/branch/main/graph/badge.svg?token=N2X4F6P6M5)](https://codecov.io/gh/KwanLab/Autometa)
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](https://bioconda.github.io/)
 
