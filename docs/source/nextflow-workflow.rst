@@ -156,7 +156,7 @@ Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 
 If you receive the message...
 
@@ -169,7 +169,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/environment.yml --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 

@@ -21,7 +21,7 @@ After installing conda, running the following command will create a minimal Cond
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/requirements.txt
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml
 
 If you receive the message...
 
@@ -34,7 +34,7 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda create -c conda-forge -c bioconda --name autometa --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/requirements.txt --force
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml --force
 
 Once Conda has finished creating the environment be sure to activate it:
 
