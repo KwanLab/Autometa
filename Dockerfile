@@ -20,14 +20,13 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 RUN apt-get update --allow-releaseinfo-change \
-    && apt-get install -y procps \
+    && apt-get install -y procps make \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY requirements.txt ./
-RUN conda install -c bioconda -c conda-forge --file=requirements.txt \
-    && conda clean --all -y \
-    && python -m pip install trimap
+COPY autometa-env.yml ./
+RUN conda env update -n base --file=autometa-env.yml \
+    && conda clean --all -y
 
 
 COPY . .

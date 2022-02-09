@@ -57,7 +57,7 @@ endif
 
 ## Install autometa from source
 install: setup.py
-	python3 setup.py install
+	python3 -m pip install . --ignore-installed --no-deps -vv
 
 ## Install dependencies for test environment
 test_environment: tests/requirements.txt

@@ -17,7 +17,8 @@ dependencies:
   - pandas>=1.1
   - parallel
   - pip
-  - prodigal>=2.5 # 2.5 and 2.6 output format is different for sequence headers
+  - prodigal # NOTE: 2.5 and 2.6 output format is different for sequence headers
+  - python-annoy>=1.11 # required for trimap installation.
   - requests
   - rsync
   - samtools>=1.11
@@ -27,4 +28,4 @@ dependencies:
   - tsne
   - umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap
   - pip:
-      - trimap==1.0.15
+      - trimap
