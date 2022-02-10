@@ -31,8 +31,7 @@ jobs:
           conda-channels: anaconda, conda-forge, bioconda
       - run: conda --version
       - run: |
-          conda env update -n base --file=tests/environment.yml
-          conda activate base
+          conda env update -n $CONDA_DEFAULT_ENV --file=tests/environment.yml
           conda list
           gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
           python -m pytest --cov-report=xml --cov=autometa tests/
