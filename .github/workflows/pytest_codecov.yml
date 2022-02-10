@@ -31,7 +31,7 @@ jobs:
           conda-channels: anaconda, conda-forge, bioconda
       - run: conda --version
       - run: |
-          conda env update --file=tests/environment.yml
+          conda env update -n base --file=tests/environment.yml
           gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
           python -m pytest --cov-report=xml --cov=autometa tests/
       - name: Upload coverage to Codecov
