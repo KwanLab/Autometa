@@ -83,6 +83,9 @@ You can build a docker image for your clone of the Autometa repository.
     # This will tag the image as jasonkwan/autometa:<your current branch>
     make image
 
+    # (or the full command from within the Autometa repo)
+    docker build . -t jasonkwan/autometa:`git branch --show-current`
+
 Testing Autometa
 ================
 
