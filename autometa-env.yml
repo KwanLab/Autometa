@@ -25,7 +25,6 @@ dependencies:
   - scikit-bio
   - scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
   - tqdm
+  - trimap
   - tsne
   - umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap
-  - pip:
-      - trimap
