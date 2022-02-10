@@ -1,0 +1,30 @@
+name: autometa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - attrs # test-data requirement
+  - bedtools
+  - biopython
+  - bowtie2
+  - diamond>=2.0
+  - gdown
+  - hdbscan
+  - hmmer
+  - numba>=0.47
+  - numpy>=1.13
+  - pandas>=1.1
+  - parallel
+  - pip
+  - prodigal # NOTE: 2.5 and 2.6 output format is different for sequence headers
+  - python-annoy>=1.11 # required for trimap installation.
+  - requests
+  - rsync
+  - samtools>=1.11
+  - scikit-bio
+  - scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
+  - tqdm
+  - trimap
+  - tsne
+  - umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap

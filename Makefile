@@ -34,11 +34,11 @@ black:
 	black --exclude autometa/validation autometa
 
 ## Set up python interpreter environment
-create_environment: requirements.txt
+create_environment: autometa-env.yml
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda create -c conda-forge -c bioconda --name $(PROJECT_NAME) python=3 --file=requirements.txt
+	conda env create --file=autometa-env.yml
 else
 	@echo "It looks like you are not using python 3. Autometa is only compatible with python 3. Please upgrade."
 endif
@@ -57,7 +57,7 @@ endif
 
 ## Install autometa from source
 install: setup.py
-	python3 setup.py install
+	python3 -m pip install . --ignore-installed --no-deps -vv
 
 ## Install dependencies for test environment
 test_environment: tests/requirements.txt

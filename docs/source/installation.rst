@@ -25,20 +25,25 @@ Download and install miniconda_. Now run the following commands:
 
     # Navigate to the directory where you would like to clone Autometa
     cd $HOME
+
     # Clone the Autometa repository
     git clone https://github.com/KwanLab/Autometa.git
+
     # Navigate into the cloned repository
     cd Autometa
-    # List all make commands
-    make
+
     # create autometa conda environment
     make create_environment
+
     # activate autometa conda environment
     conda activate autometa
-    # install trimap for kmer embedding
-    python -m pip install trimap
+
     # install autometa source code in autometa environment
     make install
+
+.. note::
+
+    You can see a list of all available make commands by running ``make`` without any other arguments.
 
 Install from source (full commands)
 ===================================
@@ -47,18 +52,12 @@ Download and install miniconda_. Now run the following commands:
 
 .. code-block:: bash
 
-    # Navigate to the directory where you need to clone Autometa
-    cd $HOME
-    # Clone the Autometa repository
-    git clone https://github.com/KwanLab/Autometa.git
-    # Navigate into the cloned repository
-    cd Autometa
-    # Construct the autometa environment from requirements.txt
-    conda create -n autometa -c conda-forge -c bioconda --file=requirements.txt
+    # Construct the autometa environment from autometa-env.yml
+    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml
+
     # Activate environment
     conda activate autometa
-    # install trimap for kmer embedding
-    pip install trimap
+
     # Install the autometa code base from source
     python setup.py install
 
@@ -74,12 +73,18 @@ You can build a docker image for your clone of the Autometa repository.
 
     # Navigate to the directory where you need to clone Autometa
     cd $HOME
+
     # Clone the Autometa repository
     git clone https://github.com/KwanLab/Autometa.git
+
     # Navigate into the cloned repository
     cd Autometa
+
     # This will tag the image as jasonkwan/autometa:<your current branch>
     make image
+
+    # (or the full command from within the Autometa repo)
+    docker build . -t jasonkwan/autometa:`git branch --show-current`
 
 Testing Autometa
 ================
@@ -92,10 +97,13 @@ To run the tests, however, you'll first need to install the following packages a
 
     # Activate your autometa conda environment
     conda activate autometa
+
     # List all make options
     make
+
     # Install dependencies for test environment
     make test_environment
+
     # Download test_data.json for unit testing to tests/data/
     make unit_test_data_download
 
@@ -105,8 +113,10 @@ You can now run different unit tests using the following commands:
 
     # Run all unit tests
     make unit_test
+
     # Run unit tests marked with entrypoint
     make unit_test_entrypoints
+
     # Run unit tests marked with WIP
     make unit_test_wip
 
