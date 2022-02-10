@@ -50,13 +50,13 @@ docker run -it --rm jasonkwan/autometa:main
 #### Install into current env
 
 ```bash
-conda install -c bioconda -c conda-forge nextflow>=20.10 nf-core==2.1
+conda env update -n <your-env> --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 ```
 
 #### Create new env
 
 ```bash
-conda create -n autometa-nf -c bioconda -c conda-forge nextflow>=20.10 nf-core==2.1
+conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 ```
 
 For developers
