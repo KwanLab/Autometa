@@ -29,12 +29,12 @@ jobs:
           update-conda: true
           python-version: ${{ matrix.python-version }}
           conda-channels: anaconda, conda-forge, bioconda
-      - run: conda --version
-      - name: Update conda env
-      - run: conda env update --file=test/environment.yml
-      - name: Generate coverage report
-      - run: gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
-      - run: python -m pytest --cov-report=xml --cov=autometa tests/
+      - run: |
+        conda --version
+        conda env update --file=test/environment.yml
+      - run: |
+        gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
+        python -m pytest --cov-report=xml --cov=autometa tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
