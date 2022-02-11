@@ -2,13 +2,14 @@ name: docker Autometa CI/CD
 
 on:
   push:
+    paths-ignore:
+      - "docs/**"
     branches:
       - main
       - dev
-    tags:
-      - type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-      - type=semver,pattern={{version}}
   pull_request:
+    paths-ignore:
+      - "docs/**"
     branches:
       - main
       - dev
@@ -28,6 +29,9 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: jasonkwan/autometa
+          tags: |
+            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=semver,pattern={{version}}
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
