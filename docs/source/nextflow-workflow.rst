@@ -191,6 +191,30 @@ start the pipeline launch process.
 
     nf-core launch KwanLab/Autometa -r main
 
+.. attention::
+
+    If you receive an error about schema parameters you may be able to resolve this
+    by first removing the existing project and pulling the desired ``KwanLab/Autometa``
+    project using ``nextflow``.
+
+    e.g.
+
+    If a local project exists (you can check with ``nextflow list``), first ``drop`` this project:
+
+    ``nextflow drop KwanLab/Autometa``
+
+    Now pull the desired revision:
+
+    .. code:: bash
+
+        nextflow pull KwanLab/Autometa -r 2.0.0
+        # or
+        nextflow pull KwanLab/Autometa -r main
+        # or
+        nextflow pull KwanLab/Autometa -r dev
+
+    Now select the revision that you downloaded using the nextflow pull command.
+
 You will then be asked to choose "Web based" or "Command line" for selecting/providing options.
 While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
 Use the arrow keys to select one or the other and then press return/enter.
