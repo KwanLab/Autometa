@@ -14,49 +14,63 @@ Documentation
 [![Documentation Status](https://readthedocs.org/projects/autometa/badge/?version=latest)](https://autometa.readthedocs.io/en/latest/?badge=latest)
 <a href="https://github.com/KwanLab/Autometa/discussions"><img src="https://img.shields.io/github/discussions/KwanLab/Autometa"/></a>
 
+Full documentation is hosted on [autometa.readthedocs.io](https://autometa.readthedocs.io "Autometa documentation")
+
 Quickstart
 -------------------------------------------------------------------------------------------------------------------------
 
-### :shell: Bash workflow and :snake: Autometa package
+### :shell: Bash workflow
 
 [![Install with Conda Badge](https://anaconda.org/bioconda/autometa/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 [![Platforms Badge](https://anaconda.org/bioconda/autometa/badges/platforms.svg)](https://anaconda.org/bioconda/autometa)
 [![Downloads Badge](https://anaconda.org/bioconda/autometa/badges/downloads.svg)](https://anaconda.org/bioconda/autometa)
 
-#### Install into current env
+#### 1. Setup env
+
+##### Install into your current env...
 
 ```bash
 conda install -c bioconda autometa
 ```
 
-#### Create new env
+##### ... or create a new env
 
 ```bash
 conda create -n autometa -c bioconda autometa
 ```
 
-### :whale: Run with Docker
+#### 2. Download the bash workflow template, [autometa.sh](https://raw.githubusercontent.com/KwanLab/Autometa/main/workflows/autometa.sh "autometa.sh template")
 
-<a href="https://hub.docker.com/r/jasonkwan/autometa"><img src="https://img.shields.io/docker/image-size/jasonkwan/autometa/main?style=flat-square" alt="Docker Image Size (tag)"/></a>
+#### 3. Edit the input parameters
 
-```bash
-docker run -it --rm jasonkwan/autometa:main
-```
+#### 4. Run the workflow
 
 ### :green_apple: Nextflow Workflow
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg?labelColor=000000?style=flat-square)](https://www.nextflow.io/)
 
-#### Install into current env
+#### 1. Setup env
+
+> :student: This workflow requires only nextflow and nf-core be installed.
+
+##### Install into your current env...
 
 ```bash
 conda env update -n <your-env> --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 ```
 
-#### Create new env
+##### ... or create a new env
 
 ```bash
 conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+# Activate the env after creation
+conda activate autometa-nf
+```
+
+#### 2. Launch and run the workflow
+
+```bash
+nf-core launch KwanLab/Autometa
 ```
 
 For developers
