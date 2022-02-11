@@ -31,6 +31,7 @@ jobs:
           images: jasonkwan/autometa
           tags: |
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=raw,value={{branch}},enable=${{ !endsWith(github.ref, github.event.repository.default_branch) }}
             type=semver,pattern={{version}}
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
