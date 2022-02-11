@@ -2,10 +2,14 @@ name: docker get genomes for mock CI/CD
 
 on:
   push:
+    paths-ignore:
+        - "docs/**"
     branches:
       - main
       - dev
   pull_request:
+    paths-ignore:
+      - "docs/**"
     branches:
       - main
       - dev
