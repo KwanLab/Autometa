@@ -66,7 +66,7 @@ provides a metagenome with paired-end read information, such that contig coverag
 sub-workflow. The second example uses pre-calculated coverage information by providing a coverage table *with* the input metagenome assembly.
 The third example retrieves coverage information from the assembly contig headers (Currently, this is only available with metagenomes assembled using SPAdes)
 
-.. attention::
+.. note::
 
     If you have paired-end read information, you can supply these file paths within the sample sheet and the coverage
     table will be computed for you (See ``example_1`` in the example sheet below).
@@ -189,15 +189,18 @@ start the pipeline launch process.
 
 .. code-block:: bash
 
-    nf-core launch KwanLab/Autometa -r main
+    nf-core launch KwanLab/Autometa
+
+.. caution::
+    
+    nf-core will give a list of revisions to use following the above command.
+    Any of the version 1.* revisions are NOT supported.
 
 .. attention::
 
     If you receive an error about schema parameters you may be able to resolve this
     by first removing the existing project and pulling the desired ``KwanLab/Autometa``
     project using ``nextflow``.
-
-    e.g.
 
     If a local project exists (you can check with ``nextflow list``), first ``drop`` this project:
 
@@ -212,8 +215,10 @@ start the pipeline launch process.
         nextflow pull KwanLab/Autometa -r main
         # or
         nextflow pull KwanLab/Autometa -r dev
+        # Now run nf-core with selected revision from above
+        nf-core launch KwanLab/Autometa -r <2.0.0|main|dev>
 
-    Now select the revision that you downloaded using the nextflow pull command.
+    Now after re-running ``nf-core launch ...`` select the revision that you downloaded from above.
 
 You will then be asked to choose "Web based" or "Command line" for selecting/providing options.
 While it is possible to use the command line version, it is preferred and easier to use the web-based GUI.
@@ -266,23 +271,28 @@ at the top right of web based GUI page, or "Launch workflow" at the bottom of
 the page. After returning to the terminal you should be provided the option
 :code:`Do you want to run this command now?  [y/n]`  enter :code:`y` to begin the pipeline.
 
-.. note::
+This process will lead to nf-core tools creating a file named :code:`nf-params.json`.
+This file contains your specified parameters that differed from the pipeline's defaults.
+This file can also be manually modified and/or shared to allow reproducible configuration
+of settings (e.g. among members within a lab sharing the same server).
 
-    This process will lead to nf-core tools creating a file named :code:`nf-params.json`.
-    This file contains your specified parameters that differed from the pipeline's defaults.
-    This file can also be manually modified and/or shared to allow reproducible configuration
-    of settings (e.g. among members within a lab sharing the same server).
-
-    Additionally all Autometa specific pipeline parameters can be used as command line arguments
-    using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens
-    (e.g. :code:`--outdir /path/to/output/workflow/results`)
+Additionally all Autometa specific pipeline parameters can be used as command line arguments
+using the :code:`nextflow run ...` command by prepending the parameter name with two hyphens
+(e.g. :code:`--outdir /path/to/output/workflow/results`)
 
 .. caution::
 
     If you are restarting from a previous run, **DO NOT FORGET** to also add the ``-resume`` flag to the nextflow run command.
-
     **Notice only 1 hyphen is used** with the ``-resume`` nextflow parameter!
 
+.. note::
+
+    You can run the ``KwanLab/Autometa`` project without using nf-core if you already have a correctly
+    formatted parameters file. (like the one generated from ``nf-core launch ...``, i.e. ``nf-params.json``)
+    
+    .. code-block:: bash
+
+        nextflow run KwanLab/Autometa -params-file nf-params.json -profile slurm -resume
 
 Advanced
 ########
