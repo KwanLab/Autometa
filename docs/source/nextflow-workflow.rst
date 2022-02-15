@@ -137,20 +137,59 @@ Example ``sample_sheet.csv``
 
 Quick start
 ###########
+
 The following is a condensed summary of steps required to get Autometa installed, configured and running. There are links throughout to the appropriate documentation sections that can provide more detail if required.
 
 Installation
 ************
-For full installation instructions, please see the :ref:`Installation` section
 
-Installation relies on Miniconda being installed on your system (`<https://docs.conda.io/en/latest/miniconda.html>`_).
-To install the conda environment run the following code:
+For full installation instructions, please see the :ref:`Installation-page` section
+
+If you would like to install Autometa via conda (I'd recommend it, its almost foolproof!), you'll need to install Miniconda being installed on your system. You can do this in a few easy steps:
+
+1. Type in the following and then hit enter:
+
+.. code-block:: bash
+
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+2. This will download the installer to your home directory. Now let’s run the installer. Type in the following and hit enter:
+
+.. code-block:: bash
+
+    bash Miniconda3-latest-Linux-x86_64.sh
+
+3.	Follow all of the prompts. Keep pressing enter until it asks you to accept. Then type yes and enter. Say yes to everything.
+
+.. note:: 
+
+    If for whatever reason, you accidentally said no to the initialization, do not fear. We can fix this. Type:
+
+    .. code-block:: bash
+
+        cd ${PWD}/miniconda3/bin/
+        ./conda init
+
+    This will run the initialization
+    
+
+4. 	Finally, for the changes to change effect, you'll need to run the following line of code which effectively acts as a "refresh"
+
+.. code-block:: bash
+    
+    source ~/.bashrc
+
+
+Now that you have conda up and running, its time to get Autometa installed! To install the Autometa conda environment run the following code:
 
 .. code-block:: bash
 
     conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+    
+.. attention::
+    You will only need to run the installation (code above) once. The installation does NOT need to be performed everytime you wish to use Autometa. Once installation is complete, the conda environement (which holds all the tools that Autometa needs) will live on your server/computer much like any other program you install. 
 
-Next, activate the environment:
+Anytime that you would like to run Autometa, you'll need to activate the conda environment. To activate the environment you'll need to run the following command:
 
 .. code-block:: bash
 
@@ -158,13 +197,14 @@ Next, activate the environment:
 
 Configuring a scheduler
 ***********************
+
 For full details on how to configure your scheduler, please see the :ref:`Configuring your process executor` section.
 
-If you are using a Slurm scheduler, you will need to create a configuration file. If you do not have a scheduler, skip ahead to "Running Autometa".
+If you are using a Slurm scheduler, you will need to create a configuration file. If you do not have a scheduler, skip ahead to :ref:`Running Autometa`
 
-First you will need to know the name of your slurm partition. Run :code:`sinfo` to find this. In the example below, the partition name is "queue".
+First you will need to know the name of your slurm partition. Run :code:`sinfo` to find this. In the example below, the partition name is "agrp".
 
-.. image:: ../img/slurm_partitions.png
+.. image:: ../img/slurm_partitions_quickstart.png
 
 Next, generate a new file called slurm_nextflow.config via nano:
 
@@ -193,7 +233,8 @@ Then copy the following code block into that new file:
             }
         }
 
-Keep this file somewhere central to you. For the sake of this example I will be keeping it in a folder called "Useful scripts" in my home directory e.g. :code:`/home/me/Useful_scripts/slurm_nextflow.config`
+Keep this file somewhere central to you. For the sake of this example I will be keeping it in a folder called "Useful scripts" in my home directory because that is a central point for me where I know I can easily find the file and it won't be moved e.g.
+:code:`/home/sam/Useful_scripts/slurm_nextflow.config`
 
 Save your new file with Ctrl+O and then exit nano with Ctrl+O. Installation and set up is now complete. 🎉 🥳 
 
@@ -204,8 +245,11 @@ For a comprehensive list of features and options and how to use them please see 
 
 Autometa can bin one or several metagenomic datasets in one run. Regardless of the number of metagenomes you
 want to process, you will need to provide a sample sheet which specifies the name of your sample, the full path to 
-where that data is found. If the metagenome was assembled via SPAdes, Autometa can extract coverage and 
-contig length information from the sequence headers. If you used a different assembler you will need to provide either raw reads for coverage calculation or a table of contig/scaffold coverage. Full details for data preparation may be found under :ref:`sample-sheet-preparation` 
+where that data is found. 
+
+If the metagenome was assembled via SPAdes, Autometa can extract coverage and contig length information from the sequence headers. 
+
+If you used a different assembler you will need to provide either raw reads for coverage calculation or a table of contig/scaffold coverage. Full details for data preparation may be found under :ref:`sample-sheet-preparation` 
 
 First ensure that your Autometa conda environment is activated. You can activate your environment by running:
 
@@ -221,12 +265,16 @@ Navigate to where your metagenome files are and run the following code to launch
     
 You will now use the arrow keys to move up and down between your options and hit your "Enter" or "Return" key to make your choice.
 
-Menu 1:
-The double, right-handed arrows should already indicate "2.0.0". This is the latest version of Autometa, hit your "Enter" to chose this option.
+
+**Menu 1 - Version Choice:**
+
+The double, right-handed arrows should already indicate "2.0.0". This is the latest version of Autometa. The latest version of the tool will always be at the top of the list with older versions descending below. To select the latest version, ensure that the double, right-handed arrows are next to "2.0.0", then hit your "Enter" to chose this option.
 
 .. image:: ../img/Menu1.png
 
-Menu 2:
+
+**Menu 2 - Interface choice:**
+
 Pick the commandline option.
 
 .. note::
@@ -235,33 +283,47 @@ Pick the commandline option.
 
 .. image:: ../img/Menu2.png
 
-Menu 3:
-If you are using a scheduler (Slurm in this example) the only thing you'll need to change is the profile option. If you are not using a scheduler, leave this blank.
+
+**Menu 3 - General Nextflow parameters:**
+
+If you are using a scheduler (Slurm in this example) the only thing you'll need to change is the profile option. 
+If you are not using a scheduler, leave this blank.
 
 .. image:: ../img/Menu3.png
 
-Menu 4:
+
+**Menu 4 -Input and Output:**
+
 Now we need to give Autometa the full path to where to find our sample sheet, where to put the output (it will generate a folder per metagenome in this folder) and where to store all the log files (aka the trace files)
 
 .. image:: ../img/Menu4.png
 
-Menu 5:
-This is where you can change your binning parameters. If you're not sure what you're doing I would recommend only changing the "length_cutoff". 
-The default cutoff is 3000bp, which means that any contigs/scaffolds smaller than 3000bp will not be considered for binning. This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200 bp, I would choose a cutoff of 1000. If your N50 is more along the lines of 5000, I would leave the cutoff at the default 3000. I would strongly recommend against choosing a number below 900 here. In the example below, I have chosen a cutoff of 1000bp as my assembly was not particularly great
+
+**Menu 5 - Binning parameters:**
+
+If you're not sure what you're doing I would recommend only changing the "length_cutoff". 
+The default cutoff is 3000bp, which means that any contigs/scaffolds smaller than 3000bp will not be considered for binning. 
+
+.. note::
+    This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200 bp, I would choose a cutoff of 1000. If your N50 is more along the lines of 5000, I would leave the cutoff at the default 3000. I would strongly recommend against choosing a number below 900 here. In the example below, I have chosen a cutoff of 1000bp as my assembly was not particularly great
 
 .. image:: ../img/Menu5.png
 
-Menu 6:
+
+**Menu 6 - Additional Autometa options:**
+
 Here you have a choice to make:
 By enabling taxonomy aware mode, Autometa will attempt to use taxonomic data to make your bins more accurate. However, this is a more computationally expensive step and will make the process take longer. By leaving this option as the default "False" option, Autometa will bin according to coverage and kmer patterns.
 
-With either choice, you need to provide a path to where the necessary databases are stored in the "single_db_dir" 
-option. Here, I have enabled the taxonomy aware mode and provided the path to where the databases are stored. 
+Despite of your choice, you will need to provide a path to where the necessary databases are stored in the "single_db_dir" 
+option. In the example below, I have enabled the taxonomy aware mode and provided the path to where the databases are stored (in my case this is :code:` /home/sam/Databases`). 
+
 See :ref:`Databases` for additional details on required databases.
 
 .. image:: ../img/Menu6.png
 
-Menu 7:
+**Menu 7 - Computational parameters:**
+
 This will depend on the computational resources you have available. You could start with the default values and see 
 how the binning goes. If you have particularly complex datasets you may want to bump this up a bit. For your 
 average metagenome, you won't need more than 150Gb of memory. I've opted to use 75 Gb as a 
@@ -274,7 +336,9 @@ starting point for a few biocrust (somewhat diverse) metagenomes.
 
 .. image:: ../img/Menu7.png
 
-Last few options:
+
+**Last few options:**
+
 You will now be presented with a choice. If you are NOT using a scheduler, you can go ahead and type "y" to launch the workflow. If you are using a scheduler, type "n" - we have one more step to go. In the example below, I am using a scheduler so I have typed "n" to prevent immediately performing the nextflow run command.
 
 .. image:: ../img/launch_choice.png
@@ -283,7 +347,7 @@ If you recall, we created a file called :code:`slurm_nextflow.config` that conta
 
 .. code-block:: bash
 
-    nextflow run KwanLab/Autometa -r 2.0.0 -profile "slurm" -params-file "nf-params.json" -c "/home/sam/slurm_nextflow.config"
+    nextflow run KwanLab/Autometa -r 2.0.0 -profile "slurm" -params-file "nf-params.json" -c "/home/sam/Useful_scripts/slurm_nextflow.config"
     
 Once you have hit the "Enter" key to submit the command, a menu will pop up and let you know the progress of your binning run, such as the one below:
 
