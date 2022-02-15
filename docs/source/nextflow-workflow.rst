@@ -141,7 +141,7 @@ The following is a condensed summary of steps required to get Autometa installed
 
 Installation
 *******************
-For full installation instructions, please `click here <https://autometa.readthedocs.io/en/latest/installation.html>`_
+For full installation instructions, please see the :ref:`Installation` section
 
 Installation relies on Miniconda being installed on your system (link here: `<https://docs.conda.io/en/latest/miniconda.html>`_).
 To install the conda environment run the following code:
