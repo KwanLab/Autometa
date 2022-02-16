@@ -157,7 +157,7 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 
 .. note::
 
-    ``$HOME``is synonymous with ``/home/user`` and in my case is ``/home/sam``
+    ``$HOME`` is synonymous with ``/home/user`` and in my case is ``/home/sam``
 
 2. Now let’s run the installer. Type in the following and hit enter:
 
@@ -169,14 +169,13 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 
 .. note:: 
 
-    If for whatever reason, you accidentally said no to the initialization, do not fear. We can fix this. Type:
+    If for whatever reason, you accidentally said no to the initialization, do not fear. 
+    We can fix this by running the initialization with the following command:
 
     .. code-block:: bash
 
         cd $HOME/miniconda3/bin/
         ./conda init
-
-    This will run the initialization
     
 
 4. 	Finally, for the changes to take effect, you'll need to run the following line of code which effectively acts as a "refresh"
@@ -184,7 +183,6 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 .. code-block:: bash
     
     source ~/.bashrc
-
 
 Now that you have conda up and running, its time to install the Autometa conda environment. Run the following code:
 
@@ -282,7 +280,7 @@ Run the following code to launch Autometa:
 
 You will now use the arrow keys to move up and down between your options and hit your "Enter" or "Return" key to make your choice.
 
-**``KwanLab/Autometa`` parameter settings:**
+**KwanLab/Autometa nf-core parameter settings:**
 
 #. :ref:`quickstart-menu-1`
 #. :ref:`quickstart-menu-2`
@@ -293,12 +291,12 @@ You will now use the arrow keys to move up and down between your options and hit
 #. :ref:`quickstart-menu-7`
 #. :ref:`quickstart-menu-8`
 
-
 .. _quickstart-menu-1:
 
-**Choose a version**
+Choose a version
+----------------
 
-The double, right-handed arrows should already indicate "2.0.0". This is the latest version of Autometa. 
+The double, right-handed arrows should already indicate the latest release of Autometa (in our case "2.0.0"). 
 The latest version of the tool will always be at the top of the list with older versions descending below. 
 To select the latest version, ensure that the double, right-handed arrows are next to "2.0.0", then hit "Enter".
 
@@ -306,29 +304,32 @@ To select the latest version, ensure that the double, right-handed arrows are ne
 
 .. _quickstart-menu-2:
 
-**Choose 'launch' method**
+Choose nf-core interface
+------------------------
 
 Pick the ``Command line`` option.
 
 .. note::
 
     Unless you've done some fancy server networking (i.e. tunneling and port-forwarding), 
-    or are using Autometa locally, ``Command line`` is your `only` option.
+    or are using Autometa locally, ``Command line`` is your *only* option.
 
 .. image:: ../img/Menu2.png
 
 .. _quickstart-menu-3:
 
-**General nextflow parameters**
+General nextflow parameters
+---------------------------
 
-If you are using a scheduler (Slurm in this example) the only thing you'll need to change is the ``-profile`` option. 
+If you are using a scheduler (Slurm in this example), ``-profile`` is the only option you'll need to change. 
 If you are not using a scheduler, you may skip this step.
 
 .. image:: ../img/Menu3.png
 
 .. _quickstart-menu-4:
 
-**Input and Output**
+Input and Output
+----------------
 
 Now we need to give Autometa the full paths to our input sample sheet, output results folder 
 and output logs folder (aka where trace files are stored). 
@@ -342,31 +343,33 @@ and output logs folder (aka where trace files are stored).
 
 .. _quickstart-menu-5:
 
-**Binning parameters**
+Binning parameters
+------------------
 
 If you're not sure what you're doing I would recommend only changing ``length_cutoff``. 
 The default cutoff is 3000bp, which means that any contigs/scaffolds smaller than 3000bp will not be considered for binning. 
 
 .. note::
 
-    This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200 bp, I would choose a cutoff of 1000. 
+    This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200bp, I would choose a cutoff of 1000. 
     If your N50 is more along the lines of 5000, I would leave the cutoff at the default 3000. I would strongly recommend
     against choosing a number below 900 here. In the example below, I have chosen a cutoff of 1000bp as my assembly was 
-    not particularly great.
+    not particularly great (the N50 is 1100bp).
 
 .. image:: ../img/Menu5.png
 
 .. _quickstart-menu-6:
 
-**Additional Autometa options**
+Additional Autometa options
+---------------------------
 
 Here you have a choice to make: 
 
 * By enabling taxonomy aware mode, Autometa will attempt to use taxonomic data to make your bins more accurate. 
-However, this is a more computationally expensive step and will make the process take longer. 
-* By leaving this option as the default "False" option, Autometa will bin according to coverage and kmer patterns.
+    However, this is a more computationally expensive step and will make the process take longer. 
+* By leaving this option as the default ``False`` option, Autometa will bin according to coverage and kmer patterns.
 
-Despite your choice, you will need to provide a path to the necessary databases using the "single_db_dir" option.
+Despite your choice, you will need to provide a path to the necessary databases using the ``single_db_dir`` option.
 In the example below, I have enabled the taxonomy aware mode and provided the path to where the databases are stored 
 (in my case this is :code:`/home/sam/Databases`). 
 
@@ -376,7 +379,8 @@ For additional details on required databases, see the :ref:`Databases` section.
 
 .. _quickstart-menu-7:
 
-**Computational parameters**
+Computational parameters
+------------------------
 
 This will depend on the computational resources you have available. You could start with the default values and see 
 how the binning goes. If you have particularly complex datasets you may want to bump this up a bit. For your 
@@ -385,30 +389,30 @@ starting point for a few biocrust (somewhat diverse) metagenomes.
 
 .. note::
     
-    These options correspond to the resources provided to `each` process of Autometa, `not` the entire workflow itself.
+    These options correspond to the resources provided to *each* process of Autometa, *not* the entire workflow itself.
 
     Also, for TB worth of assembled data you may want to try the :ref:`autometa-bash-workflow` using the
-     `autometa-large-data-mode.sh <https://github.com/KwanLab/Autometa/blob/main/workflows/autometa-large-data-mode.sh>`_ template
+    `autometa-large-data-mode.sh <https://github.com/KwanLab/Autometa/blob/main/workflows/autometa-large-data-mode.sh>`_ template
 
 .. image:: ../img/Menu7.png
 
 .. _quickstart-menu-8:
 
-**Do you want to run the nextflow command now?**
+Do you want to run the nextflow command now?
+--------------------------------------------
 
 You will now be presented with a choice. If you are NOT using a scheduler, you can go ahead and type ``y`` to launch the workflow.
- If you are using a scheduler, type ``n`` - we have one more step to go. In the example below, I am using the slurm scheduler so I have typed ``n``
- to prevent immediately performing the nextflow run command.
+If you are using a scheduler, type ``n`` - we have one more step to go. In the example below, I am using the slurm scheduler so I have typed ``n``
+to prevent immediately performing the nextflow run command.
 
 .. image:: ../img/launch_choice.png
 
-If you recall, we created a file called :code:`slurm_nextflow.config` that contains the information Autometa will need to talk to the Slurm scheduler. 
-We need to include that file using the :code:`-c` flag (or configuration flag). Therefore to launch the Autometa workflow I would run the following 
-command:
+If you recall, we created a file called :code:`slurm_nextflow.config` that contains the information Autometa will need to communicate with the Slurm scheduler. 
+We need to include that file using the :code:`-c` flag (or configuration flag). Therefore to launch the Autometa workflow, run the following command:
 
 .. note::
 
-    You will need to change the :code:`/home/sam/slurm_nextflow.config` file path to what is appropriate for your system.
+    You will need to change the :code:`/home/sam/Useful_scripts/slurm_nextflow.config` file path to what is appropriate for your system.
 
 .. code-block:: bash
 
@@ -418,7 +422,7 @@ Once you have hit the "Enter" key to submit the command, nextflow will display t
 
 .. image:: ../img/progress.png
 
-When its complete, the output will be stored in your designated output folder, in my case ``/home/same/Trial/Autometa_output`` (See :ref`quickstart-menu-4`).
+When the run is complete, output will be stored in your designated output folder, in my case ``/home/same/Trial/Autometa_output`` (See :ref`quickstart-menu-4`).
 
 
 Basic
