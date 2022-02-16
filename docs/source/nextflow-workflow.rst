@@ -276,7 +276,7 @@ Run the following code to launch Autometa:
 .. note::
 
     You may want to note where you have saved your input sample sheet prior to running the launch command. 
-    It is much easier (and less error prone) to copy/paste the sample sheet file path when specifying the input (We'll get to this later in :ref`quickstart-menu-4`).
+    It is much easier (and less error prone) to copy/paste the sample sheet file path when specifying the input (We'll get to this later in :ref:`quickstart-menu-4`).
 
 You will now use the arrow keys to move up and down between your options and hit your "Enter" or "Return" key to make your choice.
 
@@ -296,9 +296,9 @@ You will now use the arrow keys to move up and down between your options and hit
 Choose a version
 ----------------
 
-The double, right-handed arrows should already indicate the latest release of Autometa (in our case "2.0.0"). 
+The double, right-handed arrows should already indicate the latest release of Autometa (in our case ``2.0.0``). 
 The latest version of the tool will always be at the top of the list with older versions descending below. 
-To select the latest version, ensure that the double, right-handed arrows are next to "2.0.0", then hit "Enter".
+To select the latest version, ensure that the double, right-handed arrows are next to ``2.0.0``, then hit "Enter".
 
 .. image:: ../img/Menu1.png
 
@@ -366,7 +366,9 @@ Additional Autometa options
 Here you have a choice to make: 
 
 * By enabling taxonomy aware mode, Autometa will attempt to use taxonomic data to make your bins more accurate. 
-    However, this is a more computationally expensive step and will make the process take longer. 
+
+However, this is a more computationally expensive step and will make the process take longer. 
+
 * By leaving this option as the default ``False`` option, Autometa will bin according to coverage and kmer patterns.
 
 Despite your choice, you will need to provide a path to the necessary databases using the ``single_db_dir`` option.
@@ -422,7 +424,7 @@ Once you have hit the "Enter" key to submit the command, nextflow will display t
 
 .. image:: ../img/progress.png
 
-When the run is complete, output will be stored in your designated output folder, in my case ``/home/same/Trial/Autometa_output`` (See :ref`quickstart-menu-4`).
+When the run is complete, output will be stored in your designated output folder, in my case ``/home/same/Trial/Autometa_output`` (See :ref:`quickstart-menu-4`).
 
 
 Basic
