@@ -102,9 +102,7 @@ def parse(bed: str, out: str = None, force: bool = False) -> pd.DataFrame:
         raise FileNotFoundError(bed)
     names = ["contig", "depth", "bases", "length", "depth_fraction"]
     df = pd.read_csv(bed, sep="\t", names=names, index_col="contig")
-    criterion1 = df.depth != 0
-    criterion2 = df.index != "genome"
-    df = df[criterion1 & criterion2]
+    df = df[df.index != "genome"]
     df = df.assign(depth_product=lambda x: x.depth * x.bases)
     dff = df.groupby("contig")["depth_product", "bases"].sum()
     dff = dff.assign(coverage=lambda x: x.depth_product / x.bases)
