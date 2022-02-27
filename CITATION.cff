@@ -1,35 +1,32 @@
 cff-version: 1.2.0
 message: 'If you use this software, please cite it as below.'
 title: Autometa
-authors: 
-  - family-names: Kwan
-    given-names: Jason C.
-references:  
-  - type: article
-    authors:
-      - given-names: Ian J.
-        family-names: Miller
-      - given-names: Evan R.
-        family-names: Rees
-      - given-names: Jennifer
-        family-names: Ross
-      - given-names: Izaak
-        family-names: Miller
-      - given-names: Jared
-        family-names: Baxa
-      - given-names: Juan
-        family-names: Lopera
-      - given-names: Robert L.
-        family-names: Kerby
-      - given-names: Federico E.
-        family-names: Rey
-      - given-names: Jason C.
-        family-names: Kwan
-        orcid: 'https://orcid.org/0000-0001-9933-1536'
-    title: 'Autometa: automated extraction of microbial genomes from individual shotgun metagenomes'
-    year: 2019
-    journal: Nucleic Acids Research
-    volume: 47
-    issue: 10  
-    url: 'https://github.com/KwanLab/Autometa'
-    doi: 10.1093/nar/gkz148
+preferred-citation:  
+  type: article
+  authors:
+  - given-names: Ian J.
+    family-names: Miller
+  - given-names: Evan R.
+    family-names: Rees
+  - given-names: Jennifer
+    family-names: Ross
+  - given-names: Izaak
+    family-names: Miller
+  - given-names: Jared
+    family-names: Baxa
+  - given-names: Juan
+    family-names: Lopera
+  - given-names: Robert L.
+    family-names: Kerby
+  - given-names: Federico E.
+    family-names: Rey
+  - given-names: Jason C.
+    family-names: Kwan
+  orcid: 'https://orcid.org/0000-0001-9933-1536'
+  title: 'Autometa: automated extraction of microbial genomes from individual shotgun metagenomes'
+  year: 2019
+  journal: Nucleic Acids Research
+  volume: 47
+  issue: 10  
+  url: 'https://github.com/KwanLab/Autometa'
+  doi: 10.1093/nar/gkz148
