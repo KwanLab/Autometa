@@ -83,13 +83,13 @@ class LCA(NCBI):
         if self.cache and not os.path.exists(self.cache):
             logger.info(f"Created LCA cache dir: {self.cache}")
             os.makedirs(self.cache)
-        self.tour_fp = os.path.join(self.cache, "tour.pkl.gz")
+            self.tour_fp = os.path.join(self.cache, "tour.pkl.gz")
+            self.level_fp = os.path.join(self.cache, "level.pkl.gz")
+            self.occurrence_fp = os.path.join(self.cache, "occurrence.pkl.gz")
+            self.sparse_fp = os.path.join(self.cache, "precomputed_lcas.pkl.gz")
         self.tour = None
-        self.level_fp = os.path.join(self.cache, "level.pkl.gz")
         self.level = None
-        self.occurrence_fp = os.path.join(self.cache, "occurrence.pkl.gz")
         self.occurrence = None
-        self.sparse_fp = os.path.join(self.cache, "precomputed_lcas.pkl.gz")
         self.sparse = None
         self.lca_prepared = False
 
