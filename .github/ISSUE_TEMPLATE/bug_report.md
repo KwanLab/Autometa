@@ -35,9 +35,9 @@ your issue, and it is not provided (in a timely manner), your issue may be close
 
 ## Environment Information
 
-<details><summary><code>autometa-configure --dryrun --debug</code></summary><p>
+<details><summary><code>autometa-config --print</code></summary><p>
 
-<!-- between the ticks below, paste the output of 'autometa-configure --dryrun --debug' -->
+<!-- between the ticks below, paste the output of 'autometa-config --print' -->
 
 ```bash
 

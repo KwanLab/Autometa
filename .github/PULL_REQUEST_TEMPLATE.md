@@ -1,14 +1,14 @@
 <!--
-# nf-core/autometa pull request
+# KwanLab/Autometa pull request
 
-Many thanks for contributing to nf-core/autometa!
+Many thanks for contributing to KwanLab/Autometa!
 
 Please fill in the appropriate checklist below (delete whatever is not relevant).
 These are the most common things requested on pull requests (PRs).
 
-Remember that PRs should be made against the dev branch, unless you're preparing a pipeline release.
+Remember that PRs should be made against the dev branch, unless you're preparing a pipeline release or hotfix on the main branch.
 
-Learn more about contributing: [CONTRIBUTING.md](https://github.com/nf-core/autometa/tree/master/.github/CONTRIBUTING.md)
+Learn more about contributing: [CONTRIBUTING.md](https://github.com/KwanLab/autometa/tree/main/.github/CONTRIBUTING.md)
 -->
 <!-- markdownlint-disable ul-indent -->
 
@@ -16,8 +16,7 @@ Learn more about contributing: [CONTRIBUTING.md](https://github.com/nf-core/auto
 
 - [ ] This comment contains a description of changes (with reason).
 - [ ] If you've fixed a bug or added code that should be tested, add tests!
-    - [ ] If you've added a new tool - have you followed the pipeline conventions in the [contribution docs](https://github.com/nf-core/autometa/tree/master/.github/CONTRIBUTING.md)
-    - [ ] If necessary, also make a PR on the nf-core/autometa _branch_ on the [nf-core/test-datasets](https://github.com/nf-core/test-datasets) repository.
+    - [ ] If you've added a new tool - have you followed the pipeline conventions in the [contribution docs](https://github.com/KwanLab/autometa/tree/main/.github/CONTRIBUTING.md)
 - [ ] Make sure your code lints (`nf-core lint .`).
 - [ ] Ensure the test suite passes (`nextflow run . -profile test,docker`).
 - [ ] Usage Documentation in `docs/usage.md` is updated.

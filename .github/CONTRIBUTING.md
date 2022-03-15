@@ -36,7 +36,7 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 
 4. <details>
       <summary>Check out a branch respective to the contribution you plan to make.</summary>
-      <summary>Check out the <code>hotfix</code> branch from <code>master</code> if fixing a bug.</summary><code>git checkout -b hotfix master</code>
+      <summary>Check out the <code>hotfix</code> branch from <code>main</code> if fixing a bug.</summary><code>git checkout -b hotfix main</code>
       <summary>If adding a feature, check out a branch corresponding to the feature you wish to add from <code>dev</code>.</summary>
       <summary> First checkout dev</summary><code>git checkout dev</code>
       <summary>Then checkout your feature</summary><code>git checkout -b your-new-feature dev</code>
@@ -44,11 +44,11 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 
 5. <details>
       <summary>Update your local repository with the most recent updates from the Kwan Lab.</summary>
-      <summary>Update the <code>master</code> branch if fixing a bug.</summary><code>git pull upstream master</code>
+      <summary>Update the <code>main</code> branch if fixing a bug.</summary><code>git pull upstream main</code>
       <summary>Otherwise update <code>your-new-feature</code> branch with <code>dev</code> and resolve any merge conflicts.</summary><code>git pull upstream dev</code>
       <summary><b>Note: Whenver you return to the feature, make sure to pull from upstream to ensure you are working on the most up-to-date code.</b></summary>
       <summary>Update your local repository with any changes from the Kwan Lab.</summary>
-      <code>git push origin master</code>
+      <code>git push origin main</code>
       <br>
       or
       <br>
@@ -74,11 +74,11 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 > that you're experiencing, open a new issue and include a link to the original
 > issue in the body of your new one.
 
-When submitting a bug report, please follow the bug report [template](https://github.com/KwanLab/Autometa/blob/master/.github/ISSUE_TEMPLATE/bug_report.md).
+When submitting a bug report, please follow the bug report [template](https://github.com/KwanLab/Autometa/blob/main/.github/ISSUE_TEMPLATE/bug_report.md).
 
 ### Suggesting Enhancements
 
-Feature requests may be submitted by creating a new issue. When creating this issue, please follow [this template](https://github.com/KwanLab/Autometa/blob/master/.github/ISSUE_TEMPLATE/feature_request.md). After your feature request has been submitted, a maintainer will respond with a determination of whether this feature is appropriate for Autometa. If a maintainer has not responded within a reasonable time period, you can notify the Autometa team. See [notifying the team](#notifying-the-team) for details.
+Feature requests may be submitted by creating a new issue. When creating this issue, please follow [this template](https://github.com/KwanLab/Autometa/blob/main/.github/ISSUE_TEMPLATE/feature_request.md). After your feature request has been submitted, a maintainer will respond with a determination of whether this feature is appropriate for Autometa. If a maintainer has not responded within a reasonable time period, you can notify the Autometa team. See [notifying the team](#notifying-the-team) for details.
 
 ### Pull Requests
 
@@ -90,7 +90,7 @@ Pull requests have several goals:
 
 Please follow these steps to have your contribution considered by the maintainers:
 
-1. Follow all instructions in respective [bug_fix](https://github.com/KwanLab/Autometa/blob/master/.github/PULL_REQUEST_TEMPLATE/bug_fix.md) or [feature_change](https://github.com/KwanLab/Autometa/blob/master/.github/PULL_REQUEST_TEMPLATE/feature_change.md) templates.
+1. Follow all instructions in respective [bug_fix](https://github.com/KwanLab/Autometa/blob/main/.github/PULL_REQUEST_TEMPLATE/bug_fix.md) or [feature_change](https://github.com/KwanLab/Autometa/blob/main/.github/PULL_REQUEST_TEMPLATE/feature_change.md) templates.
 2. Follow the [style guides](#style-guides).
 
    > Note: If writing a new file, a `template.py` file is provided within the autometa code base to help follow the structure requested by the Autometa team.
