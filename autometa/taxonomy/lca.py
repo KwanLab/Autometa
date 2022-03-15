@@ -74,15 +74,17 @@ class LCA(NCBI):
 
     """
 
-    def __init__(self, dbdir: str, verbose: bool = False, cache: str = None):
+    def __init__(self, dbdir: str, verbose: bool = False, cache: str = ""):
         super().__init__(dbdir, verbose=verbose)
         self.verbose = verbose
         self.dbdir = dbdir
         self.cache = cache
         self.disable = False if verbose else True
+        if self.cache == None:
+            self.cache = ""
         if self.cache and not os.path.exists(self.cache):
-            logger.info(f"Created LCA cache dir: {self.cache}")
             os.makedirs(self.cache)
+            logger.info(f"Created LCA cache dir: {self.cache}")
         self.tour_fp = os.path.join(self.cache, "tour.pkl.gz")
         self.tour = None
         self.level_fp = os.path.join(self.cache, "level.pkl.gz")
