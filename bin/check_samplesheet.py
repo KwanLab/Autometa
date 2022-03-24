@@ -72,7 +72,7 @@ def check_samplesheet(file_in, file_out):
         "cov_from_assembly",
     ]
     num_required_cols = len(req_header_cols)
-    with open(file_in, "r") as fh:
+    with open(file_in, "r", encoding='utf-8-sig') as fh:
         ## Check header
         header = fh.readline().strip()
         header_cols = [header_col.strip('"') for header_col in header.split(",")]
