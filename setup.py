@@ -54,7 +54,6 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.7",
-        "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",

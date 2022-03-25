@@ -2,14 +2,20 @@ name: pytest/codecov
 
 on:
   push:
-    paths-ignore:
-      - "docs/**"
+    # Only perform codecov if autometa or tests have changed...
+    paths:
+      - "autometa/**"
+      - "tests/**"
+      - "pytest.ini"
     branches:
       - main
       - dev
   pull_request:
-    paths-ignore:
-      - "docs/**"
+    # Only perform codecov if autometa or tests have changed...
+    paths:
+      - "autometa/**"
+      - "tests/**"
+      - "pytest.ini"
     branches:
       - main
       - dev
