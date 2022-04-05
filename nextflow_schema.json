@@ -222,7 +222,7 @@
             "properties": {
                 "max_cpus": {
                     "type": "integer",
-                    "default": 16,
+                    "default": 4,
                     "fa_icon": "fas fa-microchip",
                     "description": "Max cpus to use/request"
                 },
@@ -234,7 +234,7 @@
                 },
                 "max_time": {
                     "type": "string",
-                    "default": "2d",
+                    "default": "240 h",
                     "fa_icon": "fas fa-clock",
                     "description": "Max time a *single* process is allowed to run"
                 },
