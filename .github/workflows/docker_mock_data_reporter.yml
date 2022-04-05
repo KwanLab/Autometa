@@ -2,14 +2,26 @@ name: docker mock data reporter CI/CD
 
 on:
   push:
-    paths-ignore:
-      - "docs/**"
+    paths:
+        - "workflows/**"
+        - "subworkflows/**"
+        - "modules/**"
+        - "main.nf"
+        - "lib/**"
+        - "conf/**"
+        - "docker/modules/**"
     branches:
       - main
       - dev
   pull_request:
-    paths-ignore:
-      - "docs/**"
+    paths:
+        - "workflows/**"
+        - "subworkflows/**"
+        - "modules/**"
+        - "main.nf"
+        - "lib/**"
+        - "conf/**"
+        - "docker/modules/**"
     branches:
       - main
       - dev

@@ -1,15 +1,32 @@
 name: docker Autometa CI/CD
 
 on:
+  release:
+    types: [published]
   push:
-    paths-ignore:
-      - "docs/**"
+    # Only construct the image if changes affect the image...
+    paths:
+      - "autometa/**"
+      - "Dockerfile"
+      - "autometa-env.yml"
+      - "tests/**"
+      - "Makefile"
+      - "pytest.ini"
+      - "setup.py"
+      - "make_test_data.py"
     branches:
       - main
       - dev
   pull_request:
-    paths-ignore:
-      - "docs/**"
+    paths:
+      - "autometa/**"
+      - "Dockerfile"
+      - "autometa-env.yml"
+      - "tests/**"
+      - "Makefile"
+      - "pytest.ini"
+      - "setup.py"
+      - "make_test_data.py"
     branches:
       - main
       - dev

@@ -47,9 +47,9 @@ your issue, and it is not provided (in a timely manner), your issue may be close
 
 ## Run Information
 
-<details><summary>contents of <code>parameters.config</code></summary><p>
-<!-- between the ticks below, paste the information from your input config file
-'cat </path/to/your/input/parameters.config>' -->
+<details><summary>contents of <code>nf-params.json</code></summary><p>
+<!-- between the ticks below, paste the information from your input paramaters file
+'cat </path/to/your/input/nf-params.json>' -->
 
 ```bash
 
