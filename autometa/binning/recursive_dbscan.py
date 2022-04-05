@@ -888,19 +888,30 @@ def main():
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
     if args.taxonomy:
-        main_out = taxon_guided_binning(
-            main=main_df,
-            markers=markers_df,
-            completeness=args.completeness,
-            purity=args.purity,
-            coverage_stddev=args.cov_stddev_limit,
-            gc_content_stddev=args.gc_stddev_limit,
-            method=args.clustering_method,
-            starting_rank=args.starting_rank,
-            reverse_ranks=args.reverse_ranks,
-            n_jobs=args.cpus,
-            verbose=args.verbose,
-        )
+        try:
+            main_out = taxon_guided_binning(
+                main=main_df,
+                markers=markers_df,
+                completeness=args.completeness,
+                purity=args.purity,
+                coverage_stddev=args.cov_stddev_limit,
+                gc_content_stddev=args.gc_stddev_limit,
+                method=args.clustering_method,
+                starting_rank=args.starting_rank,
+                reverse_ranks=args.reverse_ranks,
+                n_jobs=args.cpus,
+                verbose=args.verbose,
+            )
+        except BinningError as err:
+            # Failed to recover any clusters from dataset
+            logger.warn(err)
+            logger.warn(
+                "This may be due to too few input contigs, too few marker-containing contigs, or some other reason!"
+            )
+            logger.warn(
+                "Please inspect your input data before proceeding with this dataset!"
+            )
+            sys.exit(204)
     else:
         # Perform clustering w/o taxonomy
         main_out = get_clusters(
