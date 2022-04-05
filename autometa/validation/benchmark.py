@@ -228,6 +228,11 @@ def get_target_labels(
     pred_df = pd.read_csv(
         prediction, sep="\t", index_col="contig", usecols=["contig", "taxid"]
     ).convert_dtypes()
+    # Convert taxids of 0 to 1 (some taxon-profilers assign unclassified to 0)
+    logger.debug(pred_df[pred_df.taxid.eq(0)].index.unique().tolist())
+    logger.debug(f"Converting {pred_df.taxid.eq(0).sum():,} taxids from 0 to 1")
+    pred_df.taxid = pred_df.taxid.map(lambda tid: 1 if tid == 0 else tid)
+
     if not isinstance(reference, pd.DataFrame) and isinstance(reference, str):
         ref_df = (
             pd.read_csv(
