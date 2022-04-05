@@ -234,7 +234,7 @@
                 },
                 "max_time": {
                     "type": "string",
-                    "default": "240 h",
+                    "default": "240.h",
                     "fa_icon": "fas fa-clock",
                     "description": "Max time a *single* process is allowed to run"
                 },
