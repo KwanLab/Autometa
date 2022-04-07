@@ -459,10 +459,8 @@ def ncbi_is_connected(
         False if the rsync process returns any error
     """
     cmd = ["rsync", "--quiet", "--dry-run", filepath]
-    if subprocess.check_call(cmd) == 0:
-        return True
-    else:
-        return False
+    proc = subprocess.run(cmd)
+    return proc.returncode == 0
 
 if __name__ == "__main__":
     print(
