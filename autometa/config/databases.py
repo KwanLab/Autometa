@@ -10,7 +10,6 @@ of Autometa Databases.
 import logging
 import os
 import requests
-import socket
 import subprocess
 import tempfile
 
@@ -25,7 +24,7 @@ from autometa.common.utilities import untar
 from autometa.common.utilities import calc_checksum
 from autometa.common.utilities import read_checksum
 from autometa.common.utilities import write_checksum
-from autometa.common.utilities import internet_is_connected
+from autometa.common.utilities import ncbi_is_connected
 from autometa.common.exceptions import ChecksumMismatchError
 from autometa.common.external import diamond
 from autometa.common.external import hmmscan
@@ -199,8 +198,8 @@ class Databases:
             raise ValueError(
                 f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
-        if not internet_is_connected():
-            raise ConnectionError("Cannot connect to the internet")
+        if not ncbi_is_connected():
+            raise ConnectionError("Cannot connect to the NCBI rsync server")
         if section == "ncbi":
             host = self.config.get(section, "host")
             ftp_fullpath = self.config.get("checksums", option)
