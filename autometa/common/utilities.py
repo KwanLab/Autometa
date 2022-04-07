@@ -16,6 +16,7 @@ import socket
 import sys
 import tarfile
 import time
+import subprocess
 from types import FunctionType
 from typing import Any
 
@@ -439,6 +440,27 @@ def internet_is_connected(
     except socket.error:
         return False
 
+def ncbi_is_connected(
+    filepath: str = "rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number"
+) -> bool:
+    """Check if ncbi databases are reachable. This can be used instead of a check for internet connection.
+
+    Parameters
+    ----------
+    filepath : string
+        filepath to NCBI's rsync server. Default is rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number,
+        which should be a very small file that is unlikely to move. This may need to be updated if NCBI changes
+        their file organization.
+
+    Outputs
+    -------
+    True or False
+        True if the rsync server can be contacted without an error
+        False if the rsync process returns any error
+    """
+    cmd = ["rsync", "--quiet", "--dry-run", filepath]
+    proc = subprocess.run(cmd)
+    return proc.returncode == 0
 
 if __name__ == "__main__":
     print(
