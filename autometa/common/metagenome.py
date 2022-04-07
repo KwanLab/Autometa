@@ -286,7 +286,7 @@ class Metagenome:
             raise FileExistsError(out)
         logger.info(f"Getting contigs greater than or equal to {cutoff:,} bp")
         records = [record for record in self.seqrecords if len(record.seq) >= cutoff]
-        outdir = os.path.dirname(out)
+        outdir = os.path.dirname(os.path.abspath(out))
         if not os.path.exists(outdir):
             os.makedirs(outdir)
             logger.debug(f"Created outdir: {outdir}")
