@@ -300,14 +300,12 @@ def get_target_labels(
     y_pred = main_df.pred_lineage.str.get_dummies()
     # Now we need to ensure our columns have one-to-one correspondence with both dataframes
     # Retrieve columns in y_true but not in y_pred
-    y_true_cols = y_true.loc[:, ~y_true.columns.isin(y_pred.columns)].columns
+    absent_y_true_cols = y_true.loc[:, ~y_true.columns.isin(y_pred.columns)].columns
     # Retrieve columns in y_pred but not in y_true
-    y_pred_cols = y_pred.loc[:, ~y_pred.columns.isin(y_true.columns)].columns
+    absent_y_pred_cols = y_pred.loc[:, ~y_pred.columns.isin(y_true.columns)].columns
     # Now add these columns with 0's to reflect their absence in the other respective dataframe
-    for col in y_true_cols:
-        y_pred[col] = 0
-    for col in y_pred_cols:
-        y_true[col] = 0
+    y_pred.loc[:, absent_y_true_cols] = 0
+    y_true.loc[:, absent_y_pred_cols] = 0
     # Now we need to ensure all column indices correspond to each other between dataframes
     all_cols = y_true.columns.tolist()
     y_pred = y_pred[all_cols]
