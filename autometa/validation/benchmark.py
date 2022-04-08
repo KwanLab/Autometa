@@ -229,9 +229,23 @@ def get_target_labels(
         prediction, sep="\t", index_col="contig", usecols=["contig", "taxid"]
     ).convert_dtypes()
     # Convert taxids of 0 to 1 (some taxon-profilers assign unclassified to 0)
-    logger.debug(pred_df[pred_df.taxid.eq(0)].index.unique().tolist())
-    logger.debug(f"Converting {pred_df.taxid.eq(0).sum():,} taxids from 0 to 1")
+    unclassified_contigs = pred_df[pred_df.taxid.eq(0)].index.unique().tolist()
+    if unclassified_contigs:
+        logger.debug(unclassified_contigs)
+        logger.debug(f"Converting {pred_df.taxid.eq(0).sum():,} taxids from 0 to 1")
+
     pred_df.taxid = pred_df.taxid.map(lambda tid: 1 if tid == 0 else tid)
+
+    unclassified_contigs = (
+        pred_df[pred_df.taxid.eq("unclassified")].index.unique().tolist()
+    )
+    if unclassified_contigs:
+        logger.debug(unclassified_contigs)
+        logger.debug(
+            f"Converting {pred_df.taxid.eq('unclassified').sum():,} taxids from 'unclassified' to 1"
+        )
+
+    pred_df.taxid = pred_df.taxid.map(lambda tid: 1 if tid == "unclassified" else tid)
 
     if not isinstance(reference, pd.DataFrame) and isinstance(reference, str):
         ref_df = (
