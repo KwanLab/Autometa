@@ -104,8 +104,8 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
     Note
     ----
 
-    Some of these clustering performance evaluation metrics adjust for chance. This is dicussed in more detail in
-    the sklearn user guide. - `Adjustment for chance in clustering performance evaluation <https://scikit-learn.org/stable/auto_examples/cluster/plot_adjusted_for_chance_measures.html#sphx-glr-auto-examples-cluster-plot-adjusted-for-chance-measures-py>`_
+    Some of these clustering performance evaluation metrics adjust for chance. This is discussed in more detail in
+    the scikit-learn user guide. - `Adjustment for chance in clustering performance evaluation <https://scikit-learn.org/stable/auto_examples/cluster/plot_adjusted_for_chance_measures.html#sphx-glr-auto-examples-cluster-plot-adjusted-for-chance-measures-py>`_
 
     This analysis suggests the most robust and reliable metrics to use as the number of clusters
     increases are adjusted rand index and adjusted mutual info score.

@@ -12,7 +12,7 @@ import logging
 import os
 import string
 import sys
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Set
 
 import pandas as pd
 
@@ -64,6 +64,7 @@ class NCBI:
         self.names_fpath = os.path.join(self.dirpath, "names.dmp")
         self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
         self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
+        self.delnodes_fpath = os.path.join(self.dirpath, "delnodes.dmp")
         # Set prot.accession2taxid filepath
         self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
         acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
@@ -105,6 +106,7 @@ class NCBI:
         self.nodes = self.parse_nodes()
         self.names = self.parse_names()
         self.merged = self.parse_merged()
+        self.delnodes = self.parse_delnodes()
 
     def __repr__(self):
         """
@@ -382,6 +384,30 @@ class NCBI:
             logger.debug("merged loaded")
         return merged
 
+    def parse_delnodes(self) -> Set[int]:
+        """
+        Parse the delnodes.dmp database
+        Note: This is performed when a new NCBI class instance is constructed
+
+        Returns
+        -------
+        set
+            {taxid, ...}
+        """
+        if self.verbose:
+            logger.debug(f"Processing delnodes from {self.delnodes_fpath}")
+        fh = open(self.delnodes_fpath)
+        delnodes = set()
+        for line in tqdm(
+            fh, disable=self.disable, desc="parsing delnodes", leave=False
+        ):
+            del_taxid = line.strip("\t|\n")
+            delnodes.add(del_taxid)
+        fh.close()
+        if self.verbose:
+            logger.debug("delnodes loaded")
+        return delnodes
+
     def is_common_ancestor(self, taxid_A: int, taxid_B: int) -> bool:
         """
         Determines whether the provided taxids have a non-root common ancestor
@@ -410,11 +436,12 @@ class NCBI:
         2. Checks whether `taxid` is present in both nodes.dmp and names.dmp.
         3a. If (2) is false, will check for corresponding `taxid` in merged.dmp and convert to this then redo (2).
         3b. If (2) is true, will return converted taxid.
+        4. If (3a) is false will look for `taxid` in delnodes.dmp. If present will convert to root (taxid=1)
 
         Parameters
         ----------
         taxid : int
-            identifer for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+            identifier for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
@@ -429,6 +456,7 @@ class NCBI:
         DatabaseOutOfSyncError
             NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
+        #  Step 1 Converts the given `taxid` to an integer and checks whether it is positive.
         # Checking taxid instance format
         # This checks if an integer has been added as str, eg. "562"
         if isinstance(taxid, str):
@@ -448,13 +476,31 @@ class NCBI:
         if taxid <= 0:
             raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
         # Checking databases
+        #  Step 2: Check whether taxid is present in both nodes.dmp and names.dmp.
         if taxid not in self.names and taxid not in self.nodes:
+            # Step 3a. Check for corresponding taxid in merged.dmp
             if taxid not in self.merged:
-                err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp or merged.dmp."
-                raise DatabaseOutOfSyncError(err_message)
+                # Step 4: look for taxid in delnodes.dmp. If present will convert to root (taxid=1)
+                if taxid in self.delnodes:
+                    # Assign deleted taxid to root...
+                    if self.verbose:
+                        logger.debug(
+                            f"Found {taxid} in delnodes.dmp, converting to root (taxid=1)"
+                        )
+                    taxid = 1
+                else:
+                    err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp, merged.dmp or delnodes.dmp"
+                    raise DatabaseOutOfSyncError(err_message)
             else:
+                # Step 3b. convert taxid from merged.
+                if self.verbose:
+                    logger.debug(
+                        f"Converted {taxid} to {self.merged[taxid]} from merged.dmp"
+                    )
                 taxid = self.merged[taxid]
                 if taxid not in self.names and taxid not in self.nodes:
+                    # NOTE: Do not check delnodes.dmp here, as at this point it appears the databases are indeed out of sync.
+                    # i.e. The taxid should either be in merged.dmp or in delnodes.dmp if not in nodes.dmp or names.dmp
                     err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
                     raise DatabaseOutOfSyncError(err_message)
         return taxid
