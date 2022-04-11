@@ -67,6 +67,25 @@ def fixture_merged(variables):
     return lines
 
 
+@pytest.fixture(name="delnodes", scope="session", autouse=True)
+def fixture_delnodes(variables):
+    # Parsing in ncbi.parse_delnodes() follows NCBI delnodes.dmp file format.
+    deltaxids = [
+        2564079,
+        2564078,
+        2564077,
+        2564076,
+        2564075,
+        2564074,
+        2564073,
+        2564072,
+        2564071,
+        2564070,
+    ]
+    lines = "\t|\n".join([str(taxid) for taxid in deltaxids]) + "\t|\n"
+    return lines
+
+
 @pytest.fixture(name="acc2taxid", scope="session", autouse=True)
 def fixture_acc2taxid(variables):
     vote_test_data = variables["taxonomy"]
@@ -79,7 +98,7 @@ def fixture_acc2taxid(variables):
 
 
 @pytest.fixture(name="ncbi_dir", scope="session", autouse=True)
-def fixture_ncbi_dir(dbdir, merged, nodes, names, acc2taxid):
+def fixture_ncbi_dir(dbdir, merged, nodes, names, delnodes, acc2taxid):
     ncbi_dir = dbdir.joinpath("ncbi")
     ncbi_dir.mkdir()
     # NOTE: NCBI instance expects file name prot.accession2taxid
@@ -90,9 +109,11 @@ def fixture_ncbi_dir(dbdir, merged, nodes, names, acc2taxid):
     names_fpath = ncbi_dir / "names.dmp"
     # NOTE: NCBI instance expects file name nodes.dmp
     nodes_fpath = ncbi_dir / "nodes.dmp"
+    # NOTE: NCBI instance expects file name delnodes.dmp
+    delnodes_fpath = ncbi_dir / "delnodes.dmp"
     for fpath, data in zip(
-        [merged_fpath, nodes_fpath, names_fpath, acc2taxid_fpath],
-        [merged, nodes, names, acc2taxid],
+        [merged_fpath, nodes_fpath, names_fpath, delnodes_fpath, acc2taxid_fpath],
+        [merged, nodes, names, delnodes, acc2taxid],
     ):
         with open(fpath, "w") as fh:
             fh.write(data)

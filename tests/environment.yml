@@ -17,7 +17,6 @@ dependencies:
   - numpy>=1.13
   - pandas>=1.1
   - parallel
-  - pip
   - pre_commit
   - prodigal # NOTE: 2.5 and 2.6 output format is different for sequence headers
   - pytest
@@ -37,3 +36,7 @@ dependencies:
   - trimap
   - tsne
   - umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap
+  - pip
+  - pip:
+      - pytest-emoji
+      - pytest-md
