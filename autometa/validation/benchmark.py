@@ -104,8 +104,8 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
     Note
     ----
 
-    Some of these clustering performance evaluation metrics adjust for chance. This is dicussed in more detail in
-    the sklearn user guide. - `Adjustment for chance in clustering performance evaluation <https://scikit-learn.org/stable/auto_examples/cluster/plot_adjusted_for_chance_measures.html#sphx-glr-auto-examples-cluster-plot-adjusted-for-chance-measures-py>`_
+    Some of these clustering performance evaluation metrics adjust for chance. This is discussed in more detail in
+    the scikit-learn user guide. - `Adjustment for chance in clustering performance evaluation <https://scikit-learn.org/stable/auto_examples/cluster/plot_adjusted_for_chance_measures.html#sphx-glr-auto-examples-cluster-plot-adjusted-for-chance-measures-py>`_
 
     This analysis suggests the most robust and reliable metrics to use as the number of clusters
     increases are adjusted rand index and adjusted mutual info score.
@@ -229,9 +229,23 @@ def get_target_labels(
         prediction, sep="\t", index_col="contig", usecols=["contig", "taxid"]
     ).convert_dtypes()
     # Convert taxids of 0 to 1 (some taxon-profilers assign unclassified to 0)
-    logger.debug(pred_df[pred_df.taxid.eq(0)].index.unique().tolist())
-    logger.debug(f"Converting {pred_df.taxid.eq(0).sum():,} taxids from 0 to 1")
+    unclassified_contigs = pred_df[pred_df.taxid.eq(0)].index.unique().tolist()
+    if unclassified_contigs:
+        logger.debug(unclassified_contigs)
+        logger.debug(f"Converting {pred_df.taxid.eq(0).sum():,} taxids from 0 to 1")
+
     pred_df.taxid = pred_df.taxid.map(lambda tid: 1 if tid == 0 else tid)
+
+    unclassified_contigs = (
+        pred_df[pred_df.taxid.eq("unclassified")].index.unique().tolist()
+    )
+    if unclassified_contigs:
+        logger.debug(unclassified_contigs)
+        logger.debug(
+            f"Converting {pred_df.taxid.eq('unclassified').sum():,} taxids from 'unclassified' to 1"
+        )
+
+    pred_df.taxid = pred_df.taxid.map(lambda tid: 1 if tid == "unclassified" else tid)
 
     if not isinstance(reference, pd.DataFrame) and isinstance(reference, str):
         ref_df = (
@@ -286,14 +300,12 @@ def get_target_labels(
     y_pred = main_df.pred_lineage.str.get_dummies()
     # Now we need to ensure our columns have one-to-one correspondence with both dataframes
     # Retrieve columns in y_true but not in y_pred
-    y_true_cols = y_true.loc[:, ~y_true.columns.isin(y_pred.columns)].columns
+    absent_y_true_cols = y_true.loc[:, ~y_true.columns.isin(y_pred.columns)].columns
     # Retrieve columns in y_pred but not in y_true
-    y_pred_cols = y_pred.loc[:, ~y_pred.columns.isin(y_true.columns)].columns
+    absent_y_pred_cols = y_pred.loc[:, ~y_pred.columns.isin(y_true.columns)].columns
     # Now add these columns with 0's to reflect their absence in the other respective dataframe
-    for col in y_true_cols:
-        y_pred[col] = 0
-    for col in y_pred_cols:
-        y_true[col] = 0
+    y_pred.loc[:, absent_y_true_cols] = 0
+    y_true.loc[:, absent_y_pred_cols] = 0
     # Now we need to ensure all column indices correspond to each other between dataframes
     all_cols = y_true.columns.tolist()
     y_pred = y_pred[all_cols]
