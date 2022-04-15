@@ -63,8 +63,17 @@ Download and install miniconda_. Now run the following commands:
 
 .. code-block:: bash
 
+    # Navigate to the directory where you would like to clone Autometa
+    cd $HOME
+
+    # Clone the Autometa repository
+    git clone https://github.com/KwanLab/Autometa.git
+
+    # Navigate into the cloned repository
+    cd Autometa
+
     # Construct the autometa environment from autometa-env.yml
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml
+    conda env create --file=autometa-env.yml
 
     # Activate environment
     conda activate autometa
