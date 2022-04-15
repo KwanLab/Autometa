@@ -17,30 +17,28 @@ Compute Environment Setup
 If you have not previously installed/used Conda, you can get it using the
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
 
-After installing conda, running the following command will create a minimal Conda environment named "autometa".
+You may either create a new Conda environment named "autometa"...
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml
-
-If you receive the message...
-
-.. code-block:: bash
-
-    CondaValueError: prefix already exists:
-
-...it means you have already created the environment. If you want to overwrite/update
-the environment then add the :code:`--force` flag to the end of the command.
-
-.. code-block:: bash
-
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml --force
-
-Once Conda has finished creating the environment be sure to activate it:
-
-.. code-block:: bash
-
+    conda create -n autometa -c bioconda autometa
+    # Then, once Conda has finished creating the environment
+    # you may activate it:
     conda activate autometa
+
+\.\.\. or install Autometa into any of your existing environments.
+
+This installs Autometa in your current active environment:
+
+.. code-block:: bash
+
+    conda install -c bioconda autometa
+
+The next command installs Autometa in the provided environment:
+
+.. code-block:: bash
+
+    conda install -n <your-env-name> -c bioconda autometa
 
 Download Workflow Template
 **************************
@@ -198,7 +196,8 @@ If you are running Autometa for the first time you'll have to download the NCBI 
 
     # First configure where you want to download the NCBI databases
     autometa-config \\
-        --section databases --option ncbi \\
+        --section databases \\
+        --option ncbi \\
         --value <path/to/your/ncbi/database/directory>
 
     # Now download and format the NCBI databases
