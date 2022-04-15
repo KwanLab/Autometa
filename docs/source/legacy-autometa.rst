@@ -7,4 +7,4 @@ or navigate to the latest Autometa version 1 commit on the GitHub repository.
 
 The latest Autometa version 1 release may be found here: `https://github.com/KwanLab/Autometa/releases <https://github.com/KwanLab/Autometa/releases>`_
 
-You may find the commit associated with any of the Autometa releases by selecting the release and looking under the release tag on the left.
+You may find *any* of the Autometa releases by selecting the release and looking under the release tag on the left.

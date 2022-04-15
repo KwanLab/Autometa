@@ -120,6 +120,9 @@ While the above must be satisfied, additional prerequisites may be present, depe
   - :white_check_mark: `:white_check_mark:` when adding tests
   - :arrow_up: `:arrow_up:` when upgrading dependencies
   - :arrow_down: `:arrow_down:` when downgrading dependencies
+  - :snake: `:snake:` for python-related additions/edits
+  - :green_apple: `:green_apple:` for nextflow-related additions/edits
+  - :shell: `:shell:` for bash workflow-related additions/edits
 
 ### Documentation Style Guide
 

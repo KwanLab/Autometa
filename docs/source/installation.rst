@@ -15,8 +15,17 @@ Direct installation (Quickest)
 ==============================
 
 #. Install miniconda_
-#. Create a new environment with autometa installed: ``conda create -c bioconda -n autometa autometa``
-#. Activate autometa environment ``conda activate autometa``
+#. Create a new environment with ``autometa`` installed:
+
+    .. code-block:: bash
+
+        conda create -c bioconda -n autometa autometa
+
+#. Activate ``autometa`` environment:
+
+    .. code-block::
+
+        conda activate autometa
 
 Install from source (using make)
 ================================
@@ -54,14 +63,23 @@ Download and install miniconda_. Now run the following commands:
 
 .. code-block:: bash
 
+    # Navigate to the directory where you would like to clone Autometa
+    cd $HOME
+
+    # Clone the Autometa repository
+    git clone https://github.com/KwanLab/Autometa.git
+
+    # Navigate into the cloned repository
+    cd Autometa
+
     # Construct the autometa environment from autometa-env.yml
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa-env.yml
+    conda env create --file=autometa-env.yml
 
     # Activate environment
     conda activate autometa
 
     # Install the autometa code base from source
-    python setup.py install
+    python -m pip install . --ignore-installed --no-deps -vv
 
 Building the Docker image
 =========================
