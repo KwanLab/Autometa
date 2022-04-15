@@ -70,7 +70,7 @@ Download and install miniconda_. Now run the following commands:
     conda activate autometa
 
     # Install the autometa code base from source
-    python setup.py install
+    python -m pip install . --ignore-installed --no-deps -vv
 
 Building the Docker image
 =========================
