@@ -15,8 +15,17 @@ Direct installation (Quickest)
 ==============================
 
 #. Install miniconda_
-#. Create a new environment with ``autometa`` installed: ``conda create -c bioconda -n autometa autometa``
-#. Activate ``autometa`` environment ``conda activate autometa``
+#. Create a new environment with ``autometa`` installed:
+
+    .. code-block:: bash
+
+        conda create -c bioconda -n autometa autometa
+
+#. Activate ``autometa`` environment:
+
+    .. code-block::
+
+        conda activate autometa
 
 Install from source (using make)
 ================================
