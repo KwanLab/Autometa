@@ -401,7 +401,7 @@ class NCBI:
         for line in tqdm(
             fh, disable=self.disable, desc="parsing delnodes", leave=False
         ):
-            del_taxid = line.strip("\t|\n")
+            del_taxid = int(line.strip("\t|\n"))
             delnodes.add(del_taxid)
         fh.close()
         if self.verbose:
