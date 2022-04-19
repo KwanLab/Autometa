@@ -13,11 +13,11 @@ process DIAMOND_BLASTP {
     maxForks 1
     publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "bioconda::diamond=2.0.9" : null)
+    conda (params.enable_conda ? "bioconda::diamond=2.0.14" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/diamond:2.0.9--hdcc8f71_0"
+        container "https://depot.galaxyproject.org/singularity/diamond:2.0.14--hdcc8f71_0"
     } else {
-        container "quay.io/biocontainers/diamond:2.0.9--hdcc8f71_0"
+        container "quay.io/biocontainers/diamond:2.0.14--hdcc8f71_0"
     }
 
     input:
