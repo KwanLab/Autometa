@@ -11,7 +11,7 @@ Count, normalize and embed k-mers given nucleotide sequences
 import gzip
 import logging
 import os
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from tsne import bh_sne
 from umap import UMAP
-import trimap
+from trimap import TRIMAP
 
 from autometa.common import utilities
 from autometa.common.exceptions import TableFormatError
@@ -442,7 +442,8 @@ def embed(
     method: str = "bhsne",
     perplexity: float = 30.0,
     seed: int = 42,
-    **method_args: Dict,
+    n_jobs: int = -1,
+    **method_kwargs: Dict[str, Any],
 ) -> pd.DataFrame:
     """Embed k-mers using provided `method`.
 
@@ -459,24 +460,62 @@ def embed(
     ----------
     kmers : str or pd.DataFrame
         </path/to/input/kmers.normalized.tsv>
+
     out : str, optional
         </path/to/output/kmers.out.tsv> If provided will write to `out`.
+
     force: bool, optional
         Whether to overwrite existing `out` file.
+
     embed_dimensions : int, optional
         embed_dimensions` to embed k-mer frequencies (the default is 2).
+
     pca_dimensions : int, optional
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
         If zero, will skip this step.
+
     method : str, optional
         embedding method to use (the default is 'bhsne').
         choices include sksne, bhsne, umap, trimap and densmap.
+
     perplexity : float, optional
         hyperparameter used to tune sksne and bhsne (the default is 30.0).
+
     seed: int, optional
         Seed to use for `method`. Allows for reproducibility from random state.
-    **method_args : dict, optional
-        Other arguments to be supplied to respective `method`.
+
+    **method_kwargs : Dict[str, Any], optional
+        Other keyword arguments to be supplied to respective `method`.
+
+        Examples
+        --------
+
+        Set Set UMAP(verbose=True) using **method_kwargs
+        >>> embed_df = kmers.embed(
+            norm_df,
+            method='densmap',
+            embed_dimensions=2,
+            n_jobs=4,
+            **{'verbose':True}
+        )
+
+        NOTE: Setting duplicate arguments will result in an error
+
+        Here we are attempting to overwrite the use of ``densmap`` by
+        specifying it as the ``method='densmap'`` and also setting this to ``False``
+        with the method_kwargs, ``**{'densmap':False}``
+
+        >>> embed_df = kmers.embed(
+            df,
+            method='densmap',
+            embed_dimensions=2,
+            n_jobs=4,
+            **{'densmap':False}
+        )
+        TypeError: umap.umap_.UMAP() got multiple values for keyword argument 'densmap'
+
+        Typically, you will not require the use of method_kwargs as this is only available
+        for applying advanced parameter settings to any of the available embedding methods.
 
     Returns
     -------
@@ -556,16 +595,22 @@ def embed(
             n_components=embed_dimensions,
             perplexity=perplexity,
             random_state=random_state,
+            n_jobs=n_jobs,
+            **method_kwargs,
         ).fit_transform(X)
 
     def do_bhsne():
         return bh_sne(
-            data=X, d=embed_dimensions, perplexity=perplexity, random_state=random_state
+            data=X,
+            d=embed_dimensions,
+            perplexity=perplexity,
+            random_state=random_state,
+            **method_kwargs,
         )
 
     # def do_densne():
     #     return densne.run_densne(
-    #         X, no_dims=embed_dimensions, perplexity=perplexity, rand_seed=random_state,
+    #         X, no_dims=embed_dimensions, perplexity=perplexity, rand_seed=random_state, **method_kwargs
     #     )
 
     method_is_densmap = method == "densmap"
@@ -577,10 +622,14 @@ def embed(
             metric="euclidean",
             random_state=random_state,
             densmap=method_is_densmap,
+            n_jobs=n_jobs,
+            **method_kwargs,
         ).fit_transform(X)
 
     def do_trimap():
-        return trimap.TRIMAP(n_dims=embed_dimensions, verbose=False).fit_transform(X)
+        return TRIMAP(
+            n_dims=embed_dimensions, verbose=False, **method_kwargs
+        ).fit_transform(X)
 
     # TODO: Add "densne":do_densne() to dispatcher when easy install of densne is available.
     dispatcher = {
@@ -592,14 +641,14 @@ def embed(
     }
     logger.debug(f"Performing embedding with {method} (seed {seed})")
     try:
-        X = dispatcher[method](**method_args)
+        X = dispatcher[method]()
     except ValueError as err:
         if method == "sksne":
             logger.warning(
                 f"embed_dimensions ({embed_dimensions}) is too high for sksne. Reducing to 3."
             )
             embed_dimensions = 3
-            X = dispatcher[method](**method_args)
+            X = dispatcher[method]()
         else:
             raise err
     embedded_df = pd.DataFrame(X, index=df.index)
@@ -753,6 +802,7 @@ def main():
             embed_dimensions=args.embedding_dimensions,
             pca_dimensions=args.pca_dimensions,
             seed=args.seed,
+            n_jobs=args.cpus,
         )
 
 

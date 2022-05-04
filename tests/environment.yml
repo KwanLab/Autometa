@@ -7,7 +7,7 @@ dependencies:
   - attrs # test-data requirement
   - bedtools
   - biopython
-  - black
+  - black==21.7b0
   - bowtie2
   - diamond>=2.0
   - gdown

@@ -95,7 +95,7 @@ def test_count(assembly, tmp_path):
     size = 5
     force = False
     df = kmers.count(assembly=assembly, size=size, out=out, force=force)
-    assert df.shape[1] == 4 ** size / 2
+    assert df.shape[1] == 4**size / 2
     assert df.index.name == "contig"
     assert out.exists()
 
@@ -106,7 +106,7 @@ def test_count_out_exists(assembly, counts, force, tmp_path):
     counts.to_csv(out, sep="\t", index=True, header=True)
     size = 5
     df = kmers.count(assembly=assembly, size=size, out=out, force=force)
-    assert df.shape[1] == 4 ** size / 2
+    assert df.shape[1] == 4**size / 2
     assert df.index.name == "contig"
     assert out.exists()
 
@@ -152,6 +152,7 @@ def test_embed_methods(norm_df, method, tmp_path):
     force = False
     embed_dimensions = 2
     pca_dimensions = 3
+    verbose = 1 if method == "sksne" else True
     df = kmers.embed(
         kmers=norm_df,
         out=out,
@@ -160,6 +161,7 @@ def test_embed_methods(norm_df, method, tmp_path):
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
+        **{"verbose": verbose},
     )
     assert df.shape[1] == embed_dimensions
 
