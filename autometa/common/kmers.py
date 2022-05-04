@@ -490,7 +490,7 @@ def embed(
         Examples
         --------
 
-        Set Set UMAP(verbose=True) using **method_kwargs
+        Set UMAP(verbose=True) using **method_kwargs
         >>> embed_df = kmers.embed(
             norm_df,
             method='densmap',
