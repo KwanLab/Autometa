@@ -1,0 +1,6 @@
+ignore:
+  - "conf"
+  - "lib"
+  - "modules"
+  - "subworkflows"
+  - "workflows"
