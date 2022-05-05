@@ -152,7 +152,11 @@ def test_embed_methods(norm_df, method, tmp_path):
     force = False
     embed_dimensions = 2
     pca_dimensions = 3
+    method_kwargs = {}
     verbose = 1 if method == "sksne" else True
+    method_kwargs.update({"verbose": verbose})
+    output_dens = {'output_dens':True} if method == "densmap" else {}
+    method_kwargs.update(output_dens)
     df = kmers.embed(
         kmers=norm_df,
         out=out,
@@ -161,9 +165,10 @@ def test_embed_methods(norm_df, method, tmp_path):
         pca_dimensions=pca_dimensions,
         method=method,
         seed=seed,
-        **{"verbose": verbose},
+        **method_kwargs,
     )
-    assert df.shape[1] == embed_dimensions
+    out_shape = embed_dimensions + 2 if method == "densmap" else embed_dimensions
+    assert df.shape[1] == out_shape
 
 
 @pytest.mark.parametrize("embed_dimensions", [2, 3, 4])

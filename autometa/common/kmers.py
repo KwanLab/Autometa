@@ -469,6 +469,10 @@ def embed(
     embed_dimensions : int, optional
         embed_dimensions` to embed k-mer frequencies (the default is 2).
 
+        The output embedded kmers will follow columns of `x_1` to `x_{embed_dimensions}`
+        
+        NOTE: The columns are 1-indexed, i.e. at x_1 *not* x_0
+
     pca_dimensions : int, optional
         Reduce k-mer frequencies dimensions to `pca_dimensions` (the default is 50).
         If zero, will skip this step.
@@ -501,12 +505,12 @@ def embed(
 
     **method_kwargs : Dict[str, Any], optional
 
-        Other keyword arguments to be supplied to respective `method`.
+        Other keyword arguments (kwargs) to be supplied to respective `method`.
 
         Examples
         --------
 
-        Set UMAP(verbose=True) using **method_kwargs
+        Set UMAP(verbose=True, output_dens=True) using **method_kwargs
         >>> embed_df = kmers.embed(
             norm_df,
             method='densmap',
@@ -514,21 +518,23 @@ def embed(
             n_jobs=None,
             **{
                 'verbose': True,
+                'output_dens': True,
             }
         )
 
         NOTE: Setting duplicate arguments will result in an error
 
-        Here we are attempting to overwrite the use of ``densmap`` by
-        specifying it as the ``method='densmap'`` and also setting this to ``False``
-        with the method_kwargs, ``**{'densmap':False}``
+        Here we specify ``UMAP(densmap=True)`` using ``method='densmap'`` 
+        and also attempt to overwrite to ``UMAP(densmap=False)``
+        with the method_kwargs, ``**{'densmap':False}``, resulting
+        in a TypeError.
 
         >>> embed_df = kmers.embed(
             df,
             method='densmap',
             embed_dimensions=2,
             n_jobs=4,
-            **{'densmap':False}
+            **{'densmap': False}
         )
         TypeError: umap.umap_.UMAP() got multiple values for keyword argument 'densmap'
 
@@ -669,10 +675,24 @@ def embed(
             X = dispatcher[method]()
         else:
             raise err
-    embedded_df = pd.DataFrame(X, index=df.index)
-    # embedded kmers will follow columns of x_1 to x_{embed_dimensions}
-    # Make 1-indexed instead of 0-index
-    embedded_df.columns = embedded_df.columns.map(lambda x: f"x_{int(x)+1}")
+
+    embed_cols = [f"x_{col}" for col in range(1, embed_dimensions + 1)]
+    if isinstance(X, tuple):
+        # When method_kwargs = **{'output_dens': True}
+        # X : tuple[np.ndarray, np.ndarray, np.ndarray]
+        # X : tuple[embedding, original local radii, embedding local radii]
+        output_dens_ndarray_cols = [embed_cols, ["original_local_radius"], ["embedded_local_radius"]]
+        embedded_df = pd.concat([
+                pd.DataFrame(result, index=df.index, columns=cols)
+                for result,cols in zip(X, output_dens_ndarray_cols)
+            ],
+            axis=1
+        )
+    elif isinstance(X, np.ndarray):
+        embedded_df = pd.DataFrame(X, index=df.index, columns=embed_cols)
+    else:
+        logger.warning(f"Unrecognized {method} transform (method_kwargs={method_kwargs}) output type: {type(X)}")
+        embedded_df = pd.DataFrame(X, index=df.index, columns=embed_cols)
     if out:
         embedded_df.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(f"embedded.shape {embedded_df.shape} : Written {out}")
