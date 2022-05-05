@@ -309,8 +309,7 @@ def count(
     """
     out_specified = out is not None
     out_exists = os.path.exists(out) if out else False
-    case1 = out_specified and out_exists and not force
-    if case1:
+    if out_specified and out_exists and not force:
         logger.warning(f"counts already exist: {out} force to overwrite. [retrieving]")
         df = pd.read_csv(out, sep="\t", index_col="contig")
     else:
@@ -483,8 +482,25 @@ def embed(
 
     seed: int, optional
         Seed to use for `method`. Allows for reproducibility from random state.
+    
+    n_jobs: int, optional
+        
+        Used with `sksne`, `densmap` and `umap`, (the default is -1 which will attempt to use all available CPUs)
+        
+        Note
+        ----
+
+        For n_jobs below -1, (CPUS + 1 + n_jobs) are used. For example with n_jobs=-2, all CPUs but one are used.
+
+        * scikit-learn TSNE `n_jobs glossary <https://scikit-learn.org/stable/glossary.html#term-n_jobs>`_
+        * UMAP and DensMAP's 
+        `invocation <https://github.com/lmcinnes/umap/blob/2c5232f7b946efab30e279c0b095b37f5648ed8b/umap/umap_.py#L328-L341>`_ 
+        use this with 
+        `pynndescent <https://github.com/lmcinnes/pynndescent/blob/cc6ed32e25f7afb14913bff04d3b01723b33e5b5/pynndescent/pynndescent_.py#L629-L632>`_
+        
 
     **method_kwargs : Dict[str, Any], optional
+
         Other keyword arguments to be supplied to respective `method`.
 
         Examples
@@ -495,8 +511,10 @@ def embed(
             norm_df,
             method='densmap',
             embed_dimensions=2,
-            n_jobs=4,
-            **{'verbose':True}
+            n_jobs=None,
+            **{
+                'verbose': True,
+            }
         )
 
         NOTE: Setting duplicate arguments will result in an error
