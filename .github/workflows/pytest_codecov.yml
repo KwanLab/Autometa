@@ -33,19 +33,34 @@ jobs:
     name: pytest & codecov
     steps:
       - uses: actions/checkout@v2
-      - name: Setup conda
-        uses: s-weigand/setup-conda@v1
+      - name: Cache conda
+        uses: actions/cache@v2
         with:
-          update-conda: true
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-py${{ matrix.python-version }}-${{
+            hashFiles('tests/environment.yml') }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
           python-version: ${{ matrix.python-version }}
-          conda-channels: anaconda, conda-forge, bioconda
-      - run: conda --version
-      - run: |
-          conda install -n $CONDA_DEFAULT_ENV mamba
-          mamba env update -n $CONDA_DEFAULT_ENV --file=tests/environment.yml
-          mamba list
-          gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
-          python -m pytest --cov-report=xml --cov=autometa tests/
+          mamba-version: "*"
+          channels: conda-forge,bioconda,defaults
+          channel-priority: true
+          activate-environment: autometa
+          environment-file: tests/environment.yml
+      - shell: bash -l {0}
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+      - name: Download test data
+      - shell: bash -l {0}
+        run: gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
+      - name: Run pytest
+      - shell: bash -l {0}
+        run: python -m pytest --cov-report=xml --cov=autometa tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
