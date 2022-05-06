@@ -237,10 +237,10 @@ class LCA(NCBI):
         ):
             for row in range(0, nrows):
                 # First we check that the exponent of the column does not exceed the rows
-                if 2 ** col > nrows:
+                if 2**col > nrows:
                     continue
                 # Next check whether element at pos is within rows
-                if row + (2 ** col) - 1 >= nrows:
+                if row + (2**col) - 1 >= nrows:
                     sparse_array[row, col] = False
                     continue
                 # We now have our range in terms of indices
@@ -325,7 +325,7 @@ class LCA(NCBI):
         # equipartition range b/w both nodes.
         cutoff_range = int(np.floor(np.log2(high - low + 1)))
         lower_index = self.sparse[low, cutoff_range]
-        upper_index = self.sparse[(high - (2 ** cutoff_range) + 1), cutoff_range]
+        upper_index = self.sparse[(high - (2**cutoff_range) + 1), cutoff_range]
         lower_index, upper_index = map(int, [lower_index, upper_index])
         lower_range = self.level[lower_index]
         upper_range = self.level[upper_index]

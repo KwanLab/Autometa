@@ -4,7 +4,6 @@
 import os
 
 from setuptools import setup
-from setuptools import find_packages
 
 
 def read(fname):
@@ -19,7 +18,7 @@ setup(
     name="Autometa",
     python_requires=">=3.7",
     version=version,
-    packages=find_packages(exclude=["tests"]),
+    packages=["autometa"],
     package_data={"": ["*.config"]},
     entry_points={
         "console_scripts": [
@@ -42,6 +41,7 @@ setup(
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
             "autometa-download-dataset = autometa.validation.datasets:main",
             "autometa-benchmark = autometa.validation.benchmark:main",
+            "autometa = autometa.__main__:main",
         ]
     },
     author="Jason C. Kwan",
