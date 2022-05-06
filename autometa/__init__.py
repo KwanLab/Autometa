@@ -2,6 +2,7 @@
 
 import pkg_resources
 
-dist = pkg_resources.get_distribution("autometa")
-__version__ = dist.version
-console_scripts = dist.get_entry_map()["console_scripts"].keys()
+__version__ = pkg_resources.get_distribution("autometa").version
+console_scripts = (
+    pkg_resources.get_distribution("autometa").get_entry_map()["console_scripts"].keys()
+)

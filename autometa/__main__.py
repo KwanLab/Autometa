@@ -51,7 +51,7 @@ def main():
         print(citation)
         sys.exit(0)
 
-    print("Autometa Commands\n\t│")
+    print("Autometa Commands")
     commands_header = "\t├──> "
     commands_body = "\n\t├──> ".join(list(console_scripts)[:-1])
     commands_footer = f"└──> {list(console_scripts)[-1]}"
