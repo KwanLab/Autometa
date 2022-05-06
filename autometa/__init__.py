@@ -1,4 +1,5 @@
-from importlib_metadata import entry_points
+#!/usr/bin/env python
+
 import pkg_resources
 
 dist = pkg_resources.get_distribution("autometa")
