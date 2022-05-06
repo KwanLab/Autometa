@@ -470,7 +470,7 @@ def embed(
         embed_dimensions` to embed k-mer frequencies (the default is 2).
 
         The output embedded kmers will follow columns of `x_1` to `x_{embed_dimensions}`
-        
+
         NOTE: The columns are 1-indexed, i.e. at x_1 *not* x_0
 
     pca_dimensions : int, optional
@@ -486,22 +486,22 @@ def embed(
 
     seed: int, optional
         Seed to use for `method`. Allows for reproducibility from random state.
-    
+
     n_jobs: int, optional
-        
+
         Used with `sksne`, `densmap` and `umap`, (the default is -1 which will attempt to use all available CPUs)
-        
+
         Note
         ----
 
         For n_jobs below -1, (CPUS + 1 + n_jobs) are used. For example with n_jobs=-2, all CPUs but one are used.
 
         * scikit-learn TSNE `n_jobs glossary <https://scikit-learn.org/stable/glossary.html#term-n_jobs>`_
-        * UMAP and DensMAP's 
-        `invocation <https://github.com/lmcinnes/umap/blob/2c5232f7b946efab30e279c0b095b37f5648ed8b/umap/umap_.py#L328-L341>`_ 
-        use this with 
+        * UMAP and DensMAP's
+        `invocation <https://github.com/lmcinnes/umap/blob/2c5232f7b946efab30e279c0b095b37f5648ed8b/umap/umap_.py#L328-L341>`_
+        use this with
         `pynndescent <https://github.com/lmcinnes/pynndescent/blob/cc6ed32e25f7afb14913bff04d3b01723b33e5b5/pynndescent/pynndescent_.py#L629-L632>`_
-        
+
 
     **method_kwargs : Dict[str, Any], optional
 
@@ -524,7 +524,7 @@ def embed(
 
         NOTE: Setting duplicate arguments will result in an error
 
-        Here we specify ``UMAP(densmap=True)`` using ``method='densmap'`` 
+        Here we specify ``UMAP(densmap=True)`` using ``method='densmap'``
         and also attempt to overwrite to ``UMAP(densmap=False)``
         with the method_kwargs, ``**{'densmap':False}``, resulting
         in a TypeError.
@@ -681,17 +681,24 @@ def embed(
         # When method_kwargs = **{'output_dens': True}
         # X : tuple[np.ndarray, np.ndarray, np.ndarray]
         # X : tuple[embedding, original local radii, embedding local radii]
-        output_dens_ndarray_cols = [embed_cols, ["original_local_radius"], ["embedded_local_radius"]]
-        embedded_df = pd.concat([
+        output_dens_ndarray_cols = [
+            embed_cols,
+            ["original_local_radius"],
+            ["embedded_local_radius"],
+        ]
+        embedded_df = pd.concat(
+            [
                 pd.DataFrame(result, index=df.index, columns=cols)
-                for result,cols in zip(X, output_dens_ndarray_cols)
+                for result, cols in zip(X, output_dens_ndarray_cols)
             ],
-            axis=1
+            axis=1,
         )
     elif isinstance(X, np.ndarray):
         embedded_df = pd.DataFrame(X, index=df.index, columns=embed_cols)
     else:
-        logger.warning(f"Unrecognized {method} transform (method_kwargs={method_kwargs}) output type: {type(X)}")
+        logger.warning(
+            f"Unrecognized {method} transform (method_kwargs={method_kwargs}) output type: {type(X)}"
+        )
         embedded_df = pd.DataFrame(X, index=df.index, columns=embed_cols)
     if out:
         embedded_df.to_csv(out, sep="\t", index=True, header=True)

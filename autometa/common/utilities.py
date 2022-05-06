@@ -440,8 +440,9 @@ def internet_is_connected(
     except socket.error:
         return False
 
+
 def ncbi_is_connected(
-    filepath: str = "rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number"
+    filepath: str = "rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number",
 ) -> bool:
     """Check if ncbi databases are reachable. This can be used instead of a check for internet connection.
 
@@ -461,6 +462,7 @@ def ncbi_is_connected(
     cmd = ["rsync", "--quiet", "--dry-run", filepath]
     proc = subprocess.run(cmd)
     return proc.returncode == 0
+
 
 if __name__ == "__main__":
     print(

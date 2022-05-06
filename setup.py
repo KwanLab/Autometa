@@ -3,8 +3,7 @@
 
 import os
 
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import find_packages, setup
 
 
 def read(fname):
@@ -42,6 +41,7 @@ setup(
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
             "autometa-download-dataset = autometa.validation.datasets:main",
             "autometa-benchmark = autometa.validation.benchmark:main",
+            "autometa = autometa.__main__:main",
         ]
     },
     author="Jason C. Kwan",

@@ -31,7 +31,7 @@ clean:
 
 ## Apply black formatting
 black:
-	black --exclude autometa/validation autometa
+	black --exclude autometa/validation autometa bin tests autometa/validation/benchmark.py autometa/validation/datasets.py
 
 ## Set up python interpreter environment
 create_environment: autometa-env.yml

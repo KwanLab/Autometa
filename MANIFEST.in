@@ -2,3 +2,5 @@ include LICENSE
 include MANIFEST.in
 include README.md
 include setup.py
+recursive-include autometa *
+prune autometa/__pycache__
