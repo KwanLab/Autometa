@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: tests/data/test_data.json
-          key: ${{ runner.os }}-${{ hashFiles('tests/data/test_data.json') }}
+          key: ${{ runner.os }}-test-data
       - name: Setup mamba
         uses: conda-incubator/setup-miniconda@v2
         with:
