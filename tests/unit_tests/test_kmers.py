@@ -155,7 +155,7 @@ def test_embed_methods(norm_df, method, tmp_path):
     method_kwargs = {}
     verbose = 1 if method == "sksne" else True
     method_kwargs.update({"verbose": verbose})
-    output_dens = {'output_dens':True} if method == "densmap" else {}
+    output_dens = {"output_dens": True} if method == "densmap" else {}
     method_kwargs.update(output_dens)
     df = kmers.embed(
         kmers=norm_df,
