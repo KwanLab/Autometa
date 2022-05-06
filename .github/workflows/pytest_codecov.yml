@@ -40,7 +40,8 @@ jobs:
           key:
             ${{ runner.os }}-conda-py${{ matrix.python-version }}-${{
             hashFiles('tests/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Setup mamba
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
           mamba-version: "*"
@@ -48,7 +49,8 @@ jobs:
           channel-priority: true
           activate-environment: autometa
           environment-file: tests/environment.yml
-      - shell: bash -l {0}
+      - name: Conda config info
+        shell: bash -l {0}
         run: |
           conda info
           conda list
@@ -56,10 +58,10 @@ jobs:
           conda config --show
           printenv | sort
       - name: Download test data
-      - shell: bash -l {0}
+        shell: bash -l {0}
         run: gdown https://drive.google.com/uc\?\id=1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk -O tests/data/test_data.json
       - name: Run pytest
-      - shell: bash -l {0}
+        shell: bash -l {0}
         run: python -m pytest --cov-report=xml --cov=autometa tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
