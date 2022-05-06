@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.7]
+        python-version: [3.8]
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -37,9 +37,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/conda_pkgs_dir
-          key:
-            ${{ runner.os }}-conda-py${{ matrix.python-version }}-${{
-            hashFiles('tests/environment.yml') }}
+          key: ${{ runner.os }}-conda-py${{ matrix.python-version }}-${{ hashFiles('tests/environment.yml') }}
+      - name: Cache test data
+        uses: actions/cache@v2
+        with:
+          path: tests/data/test_data.json
+          key: ${{ runner.os }}-${{ hashFiles('tests/data/test_data.json') }}
       - name: Setup mamba
         uses: conda-incubator/setup-miniconda@v2
         with:
