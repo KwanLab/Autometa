@@ -3,7 +3,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def read(fname):
@@ -18,7 +18,7 @@ setup(
     name="Autometa",
     python_requires=">=3.7",
     version=version,
-    packages=["autometa"],
+    packages=find_packages(exclude=["tests"]),
     package_data={"": ["*.config"]},
     entry_points={
         "console_scripts": [
