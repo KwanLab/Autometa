@@ -39,6 +39,6 @@ process REDUCE_LCA {
             --lca-error-taxids lca_error_taxids.tsv \\
             --sseqid2taxid-output sseqid2taxid.tsv \\
             --lca-output lca.tsv
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

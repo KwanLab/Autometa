@@ -38,6 +38,6 @@ process SPLIT_KINGDOMS {
             --assembly "${assembly}" \\
             --ncbi "${ncbi_tax_dir}"
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

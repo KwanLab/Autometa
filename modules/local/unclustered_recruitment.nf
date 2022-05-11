@@ -45,7 +45,7 @@ process RECRUIT {
             --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
             --output-features ${params.kingdom}.recruitment.features.tsv.gz
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
         else
         """
@@ -62,6 +62,6 @@ process RECRUIT {
             --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
             --output-features ${params.kingdom}.recruitment.features.tsv.gz
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

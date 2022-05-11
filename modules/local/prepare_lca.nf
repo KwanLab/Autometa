@@ -34,6 +34,6 @@ process PREPARE_LCA {
             --dbdir ${blastdb_dir} \\
             --cache cache \\
             --only-prepare-cache
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }
