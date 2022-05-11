@@ -48,6 +48,9 @@ fi
 
 ######### BEGIN #########
 
+# Step 00: Report autometa version
+autometa --version
+
 # Step 1: filter assembly by length and retrieve contig lengths as well as GC content
 
 # input:
@@ -223,7 +226,7 @@ for kingdom in ${kingdoms[@]};do
     # script:
     autometa-binning \
         --kmers $kmers \
-        --coverages $coverage \
+        --coverages $coverages \
         --gc-content $gc_content \
         --markers $markers \
         --output-binning $output_binning \

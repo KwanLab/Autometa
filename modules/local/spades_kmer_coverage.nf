@@ -36,6 +36,6 @@ process SPADES_KMER_COVERAGE {
             --from-spades \\
             --out "coverage.tsv"
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

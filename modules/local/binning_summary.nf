@@ -41,6 +41,6 @@ process BINNING_SUMMARY {
             --output-taxonomy "metabin_taxonomy.tsv" \\
             --output-metabins "metabins"
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

@@ -30,7 +30,6 @@ process MAJORITY_VOTE {
         """
         autometa-taxonomy-majority-vote --lca ${lca} --output votes.tsv --dbdir "${ncbi_tax_dir}"
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }
-

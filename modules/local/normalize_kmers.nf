@@ -32,6 +32,6 @@ process NORMALIZE_KMERS {
             --norm-method "${params.norm_method}" \\
             --seed 42
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }
