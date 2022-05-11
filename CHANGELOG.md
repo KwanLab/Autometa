@@ -19,10 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Dependencies`
 
-- :art: Pinned black version to 22.1.0
+- :art: Pinned black version to 22.3.0
 - ⬆️:green_heart: upgrade diamond to version 2.0.14
-
-### `Deprecated`
 
 ## [2.0.3] - 2022-04-07
 
