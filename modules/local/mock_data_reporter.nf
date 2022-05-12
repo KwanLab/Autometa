@@ -11,7 +11,7 @@ process MOCK_DATA_REPORT {
 
     publishDir "${options.publish_dir}", mode: params.publish_dir_mode
 
-    container "jasonkwan/autometa-nf-modules-mock_data_reporter"
+    container "jasonkwan/autometa-nf-modules-mock_data_reporter:${params.autometa_image_tag}"
 
 
     input:
