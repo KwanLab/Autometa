@@ -59,6 +59,9 @@ fi
 
 ######### BEGIN #########
 
+# Step 00: Report autometa version
+autometa --version
+
 # Step 1: filter assembly by length and retrieve contig lengths as well as GC content
 
 # input:
