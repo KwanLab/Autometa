@@ -6,7 +6,7 @@ options        = initOptions(params.options)
 
 /*
 This file is left in from the template, that's mainly used for QUAST (http://cab.spbu.ru/software/quast/).
- There's a discussion that can be had later about incorporating that module fully or removing the remaining template that feeds into it
+There's a discussion that can be had later about incorporating that module fully or removing the remaining template that feeds into it
 */
 
 process GET_SOFTWARE_VERSIONS {
@@ -40,6 +40,6 @@ process GET_SOFTWARE_VERSIONS {
         echo $workflow.nextflow.version > nextflow.version.txt
         scrape_software_versions.py &> software_versions_mqc.yaml
 
-        echo "make linter happy" > autometa.version.txt
+        echo "make linter happy" > ${software}.version.txt
         """
 }

@@ -50,6 +50,6 @@ process MARKERS {
             --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
             --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

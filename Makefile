@@ -31,7 +31,7 @@ clean:
 
 ## Apply black formatting
 black:
-	black --exclude autometa/validation autometa
+	black --exclude autometa/validation autometa bin tests autometa/validation/benchmark.py autometa/validation/datasets.py
 
 ## Set up python interpreter environment
 create_environment: autometa-env.yml
@@ -60,8 +60,8 @@ install: setup.py
 	python3 -m pip install . --ignore-installed --no-deps -vv
 
 ## Install dependencies for test environment
-test_environment: tests/requirements.txt
-	python3 -m pip install --requirement=tests/requirements.txt
+test_environment: tests/environment.yml
+	conda env update -n $(PROJECT_NAME) --file=$<
 
 ## Build docker image from Dockerfile (auto-taggged as jasonkwan/autometa:<current-branch>)
 image: Dockerfile

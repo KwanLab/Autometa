@@ -12,7 +12,7 @@ process GET_GENOMES_FOR_MOCK {
     cache 'lenient'
 
     conda (params.enable_conda ? "bioconda::emboss=6.6.0" : null)
-    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock"
+    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock:${params.autometa_image_tag}"
 
     output:
         path "metagenome.fna.gz", emit: metagenome

@@ -33,6 +33,6 @@ process COUNT_KMERS {
             --cpus "${task.cpus}" \\
             --seed 42
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }

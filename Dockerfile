@@ -46,6 +46,7 @@ RUN echo "Testing autometa import" \
 
 # Check entrypoints are available
 RUN echo "Checking autometa entrypoints" \
+    && autometa --version > /dev/null \
     && autometa-config -h > /dev/null \
     && autometa-update-databases -h > /dev/null \
     && autometa-length-filter -h > /dev/null \

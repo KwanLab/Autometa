@@ -37,6 +37,6 @@ process PARSE_BED {
             --bed $bed \\
             --output coverage.tsv
 
-        echo "TODO" > autometa.version.txt
+        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
 }
