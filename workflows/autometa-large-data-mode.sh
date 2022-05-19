@@ -157,9 +157,9 @@ autometa-taxonomy-majority-vote --lca $lca --output $votes --dbdir $ncbi
 
 # output:
 # Will write recovered superkingdoms to ${outdir}
-# e.g. ${outdir}/${prefix}.bacteria.fna
-# e.g. ${outdir}/${prefix}.archaea.fna
-# e.g. ${outdir}/${prefix}.taxonomy.tsv
+# e.g. ${outdir}/${simpleName}.bacteria.fna
+# e.g. ${outdir}/${simpleName}.archaea.fna
+# e.g. ${outdir}/${simpleName}.taxonomy.tsv
 
 # script:
 autometa-taxonomy \
