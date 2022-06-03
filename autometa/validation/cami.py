@@ -21,21 +21,10 @@ You should have received a copy of the GNU Affero General Public License
 along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 COPYRIGHT
 
-Template Script for Autometa Modules
+Autometa module to format Autometa results to bioboxes data format (compatible with CAMI tools)
 
 Template Description:
-Concise sentence describing functionality of script
-
-Template Format:
-0. - Shebang python env definition
-1. - Two lines following comment block script description
-2. - One line separating different import types
-3. - Two lines separating imports and logger
-4. - Two lines separating logger and algorithm functions
-5. - Main function
-6. - if __name__ == '__main__' clause
-7. - Argparse
-8. - Logging aliased to logger in 5.
+Reformats Autometa binning results such that they may be submitted to CAMI for benchmarking assessment
 """
 
 
