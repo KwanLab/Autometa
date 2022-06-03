@@ -1,6 +1,6 @@
-=======================
-Contributing Guidelines
-=======================
+=================
+How to contribute
+=================
 
 Autometa is an open-source project developed on GitHub. If you would like to help develop
 Autometa or have ideas for new features please see our `contributing guidelines <https://github.com/KwanLab/Autometa/blob/dev/.github/CONTRIBUTING.md>`__
