@@ -23,7 +23,6 @@ COPYRIGHT
 
 Autometa module to format Autometa results to bioboxes data format (compatible with CAMI tools)
 
-Template Description:
 Reformats Autometa binning results such that they may be submitted to CAMI for benchmarking assessment
 """
 
@@ -33,9 +32,7 @@ from typing import Literal, Union
 import pandas as pd
 
 
-# Two lines to separate imports and beginning of script
 logger = logging.getLogger(__name__)
-# Two lines to separate function definitions and logger
 
 
 def format_taxon_binning(
