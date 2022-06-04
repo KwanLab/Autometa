@@ -24,7 +24,7 @@ Guide
    installation
    autometa-python-api
    scripts/usage
-   contribution-guidelines
+   how-to-contribute
    Autometa_modules/modules
    legacy-autometa
    license

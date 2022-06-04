@@ -66,6 +66,30 @@ First off, thanks for taking the time to contribute! :clap::+1::tada:
 
 7. Submit a pull request! To submit a pull request - see [instructions below](#pull-requests).
 
+### Testing code locally
+
+If you are testing the bash workflow and have updated an Autometa entrypoint, you will need to reinstall Autometa as follows:
+
+```
+cd Autometa
+make clean
+make install
+```
+
+The [Nextflow](https://www.nextflow.io/) workflow pulls [Docker](https://www.docker.com/) images, so in order to ensure that you are running your local updated code, 
+you must make a Docker image locally, and then tell Nextflow to use it. In the example below, `newfeature` is a name given to represent the branch you are working on.
+
+```
+cd Autometa
+docker build . --tag jasonkwan/autometa:newfeature
+```
+
+Then, when you test the Autometa Nextflow workflow, you can run it as follows from the Autometa directory.
+
+```
+nextflow run . --autometa_image_tag 'newfeature'
+```
+
 ## How can I contribute?
 
 ### Reporting Bugs
