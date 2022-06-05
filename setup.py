@@ -40,6 +40,7 @@ setup(
             "autometa-binning-ldm-loginfo = autometa.binning.large_data_mode_loginfo:main",
             "autometa-unclustered-recruitment = autometa.binning.unclustered_recruitment:main",
             "autometa-download-dataset = autometa.validation.datasets:main",
+            "autometa-cami-format = autometa.validation.cami:main",
             "autometa-benchmark = autometa.validation.benchmark:main",
             "autometa = autometa.__main__:main",
         ]
