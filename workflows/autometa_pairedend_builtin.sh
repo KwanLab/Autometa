@@ -5,33 +5,50 @@
 #SBATCH --time=14-00:00:00
 #SBATCH --error=autometa.%J.err
 #SBATCH --output=autometa.%J.out
-#SBATCH --mail-user=samche42@gmail.com
-#SBATCH --mail-type=ALL
 
-#Change the following to suit YOUR files:
+Help()
+{
+   # Display Help
+   echo "Required flags"
+   echo
+   echo "Syntax: scriptTemplate [-d|a|s|f|r|n|m|l|c]"
+   echo "-h     Display this help menu"
+   echo "Required flags:"
+   echo "-d     Path to where your input files are and where the output will go"
+   echo "-a     Full path to where your scaffold/contig file is (inlclude file name)"
+   echo "-s     Simple name to prefix output files"
+   echo "-f     DNA forward reads"
+   echo "-r     DNA reverse reads"
+   echo "-n     Path to NCBI databases"
+   echo "-m     Path to marker files"
+   echo "-l     Contig length cutoff in bp. Change this according to the N50 you got from running metaQuast"
+   echo "-c     How many cpus you would like to use"
+   echo
+   echo "Example usage:"
+   echo "sbatch autometa_pairedend_builtin.sh -d /home/user/Trial/Sample1 -a /home/user/Trial/Sample1/scaffolds.fasta -s Sample1 -f /home/user/Trial/Sample1/sample1_fwd.fastq -r /home/user/Trial/Sample1/sample1_rev.fastq -n /home/user/Databases -m /home/user/Autometa/autometa/databases/markers -l 1000 -c 16"
+}
 
-work_dir="/home/sam/Autometa_test" #work_dir is where your input files are and where the output will go
-
-assembly="/home/sam/Autometa_test/N30_scaffolds.fasta" #assembly is the metagenome fasta file with a full path to where this file is located
-
-fwd_reads="/home/sam/Autometa_test/N30_1P.fastq" #Forward reads used for assembly
-
-rev_reads="/home/sam/Autometa_test/N30_2P.fastq" #Reverse reads used for assembly
-
-ncbi="/media/bigdrive1/Databases/autometa_databases" #ncbi is the full path to where the NCBI databases are found. This does not include the file name.
-
-marker_db="/home/sam/Tools/Autometa/autometa/databases/markers" #marker spcifies were the marker files are. They should have been downloaded with autometa.
-
-simpleName="N30" #A prefix for all output files specific to your sample
-
-length_cutoff=1000 # in bp. Change this according to the N50 you got from running metaQuast.
-
-cpus=16 #How many cpus you would like to use
-
-#IMPORTANT: YOU DO NOT NEED TO CHANGE ANYTHING ELSE FROM THIS POINT ONWARD!
+#Define flags
+while getopts "d:a:s:f:r:n:m:l:c" flag
+do
+    case "${flag}" in
+        d) work_dir=${OPTARG};;
+        a) assembly=${OPTARG};;
+        s) simple_name=${OPTARG};;
+        f) fwd_reads=${OPTARG};;
+        r) rev_reads=${OPTARG};;
+        n) ncbi=${OPTARG};;
+        m) marker_db=${OPTARG};;
+        l) length_cutoff=${OPTARG};;
+        c) cpus=${OPTARG};;
+                h) # display Help
+                        Help
+                        exit;;
+    esac
+done
 
 # Step 0: Do some Path handling with the provided `assembly` filepath
-outdir="${work_dir}/${simpleName}_Autometa_Output"
+outdir="${work_dir}/${simple_name}_Autometa_Output"
 if [ ! -d $outdir ]
 then mkdir -p $outdir
 fi
@@ -59,8 +76,8 @@ autometa --version
 # Step 1: filter assembly by length and retrieve contig lengths as well as GC content
 
 # output:
-filtered_assembly="${outdir}/${simpleName}.filtered.fna"
-gc_content="${outdir}/${simpleName}.gc_content.tsv"
+filtered_assembly="${outdir}/${simple_name}.filtered.fna"
+gc_content="${outdir}/${simple_name}.gc_content.tsv"
 
 # script:
 autometa-length-filter \
@@ -72,7 +89,7 @@ autometa-length-filter \
 # Step 2: Determine coverages from assembly read alignments
 
 # output:
-coverages="${outdir}/${simpleName}.coverages.tsv"
+coverages="${outdir}/${simple_name}.coverages.tsv"
 
 # script:
 autometa-coverage \
@@ -88,8 +105,8 @@ autometa-coverage \
 # $cpus --> User input
 # $seed --> User input
 
-orfs="${outdir}/${simpleName}.orfs.faa"
-orfs_nuc="${outdir}/${simpleName}.orfs.fna"
+orfs="${outdir}/${simple_name}.orfs.faa"
+orfs_nuc="${outdir}/${simple_name}.orfs.fna"
 
 #Get ORFs
 autometa-orfs \
@@ -122,8 +139,8 @@ kingdoms=(bacteria archaea)
 # NOTE: We iterate through both sets of markers for binning both bacterial and archeal kingdoms
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific output:
-    hmmscan="${outdir}/${simpleName}.${kingdom}.hmmscan.tsv"
-    markers="${outdir}/${simpleName}.${kingdom}.markers.tsv"
+    hmmscan="${outdir}/${simple_name}.${kingdom}.hmmscan.tsv"
+    markers="${outdir}/${simple_name}.${kingdom}.markers.tsv"
 
     # script:
     autometa-markers \
@@ -154,7 +171,7 @@ fi
 # $ncbi --> User Input
 
 #Run blastp
-blast="${outdir}/${simpleName}.blastp.tsv" #Generate output file name
+blast="${outdir}/${simple_name}.blastp.tsv" #Generate output file name
 
 diamond blastp \
     --query $orfs \
@@ -166,9 +183,9 @@ diamond blastp \
     --out $blast
 
 # output:
-lca="${outdir}/${simpleName}.orfs.lca.tsv"
-sseqid2taxid="${outdir}/${simpleName}.orfs.sseqid2taxid.tsv"
-errorTaxids="${outdir}/${simpleName}.orfs.errortaxids.tsv"
+lca="${outdir}/${simple_name}.orfs.lca.tsv"
+sseqid2taxid="${outdir}/${simple_name}.orfs.sseqid2taxid.tsv"
+errorTaxids="${outdir}/${simple_name}.orfs.errortaxids.tsv"
 
 # script:
 autometa-taxonomy-lca \
@@ -185,7 +202,7 @@ autometa-taxonomy-lca \
 # $ncbi --> User Input
 
 # output:
-votes="${outdir}/${simpleName}.taxids.tsv"
+votes="${outdir}/${simple_name}.taxids.tsv"
 
 # script:
 autometa-taxonomy-majority-vote --lca $lca --output $votes --dbdir $ncbi
@@ -200,15 +217,15 @@ autometa-taxonomy-majority-vote --lca $lca --output $votes --dbdir $ncbi
 
 # output:
 # Will write recovered superkingdoms to ${outdir}
-# e.g. ${outdir}/${simpleName}.bacteria.fna
-# e.g. ${outdir}/${simpleName}.archaea.fna
-# e.g. ${outdir}/${simpleName}.taxonomy.tsv
+# e.g. ${outdir}/${simple_name}.bacteria.fna
+# e.g. ${outdir}/${simple_name}.archaea.fna
+# e.g. ${outdir}/${simple_name}.taxonomy.tsv
 
 # script:
 autometa-taxonomy \
     --votes $votes \
     --output $outdir \
-    --prefix $simpleName \
+    --prefix $simple_name \
     --split-rank-and-write superkingdom \
     --assembly $filtered_assembly \
     --ncbi $ncbi
@@ -228,12 +245,12 @@ kingdoms=(bacteria archaea)
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific input:
     # NOTE: $fasta --> Generated by step 4.3
-    fasta="${outdir}/${simpleName}.${kingdom}.fna"
+    fasta="${outdir}/${simple_name}.${kingdom}.fna"
 
     # kingdom-specific output:
-    counts="${outdir}/${simpleName}.${kingdom}.${kmer_size}mers.tsv"
-    normalized="${outdir}/${simpleName}.${kingdom}.${kmer_size}mers.${norm_method}.tsv"
-    embedded="${outdir}/${simpleName}.${kingdom}.${kmer_size}mers.${norm_method}.${embed_method}.tsv"
+    counts="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.tsv"
+    normalized="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.${norm_method}.tsv"
+    embedded="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.${norm_method}.${embed_method}.tsv"
 
     if [ ! -f $fasta ]
     then
@@ -260,19 +277,19 @@ done
 # input:
 # $cpus --> User input
 # $seed --> User input
-taxonomy="${outdir}/${simpleName}.taxonomy.tsv" # Generated by step 4.3
+taxonomy="${outdir}/${simple_name}.taxonomy.tsv" # Generated by step 4.3
 # $gc_content --> Generated by step 1
 
 kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific input:
-    kmers="${outdir}/${simpleName}.${kingdom}.${kmer_size}mers.${norm_method}.${embed_method}.tsv" # Generated by step 5
-    markers="${outdir}/${simpleName}.${kingdom}.markers.tsv" # Generated by step 3
+    kmers="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.${norm_method}.${embed_method}.tsv" # Generated by step 5
+    markers="${outdir}/${simple_name}.${kingdom}.markers.tsv" # Generated by step 3
 
     # kingdom-specific output:
-    output_binning="${outdir}/${simpleName}.${kingdom}.${cluster_method}.tsv"
-    output_main="${outdir}/${simpleName}.${kingdom}.${cluster_method}.main.tsv"
+    output_binning="${outdir}/${simple_name}.${kingdom}.${cluster_method}.tsv"
+    output_main="${outdir}/${simple_name}.${kingdom}.${cluster_method}.main.tsv"
 
     if [ -f $output_main ] && [ -s $output_main ];then
         echo "$(basename $output_main) already exists. continuing..."
@@ -308,13 +325,13 @@ kingdoms=(bacteria archaea)
 for kingdom in ${kingdoms[@]};do
 
     # kingdom-specific input:
-    binning_main="${outdir}/${simpleName}.${kingdom}.${cluster_method}.main.tsv" # Generated by step 6
-    markers="${outdir}/${simpleName}.${kingdom}.markers.tsv" # Generated by step 3
+    binning_main="${outdir}/${simple_name}.${kingdom}.${cluster_method}.main.tsv" # Generated by step 6
+    markers="${outdir}/${simple_name}.${kingdom}.markers.tsv" # Generated by step 3
 
     # kingdom-specific output:
-    output_stats="${outdir}/${simpleName}_${kingdom}_metabin_stats.tsv"
-    output_taxonomy="${outdir}/${simpleName}_${kingdom}_metabin_taxonomy.tsv"
-    output_metabins="${outdir}/${simpleName}_${kingdom}_metabins"
+    output_stats="${outdir}/${simple_name}_${kingdom}_metabin_stats.tsv"
+    output_taxonomy="${outdir}/${simple_name}_${kingdom}_metabin_taxonomy.tsv"
+    output_metabins="${outdir}/${simple_name}_${kingdom}_metabins"
 
     if [ ! -f $binning_main ]
     then

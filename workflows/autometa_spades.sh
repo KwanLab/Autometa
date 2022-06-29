@@ -5,26 +5,43 @@
 #SBATCH --time=14-00:00:00
 #SBATCH --error=autometa.%J.err
 #SBATCH --output=autometa.%J.out
-#SBATCH --mail-user=samche42@gmail.com
-#SBATCH --mail-type=ALL
 
-#Change the following to suit YOUR files:
+Help()
+{
+   # Display Help
+   echo "Required flags"
+   echo
+   echo "Syntax: scriptTemplate [-d|a|s|n|m|l|c]"
+   echo "-h     Display this help menu"
+   echo "Required flags:"
+   echo "-d     Path to where your input files are and where the output will go"
+   echo "-a     Full path to where your scaffold/contig file is (inlclude file name)"
+   echo "-s     Simple name to prefix output files"
+   echo "-n     Path to NCBI databases"
+   echo "-m     Path to marker files"
+   echo "-l     Contig length cutoff in bp. Change this according to the N50 you got from running metaQuast"
+   echo "-c     How many cpus you would like to use"
+   echo
+   echo "Example usage:"
+   echo "sbatch autometa_spades.sh -d /home/user/Trial/Sample1 -a /home/user/Trial/Sample1/scaffolds.fasta -s Sample1 -n /home/user/Databases -m /home/user/Autometa/autometa/databases/markers -l 1000 -c 16"
+}
 
-work_dir="/home/sam/Autometa_test" #work_dir is where your input files are and where the output will go
-
-assembly="/home/sam/Autometa_test/N30_scaffolds.fasta" #assembly is the metagenome fasta file with a full path to where this file is located
-
-ncbi="/media/bigdrive1/Databases/autometa_databases" #ncbi is the full path to where the NCBI databases are found. This does not include the file name.
-
-marker_db="/home/sam/Tools/Autometa/autometa/databases/markers" #marker spcifies were the marker files are. They should have been downloaded with autometa.
-
-simpleName="N30" #A prefix for all output files specific to your sample
-
-length_cutoff=1000 # in bp. Change this according to the N50 you got from running metaQuast.
-
-cpus=16 #How many cpus you would like to use
-
-#IMPORTANT: IF YOU USED SPADES TO ASSEMBLE YOUR METAGENOME YOU DO NOT NEED TO CHANGE ANYTHING ELSE FROM THIS POINT ONWARD!
+#Define flags
+while getopts "d:a:s:f:r:n:m:l:c" flag
+do
+    case "${flag}" in
+        d) work_dir=${OPTARG};;
+        a) assembly=${OPTARG};;
+        s) simple_name=${OPTARG};;
+        n) ncbi=${OPTARG};;
+        m) marker_db=${OPTARG};;
+        l) length_cutoff=${OPTARG};;
+        c) cpus=${OPTARG};;
+                h) # display Help
+                        Help
+                        exit;;
+    esac
+done
 
 # Step 0: Do some Path handling with the provided `assembly` filepath
 outdir="${work_dir}/${simpleName}_Autometa_Output"
