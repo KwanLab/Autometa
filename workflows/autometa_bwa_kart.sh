@@ -9,7 +9,40 @@
 
 #Change the following to suit YOUR files:
 
-work_dir="/home/sam/Autometa_test" #work_dir is where your input files are and where the output will go
+Help()
+{
+   # Display Help
+   echo "Required flags"
+   echo
+   echo "Syntax: scriptTemplate [-d|h|s|a|b|c|e]"
+   echo "-h     Display this help menu"
+   echo "Required flags:"
+   echo "-d     Input directory with all files"
+   echo "-s     Assembly scaffolds"
+   echo "-b     Name to prefix all files"
+   echo "-u     DNA forward reads"
+   echo "-v     DNA reverse reads"
+   echo
+}
+
+#Define flags
+while getopts "d:s:b:t:u:v:x:y:h" flag
+do
+    case "${flag}" in
+        d) input_dir=${OPTARG};;
+        s) scaffolds=${OPTARG};;
+        b) basename=${OPTARG};;
+        t) contig_taxonomy=${OPTARG};;
+        u) dna_fwd_read=${OPTARG};;
+        v) dna_rev_read=${OPTARG};;
+        x) rna_fwd_read=${OPTARG};;
+        y) rna_rev_read=${OPTARG};;
+                h) # display Help
+                        Help
+                        exit;;
+    esac
+done
+work_dir="/your/dir/here" #work_dir is where your input files are and where the output will go
 
 assembly="/home/sam/Autometa_test/N30_scaffolds.fasta" #assembly is the metagenome fasta file with a full path to where this file is located
 
@@ -21,7 +54,7 @@ ncbi="/media/bigdrive1/Databases/autometa_databases" #ncbi is the full path to w
 
 marker_db="/home/sam/Tools/Autometa/autometa/databases/markers" #marker spcifies were the marker files are. They should have been downloaded with autometa.
 
-simpleName="N30" #A prefix for all output files specific to your sample
+simple_name="N30" #A prefix for all output files specific to your sample
 
 length_cutoff=1000 # in bp. Change this according to the N50 you got from running metaQuast.
 
