@@ -5,7 +5,6 @@
 #SBATCH --time=14-00:00:00
 #SBATCH --error=autometa.%J.err
 #SBATCH --output=autometa.%J.out
-#SBATCH --mail-user=samche42@gmail.com
 #SBATCH --mail-type=ALL
 
 #Change the following to suit YOUR files:
