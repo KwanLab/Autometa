@@ -21,7 +21,7 @@ from typing import Union, List
 from autometa.common.external import prodigal
 from autometa.taxonomy import majority_vote
 from autometa.taxonomy.lca import LCA
-from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
+from autometa.taxonomy.ncbi import TAXA_DB, TAXA_DB_DIR
 from autometa.common.exceptions import TableFormatError
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def assign(
     nucl_orfs: str = None,
     blast: str = None,
     lca_fpath: str = None,
-    ncbi_dir: str = NCBI_DIR,
+    taxa_db_dir: str = TAXA_DB_DIR,
     force: bool = False,
     verbose: bool = False,
     parallel: bool = True,
@@ -60,8 +60,8 @@ def assign(
         Path to blastp table, by default None
     lca_fpath : str, optional
         Path to output of LCA analysis, by default None
-    ncbi_dir : str, optional
-        Path to NCBI databases directory, by default NCBI_DIR
+    taxa_db_dir : str, optional
+        Path to TAXA_DB databases directory, by default TAXA_DB_DIR
     force : bool, optional
         Overwrite existing annotations, by default False
     verbose : bool, optional
@@ -107,16 +107,18 @@ def assign(
 
     def blast2lca():
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
+            lca = LCA(dbdir=taxa_db_dir, verbose=verbose, cache=outdir)
         lca.blast2lca(
             orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
         )
 
     def majority_vote_lca(out=out):
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
+            lca = LCA(dbdir=taxa_db_dir, verbose=verbose, cache=outdir)
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
-        votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca, verbose=verbose)
+        votes = majority_vote.rank_taxids(
+            ctg_lcas=ctg_lcas, taxa_db=lca, verbose=verbose
+        )
         out = majority_vote.write_votes(results=votes, out=out)
         return pd.read_csv(out, sep="\t", index_col="contig")
 
@@ -146,30 +148,30 @@ def assign(
         calculation()
 
 
-def add_ranks(df: pd.DataFrame, ncbi: Union[NCBI, str]) -> pd.DataFrame:
+def add_ranks(df: pd.DataFrame, taxa_db: Union[TAXA_DB, str]) -> pd.DataFrame:
     """Add canonical ranks to `df` and write to `out`
 
     Parameters
     ----------
     df : pd.DataFrame
         index="contig", column="taxid"
-    ncbi : str or NCBI
-        Path to NCBI databases directory, or autometa NCBI instance.
+    taxa_db : str or TAXA_DB
+        Path to TAXA_DB databases directory, or autometa TAXA_DB instance.
 
     Returns
     -------
     pd.DataFrame
         index="contig", columns=["taxid", *canonical_ranks]
     """
-    ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
-    dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
+    taxa_db = taxa_db if isinstance(taxa_db, TAXA_DB) else TAXA_DB(taxa_db)
+    dff = taxa_db.get_lineage_dataframe(df["taxid"].unique().tolist())
     return pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True)
 
 
 def get(
     filepath_or_dataframe: Union[str, pd.DataFrame],
     kingdom: str,
-    ncbi: Union[NCBI, str] = NCBI_DIR,
+    taxa_db: Union[TAXA_DB, str] = TAXA_DB_DIR,
 ) -> pd.DataFrame:
     """Retrieve specific `kingdom` voted taxa for `assembly` from `filepath`
 
@@ -179,8 +181,8 @@ def get(
         Path to tab-delimited taxonomy table. cols=['contig','taxid', *canonical_ranks]
     kingdom : str
         rank to retrieve from superkingdom column in taxonomy table.
-    ncbi : str or autometa.taxonomy.NCBI instance, optional
-        Path to NCBI database directory or NCBI instance, by default NCBI_DIR.
+    taxa_db : str or autometa.taxonomy.TAXA_DB instance, optional
+        Path to TAXA_DB database directory or TAXA_DB instance, by default TAXA_DB_DIR.
         This is necessary only if `filepath` does not already contain columns of canonical ranks.
 
     Returns
@@ -212,7 +214,7 @@ def get(
     if df.shape[1] <= 2:
         # Voting method will write out contig and its voted taxid (2 cols).
         # So here we add the canonical ranks using voted taxids.
-        df = add_ranks(df=df, ncbi=ncbi)
+        df = add_ranks(df=df, taxa_db=taxa_db)
 
     if "superkingdom" not in df.columns:
         raise TableFormatError(f"superkingdom is not in taxonomy columns {df.columns}")
@@ -255,8 +257,8 @@ def write_ranks(
     ValueError
         `rank` not in canonical ranks
     """
-    if rank not in NCBI.CANONICAL_RANKS:
-        raise ValueError(f"rank: {rank} not in {NCBI.CANONICAL_RANKS}")
+    if rank not in TAXA_DB.CANONICAL_RANKS:
+        raise ValueError(f"rank: {rank} not in {TAXA_DB.CANONICAL_RANKS}")
     if rank not in taxonomy.columns:
         raise KeyError(f"{rank} not in taxonomy columns: {taxonomy.columns}")
     if not os.path.exists(assembly) or not os.path.getsize(assembly):
@@ -339,10 +341,10 @@ def main():
         ],
     )
     parser.add_argument(
-        "--ncbi",
-        help="Path to NCBI databases directory.",
+        "--taxa-db",
+        help="Path to TAXA_DB databases directory.",
         metavar="dirpath",
-        default=NCBI_DIR,
+        default=TAXA_DB_DIR,
     )
     args = parser.parse_args()
 
@@ -354,7 +356,7 @@ def main():
         os.makedirs(args.output)
 
     if taxa_df.shape[1] <= 2:
-        taxa_df = add_ranks(taxa_df, ncbi=args.ncbi)
+        taxa_df = add_ranks(taxa_df, taxa_db=args.taxa_db)
         taxa_df.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(
             f"Wrote {taxa_df.shape[0]:,} contigs canonical rank names to {out}"

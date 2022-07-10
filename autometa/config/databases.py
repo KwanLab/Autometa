@@ -63,7 +63,7 @@ class Databases:
 
     Attributes
     ----------
-    ncbi_dir : str </path/to/databases/ncbi> markers_dir : str
+    taxa_db_dir : str </path/to/databases/ncbi> markers_dir : str
         </path/to/databases/markers> SECTIONS : dict keys are `sections`
         respective to database config sections and values are options within
         the `sections`.
@@ -135,9 +135,9 @@ class Databases:
                 continue
             outdir = DEFAULT_CONFIG.get("databases", section)
             self.config.set("databases", section, outdir)
-        self.ncbi_dir = self.config.get("databases", "ncbi")
+        self.taxa_db_dir = self.config.get("databases", "ncbi")
         self.markers_dir = self.config.get("databases", "markers")
-        for outdir in {self.ncbi_dir, self.markers_dir}:
+        for outdir in {self.taxa_db_dir, self.markers_dir}:
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
 
@@ -199,7 +199,7 @@ class Databases:
                 f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
         if not ncbi_is_connected():
-            raise ConnectionError("Cannot connect to the NCBI rsync server")
+            raise ConnectionError("Cannot connect to the TAXA_DB rsync server")
         if section == "ncbi":
             host = self.config.get(section, "host")
             ftp_fullpath = self.config.get("checksums", option)
@@ -319,7 +319,7 @@ class Databases:
             ("merged", "merged.dmp"),
         ]
         for option, fname in taxdump_files:
-            outfpath = os.path.join(self.ncbi_dir, fname)
+            outfpath = os.path.join(self.taxa_db_dir, fname)
             if self.dryrun:
                 logger.debug(f"UPDATE (ncbi,{option}): {outfpath}")
                 self.config.set("ncbi", option, outfpath)
@@ -329,14 +329,14 @@ class Databases:
                 os.remove(outfpath)
             # Only extract the taxdump files if this is not a "dryrun"
             if not os.path.exists(outfpath):
-                outfpath = untar(taxdump_fpath, self.ncbi_dir, fname)
+                outfpath = untar(taxdump_fpath, self.taxa_db_dir, fname)
             write_checksum(outfpath, f"{outfpath}.md5")
 
             logger.debug(f"UPDATE (ncbi,{option}): {outfpath}")
             self.config.set("ncbi", option, outfpath)
 
     def download_ncbi_files(self, options: Iterable) -> None:
-        """Download NCBI database files.
+        """Download TAXA_DB database files.
 
         Parameters
         ----------
@@ -351,9 +351,9 @@ class Databases:
         Raises
         -------
         subprocess.CalledProcessError
-            NCBI file download with rsync failed.
+            TAXA_DB file download with rsync failed.
         ConnectionError
-            NCBI file checksums do not match after file transfer.
+            TAXA_DB file checksums do not match after file transfer.
 
         """
         # s.t. set methods are available
@@ -374,7 +374,7 @@ class Databases:
                 outfpath = self.config.get("ncbi", option)
             else:
                 outfname = os.path.basename(ftp_fullpath)
-                outfpath = os.path.join(self.ncbi_dir, outfname)
+                outfpath = os.path.join(self.taxa_db_dir, outfname)
 
             logger.debug(f"UPDATE: (ncbi,{option}): {outfpath}")
             self.config.set("ncbi", option, outfpath)
@@ -674,7 +674,7 @@ class Databases:
         Raises
         -------
         ValueError Provided `section` does not match 'ncbi' or 'markers'.
-            ConnectionError A connection issue occurred when connecting to NCBI
+            ConnectionError A connection issue occurred when connecting to TAXA_DB
             or GitHub.
 
         """

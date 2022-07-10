@@ -3,7 +3,7 @@
 # License: GNU Affero General Public License v3 or later
 # A copy of GNU AGPL v3 should have been included in this software package in LICENSE.txt.
 
-File containing definition of the NCBI class and containing functions useful for handling NCBI taxonomy databases
+File containing definition of the TAXA_DB class and containing functions useful for handling TAXA_DB taxonomy databases
 """
 
 
@@ -25,13 +25,15 @@ from autometa.config.utilities import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
-NCBI_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
+TAXA_DB_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
 # For cases where autometa has not been configured, attempt to find ncbi directory via source
-NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
+TAXA_DB_DIR = (
+    TAXA_DB_DIR if not "None" in TAXA_DB_DIR else TAXA_DB_DIR.replace("None", ".")
+)
 
 
-class NCBI:
-    """Taxonomy utilities for NCBI databases."""
+class TAXA_DB:
+    """Taxonomy utilities for TAXA_DB databases."""
 
     CANONICAL_RANKS = [
         "species",
@@ -44,9 +46,9 @@ class NCBI:
         "root",
     ]
 
-    def __init__(self, dirpath, verbose=False):
+    def __init__(self, dirpath, verbose=False, dbType="gtdb"):
         """
-        Instantiates the NCBI class
+        Instantiates the TAXA_DB class
 
         Parameters
         ----------
@@ -60,53 +62,79 @@ class NCBI:
         """
         self.dirpath = dirpath
         self.verbose = verbose
+        self.dbType = dbType
         self.disable = not self.verbose
+        # Setup data structures from nodes.dmp, names.dmp
         self.names_fpath = os.path.join(self.dirpath, "names.dmp")
         self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
-        self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
-        self.delnodes_fpath = os.path.join(self.dirpath, "delnodes.dmp")
-        # Set prot.accession2taxid filepath
-        self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
-        acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
-        if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
-            acc2taxid_gz
-        ):
-            self.accession2taxid_fpath = acc2taxid_gz
-        # Set prot.accession2taxid.FULL.gz filepath
-        self.accession2taxidfull_fpath = os.path.join(
-            self.dirpath, "prot.accession2taxid.FULL"
-        )
-        acc2taxid_gz = ".".join([self.accession2taxidfull_fpath, "gz"])
-        if not os.path.exists(self.accession2taxidfull_fpath) and os.path.exists(
-            acc2taxid_gz
-        ):
-            self.accession2taxidfull_fpath = acc2taxid_gz
-        # Set dead_prot.accession2taxid filepath
-        self.dead_accession2taxid_fpath = os.path.join(
-            self.dirpath, "dead_prot.accession2taxid"
-        )
-        acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
-        if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
-            acc2taxid_gz
-        ):
-            self.dead_accession2taxid_fpath = acc2taxid_gz
-        # Check formatting for nr database
-        self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
-        nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
-        nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
-        nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
-        if os.path.exists(nr_dmnd_fpath):
-            self.nr_fpath = nr_dmnd_fpath
-        if "dmnd" not in os.path.basename(self.nr_fpath):
-            # This check should probably be in the dependencies/databases file...
-            logger.warning(
-                f"DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!"
-            )
-        # Setup data structures from nodes.dmp, names.dmp and merged.dmp
         self.nodes = self.parse_nodes()
         self.names = self.parse_names()
-        self.merged = self.parse_merged()
-        self.delnodes = self.parse_delnodes()
+        if self.dbType == "ncbi":
+            self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
+            self.delnodes_fpath = os.path.join(self.dirpath, "delnodes.dmp")
+            self.merged = self.parse_merged()
+            self.delnodes = self.parse_delnodes()
+            # Set prot.accession2taxid filepath
+            self.accession2taxid_fpath = os.path.join(
+                self.dirpath, "prot.accession2taxid"
+            )
+            acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
+            if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
+                acc2taxid_gz
+            ):
+                self.accession2taxid_fpath = acc2taxid_gz
+            # Set prot.accession2taxid.FULL.gz filepath
+            self.accession2taxidfull_fpath = os.path.join(
+                self.dirpath, "prot.accession2taxid.FULL"
+            )
+            acc2taxid_gz = ".".join([self.accession2taxidfull_fpath, "gz"])
+            if not os.path.exists(self.accession2taxidfull_fpath) and os.path.exists(
+                acc2taxid_gz
+            ):
+                self.accession2taxidfull_fpath = acc2taxid_gz
+            # Set dead_prot.accession2taxid filepath
+            self.dead_accession2taxid_fpath = os.path.join(
+                self.dirpath, "dead_prot.accession2taxid"
+            )
+            acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
+            if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
+                acc2taxid_gz
+            ):
+                self.dead_accession2taxid_fpath = acc2taxid_gz
+            # Check formatting for nr database
+            self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
+            nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
+            nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
+            nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
+            if os.path.exists(nr_dmnd_fpath):
+                self.nr_fpath = nr_dmnd_fpath
+            if "dmnd" not in os.path.basename(self.nr_fpath):
+                # This check should probably be in the dependencies/databases file...
+                logger.warning(
+                    f"DatabaseWarning: {self.nr_fpath} needs to be formatted for diamond!"
+                )
+        else:
+            # Set genome.accession2taxid filepath
+            self.genome_accession2taxid_fpath = os.path.join(
+                self.dirpath, "genome.accession2taxid"
+            )
+            acc2taxid_gz = ".".join([self.genome_accession2taxid_fpath, "gz"])
+            if not os.path.exists(self.genome_accession2taxid_fpath) and os.path.exists(
+                acc2taxid_gz
+            ):
+                self.genome_accession2taxid_fpath = acc2taxid_gz
+            # Check formatting for gtdb database
+            self.gtdb_fpath = os.path.join(self.dirpath, "gtdb.gz")
+            gtdb_bname = os.path.splitext(os.path.basename(self.gtdb_fpath))[0]
+            gtdb_dmnd_fname = ".".join([gtdb_bname, "dmnd"])
+            gtdb_dmnd_fpath = os.path.join(self.dirpath, gtdb_dmnd_fname)
+            if os.path.exists(gtdb_dmnd_fpath):
+                self.gtdb_fpath = gtdb_dmnd_fpath
+            if "dmnd" not in os.path.basename(self.gtdb_fpath):
+                # This check should probably be in the dependencies/databases file...
+                logger.warning(
+                    f"DatabaseWarning: {self.gtdb_fpath} needs to be formatted for diamond!"
+                )
 
     def __repr__(self):
         """
@@ -134,7 +162,7 @@ class NCBI:
     def name(self, taxid: int, rank: str = None) -> str:
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
-        deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
+        deprecated, suppressed, withdrawn from TAXA_DB (basically old) the updated name will be retrieved
 
         Parameters
         ----------
@@ -153,7 +181,7 @@ class NCBI:
         Raises
         ------
         DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+            TAXA_DB databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -162,7 +190,7 @@ class NCBI:
             taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
-        if rank not in set(NCBI.CANONICAL_RANKS):
+        if rank not in set(TAXA_DB.CANONICAL_RANKS):
             logger.warning(f"{rank} not in canonical ranks!")
             return "unclassified"
         ancestor_taxid = taxid
@@ -194,7 +222,7 @@ class NCBI:
         """
         lineage = []
         while taxid != 1:
-            if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
+            if canonical and self.rank(taxid) not in TAXA_DB.CANONICAL_RANKS:
                 taxid = self.parent(taxid)
                 continue
             lineage.append(
@@ -239,7 +267,7 @@ class NCBI:
                 right_index=True)
         """
         canonical_ranks = [
-            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+            rank for rank in reversed(TAXA_DB.CANONICAL_RANKS) if rank != "root"
         ]
         taxids = list(set(taxids))
         ranked_taxids = {}
@@ -259,7 +287,7 @@ class NCBI:
     def rank(self, taxid: int) -> str:
         """
         Return the respective rank of provided `taxid`. If the `taxid` is deprecated, suppressed,
-        withdrawn from NCBI (basically old) the updated rank will be retrieved
+        withdrawn from TAXA_DB (basically old) the updated rank will be retrieved
 
         Parameters
         ----------
@@ -274,7 +302,7 @@ class NCBI:
         Raises
         ------
         DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+            TAXA_DB databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -286,7 +314,7 @@ class NCBI:
     def parent(self, taxid: int) -> int:
         """
         Retrieve the parent taxid of provided `taxid`. If the `taxid` is deprecated, suppressed,
-        withdrawn from NCBI (basically old) the updated parent will be retrieved
+        withdrawn from TAXA_DB (basically old) the updated parent will be retrieved
 
         Parameters
         ----------
@@ -301,7 +329,7 @@ class NCBI:
         Raises
         ------
         DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+            TAXA_DB databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         try:
             taxid = self.convert_taxid_dtype(taxid)
@@ -337,8 +365,8 @@ class NCBI:
 
     def parse_nodes(self) -> Dict[int, str]:
         """
-        Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.NCBI.parent`, :func:`autometa.taxonomy.ncbi.NCBI.rank`
-        Note: This is performed when a new NCBI class instance is constructed
+        Parse the `nodes.dmp` database to be used later by :func:`autometa.taxonomy.ncbi.TAXA_DB.parent`, :func:`autometa.taxonomy.ncbi.TAXA_DB.rank`
+        Note: This is performed when a new TAXA_DB class instance is constructed
 
         Returns
         -------
@@ -363,7 +391,7 @@ class NCBI:
     def parse_merged(self) -> Dict[int, int]:
         """
         Parse the merged.dmp database
-        Note: This is performed when a new NCBI class instance is constructed
+        Note: This is performed when a new TAXA_DB class instance is constructed
 
         Returns
         -------
@@ -387,7 +415,7 @@ class NCBI:
     def parse_delnodes(self) -> Set[int]:
         """
         Parse the delnodes.dmp database
-        Note: This is performed when a new NCBI class instance is constructed
+        Note: This is performed when a new TAXA_DB class instance is constructed
 
         Returns
         -------
@@ -415,9 +443,9 @@ class NCBI:
         Parameters
         ----------
         taxid_A : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+            taxid in TAXA_DB taxonomy databases - nodes.dmp, names.dmp or merged.dmp
         taxid_B : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+            taxid in TAXA_DB taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
@@ -441,7 +469,7 @@ class NCBI:
         Parameters
         ----------
         taxid : int
-            identifier for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+            identifier for a taxon in TAXA_DB taxonomy databases - nodes.dmp, names.dmp or merged.dmp
 
         Returns
         -------
@@ -454,7 +482,7 @@ class NCBI:
         ValueError
             Provided `taxid` is not a positive integer
         DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+            TAXA_DB databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
         """
         #  Step 1 Converts the given `taxid` to an integer and checks whether it is positive.
         # Checking taxid instance format
@@ -522,7 +550,7 @@ class NCBI:
             Dictionary containing sseqids converted to taxids
 
         db : str, optional
-            selection of one of the prot accession to taxid databases from NCBI. Choices are live, dead, full
+            selection of one of the prot accession to taxid databases from TAXA_DB. Choices are live, dead, full
 
             * live: prot.accession2taxid.gz
             * full: prot.accession2taxid.FULL.gz
@@ -601,9 +629,29 @@ class NCBI:
         logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
         return sseqids_to_taxids
 
+    def search_genome_accessions(self, accessions: set):
+        sseqids_to_taxids = {}
+        fpath = self.genome_accession2taxid_fpath
+        # "rt" open the database in text mode instead of binary to be handled like a text file
+        fh = gzip.open(fpath, "rt") if fpath.endswith(".gz") else open(fpath)
+        # skip the header line
+        __ = fh.readline()
+        n_lines = file_length(fpath, approximate=True)
+        converted_sseqid_count = 0
+        logger.debug("parsing genome_accession2taxid_fpath...")
+        for line in fh:
+            acc_num, acc_ver, taxid = line.strip().split("\t")
+            taxid = int(taxid)
+            if acc_ver in accessions:
+                sseqids_to_taxids[acc_ver] = taxid
+                converted_sseqid_count += 1
+        fh.close()
+        logger.debug(f"sseqids converted: {converted_sseqid_count:,}")
+        return sseqids_to_taxids
+
 
 if __name__ == "__main__":
-    print("file containing Autometa NCBI utilities class")
+    print("file containing Autometa TAXA_DB utilities class")
     import sys
 
     sys.exit(1)

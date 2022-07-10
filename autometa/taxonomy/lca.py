@@ -25,7 +25,7 @@ from tqdm import tqdm
 from pickle import UnpicklingError
 
 from autometa.config.environ import get_versions
-from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
+from autometa.taxonomy.ncbi import TAXA_DB, TAXA_DB_DIR
 from autometa.common.utilities import make_pickle, unpickle, file_length
 from autometa.common.external import diamond
 from autometa.common.external import prodigal
@@ -34,7 +34,7 @@ from autometa.common.external import prodigal
 logger = logging.getLogger(__name__)
 
 
-class LCA(NCBI):
+class LCA(TAXA_DB):
     """LCA class containing methods to retrieve the Lowest Common Ancestor.
 
     LCAs may be computed given taxids, a fasta or BLAST results.
@@ -74,10 +74,13 @@ class LCA(NCBI):
 
     """
 
-    def __init__(self, dbdir: str, verbose: bool = False, cache: str = ""):
+    def __init__(
+        self, dbdir: str, verbose: bool = False, cache: str = "", dbType: str = "gtdb"
+    ):
         super().__init__(dbdir, verbose=verbose)
         self.verbose = verbose
         self.dbdir = dbdir
+        self.dbType = dbType
         self.cache = cache
         self.disable = False if verbose else True
         if self.cache == None:
@@ -347,7 +350,7 @@ class LCA(NCBI):
         .. note::
 
             If an accession number is no longer available in prot.accesssion2taxid.gz
-            (either due to being suppressed, deprecated or removed by NCBI),
+            (either due to being suppressed, deprecated or removed by TAXA_DB),
             then root taxid (1) is returned as the taxid for the corresponding sseqid.
 
         Parameters
@@ -371,37 +374,42 @@ class LCA(NCBI):
             chain.from_iterable([qseqid_sseqids for qseqid_sseqids in sseqids.values()])
         )
 
-        # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
-        # Any accessions not found in live prot.accession2taxid db *may* be here.
-        # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
-        try:
+        if self.dbType == "gtdb":
+            sseqids_to_taxids = self.search_genome_accessions(
+                accessions=recovered_sseqids
+            )
+        else:
+            # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+            # Any accessions not found in live prot.accession2taxid db *may* be here.
+            # This *attempts* to prevent sseqids from being assigned root (root taxid=1)
+            try:
+                sseqids_to_taxids = self.search_prot_accessions(
+                    accessions=recovered_sseqids,
+                    db="dead",
+                    sseqids_to_taxids=None,
+                )
+                dead_sseqids_found = set(sseqids_to_taxids.keys())
+            except FileNotFoundError as db_fpath:
+                logger.warn(f"Skipping taxid conversion from {db_fpath}")
+                sseqids_to_taxids = None
+                dead_sseqids_found = set()
+
+            # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
+            # Possibly overwriting any merged accessions to live accessions
             sseqids_to_taxids = self.search_prot_accessions(
                 accessions=recovered_sseqids,
-                db="dead",
-                sseqids_to_taxids=None,
+                db="full",
+                sseqids_to_taxids=sseqids_to_taxids,
             )
-            dead_sseqids_found = set(sseqids_to_taxids.keys())
-        except FileNotFoundError as db_fpath:
-            logger.warn(f"Skipping taxid conversion from {db_fpath}")
-            sseqids_to_taxids = None
-            dead_sseqids_found = set()
 
-        # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
-        # Possibly overwriting any merged accessions to live accessions
-        sseqids_to_taxids = self.search_prot_accessions(
-            accessions=recovered_sseqids,
-            db="full",
-            sseqids_to_taxids=sseqids_to_taxids,
-        )
-
-        # Remove sseqids: Ignore any sseqids already found
-        live_sseqids_found = set(sseqids_to_taxids.keys())
-        live_sseqids_found -= dead_sseqids_found
-        recovered_sseqids -= live_sseqids_found
-        if recovered_sseqids:
-            logger.warn(
-                f"sseqids without corresponding taxid: {len(recovered_sseqids):,}"
-            )
+            # Remove sseqids: Ignore any sseqids already found
+            live_sseqids_found = set(sseqids_to_taxids.keys())
+            live_sseqids_found -= dead_sseqids_found
+            recovered_sseqids -= live_sseqids_found
+            if recovered_sseqids:
+                logger.warn(
+                    f"sseqids without corresponding taxid: {len(recovered_sseqids):,}"
+                )
         root_taxid = 1
         taxids = {}
         sseqid_not_found = pd.NA
@@ -416,15 +424,16 @@ class LCA(NCBI):
                 for sseqid in qseqid_sseqids
             ]
         )
-        # Update taxids if they are old.
-        sseqid_to_taxid_df["merged_taxid"] = sseqid_to_taxid_df.raw_taxid.map(
-            lambda tid: self.merged.get(tid, tid)
-        )
-        # If we still have missing taxids, we will set the sseqid value to the root taxid
-        # fill missing taxids with root_taxid
-        sseqid_to_taxid_df["cleaned_taxid"] = sseqid_to_taxid_df.merged_taxid.fillna(
-            root_taxid
-        )
+        if self.dbType == "ncbi":
+            # Update taxids if they are old.
+            sseqid_to_taxid_df["merged_taxid"] = sseqid_to_taxid_df.raw_taxid.map(
+                lambda tid: self.merged.get(tid, tid)
+            )
+            # If we still have missing taxids, we will set the sseqid value to the root taxid
+            # fill missing taxids with root_taxid
+            sseqid_to_taxid_df[
+                "cleaned_taxid"
+            ] = sseqid_to_taxid_df.merged_taxid.fillna(root_taxid)
         for qseqid, qseqid_sseqids in sseqids.items():
             # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
             qseqid_taxids = {
@@ -456,7 +465,10 @@ class LCA(NCBI):
         for qseqid, qseqid_taxids in taxids.items():
             # This will convert any deprecated taxids to their current taxids before reduction to LCA.
             # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
-            qseqid_taxids = {self.merged.get(taxid, taxid) for taxid in qseqid_taxids}
+            if self.dbType == "ncbi":
+                qseqid_taxids = {
+                    self.merged.get(taxid, taxid) for taxid in qseqid_taxids
+                }
             lca_taxid = False
             num_taxids = len(qseqid_taxids)
             while not lca_taxid:
@@ -534,7 +546,7 @@ class LCA(NCBI):
         out : str
             </path/to/output/lca.tsv>.
         sseqid_to_taxid_output : str
-            Path to write qseqids' sseqids and their taxid designations from NCBI databases
+            Path to write qseqids' sseqids and their taxid designations from TAXA_DB databases
         force : bool, optional
             Force overwrite of existing `out`.
 
@@ -686,7 +698,7 @@ class LCA(NCBI):
                 taxid = int(taxid)
                 contig = contigs_from_orfs.get(orf_id)
                 if taxid != 1:
-                    while rank not in set(NCBI.CANONICAL_RANKS):
+                    while rank not in set(TAXA_DB.CANONICAL_RANKS):
                         taxid = self.parent(taxid)
                         rank = self.rank(taxid)
                 if contig not in lca_hits:
@@ -722,10 +734,16 @@ def main():
         required=True,
     )
     parser.add_argument(
+        "--dbType",
+        help="Type of taxonomy database to use.",
+        choices=["ncbi", "gtdb"],
+        default="ncbi",
+    )
+    parser.add_argument(
         "--dbdir",
-        help="Path to NCBI databases directory.",
+        help="Path to taxonomy database directory.",
         metavar="dirpath",
-        default=NCBI_DIR,
+        default=TAXA_DB_DIR,
     )
     parser.add_argument(
         "--lca-output",
@@ -772,9 +790,12 @@ def main():
         action="store_true",
         default=False,
     )
+
     args = parser.parse_args()
 
-    lca = LCA(dbdir=args.dbdir, verbose=args.verbose, cache=args.cache)
+    lca = LCA(
+        dbdir=args.dbdir, verbose=args.verbose, cache=args.cache, dbType=args.dbType
+    )
 
     # The pkl objects will be recomputed if the respective process cache file does not exist
     if args.force_cache_overwrite:

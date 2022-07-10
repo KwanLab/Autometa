@@ -39,7 +39,7 @@ from autometa.common.markers import load as load_markers
 from autometa.common import kmers
 
 from autometa.common.exceptions import TableFormatError, BinningError
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import TAXA_DB
 from autometa.binning.recursive_dbscan import get_clusters
 from autometa.binning.utilities import (
     write_results,
@@ -312,11 +312,11 @@ def cluster_by_taxon_partitioning(
     """
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
-        canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
+        canonical_ranks = [rank for rank in TAXA_DB.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
         canonical_ranks = [
-            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
+            rank for rank in reversed(TAXA_DB.CANONICAL_RANKS) if rank != "root"
         ]
     # if stage is cached then we can first look to the cache before we begin subsetting main...
     clustered_contigs = set()

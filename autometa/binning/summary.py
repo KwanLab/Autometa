@@ -17,7 +17,7 @@ import numpy as np
 
 from Bio import SeqIO
 
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import TAXA_DB
 from autometa.taxonomy import majority_vote
 from autometa.common.markers import load as load_markers
 
@@ -226,7 +226,7 @@ def get_metabin_stats(
 
 
 def get_metabin_taxonomies(
-    bin_df: pd.DataFrame, ncbi: NCBI, cluster_col: str = "cluster"
+    bin_df: pd.DataFrame, ncbi: TAXA_DB, cluster_col: str = "cluster"
 ) -> pd.DataFrame:
     """Retrieve taxonomies of all clusters recovered from Autometa binning.
 
@@ -234,8 +234,8 @@ def get_metabin_taxonomies(
     ----------
     bin_df : pd.DataFrame
         Autometa binning table. index=contig, cols=['cluster','length','taxid', *canonical_ranks]
-    ncbi : autometa.taxonomy.ncbi.NCBI instance
-        Autometa NCBI class instance
+    ncbi : autometa.taxonomy.ncbi.TAXA_DB instance
+        Autometa TAXA_DB class instance
     cluster_col : str, optional
         Clustering column by which to group metabins
 
@@ -246,7 +246,7 @@ def get_metabin_taxonomies(
         Indexed by cluster
     """
     logger.info(f"Retrieving metabin taxonomies for {cluster_col}")
-    canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
+    canonical_ranks = [rank for rank in TAXA_DB.CANONICAL_RANKS if rank != "root"]
     is_clustered = bin_df[cluster_col].notnull()
     bin_df = bin_df[is_clustered]
     outcols = [cluster_col, "length", "taxid", *canonical_ranks]
@@ -324,7 +324,7 @@ def main():
     )
     parser.add_argument(
         "--ncbi",
-        help="Path to user NCBI databases directory (Required for retrieving metabin taxonomies)",
+        help="Path to user TAXA_DB databases directory (Required for retrieving metabin taxonomies)",
         metavar="dirpath",
         required=False,
     )
@@ -382,7 +382,7 @@ def main():
                 "taxid found in dataframe. --ncbi argument is required to retrieve metabin taxonomies. Skipping..."
             )
         else:
-            ncbi = NCBI(dirpath=args.ncbi)
+            ncbi = TAXA_DB(dirpath=args.ncbi)
             taxa_df = get_metabin_taxonomies(
                 bin_df=bin_df, ncbi=ncbi, cluster_col=args.binning_column
             )

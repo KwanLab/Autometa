@@ -67,7 +67,7 @@ class ExternalToolError(AutometaError):
 
 class DatabaseOutOfSyncError(AutometaError):
     """
-    Raised when NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+    Raised when TAXA_DB databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
     Parameters
     ----------
     AutometaError : class
@@ -87,7 +87,7 @@ class DatabaseOutOfSyncError(AutometaError):
             Message written alongside raising the exception
         """
         message = """
-        NCBI databases nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz and nr.gz may be out of sync.
+        TAXA_DB databases nodes.dmp, names.dmp, merged.dmp, prot.accession2taxid.gz and nr.gz may be out of sync.
         Up-to-date databases may be downloaded at:
         non-redundant protein database (nr) - ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
         prot.accession2taxid.gz - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz

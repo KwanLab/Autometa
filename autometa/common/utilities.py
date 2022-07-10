@@ -449,8 +449,8 @@ def ncbi_is_connected(
     Parameters
     ----------
     filepath : string
-        filepath to NCBI's rsync server. Default is rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number,
-        which should be a very small file that is unlikely to move. This may need to be updated if NCBI changes
+        filepath to TAXA_DB's rsync server. Default is rsync://ftp.ncbi.nlm.nih.gov/genbank/GB_Release_Number,
+        which should be a very small file that is unlikely to move. This may need to be updated if TAXA_DB changes
         their file organization.
 
     Outputs
