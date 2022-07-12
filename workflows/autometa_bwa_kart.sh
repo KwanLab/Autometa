@@ -197,7 +197,7 @@ blast="${outdir}/${simple_name}.blastp.tsv" #Generate output file name
 
 diamond blastp \
     --query $orfs \
-    --db "$ncbi/nr.dmnd" \
+    --db "${ncbi}/nr.dmnd" \
     --evalue 1e-5 \
     --max-target-seqs 200 \
     --threads $cpus \

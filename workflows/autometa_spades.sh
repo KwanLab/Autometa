@@ -90,7 +90,8 @@ coverages="${outdir}/${simpleName}.coverages.tsv"
 # script:
 autometa-coverage \
     --assembly $filtered_assembly \
-    --from-spades --out $coverages
+    --from-spades \
+    --out $coverages
 
 # Step 3: Annotate and filter markers
 # input:
