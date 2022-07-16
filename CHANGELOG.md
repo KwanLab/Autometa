@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - :bug::memo::green_apple: Replace incorrect runtime defaults specified in nf-core launch command #252
 - :art::green_apple: Continue nextflow workflow (without termination) if bins are not recovered from a particular dataset #253
 - :art::bug: `autometa-benchmark` entrypoint, when checking taxid classifications, now converts any taxids of `0` to `1` #254
-- :bug: NCBI connection is checked prior to NCBI database files download rather than pinging google DNS #258
+- :bug: TAXA_DB connection is checked prior to TAXA_DB database files download rather than pinging google DNS #258
 - :bug: Fix `autometa-length-filter` bug where specifying a directory when writing to `--output-fasta` was required (now optional) #256
 - 💚 ⬆️:whale::green_apple:  Bump version to 2.0.3 in `VERSION` and `manifest.version` in `nextflow.config` s.t. autometa docker images used in nextflow workflow correspond to most recent release
 
@@ -131,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Merge main into dev by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/224>
 - pytest & codecov CI by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/227>
 - Refactor samplesheet by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/228>
-- 🐛 🎨 🍏  Fix kingdom-handling and mounting NCBI databases into docker container by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/229>
+- 🐛 🎨 🍏  Fix kingdom-handling and mounting TAXA_DB databases into docker container by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/229>
 - Add error handling strategies for nextflow processes by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/231>
 - Release 2.0.0 by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/233>
 - :memo::art::arrow_up::fire: update build files and respective docs by @WiscEvan in <https://github.com/KwanLab/Autometa/pull/234>

@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
-# Program to download a random number of bacterial genomes from NCBI
-# Before starting - download all the bacterial genomes from NCBI:
+# Program to download a random number of bacterial genomes from TAXA_DB
+# Before starting - download all the bacterial genomes from TAXA_DB:
 # rsync -avzh --progress ftp.ncbi.nlm.nih.gov::genomes/genbank/bacteria ./
 # Don't worry - this just downloads a series of symlinks (~300 MB)
 # USAGE: download_random_bacterial_genomes.py <number to download>

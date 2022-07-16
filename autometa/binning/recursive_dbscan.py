@@ -24,7 +24,7 @@ from numba import config
 from autometa.common.markers import load as load_markers
 
 from autometa.common.exceptions import TableFormatError, BinningError
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.database import TaxonomyDatabase
 from autometa.binning.utilities import (
     write_results,
     read_annotations,
@@ -628,10 +628,14 @@ def taxon_guided_binning(
     logger.info(f"Using {method} clustering method")
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
-        ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
+        ranks = [rank for rank in TaxonomyDatabase.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
-        ranks = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
+        ranks = [
+            rank
+            for rank in reversed(TaxonomyDatabase.CANONICAL_RANKS)
+            if rank != "root"
+        ]
     starting_rank_index = ranks.index(starting_rank)
     ranks = ranks[starting_rank_index:]
     logger.debug(f"Using ranks: {', '.join(ranks)}")

@@ -74,7 +74,7 @@ Example benchmarking with simulated communities
 
 .. note::
     Using ``--benchmark=classification`` requires the path to a directory containing files (nodes.dmp, names.dmp, merged.dmp) 
-    from NCBI's taxdump tarball. This should be supplied using the ``--ncbi`` parameter.
+    from TAXA_DB's taxdump tarball. This should be supplied using the ``--ncbi`` parameter.
 
 Clustering
 ----------

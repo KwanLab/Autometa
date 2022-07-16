@@ -32,7 +32,8 @@ process BINNING_SUMMARY {
         def software = getSoftwareName(task.process)
         """
         autometa-binning-summary \\
-            --ncbi $ncbi \\
+            --dbdir $ncbi \\
+            --dbtype ncbi \\
             --binning-main $binning_main \\
             --markers $markers \\
             --metagenome $metagenome \\

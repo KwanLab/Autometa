@@ -310,7 +310,7 @@ or viral contigs will be placed into bacterial bins.
 
 The first step for contig taxonomy assignment is a local alignment search of the ORFs against a reference database. This can be accelerated using `diamond <https://github.com/bbuchfink/diamond>`_.
 
-Create a diamond formatted database of the NCBI non-redundant (nr.gz) protein database.
+Create a diamond formatted database of the TAXA_DB non-redundant (nr.gz) protein database.
 
 .. code-block:: bash
 
@@ -384,7 +384,7 @@ The above command would generate the blastP table (``78mbp_metagenome.blastp.tsv
 The second step in taxon assignment is determining each ORF's lowest common ancestor (LCA).
 This step uses the blastp results generated in the previous step to generate a table having the LCA of each ORF. As a default only
 the blastp hits (subject accessions) which are within 10% of the top bitscore are used. These subject accessions are translated to
-their respective taxids (``prot.accession2taxid.gz``) to be looked up in NCBI's taxonomy database (``nodes.dmp``). Each ORFs' list of taxids
+their respective taxids (``prot.accession2taxid.gz``) to be looked up in TAXA_DB's taxonomy database (``nodes.dmp``). Each ORFs' list of taxids
 are then reduced to its lowest common ancestor via a range minimum query.
 
 .. note::
@@ -412,7 +412,7 @@ Let us dissect the above command:
 +===========================+===========================================================================================+================+
 | ``--blast``               | Path to diamond blastp output                                                             | Y              |
 +---------------------------+-------------------------------------------------------------------------------------------+----------------+
-| ``--dbdir``               | Path to NCBI databases directory                                                          | Y              |
+| ``--dbdir``               | Path to TAXA_DB databases directory                                                          | Y              |
 +---------------------------+-------------------------------------------------------------------------------------------+----------------+
 | ``--lca-output``          | Path to write lca output                                                                  | Y              |
 +---------------------------+-------------------------------------------------------------------------------------------+----------------+
@@ -734,7 +734,7 @@ In addition to the above columns ``78mbp_metagenome.main.tsv`` file has the foll
 +--------------+-------------------------------------------------+
 | superkingdom | Assigned taxonomic superkingdom for the contig  |
 +--------------+-------------------------------------------------+
-| taxid        | Assigned NCBI taxonomy ID number for the contig |
+| taxid        | Assigned TAXA_DB taxonomy ID number for the contig |
 +--------------+-------------------------------------------------+
 | x_1          | The first coordinate after dimension reduction  |
 +--------------+-------------------------------------------------+

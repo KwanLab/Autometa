@@ -15,13 +15,15 @@ from pathlib import PurePath
 import pandas as pd
 
 from Bio import SeqIO
-from typing import Union, List
+from typing import Union, List, Literal
 
 
 from autometa.common.external import prodigal
 from autometa.taxonomy import majority_vote
 from autometa.taxonomy.lca import LCA
 from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
+from autometa.taxonomy.gtdb import GTDB
+from autometa.taxonomy.database import TaxonomyDatabase
 from autometa.common.exceptions import TableFormatError
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,8 @@ def assign(
     nucl_orfs: str = None,
     blast: str = None,
     lca_fpath: str = None,
-    ncbi_dir: str = NCBI_DIR,
+    dbdir: str = NCBI_DIR,
+    dbtype: Literal["ncbi", "gtdb"] = "ncbi",
     force: bool = False,
     verbose: bool = False,
     parallel: bool = True,
@@ -60,8 +63,10 @@ def assign(
         Path to blastp table, by default None
     lca_fpath : str, optional
         Path to output of LCA analysis, by default None
-    ncbi_dir : str, optional
+    dbdir : str, optional
         Path to NCBI databases directory, by default NCBI_DIR
+    dbtype : str, optional
+        Type of Taxonomy database to use, by default ncbi
     force : bool, optional
         Overwrite existing annotations, by default False
     verbose : bool, optional
@@ -95,6 +100,8 @@ def assign(
     prot_orfs = prot_orfs if prot_orfs else os.path.join(outdir, "orfs.faa")
     nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(outdir, "orfs.fna")
 
+    taxa_db = NCBI(dbdir=dbdir) if dbtype == "ncbi" else GTDB(dbdir=dbdir)
+
     def call_orfs():
         prodigal.run(
             assembly=assembly,
@@ -107,16 +114,18 @@ def assign(
 
     def blast2lca():
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
+            lca = LCA(taxonomy_db=taxa_db, verbose=verbose, cache=outdir)
         lca.blast2lca(
             orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
         )
 
     def majority_vote_lca(out=out):
         if "lca" not in locals():
-            lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
+            lca = LCA(taxonomy_db=taxa_db, verbose=verbose, cache=outdir)
         ctg_lcas = lca.parse(lca_fpath=lca_fpath, orfs_fpath=prot_orfs)
-        votes = majority_vote.rank_taxids(ctg_lcas=ctg_lcas, ncbi=lca, verbose=verbose)
+        votes = majority_vote.rank_taxids(
+            ctg_lcas=ctg_lcas, taxa_db=taxa_db, verbose=verbose
+        )
         out = majority_vote.write_votes(results=votes, out=out)
         return pd.read_csv(out, sep="\t", index_col="contig")
 
@@ -146,14 +155,14 @@ def assign(
         calculation()
 
 
-def add_ranks(df: pd.DataFrame, ncbi: Union[NCBI, str]) -> pd.DataFrame:
+def add_ranks(df: pd.DataFrame, taxa_db: TaxonomyDatabase) -> pd.DataFrame:
     """Add canonical ranks to `df` and write to `out`
 
     Parameters
     ----------
     df : pd.DataFrame
         index="contig", column="taxid"
-    ncbi : str or NCBI
+    taxa_db : str or NCBI
         Path to NCBI databases directory, or autometa NCBI instance.
 
     Returns
@@ -161,8 +170,7 @@ def add_ranks(df: pd.DataFrame, ncbi: Union[NCBI, str]) -> pd.DataFrame:
     pd.DataFrame
         index="contig", columns=["taxid", *canonical_ranks]
     """
-    ncbi = ncbi if isinstance(ncbi, NCBI) else NCBI(ncbi)
-    dff = ncbi.get_lineage_dataframe(df["taxid"].unique().tolist())
+    dff = taxa_db.get_lineage_dataframe(df["taxid"].unique().tolist())
     return pd.merge(left=df, right=dff, how="left", left_on="taxid", right_index=True)
 
 
@@ -252,11 +260,9 @@ def write_ranks(
 
     Raises
     ------
-    ValueError
-        `rank` not in canonical ranks
+    KeyError
+        `rank` not in taxonomy columns
     """
-    if rank not in NCBI.CANONICAL_RANKS:
-        raise ValueError(f"rank: {rank} not in {NCBI.CANONICAL_RANKS}")
     if rank not in taxonomy.columns:
         raise KeyError(f"{rank} not in taxonomy columns: {taxonomy.columns}")
     if not os.path.exists(assembly) or not os.path.getsize(assembly):
@@ -339,12 +345,23 @@ def main():
         ],
     )
     parser.add_argument(
-        "--ncbi",
-        help="Path to NCBI databases directory.",
+        "--dbdir",
+        help="Path to taxonomy database directory.",
         metavar="dirpath",
         default=NCBI_DIR,
     )
+    parser.add_argument(
+        "--dbtype",
+        help="Taxonomy database to use",
+        choices=["ncbi", "gtdb"],
+        default="ncbi",
+    )
     args = parser.parse_args()
+
+    if args.dbtype == "ncbi":
+        taxa_db = NCBI(args.dbdir)
+    elif args.dbtype == "gtdb":
+        taxa_db = GTDB(args.dbdir)
 
     filename = f"{args.prefix}.taxonomy.tsv" if args.prefix else "taxonomy.tsv"
     out = os.path.join(args.output, filename)
@@ -354,12 +371,16 @@ def main():
         os.makedirs(args.output)
 
     if taxa_df.shape[1] <= 2:
-        taxa_df = add_ranks(taxa_df, ncbi=args.ncbi)
+        taxa_df = add_ranks(taxa_df, taxa_db=taxa_db)
         taxa_df.to_csv(out, sep="\t", index=True, header=True)
         logger.debug(
             f"Wrote {taxa_df.shape[0]:,} contigs canonical rank names to {out}"
         )
     if args.split_rank_and_write:
+        if args.split_rank_and_write not in TaxonomyDatabase.CANONICAL_RANKS:
+            raise ValueError(
+                f"rank: {args.split_rank_and_write} not in {TaxonomyDatabase.CANONICAL_RANKS}"
+            )
         written_ranks = write_ranks(
             taxonomy=taxa_df,
             assembly=args.assembly,

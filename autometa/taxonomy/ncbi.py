@@ -12,7 +12,9 @@ import logging
 import os
 import string
 import sys
-from typing import Dict, Iterable, List, Set
+
+from typing import Dict, Iterable, List, Set, Tuple
+from itertools import chain
 
 import pandas as pd
 
@@ -21,6 +23,7 @@ from tqdm import tqdm
 from autometa.common.utilities import file_length
 from autometa.common.exceptions import DatabaseOutOfSyncError
 from autometa.config.utilities import DEFAULT_CONFIG
+from autometa.taxonomy.database import TaxonomyDatabase
 
 
 logger = logging.getLogger(__name__)
@@ -30,19 +33,8 @@ NCBI_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
 NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
 
 
-class NCBI:
+class NCBI(TaxonomyDatabase):
     """Taxonomy utilities for NCBI databases."""
-
-    CANONICAL_RANKS = [
-        "species",
-        "genus",
-        "family",
-        "order",
-        "class",
-        "phylum",
-        "superkingdom",
-        "root",
-    ]
 
     def __init__(self, dirpath, verbose=False):
         """
@@ -162,7 +154,7 @@ class NCBI:
             taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
-        if rank not in set(NCBI.CANONICAL_RANKS):
+        if rank not in set(TaxonomyDatabase.CANONICAL_RANKS):
             logger.warning(f"{rank} not in canonical ranks!")
             return "unclassified"
         ancestor_taxid = taxid
@@ -174,87 +166,6 @@ class NCBI:
         # At this point we have not encountered a name for the taxid rank
         # so we will place this as unclassified.
         return "unclassified"
-
-    def lineage(self, taxid: int, canonical: bool = True) -> List[Dict]:
-        """
-        Returns the lineage of `taxids` encountered when traversing to root
-
-        Parameters
-        ----------
-        taxid : int
-            `taxid` in nodes.dmp, whose lineage is being returned
-        canonical : bool, optional
-            Lineage includes both canonical and non-canonical ranks when False, and only the canonical ranks when True
-            Canonical ranks include : species, genus , family, order, class, phylum, superkingdom, root
-
-        Returns
-        -------
-        ordered list of dicts
-            [{'taxid':taxid, 'rank':rank,'name':name}, ...]
-        """
-        lineage = []
-        while taxid != 1:
-            if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
-                taxid = self.parent(taxid)
-                continue
-            lineage.append(
-                {"taxid": taxid, "name": self.name(taxid), "rank": self.rank(taxid)}
-            )
-            taxid = self.parent(taxid)
-        return lineage
-
-    def get_lineage_dataframe(
-        self, taxids: Iterable, fillna: bool = True
-    ) -> pd.DataFrame:
-        """
-        Given an iterable of taxids generate a pandas DataFrame of their canonical
-        lineages
-
-        Parameters
-        ----------
-        taxids : iterable
-            `taxids` whose lineage dataframe is being returned
-        fillna : bool, optional
-            Whether to fill the empty cells  with 'unclassified' or not, default True
-
-        Returns
-        -------
-        pd.DataFrame
-            index = taxid
-            columns = [superkingdom,phylum,class,order,family,genus,species]
-
-        Example
-        -------
-
-        If you would like to merge the returned DataFrame ('this_df') with another
-        DataFrame ('your_df'). Let's say where you retrieved your taxids:
-
-        .. code-block:: python
-
-            merged_df = pd.merge(
-                left=your_df,
-                right=this_df,
-                how='left',
-                left_on=<taxid_column>,
-                right_index=True)
-        """
-        canonical_ranks = [
-            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
-        ]
-        taxids = list(set(taxids))
-        ranked_taxids = {}
-        for rank in canonical_ranks:
-            for taxid in taxids:
-                name = self.name(taxid, rank=rank)
-                if taxid not in ranked_taxids:
-                    ranked_taxids.update({taxid: {rank: name}})
-                else:
-                    ranked_taxids[taxid].update({rank: name})
-        df = pd.DataFrame(ranked_taxids).transpose()
-        df.index.name = "taxid"
-        if fillna:
-            df.fillna(value="unclassified", inplace=True)
-        return df
 
     def rank(self, taxid: int) -> str:
         """
@@ -600,6 +511,78 @@ class NCBI:
         fh.close()
         logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
         return sseqids_to_taxids
+
+    def convert_accessions_to_taxids(
+        self, accessions: set
+    ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
+        # We first get all unique accessions that were retrieved from the blast output
+        recovered_accessions = set(
+            chain.from_iterable(
+                [qseqid_sseqids for qseqid_sseqids in accessions.values()]
+            )
+        )
+        # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+        # Any accessions not found in live prot.accession2taxid db *may* be here.
+        # This *attempts* to prevent accessions from being assigned root (root taxid=1)
+        try:
+            sseqids_to_taxids = self.search_prot_accessions(
+                accessions=recovered_accessions,
+                db="dead",
+                sseqids_to_taxids=None,
+            )
+            dead_sseqids_found = set(sseqids_to_taxids.keys())
+        except FileNotFoundError as db_fpath:
+            logger.warn(f"Skipping taxid conversion from {db_fpath}")
+            sseqids_to_taxids = None
+            dead_sseqids_found = set()
+
+        # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
+        # Possibly overwriting any merged accessions to live accessions
+        sseqids_to_taxids = self.search_prot_accessions(
+            accessions=recovered_accessions,
+            db="full",
+            sseqids_to_taxids=sseqids_to_taxids,
+        )
+
+        # Remove accessions: Ignore any accessions already found
+        live_sseqids_found = set(sseqids_to_taxids.keys())
+        live_sseqids_found -= dead_sseqids_found
+        recovered_accessions -= live_sseqids_found
+        if recovered_accessions:
+            logger.warn(
+                f"accessions without corresponding taxid: {len(recovered_accessions):,}"
+            )
+        root_taxid = 1
+        taxids = {}
+        sseqid_not_found = pd.NA
+        sseqid_to_taxid_df = pd.DataFrame(
+            [
+                {
+                    "qseqid": qseqid,
+                    "sseqid": sseqid,
+                    "raw_taxid": sseqids_to_taxids.get(sseqid, sseqid_not_found),
+                }
+                for qseqid, qseqid_sseqids in accessions.items()
+                for sseqid in qseqid_sseqids
+            ]
+        )
+        # Update taxids if they are old.
+        sseqid_to_taxid_df["merged_taxid"] = sseqid_to_taxid_df.raw_taxid.map(
+            lambda tid: self.merged.get(tid, tid)
+        )
+        # If we still have missing taxids, we will set the sseqid value to the root taxid
+        # fill missing taxids with root_taxid
+        sseqid_to_taxid_df["cleaned_taxid"] = sseqid_to_taxid_df.merged_taxid.fillna(
+            root_taxid
+        )
+        root_taxid = 1
+        for qseqid, qseqid_sseqids in accessions.items():
+            # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
+            qseqid_taxids = {
+                sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
+            }
+            taxids[qseqid] = qseqid_taxids
+        return taxids, sseqid_to_taxid_df
 
 
 if __name__ == "__main__":

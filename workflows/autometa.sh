@@ -19,7 +19,7 @@ assembly="Path to metagenome assembly fasta file"
 bam="Path to metagenome read alignments.bam"
 orfs="Path to orfs used as input to diamond blast"
 blast="Path to diamond output file (outfmt 6)"
-ncbi="Path to NCBI databases directory"
+ncbi="Path to TAXA_DB databases directory"
 
 # Autometa Parameters
 length_cutoff=3000 # in bp

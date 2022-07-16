@@ -98,13 +98,13 @@ def test_add_ranks(ncbi, votes, tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.skip
-def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
+def test_vote_assign(blastp, taxa_db_dir, prot_orfs, tmp_path):
     out = tmp_path / "votes.tsv"
     votes = vote.assign(
         out=out,
         prot_orfs=prot_orfs,
         blast=blastp,
-        ncbi_dir=ncbi_dir,
+        taxa_db_dir=taxa_db_dir,
     )
     assert isinstance(votes, pd.DataFrame)
     assert votes.index.name == "contig"
@@ -130,13 +130,13 @@ def test_get_none_recovered(ncbi, votes_fpath):
         )
 
 
-def test_get_empty_votes(ncbi_dir, tmp_path):
+def test_get_empty_votes(taxa_db_dir, tmp_path):
     fpath = tmp_path / "votes.tsv"
     with pytest.raises(FileNotFoundError):
         vote.get(
             filepath_or_dataframe=fpath,
             kingdom="archaea",
-            ncbi=ncbi_dir,
+            ncbi=taxa_db_dir,
         )
 
 
@@ -229,7 +229,7 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
 @pytest.mark.slow
 @pytest.mark.skip
 @pytest.mark.entrypoint
-def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
+def test_vote_main(monkeypatch, taxa_db_dir, tmp_path):
     outdir = tmp_path / "outdir"
     outdir.mkdir()
     taxonomy = outdir / "taxonomy.tsv"
@@ -244,7 +244,7 @@ def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
             self.output = outdir
             self.assembly = assembly
             self.split_rank_and_write = "superkingdom"
-            self.ncbi = ncbi_dir
+            self.ncbi = taxa_db_dir
 
     class MockParser:
         def add_argument(self, *args, **kwargs):

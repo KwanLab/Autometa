@@ -28,7 +28,7 @@ assembly="Path to metagenome assembly fasta file"
 bam="Path to metagenome read alignments.bam"
 orfs="Path to orfs used as input to diamond blastp"
 blast="Path to diamond blastp results (outfmt 6)"
-ncbi="Path to NCBI databases directory" # should contain prot.accession2taxid.gz, names.dmp, nodes.dmp and merged.dmp
+ncbi="Path to TAXA_DB databases directory" # should contain prot.accession2taxid.gz, names.dmp, nodes.dmp and merged.dmp
 markers_dbdir="Path to autometa markers databases" # should contain marker hmms and cutoffs files (can be downloaded from Autometa repo under `Autometa/autometa/databases/markers`)
 
 # Autometa Parameters

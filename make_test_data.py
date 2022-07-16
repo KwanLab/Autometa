@@ -60,7 +60,7 @@ from Bio import SeqIO
 
 from autometa.common import kmers, markers
 from autometa.common.external import hmmscan, prodigal
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import TAXA_DB
 
 import numpy as np
 
@@ -83,7 +83,7 @@ def opener(fpath, mode="r"):
     return fh
 
 
-def subset_acc2taxids(blastp_accessions: set, ncbi: NCBI) -> dict:
+def subset_acc2taxids(blastp_accessions: set, ncbi: TAXA_DB) -> dict:
     acc2taxids = {}
     with opener(ncbi.accession2taxid_fpath) as fh:
         fh.readline()  # skip reading header line
@@ -237,7 +237,7 @@ class TestData:
             if not record.id in orf_hits
         }
 
-        ncbi = NCBI(self.taxonomy_ncbi)
+        ncbi = TAXA_DB(self.taxonomy_ncbi)
         # Get prot.accession2taxid datastructure and subset by taxids encountered in blastp output.
         sacc_column = 1
         blastp_accessions = set(blastp[sacc_column].unique().tolist())

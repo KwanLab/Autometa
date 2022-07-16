@@ -28,7 +28,7 @@ from sklearn.metrics import (
     classification_report,
 )
 
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.ncbi import TAXA_DB
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
 
 
 def get_target_labels(
-    prediction: str, reference: Union[str, pd.DataFrame], ncbi: Union[str, NCBI]
+    prediction: str, reference: Union[str, pd.DataFrame], ncbi: Union[str, TAXA_DB]
 ) -> namedtuple:
     """Retrieve taxid lineage as target labels from merge of `reference` and `prediction`.
 
@@ -210,8 +210,8 @@ def get_target_labels(
         Path to contig taxid predictions
     reference : Union[str, pd.DataFrame]
         Path to ground truth contig taxids
-    ncbi : Union[str, NCBI]
-        Path to NCBI databases directory or instance of autometa NCBI class.
+    ncbi : Union[str, TAXA_DB]
+        Path to TAXA_DB databases directory or instance of autometa TAXA_DB class.
 
     Returns
     -------
@@ -276,7 +276,7 @@ def get_target_labels(
             "The provided reference community and predictions do not match!"
         )
     # Convert any old taxids to new taxids from merged.dmp
-    ncbi = NCBI(ncbi) if isinstance(ncbi, str) else ncbi
+    ncbi = TAXA_DB(ncbi) if isinstance(ncbi, str) else ncbi
     main_df.taxid_pred = main_df.taxid_pred.map(
         lambda tid: ncbi.convert_taxid_dtype(tid)
     )
@@ -431,7 +431,7 @@ def evaluate_binning_classification(
 def evaluate_classification(
     predictions: Iterable,
     reference: str,
-    ncbi: Union[str, NCBI],
+    ncbi: Union[str, TAXA_DB],
     keep_averages=["weighted avg", "samples avg"],
 ) -> Tuple[pd.DataFrame, List[Dict[str, str]]]:
     """Evaluate classification `predictions` against provided `reference`
@@ -442,8 +442,8 @@ def evaluate_classification(
         Paths to taxonomic predictions (tab-delimited files of contig and taxid columns)
     reference : str
         Path to ground truths (tab-delimited file containing at least contig and taxid columns)
-    ncbi : Union[str, NCBI]
-        Path to NCBI databases directory or instance of autometa NCBI class
+    ncbi : Union[str, TAXA_DB]
+        Path to TAXA_DB databases directory or instance of autometa TAXA_DB class
     keep_averages : list, optional
         averages to keep from classification report, by default ["weighted avg", "samples avg"]
 
@@ -464,8 +464,8 @@ def evaluate_classification(
         # Drop any contigs missing taxid classification
         .dropna(axis="index")
     )
-    # Instantiate NCBI so we can coordinate taxids
-    ncbi = NCBI(ncbi) if isinstance(ncbi, str) else ncbi
+    # Instantiate TAXA_DB so we can coordinate taxids
+    ncbi = TAXA_DB(ncbi) if isinstance(ncbi, str) else ncbi
     all_metrics = []
     all_reports = []
     # Compute metrics for all provided predictions
@@ -489,7 +489,7 @@ def evaluate_classification(
     return df, all_reports
 
 
-def write_reports(reports: Iterable[Dict], outdir: str, ncbi: NCBI) -> None:
+def write_reports(reports: Iterable[Dict], outdir: str, ncbi: TAXA_DB) -> None:
     """Write taxid multi-label classification reports in `reports`
 
     Parameters
@@ -498,8 +498,8 @@ def write_reports(reports: Iterable[Dict], outdir: str, ncbi: NCBI) -> None:
         List of classification report dicts from each classification benchmarking evaluation
     outdir : str
         Directory path to write reports
-    ncbi : NCBI
-        autometa.taxonomy.ncbi.NCBI instance for taxid name and rank look-up.
+    ncbi : TAXA_DB
+        autometa.taxonomy.ncbi.TAXA_DB instance for taxid name and rank look-up.
 
     Returns
     -------
@@ -583,7 +583,7 @@ def main():
     )
     parser.add_argument(
         "--ncbi",
-        help="Path to NCBI databases directory (Required with --benchmark=classification)",
+        help="Path to TAXA_DB databases directory (Required with --benchmark=classification)",
         metavar="dirpath",
         required=False,
     )
@@ -607,7 +607,7 @@ def main():
                 f"Wrote {dff.index.nunique()} datasets (stacked) metrics to {args.output_long}"
             )
     elif args.benchmark == "classification":
-        ncbi = NCBI(args.ncbi)
+        ncbi = TAXA_DB(args.ncbi)
         df, reports = evaluate_classification(
             predictions=args.predictions,
             reference=args.reference,

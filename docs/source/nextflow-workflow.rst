@@ -610,7 +610,7 @@ may still use multiple cores.
 Databases
 *********
 
-Autometa uses the following NCBI databases throughout its pipeline:
+Autometa uses the following TAXA_DB databases throughout its pipeline:
 
 - Non-redundant nr database
     - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
@@ -641,7 +641,7 @@ Make sure that the directory path contains the following databases:
 .. note::
 
     Find the above section of code in ``nf-params.json`` and update this path to the folder
-    with all of the downloaded/formatted NCBI databases.
+    with all of the downloaded/formatted TAXA_DB databases.
 
 CPUs, Memory, Disk
 ******************

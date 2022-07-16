@@ -18,7 +18,7 @@
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 # Program to make a control assembly fasta for simulated metagenome datasets made by 'make_simulated_metagenome.py'.
-# The control fasta contains all the contigs originally obtained from NCBI, and a table is also made that
+# The control fasta contains all the contigs originally obtained from TAXA_DB, and a table is also made that
 # tells you which species/assembly each contig came from.  You can align simulated reads to this fasta file in
 # order to find out which reads are really unique to certain species.  This information can be used later to determine
 # the accuracy of assemblies and binning of the simulated reads.

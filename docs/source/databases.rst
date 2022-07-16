@@ -12,21 +12,21 @@ Autometa comes packaged with the necessary markers files. Links to these markers
 - archaea single-copy-markers - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/archaea.single_copy.hmm>`__
 - archaea single-copy-markers cutoffs - `link <https://raw.githubusercontent.com/KwanLab/Autometa/main/autometa/databases/markers/archaea.single_copy.cutoffs>`__
 
-NCBI
+TAXA_DB
 ####
 
-If you are running Autometa for the first time you will need to download the NCBI databases.
+If you are running Autometa for the first time you will need to download the TAXA_DB databases.
 You may do this manually or using a few Autometa helper scripts. If you would like to use Autometa's
 scripts for this, you will first need to download Autometa (See :ref:`Installation`).
 
 .. code-block:: bash
 
-    # First configure where you want to download the NCBI databases
+    # First configure where you want to download the TAXA_DB databases
     autometa-config \\
         --section databases --option ncbi \\
         --value <path/to/your/ncbi/database/directory>
 
-    # Now download and format the NCBI databases
+    # Now download and format the TAXA_DB databases
     autometa-update-databases --update-ncbi
 
 .. note::
@@ -34,7 +34,7 @@ scripts for this, you will first need to download Autometa (See :ref:`Installati
 
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-The previous command will download the following NCBI databases:
+The previous command will download the following TAXA_DB databases:
 
 - Non-redundant nr database
     - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
