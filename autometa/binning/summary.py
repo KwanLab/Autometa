@@ -339,6 +339,7 @@ def main():
         help="Taxonomy database type to use (NOTE: must correspond to the same database type used during contig taxon assignment.)",
         choices=["ncbi", "gtdb"],
         required=False,
+        default="ncbi",
     )
     parser.add_argument(
         "--binning-column",
@@ -397,7 +398,7 @@ def main():
             if args.dbtype == "ncbi":
                 taxa_db = NCBI(dirpath=args.dbdir)
             elif args.dbtype == "gtdb":
-                taxa_db = GTDB(dirpath=args.dbdir)
+                taxa_db = GTDB(dbdir=args.dbdir)
             taxa_df = get_metabin_taxonomies(
                 bin_df=bin_df, taxa_db=taxa_db, cluster_col=args.binning_column
             )

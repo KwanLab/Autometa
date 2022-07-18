@@ -100,7 +100,7 @@ def assign(
     prot_orfs = prot_orfs if prot_orfs else os.path.join(outdir, "orfs.faa")
     nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(outdir, "orfs.fna")
 
-    taxa_db = NCBI(dbdir=dbdir) if dbtype == "ncbi" else GTDB(dbdir=dbdir)
+    taxa_db = NCBI(dirpath=dbdir) if dbtype == "ncbi" else GTDB(dbdir=dbdir)
 
     def call_orfs():
         prodigal.run(
