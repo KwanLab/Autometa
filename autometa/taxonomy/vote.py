@@ -100,7 +100,7 @@ def assign(
     prot_orfs = prot_orfs if prot_orfs else os.path.join(outdir, "orfs.faa")
     nucl_orfs = nucl_orfs if nucl_orfs else os.path.join(outdir, "orfs.fna")
 
-    taxa_db = NCBI(dirpath=dbdir) if dbtype == "ncbi" else GTDB(dbdir=dbdir)
+    taxa_db = NCBI(dbdir=dbdir) if dbtype == "ncbi" else GTDB(dbdir=dbdir)
 
     def call_orfs():
         prodigal.run(
@@ -162,8 +162,8 @@ def add_ranks(df: pd.DataFrame, taxa_db: TaxonomyDatabase) -> pd.DataFrame:
     ----------
     df : pd.DataFrame
         index="contig", column="taxid"
-    taxa_db : str or NCBI
-        Path to NCBI databases directory, or autometa NCBI instance.
+    taxa_db : TaxonomyDatabase
+        NCBI or GTDB TaxonomyDatabase instance.
 
     Returns
     -------
@@ -177,7 +177,7 @@ def add_ranks(df: pd.DataFrame, taxa_db: TaxonomyDatabase) -> pd.DataFrame:
 def get(
     filepath_or_dataframe: Union[str, pd.DataFrame],
     kingdom: str,
-    ncbi: Union[NCBI, str] = NCBI_DIR,
+    taxa_db: TaxonomyDatabase,
 ) -> pd.DataFrame:
     """Retrieve specific `kingdom` voted taxa for `assembly` from `filepath`
 
@@ -220,7 +220,7 @@ def get(
     if df.shape[1] <= 2:
         # Voting method will write out contig and its voted taxid (2 cols).
         # So here we add the canonical ranks using voted taxids.
-        df = add_ranks(df=df, ncbi=ncbi)
+        df = add_ranks(df=df, taxa_db=taxa_db)
 
     if "superkingdom" not in df.columns:
         raise TableFormatError(f"superkingdom is not in taxonomy columns {df.columns}")

@@ -156,7 +156,8 @@ autometa-taxonomy \
     --prefix $simpleName \
     --split-rank-and-write superkingdom \
     --assembly $assembly \
-    --ncbi $ncbi
+    --dbdir $ncbi \
+    --dbtype ncbi
 
 # Step 5: Perform k-mer counting on respective kingdoms
 
@@ -272,7 +273,8 @@ for kingdom in ${kingdoms[@]};do
         --binning-main $binning_main \
         --markers $markers \
         --metagenome $assembly \
-        --ncbi $ncbi \
+        --dbdir $ncbi \
+        --dbtype ncbi \
         --output-stats $output_stats \
         --output-taxonomy $output_taxonomy \
         --output-metabins $output_metabins

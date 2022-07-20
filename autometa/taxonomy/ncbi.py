@@ -50,15 +50,15 @@ class NCBI(TaxonomyDatabase):
             log progress to terminal, by default False
 
         """
-        self.dirpath = dirpath
+        self.dbdir = dirpath
         self.verbose = verbose
         self.disable = not self.verbose
-        self.names_fpath = os.path.join(self.dirpath, "names.dmp")
-        self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
-        self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
-        self.delnodes_fpath = os.path.join(self.dirpath, "delnodes.dmp")
+        self.names_fpath = os.path.join(self.dbdir, "names.dmp")
+        self.nodes_fpath = os.path.join(self.dbdir, "nodes.dmp")
+        self.merged_fpath = os.path.join(self.dbdir, "merged.dmp")
+        self.delnodes_fpath = os.path.join(self.dbdir, "delnodes.dmp")
         # Set prot.accession2taxid filepath
-        self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
+        self.accession2taxid_fpath = os.path.join(self.dbdir, "prot.accession2taxid")
         acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
         if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
             acc2taxid_gz
@@ -66,7 +66,7 @@ class NCBI(TaxonomyDatabase):
             self.accession2taxid_fpath = acc2taxid_gz
         # Set prot.accession2taxid.FULL.gz filepath
         self.accession2taxidfull_fpath = os.path.join(
-            self.dirpath, "prot.accession2taxid.FULL"
+            self.dbdir, "prot.accession2taxid.FULL"
         )
         acc2taxid_gz = ".".join([self.accession2taxidfull_fpath, "gz"])
         if not os.path.exists(self.accession2taxidfull_fpath) and os.path.exists(
@@ -75,7 +75,7 @@ class NCBI(TaxonomyDatabase):
             self.accession2taxidfull_fpath = acc2taxid_gz
         # Set dead_prot.accession2taxid filepath
         self.dead_accession2taxid_fpath = os.path.join(
-            self.dirpath, "dead_prot.accession2taxid"
+            self.dbdir, "dead_prot.accession2taxid"
         )
         acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
         if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
@@ -83,10 +83,10 @@ class NCBI(TaxonomyDatabase):
         ):
             self.dead_accession2taxid_fpath = acc2taxid_gz
         # Check formatting for nr database
-        self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
+        self.nr_fpath = os.path.join(self.dbdir, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
         nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
-        nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
+        nr_dmnd_fpath = os.path.join(self.dbdir, nr_dmnd_fname)
         if os.path.exists(nr_dmnd_fpath):
             self.nr_fpath = nr_dmnd_fpath
         if "dmnd" not in os.path.basename(self.nr_fpath):
@@ -121,7 +121,7 @@ class NCBI(TaxonomyDatabase):
             Directory path of the class object
         """
         # Perhaps should place summary here of files that do or do not exist?
-        return self.dirpath
+        return self.dbdir
 
     def name(self, taxid: int, rank: str = None) -> str:
         """

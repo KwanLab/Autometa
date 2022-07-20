@@ -396,7 +396,7 @@ def main():
             )
         else:
             if args.dbtype == "ncbi":
-                taxa_db = NCBI(dirpath=args.dbdir)
+                taxa_db = NCBI(dbdir=args.dbdir)
             elif args.dbtype == "gtdb":
                 taxa_db = GTDB(dbdir=args.dbdir)
             taxa_df = get_metabin_taxonomies(

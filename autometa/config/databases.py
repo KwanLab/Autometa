@@ -10,6 +10,7 @@ of Autometa Databases.
 import logging
 import os
 import requests
+import sys
 import subprocess
 import tempfile
 
@@ -32,6 +33,7 @@ from autometa.config.utilities import DEFAULT_FPATH
 from autometa.config.utilities import DEFAULT_CONFIG
 from autometa.config.utilities import AUTOMETA_DIR
 from autometa.config.utilities import put_config, get_config
+from autometa.taxonomy.gtdb import make_taxdump_files, make_gtdb_db
 
 
 logger = logging.getLogger(__name__)
@@ -401,6 +403,33 @@ class Databases:
         if "nr" in options:
             self.format_nr()
 
+    def download_gtdb_files(self) -> None:
+        proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
+        bac120_taxonomy_url = self.config.get("database_urls", "bac120_taxonomy")
+        ar53_taxonomy_url = self.config.get("database_urls", "ar53_taxonomy")
+        # User path:
+        proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
+        bac120_taxonomy_filepath = self.config.get("gtdb", "bac120_taxonomy")
+        ar53_taxonomy_filepath = self.config.get("gtdb", "ar53_taxonomy")
+
+        urls = [
+            proteins_aa_reps_url,
+            bac120_taxonomy_url,
+            ar53_taxonomy_url,
+        ]
+        filepaths = [
+            proteins_aa_reps_filepath,
+            bac120_taxonomy_filepath,
+            ar53_taxonomy_filepath,
+        ]
+        logger.debug(f"starting GTDB databases download")
+        for url, filepath in zip([urls, filepaths]):
+            cmd = ["wget", url, "-O", filepath]
+            logger.debug(" ".join(cmd))
+            subprocess.run(
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+            )
+
     def press_hmms(self) -> None:
         """hmmpress markers hmm database files.
 
@@ -714,7 +743,7 @@ def main():
     )
     parser.add_argument(
         "--update-all",
-        help="Update all out-of-date databases.",
+        help="Update all out-of-date databases. (NOTE: Does not update GTDB)",
         action="store_true",
         default=False,
     )
@@ -727,6 +756,12 @@ def main():
     parser.add_argument(
         "--update-ncbi",
         help="Update out-of-date ncbi databases.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--update-gtdb",
+        help="Download and format the user-configured GTDB release databases",
         action="store_true",
         default=False,
     )
@@ -771,6 +806,27 @@ def main():
         section = "markers"
     elif args.update_ncbi:
         section = "ncbi"
+    elif args.update_gtdb:
+        # Download, generate and format GTDB databases
+        dbs.download_gtdb_files()
+        taxa_files = [
+            dbs.config.get("gtdb", "ar53_taxonomy"),
+            dbs.config.get("gtdb", "bac120_taxonomy"),
+        ]
+        taxdump_files = make_taxdump_files(
+            taxa_files=taxa_files, dbdir=dbs.config.get("databases", "gtdb")
+        )
+        gtdb_files = make_gtdb_db(
+            dbs.config.get("gtdb", "proteins_aa_reps"),
+            taxdump_files["names"],
+            taxdump_files["nodes"],
+            dbs.config.get("databases", "gtdb"),
+        )
+        database = gtdb_files["faa"].replace(".faa", ".dmnd")
+        diamond.makedatabase(
+            fasta=gtdb_files["faa"], database=database, cpus=args.nproc
+        )
+        sys.exit(0)
     else:
         section = None
 
@@ -779,15 +835,11 @@ def main():
             section=section, compare_checksums=compare_checksums
         )
         logger.info(f"Database dependencies satisfied: {dbs_satisfied}")
-        import sys
-
         sys.exit(0)
 
     config = dbs.configure(section=section, no_checksum=args.no_checksum)
 
     if not args.out:
-        import sys
-
         sys.exit(0)
     put_config(config, args.out)
     logger.info(f"{args.out} written.")

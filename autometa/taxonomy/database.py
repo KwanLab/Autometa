@@ -32,38 +32,18 @@ class TaxonomyDatabase(ABC):
         self.nodes = nodes
 
     def parse_nodes(self) -> Dict[int, Dict[str, Union[str, int]]]:
-        raise NotImplementedError
-
-    def parse_names(self) -> Dict[int, str]:
-        raise NotImplementedError
-
-    def convert_accessions_to_taxids(
-        self,
-        accessions: Dict[str, Set[str]],
-    ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
         """
-        Translates subject sequence ids to taxids from prot.accession2taxid.gz and dead_prot.accession2taxid.gz.
-
-        .. note::
-
-            If an accession number is no longer available in prot.accesssion2taxid.gz
-            (either due to being suppressed, deprecated or removed by NCBI),
-            then root taxid (1) is returned as the taxid for the corresponding sseqid.
-
-        Parameters
-        ----------
-        accessions : dict
-            {qseqid: {sseqid, ...}, ...}
+        Parse the `nodes.dmp` database.
+        Note: This is performed when a new GTDB class instance is constructed
 
         Returns
         -------
-        Tuple[Dict[str, Set[int]], pd.DataFrame]
-            {qseqid: {taxid, taxid, ...}, ...}, index=range, cols=[qseqid, sseqid, raw_taxid, merged_taxid, cleaned_taxid]
-
+        dict
+            {child_taxid:{'parent':parent_taxid,'rank':rank}, ...}
         """
         raise NotImplementedError
 
-    def name(self, taxid: int, rank: str = None) -> str:
+    def parse_names(self) -> Dict[int, str]:
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
         deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
@@ -83,6 +63,31 @@ class TaxonomyDatabase(ABC):
             Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
 
         """
+        raise NotImplementedError
+
+    def convert_accessions_to_taxids(
+        self,
+        accessions: Dict[str, Set[str]],
+    ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
+        """
+        Translates subject sequence ids to taxids
+
+
+        Parameters
+        ----------
+        accessions : dict
+            {qseqid: {sseqid, ...}, ...}
+
+        Returns
+        -------
+        Tuple[Dict[str, Set[int]], pd.DataFrame]
+            {qseqid: {taxid, taxid, ...}, ...}, index=range, cols=[qseqid, sseqid, raw_taxid, ..., cleaned_taxid]
+
+        """
+        raise NotImplementedError
+
+    def name(self, taxid: int, rank: str = None) -> str:
+
         if not rank:
             return self.names.get(taxid, "unclassified")
         if rank not in set(TaxonomyDatabase.CANONICAL_RANKS):
