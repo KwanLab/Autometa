@@ -78,7 +78,7 @@ The Autometa bash workflow requires the following input file and directory paths
 #. Alignments (``bam``)
 #. ORFs (``orfs``)
 #. Diamond blastp results table (``blast``)
-#. TAXA_DB database directory (``ncbi``)
+#. NCBI database directory (``ncbi``)
 #. Input sample name (``simpleName``)
 #. Output directory (``outdir``)
 
@@ -181,26 +181,26 @@ Diamond blastp Preparation
 
     diamond blastp \\
         --query "metagenome.orfs.faa" \\ # See prodigal output from above
-        --db /path/to/nr.dmnd         \\ # See TAXA_DB section
+        --db /path/to/nr.dmnd         \\ # See NCBI section
         --threads <num cpus to use>   \\
         --out blastp.tsv # This generated file is required as input to the bash workflow
 
 .. _ncbi-preparation:
 
-TAXA_DB Preparation
+NCBI Preparation
 ****************
 
-If you are running Autometa for the first time you'll have to download the TAXA_DB databases.
+If you are running Autometa for the first time you'll have to download the NCBI databases.
 
 .. code-block:: bash
 
-    # First configure where you want to download the TAXA_DB databases
+    # First configure where you want to download the NCBI databases
     autometa-config \\
         --section databases \\
         --option ncbi \\
         --value <path/to/your/ncbi/database/directory>
 
-    # Now download and format the TAXA_DB databases
+    # Now download and format the NCBI databases
     autometa-update-databases --update-ncbi
 
 .. note::
@@ -208,7 +208,7 @@ If you are running Autometa for the first time you'll have to download the TAXA_
 
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-The previous command will download the following TAXA_DB databases:
+The previous command will download the following NCBI databases:
 
 - Non-redundant nr database
     - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_

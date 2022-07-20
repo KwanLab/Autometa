@@ -54,7 +54,7 @@ def fixture_disjoint_markers_fpath(markers, bin_df, tmp_path):
 
 
 def return_mock_ncbi(*args, **kwargs):
-    class MockTAXA_DB:
+    class MockNCBI:
         def get_lineage_dataframe(self, *args, **kwargs):
             df = pd.DataFrame.from_dict(
                 {
@@ -112,7 +112,7 @@ def return_mock_ncbi(*args, **kwargs):
             df.index.name = "taxid"
             return df
 
-    return MockTAXA_DB()
+    return MockNCBI()
 
 
 @pytest.fixture(name="mock_rank_taxids")

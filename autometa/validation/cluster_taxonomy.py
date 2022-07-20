@@ -180,7 +180,7 @@ parser.add_argument(
 parser.add_argument(
     "-x",
     "--taxdump_path",
-    help="Path to taxdump directory (downloaded from TAXA_DB taxonomy)",
+    help="Path to taxdump directory (downloaded from NCBI taxonomy)",
     required=True,
 )
 parser.add_argument("-o", "--out_table", help="Output table path", required=True)
@@ -196,7 +196,7 @@ output_file_path = args["out_table"]
 cluster_column_name = args["cluster_column"]
 single_genome_mode = args["single_genome"]
 
-# Process TAXA_DB taxdump files
+# Process NCBI taxdump files
 names_dmp_path = taxdump_dir_path + "/names.dmp"
 nodes_dmp_path = taxdump_dir_path + "/nodes.dmp"
 
