@@ -423,8 +423,13 @@ class Databases:
             ar53_taxonomy_filepath,
         ]
         logger.debug(f"starting GTDB databases download")
-        for url, filepath in zip([urls, filepaths]):
+        for url, filepath in zip(urls, filepaths):
             cmd = ["wget", url, "-O", filepath]
+            full_path = os.path.abspath(filepath)
+            dir_path = os.path.dirname(full_path)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+                logger.debug(f"Created missing database directory: {dir_path}")
             logger.debug(" ".join(cmd))
             subprocess.run(
                 cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True

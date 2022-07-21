@@ -22,8 +22,8 @@ scripts for this, you will first need to download Autometa (See :ref:`Installati
 .. code-block:: bash
 
     # First configure where you want to download the NCBI databases
-    autometa-config \\
-        --section databases --option ncbi \\
+    autometa-config \
+        --section databases --option ncbi \
         --value <path/to/your/ncbi/database/directory>
 
     # Now download and format the NCBI databases
@@ -57,13 +57,13 @@ scripts for this, you will first need to install Autometa (See :ref:`Installatio
 .. code-block:: bash
 
     # First configure where you want to download the GTDB databases
-    autometa-config \\
-        --section databases --option gtdb \\
+    autometa-config \
+        --section databases --option gtdb \
         --value <path/to/your/gtdb/database/directory>
-    
+
     # To use a specific GTDB release
-    autometa-config \\
-        --section gtdb --option release \\
+    autometa-config \
+        --section gtdb --option release \
         --value latest
         # Or --value r207 or --value r202, etc.
 
@@ -85,4 +85,3 @@ The previous command will download the following GTDB databases:
     - `ar53_taxonomy.tsv.gz <https://data.gtdb.ecogenomic.org/releases/latest/ar53_taxonomy.tsv.gz>`_
 - bac120_taxonomy.tsv.gz
     - `bac120_taxonomy.tsv.gz <https://data.gtdb.ecogenomic.org/releases/latest/bac120_taxonomy.tsv.gz>`_
-

@@ -2,14 +2,13 @@
 
 import logging
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Dict, Set, Tuple, List, Union, Iterable
 
 import pandas as pd
 
 
 logger = logging.getLogger(__name__)
-# TODO: Add other logger formatting
 
 
 class TaxonomyDatabase(ABC):
@@ -31,6 +30,7 @@ class TaxonomyDatabase(ABC):
     ) -> None:
         self.nodes = nodes
 
+    @abstractmethod
     def parse_nodes(self) -> Dict[int, Dict[str, Union[str, int]]]:
         """
         Parse the `nodes.dmp` database.
@@ -41,8 +41,8 @@ class TaxonomyDatabase(ABC):
         dict
             {child_taxid:{'parent':parent_taxid,'rank':rank}, ...}
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def parse_names(self) -> Dict[int, str]:
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
@@ -63,8 +63,8 @@ class TaxonomyDatabase(ABC):
             Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
 
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def convert_accessions_to_taxids(
         self,
         accessions: Dict[str, Set[str]],
@@ -84,7 +84,6 @@ class TaxonomyDatabase(ABC):
             {qseqid: {taxid, taxid, ...}, ...}, index=range, cols=[qseqid, sseqid, raw_taxid, ..., cleaned_taxid]
 
         """
-        raise NotImplementedError
 
     def name(self, taxid: int, rank: str = None) -> str:
 
