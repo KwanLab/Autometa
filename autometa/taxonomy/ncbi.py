@@ -13,7 +13,7 @@ import os
 import string
 import sys
 
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Dict, Set, Tuple
 from itertools import chain
 
 import pandas as pd
@@ -36,21 +36,21 @@ NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
 class NCBI(TaxonomyDatabase):
     """Taxonomy utilities for NCBI databases."""
 
-    def __init__(self, dirpath, verbose=False):
+    def __init__(self, dbdir, verbose=False):
         """
         Instantiates the NCBI class
 
         Parameters
         ----------
 
-        dirpath : str
+        dbdir : str
             Path to the database directory
 
         verbose : bool, optional
             log progress to terminal, by default False
 
         """
-        self.dbdir = dirpath
+        self.dbdir = dbdir
         self.verbose = verbose
         self.disable = not self.verbose
         self.names_fpath = os.path.join(self.dbdir, "names.dmp")

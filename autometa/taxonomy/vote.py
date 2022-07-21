@@ -116,7 +116,9 @@ def assign(
         if "lca" not in locals():
             lca = LCA(taxonomy_db=taxa_db, verbose=verbose, cache=outdir)
         lca.blast2lca(
-            orfs=prot_orfs, out=lca_fpath, blast=blast, force=force, cpus=cpus
+            blast=blast,
+            out=lca_fpath,
+            force=force,
         )
 
     def majority_vote_lca(out=out):
@@ -320,7 +322,7 @@ def main():
     )
     parser.add_argument(
         "--output",
-        help="Directory to output fasta files of split canonical ranks and taxonomy.tsv.",
+        help="Output directory to write specified canonical ranks fasta files and taxon-binning results table",
         type=str,
         metavar="dirpath",
         required=True,

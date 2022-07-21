@@ -223,14 +223,12 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
         )
 
 
-@pytest.mark.slow
-@pytest.mark.skip
 @pytest.mark.entrypoint
-def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
+def test_vote_main(monkeypatch, ncbi_dir, votes_fpath, tmp_path):
     outdir = tmp_path / "outdir"
     outdir.mkdir()
     prefix = "test"
-    taxonomy = outdir / prefix / "taxonomy.tsv"
+    taxonomy = outdir / f"{prefix}.taxonomy.tsv"
     assembly = outdir / "assembly.fna"
     assembly.write_text("records")
     lca_fpath = outdir / "lca.tsv"
@@ -238,7 +236,7 @@ def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
 
     class MockArgs:
         def __init__(self):
-            self.votes = taxonomy
+            self.votes = votes_fpath
             self.output = outdir
             self.assembly = assembly
             self.split_rank_and_write = "superkingdom"
