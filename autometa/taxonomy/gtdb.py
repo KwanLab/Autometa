@@ -5,7 +5,6 @@
 File containing definition of the GTDB class and containing functions useful for handling GTDB taxonomy databases
 """
 
-import argparse
 import gzip
 import logging
 import os
@@ -312,6 +311,8 @@ class GTDB(TaxonomyDatabase):
 
 
 def main():
+    import argparse
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
