@@ -30,6 +30,7 @@ scripts for this, you will first need to download Autometa (See :ref:`Installati
     autometa-update-databases --update-ncbi
 
 .. note::
+
     You can check the default config paths using ``autometa-config --print``.
 
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
@@ -45,3 +46,43 @@ The previous command will download the following NCBI databases:
 
 After these files are downloaded, the ``taxdump.tar.gz`` tarball's files are extracted and the non-redundant protein database (``nr.gz``)
 is formatted as a diamond database (i.e. ``nr.dmnd``). This will significantly speed-up the ``diamond blastp`` searches.
+
+Genome Taxonomy Database (GTDB)
+###############################
+
+If you would like to incorporate the benefits of using the Genome Taxonomy Database.
+You may do this manually or using a few Autometa helper scripts. If you would like to use Autometa's
+scripts for this, you will first need to install Autometa (See :ref:`Installation`).
+
+.. code-block:: bash
+
+    # First configure where you want to download the GTDB databases
+    autometa-config \\
+        --section databases --option gtdb \\
+        --value <path/to/your/gtdb/database/directory>
+    
+    # To use a specific GTDB release
+    autometa-config \\
+        --section gtdb --option release \\
+        --value latest
+        # Or --value r207 or --value r202, etc.
+
+    # Download and format the configured GTDB databases release
+    autometa-update-databases --update-gtdb
+
+
+.. note::
+
+    You can check the default config paths using ``autometa-config --print``.
+
+    See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
+
+The previous command will download the following GTDB databases:
+
+- Amino acid sequences of representative genome
+    - `gtdb_proteins_aa_reps.tar.gz <https://data.gtdb.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
+- ar53_taxonomy.tsv.gz
+    - `ar53_taxonomy.tsv.gz <https://data.gtdb.ecogenomic.org/releases/latest/ar53_taxonomy.tsv.gz>`_
+- bac120_taxonomy.tsv.gz
+    - `bac120_taxonomy.tsv.gz <https://data.gtdb.ecogenomic.org/releases/latest/bac120_taxonomy.tsv.gz>`_
+
