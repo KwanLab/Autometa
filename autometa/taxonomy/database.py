@@ -33,8 +33,7 @@ class TaxonomyDatabase(ABC):
     @abstractmethod
     def parse_nodes(self) -> Dict[int, Dict[str, Union[str, int]]]:
         """
-        Parse the `nodes.dmp` database.
-        Note: This is performed when a new GTDB class instance is constructed
+        Parse the `nodes.dmp` database and set to self.nodes.
 
         Returns
         -------
@@ -45,8 +44,7 @@ class TaxonomyDatabase(ABC):
     @abstractmethod
     def parse_names(self) -> Dict[int, str]:
         """
-        Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
-        deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
+        Parses through the names.dmp in search of the given `taxid` and returns its name
 
         Parameters
         ----------
@@ -72,7 +70,6 @@ class TaxonomyDatabase(ABC):
         """
         Translates subject sequence ids to taxids
 
-
         Parameters
         ----------
         accessions : dict
@@ -86,7 +83,24 @@ class TaxonomyDatabase(ABC):
         """
 
     def name(self, taxid: int, rank: str = None) -> str:
+        """
+        Parses through the names.dmp in search of the given `taxid` and returns its name.
 
+        Parameters
+        ----------
+        taxid : int
+            `taxid` whose name is being returned
+        rank : str, optional
+            If  provided, will return `taxid` name at `rank`, by default None
+            Must be a canonical rank, choices: species, genus, family, order, class, phylum, superkingdom
+            Eg. self.name(562, 'genus') would return 'Escherichia', where 562 is the taxid for Escherichia coli
+
+        Returns
+        -------
+        str
+            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
+
+        """
         if not rank:
             return self.names.get(taxid, "unclassified")
         if rank not in set(TaxonomyDatabase.CANONICAL_RANKS):

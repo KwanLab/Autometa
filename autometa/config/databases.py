@@ -414,13 +414,13 @@ class Databases:
 
         urls = [
             proteins_aa_reps_url,
-            bac120_taxonomy_url,
-            ar53_taxonomy_url,
+            # bac120_taxonomy_url,
+            # ar53_taxonomy_url,
         ]
         filepaths = [
             proteins_aa_reps_filepath,
-            bac120_taxonomy_filepath,
-            ar53_taxonomy_filepath,
+            # bac120_taxonomy_filepath,
+            # ar53_taxonomy_filepath,
         ]
         logger.debug(f"starting GTDB databases download")
         for url, filepath in zip(urls, filepaths):
@@ -813,14 +813,14 @@ def main():
         section = "ncbi"
     elif args.update_gtdb:
         # Download, generate and format GTDB databases
-        dbs.download_gtdb_files()
         taxa_files = [
-            dbs.config.get("gtdb", "ar53_taxonomy"),
-            dbs.config.get("gtdb", "bac120_taxonomy"),
+            dbs.config.get("database_urls", "ar53_taxonomy"),
+            dbs.config.get("database_urls", "bac120_taxonomy"),
         ]
         taxdump_files = make_taxdump_files(
             taxa_files=taxa_files, dbdir=dbs.config.get("databases", "gtdb")
         )
+        dbs.download_gtdb_files()
         gtdb_files = make_gtdb_db(
             dbs.config.get("gtdb", "proteins_aa_reps"),
             taxdump_files["names"],

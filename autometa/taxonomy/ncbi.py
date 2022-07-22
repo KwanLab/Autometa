@@ -319,28 +319,6 @@ class NCBI(TaxonomyDatabase):
             logger.debug("delnodes loaded")
         return delnodes
 
-    def is_common_ancestor(self, taxid_A: int, taxid_B: int) -> bool:
-        """
-        Determines whether the provided taxids have a non-root common ancestor
-
-        Parameters
-        ----------
-        taxid_A : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
-        taxid_B : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
-
-        Returns
-        -------
-        boolean
-            True if taxids share a common ancestor else False
-        """
-        lineage_a_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_A)}
-        lineage_b_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_B)}
-        common_ancestor = lineage_b_taxids.intersection(lineage_a_taxids)
-        common_ancestor.discard(1)  # This discards root
-        return True if common_ancestor else False
-
     def convert_taxid_dtype(self, taxid: int) -> int:
         """
         1. Converts the given `taxid` to an integer and checks whether it is positive.
