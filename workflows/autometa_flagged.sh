@@ -28,7 +28,7 @@ usage()
 while getopts "o:a:s:n:m:l:v:f:r:c:h" flag
 do
     case "${flag}" in
-        o) out_dir=${OPTARG};;
+        o) work_dir=${OPTARG};;
         a) assembly=${OPTARG};;
         s) simple_name=${OPTARG};;
         n) ncbi=${OPTARG};;
@@ -61,7 +61,7 @@ fi
 
 echo
 echo "You have provided the following input parameters:"
-echo "Output directory: " $out_dir
+echo "Output directory: " $work_dir
 echo "Scaffolds file: " $assembly
 echo "File prefix: " $simple_name
 echo "Contig length cutoff: " $length_cutoff
@@ -72,7 +72,7 @@ echo "Path to marker files: " $marker_db
 echo
 
 #Check that required flags are provided
-if [ -z $out_dir ]; then
+if [ -z $work_dir ]; then
     echo "Output directory not provided"
     exit 1
 fi
@@ -114,10 +114,10 @@ fi
 
 #Check that provided files exist
 echo "Checking that provided files exist..."
-if [ -d "$out_dir" ]; then
-        echo "$out_dir found."
+if [ -d "$work_dir" ]; then
+        echo "$work_dir found."
 else 
-        echo "$out_dir does not exist."
+        echo "$work_dir does not exist."
         exit
 fi
 
@@ -151,7 +151,7 @@ else
 fi
 
 #Create output folder
-outdir="${out_dir}/${simple_name}_Autometa_Output"
+outdir="${work_dir}/${simple_name}_Autometa_Output"
 if [ ! -d $outdir ]
 then mkdir -p $outdir
 fi
