@@ -13,7 +13,7 @@ usage()
    echo
    echo "Required flags:"
    echo "-o     Directory path to where the output will go"
-   echo "-a     Full path to where your scaffold/contig file is (include file name)"
+   echo "-a     File path to your assembly file (include file name)"
    echo "-s     Simple name to prefix output files"
    echo "-n     Path to NCBI databases directory"
    echo "-m     Path to marker files directory"
@@ -41,7 +41,13 @@ do
         h) usage exit;;
     esac
 done
-
+if [ "$#" -eq 0 ]
+then
+    echo "No arguments provided"
+    echo
+    usage >&2
+    exit 1
+fi
 echo 
 echo "Your current conda environment is: " $CONDA_DEFAULT_ENV
 
