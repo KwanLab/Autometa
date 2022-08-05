@@ -5,6 +5,8 @@
 #SBATCH --time=14-00:00:00
 #SBATCH --error=autometa.%J.err
 #SBATCH --output=autometa.%J.out
+# Exit if a process returns a non-zero exit code
+set -e
 
 usage()
 {
@@ -19,8 +21,8 @@ usage()
    echo "-m     Path to marker files directory"
    echo "-l     Contig length cutoff in base pairs. (NOTE: Change this according to the metagenome assembly's N50)"
    echo "-v     Coverage calculation. Options are 'spades' or 'paired'. If you assembled your metagenome with spades, choose the spades option. If you used a different assembler, please use the 'paired' option for the coverage calculation. Paired reads used for assembly are required as input"
-   echo "-f     Forward reads. Required only if metagenome not assembled with Spades"
-   echo "-r     Reverse reads. Required only if metagenome not assembled with Spades"
+   echo "-f     Forward reads. (Required if your metagenome was not assembled with SPAdes)"
+   echo "-r     Reverse reads. (Required if your metagenome was not assembled with SPAdes)"
    echo "-c     How many cpus you would like to use"
 }
 
@@ -59,17 +61,6 @@ else
     exit
 fi
 
-echo
-echo "You have provided the following input parameters:"
-echo "Output directory: " $work_dir
-echo "Scaffolds file: " $assembly
-echo "File prefix: " $simple_name
-echo "Contig length cutoff: " $length_cutoff
-echo "Coverage calc option: " $coverage
-echo "CPUS to be used: " $cpus
-echo "Path to NCBI files: " $ncbi
-echo "Path to marker files: " $marker_db
-echo
 
 #Check that required flags are provided
 if [ -z $work_dir ]; then
@@ -117,21 +108,21 @@ echo "Checking that provided files exist..."
 if [ -d "$work_dir" ]; then
         echo "$work_dir found."
 else 
-        echo "$work_dir does not exist."
-        exit
+        echo "$work_dir does not exist, creating..."
+        mkdir -p $work_dir
 fi
 
 if [ -f "$assembly" ]; then
         echo "$assembly found."
 else 
-        echo "$assembly does not exist."
+        echo "assembly option (-a) does not exist. given: $assembly"
         exit
 fi
 
 if [ -d "$ncbi" ]; then
         echo "$ncbi found."
 else 
-        echo "$ncbi does not exist."
+        echo "ncbi option (-n) does not exist. given: $ncbi"
         exit
 fi
 
@@ -146,10 +137,20 @@ fi
 if [ -d "$marker_db" ]; then
         echo "$marker_db found."
 else 
-        echo "$marker_db does not exist."
+        echo "markers directory option (-m) does not exist. given: $marker_db"
         exit
 fi
-
+echo
+echo "You have provided the following input parameters:"
+echo "Output directory: " $work_dir
+echo "Scaffolds file: " $assembly
+echo "File prefix: " $simple_name
+echo "Contig length cutoff: " $length_cutoff
+echo "Coverage calc option: " $coverage
+echo "CPUS to be used: " $cpus
+echo "Path to NCBI files: " $ncbi
+echo "Path to marker files: " $marker_db
+echo
 #Create output folder
 outdir="${work_dir}/${simple_name}_Autometa_Output"
 if [ ! -d $outdir ]
@@ -161,7 +162,7 @@ kmer_size=5
 norm_method="am_clr" # choices: am_clr, clr, ilr
 pca_dimensions=50 # NOTE: must be greater than $embed_dimensions
 embed_dimensions=2 # NOTE: must be less than $pca_dimensions
-embed_method="bhsne" # choices: bhsne, sksne, umap, densne, trimap
+embed_method="bhsne" # choices: bhsne, sksne, umap, densmap, trimap
 cluster_method="hdbscan" # choices: hdbscan, dbscan
 completeness=20.0
 purity=95.0
@@ -206,7 +207,7 @@ else
         if [ -f "$fwd_reads" ]; then
             echo "$fwd_reads found."
         else 
-            echo "$fwd_reads does not exist."
+            echo "forward reads (-f) option does not exist. given: $fwd_reads"
             exit
         fi
 
@@ -218,7 +219,7 @@ else
         if [ -f "$rev_reads" ]; then
             echo "$rev_reads found."
         else 
-            echo "$rev_reads does not exist."
+            echo "reverse reads option (-r) does not exist. given: $rev_reads"
             exit
         fi
 
@@ -226,7 +227,9 @@ else
 
     else
         echo
-        echo "You have provided an invalid option. The options for coverage are 'spades' or 'paired'. Please fix">&2; exit 1
+        echo "You have provided an invalid value for the coverage option (-v). Your choices are 'spades' or 'paired'."
+        echo "given: $coverage"
+        exit 1
     fi
 fi
 
@@ -242,11 +245,6 @@ autometa-orfs \
     --output-prots $orfs \
     --cpus $cpus
 
-if [ $? -eq 0 ]; then
-   echo "ORFs successfully generated"
-else
-   echo "ORF generation failed"
-fi
 
 #Check if marker files are pressed, if not, press them
 echo
@@ -275,6 +273,7 @@ for kingdom in ${kingdoms[@]};do
     markers="${outdir}/${simple_name}.${kingdom}.markers.tsv"
 
     # script:
+    set -x
     autometa-markers \
         --orfs $orfs \
         --hmmscan $hmmscan \
@@ -284,13 +283,14 @@ for kingdom in ${kingdoms[@]};do
         --parallel \
         --cpus $cpus \
         --seed $seed
+    { set +x; } 2>/dev/null
 done
 
 # Step 4.1: Determine ORF lowest common ancestor (LCA) amongst top hits
 
 #Run blastp
 blast="${outdir}/${simple_name}.blastp.tsv" #Generate output file name
-
+set -x
 diamond blastp \
     --query $orfs \
     --db "$ncbi/nr.dmnd" \
@@ -299,24 +299,25 @@ diamond blastp \
     --threads $cpus \
     --outfmt 6 \
     --out $blast
-
+{ set +x; } 2>/dev/null
 # output:
 lca="${outdir}/${simple_name}.orfs.lca.tsv"
 sseqid2taxid="${outdir}/${simple_name}.orfs.sseqid2taxid.tsv"
 error_taxids="${outdir}/${simple_name}.orfs.errortaxids.tsv"
 
 # script:
+set -x
 autometa-taxonomy-lca \
     --blast $blast \
     --dbdir $ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
     --lca-error-taxids $error_taxids
-
+{ set +x; } 2>/dev/null
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 
 votes="${outdir}/${simple_name}.taxids.tsv"
-
+set -x
 autometa-taxonomy-majority-vote \
     --lca $lca \
     --output $votes \
@@ -331,7 +332,7 @@ autometa-taxonomy \
     --split-rank-and-write superkingdom \
     --assembly $filtered_assembly \
     --ncbi $ncbi
-
+{ set +x; } 2>/dev/null
 # Step 5: Perform k-mer counting on respective kingdoms
 
 kingdoms=(bacteria archaea)
@@ -349,7 +350,7 @@ for kingdom in ${kingdoms[@]};do
         echo "${fasta} does not exist, skipping..."
         continue
     fi
-
+    set -x
     autometa-kmers \
         --fasta $fasta \
         --kmers $counts \
@@ -362,6 +363,7 @@ for kingdom in ${kingdoms[@]};do
         --embedding-dimensions $embed_dimensions \
         --cpus $cpus \
         --seed $seed
+    { set +x; } 2>/dev/null
 done
 
 # Step 6: Perform binning on each set of bacterial and archaeal contigs
@@ -386,8 +388,9 @@ for kingdom in ${kingdoms[@]};do
 
     if [ ! -f $kmers ]
         then echo "Required ${kingdom} files not found, skipping."
+        continue
     fi
-    
+    set -x
     autometa-binning \
         --kmers $kmers \
         --coverages $coverages \
@@ -404,6 +407,7 @@ for kingdom in ${kingdoms[@]};do
         --starting-rank superkingdom \
         --rank-filter superkingdom \
         --rank-name-filter $kingdom
+    { set +x; } 2>/dev/null
 done
 
 # Step 7: Create binning summary files
@@ -426,7 +430,7 @@ for kingdom in ${kingdoms[@]};do
         echo "${binning_main} does not exist, skipping..."
         continue
     fi
-
+    set -x
     autometa-binning-summary \
         --binning-main $binning_main \
         --markers $markers \
@@ -435,4 +439,5 @@ for kingdom in ${kingdoms[@]};do
         --output-stats $output_stats \
         --output-taxonomy $output_taxonomy \
         --output-metabins $output_metabins
+    { set +x; } 2>/dev/null
 done
