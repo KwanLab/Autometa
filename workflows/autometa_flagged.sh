@@ -5,6 +5,7 @@
 #SBATCH --time=14-00:00:00
 #SBATCH --error=autometa.%J.err
 #SBATCH --output=autometa.%J.out
+
 # Exit if a process returns a non-zero exit code
 set -e
 
@@ -36,7 +37,7 @@ do
         n) ncbi=${OPTARG};;
         m) marker_db=${OPTARG};;
         l) length_cutoff=${OPTARG};;
-        v) coverage=${OPTARG};;
+        v) coverage_method=${OPTARG};;
         f) fwd_reads=${OPTARG};;
         r) rev_reads=${OPTARG};;
         c) cpus=${OPTARG};;
@@ -93,8 +94,8 @@ if [ -z $length_cutoff ]; then
     exit 1
 fi
 
-if [ -z $coverage ]; then
-    echo "Method for coverage calc not provided"
+if [ -z $coverage_method ]; then
+    echo "Method for coverage calculation not provided"
     exit 1
 fi
 
@@ -105,25 +106,18 @@ fi
 
 #Check that provided files exist
 echo "Checking that provided files exist..."
-if [ -d "$work_dir" ]; then
-        echo "$work_dir found."
-else 
-        echo "$work_dir does not exist, creating..."
-        mkdir -p $work_dir
-fi
-
 if [ -f "$assembly" ]; then
-        echo "$assembly found."
+    echo "$assembly found."
 else 
-        echo "assembly option (-a) does not exist. given: $assembly"
-        exit
+    echo "assembly option (-a) does not exist. given: $assembly"
+    exit
 fi
 
 if [ -d "$ncbi" ]; then
-        echo "$ncbi found."
+    echo "$ncbi found."
 else 
-        echo "ncbi option (-n) does not exist. given: $ncbi"
-        exit
+    echo "ncbi option (-n) does not exist. given: $ncbi"
+    exit
 fi
 
 #Check if ncbi files are present, if not, download and prep them
@@ -135,22 +129,31 @@ else
 fi
 
 if [ -d "$marker_db" ]; then
-        echo "$marker_db found."
+    echo "$marker_db found."
 else 
-        echo "markers directory option (-m) does not exist. given: $marker_db"
-        exit
+    echo "markers directory option (-m) does not exist. given: $marker_db"
+    exit
 fi
+
+if [ -d "$work_dir" ]; then
+    echo "$work_dir found."
+else 
+    echo "$work_dir does not exist, creating..."
+    mkdir -p $work_dir
+fi
+
 echo
 echo "You have provided the following input parameters:"
-echo "Output directory: " $work_dir
-echo "Scaffolds file: " $assembly
-echo "File prefix: " $simple_name
-echo "Contig length cutoff: " $length_cutoff
-echo "Coverage calc option: " $coverage
-echo "CPUS to be used: " $cpus
-echo "Path to NCBI files: " $ncbi
-echo "Path to marker files: " $marker_db
+echo "Output directory: ${work_dir}"
+echo "Scaffolds file: ${assembly}"
+echo "File prefix: ${simple_name}"
+echo "Contig length cutoff: ${length_cutoff}"
+echo "Coverage calculation method: ${coverage_method}"
+echo "CPUS to be used: ${cpus}"
+echo "Path to NCBI files: ${ncbi}"
+echo "Path to marker files: ${marker_db}"
 echo
+
 #Create output folder
 outdir="${work_dir}/${simple_name}_Autometa_Output"
 if [ ! -d $outdir ]
@@ -171,64 +174,72 @@ gc_stddev_limit=5.0
 seed=42
 
 # Report autometa version
-echo
+set -x
 autometa --version
+{ set +x; } 2>/dev/null
 
 #Step 1: Filter assembly by length and retrieve contig lengths as well as GC content
 
 filtered_assembly="${outdir}/${simple_name}.filtered.fna"
 gc_content="${outdir}/${simple_name}.gc_content.tsv"
 
+set -x
 autometa-length-filter \
     --assembly $assembly \
     --cutoff $length_cutoff \
     --output-fasta $filtered_assembly \
     --output-gc-content $gc_content
-
+{ set +x; } 2>/dev/null
 
 #Step 2: Determine coverages from assembly read alignments
 coverages="${outdir}/${simple_name}.coverages.tsv"
 
-if [[ "$coverage" == "spades" ]]
+if [[ "$coverage_method" == "spades" ]]
 then
-    echo
     echo "Coverage to be taken from Spades headers"
+    set -x
     autometa-coverage --assembly $filtered_assembly --from-spades --out $coverages
+    { set +x; } 2>/dev/null
 else
-    if [[ "$coverage" == "paired" ]]
+    if [[ "$coverage_method" == "paired" ]]
     then
-        echo
         echo "Coverage to be calculated from reads"
         if [ -z $fwd_reads ]; then
-            echo "Forward reads were not provided. These are required for coverage calculations"
+            echo "Forward reads(-f) were not provided. These are required for coverage calculations"
             exit 1
         fi
 
         if [ -f "$fwd_reads" ]; then
             echo "$fwd_reads found."
         else 
-            echo "forward reads (-f) option does not exist. given: $fwd_reads"
+            echo "Forward reads (-f) option does not exist. given: $fwd_reads"
             exit
         fi
 
         if [ -z $rev_reads ]; then
-            echo "Reverse reads were not provided. These are required for coverage calculations"
+            echo "Reverse reads (-r) were not provided. These are required for coverage calculations."
             exit 1
         fi
 
         if [ -f "$rev_reads" ]; then
             echo "$rev_reads found."
         else 
-            echo "reverse reads option (-r) does not exist. given: $rev_reads"
+            echo "Reverse reads option (-r) does not exist. given: $rev_reads"
             exit
         fi
-
-        autometa-coverage --assembly $filtered_assembly --fwd-reads $fwd_reads --rev-reads $rev_reads --out $coverages --cpus $cpus
+        
+        set -x
+        autometa-coverage \
+            --assembly $filtered_assembly \
+            --fwd-reads $fwd_reads \
+            --rev-reads $rev_reads \
+            --out $coverages \
+            --cpus $cpus
+        { set +x; } 2>/dev/null
 
     else
-        echo
         echo "You have provided an invalid value for the coverage option (-v). Your choices are 'spades' or 'paired'."
-        echo "given: $coverage"
+        echo "given: $coverage_method"
         exit 1
     fi
 fi
@@ -239,21 +250,23 @@ orfs="${outdir}/${simple_name}.orfs.faa"
 orfs_nuc="${outdir}/${simple_name}.orfs.fna"
 
 #Get ORFs
+set -x
 autometa-orfs \
     --assembly $filtered_assembly \
     --output-nucls $orfs_nuc \
     --output-prots $orfs \
     --cpus $cpus
-
+{ set +x; } 2>/dev/null
 
 #Check if marker files are pressed, if not, press them
-echo
 echo "Checking if hmm files are pressed..."
 if [ -f "$marker_db/bacteria.single_copy.hmm.h3i" ]; then
     echo "Bacterial hmm files are pressed, moving on..."
 else
     echo "Bacterial hmm files not pressed. Pressing files now..."
+    set -x
     hmmpress -f $marker_db/bacteria.single_copy.hmm
+    { set +x; } 2>/dev/null
 fi
 
 
@@ -261,12 +274,14 @@ if [ -f "$marker_db/archaea.single_copy.hmm.h3i" ]; then
     echo "Archaeal hmm files are pressed, moving on..."
 else
     echo "Archaeal hmm files not pressed. Pressing files now..."
+    set -x
     hmmpress -f $marker_db/archaea.single_copy.hmm
+    { set +x; } 2>/dev/null
 fi
 
-kingdoms=(bacteria archaea)
 
 # NOTE: We iterate through both sets of markers for binning both bacterial and archeal kingdoms
+kingdoms=(bacteria archaea)
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific output:
     hmmscan="${outdir}/${simple_name}.${kingdom}.hmmscan.tsv"
@@ -300,6 +315,7 @@ diamond blastp \
     --outfmt 6 \
     --out $blast
 { set +x; } 2>/dev/null
+
 # output:
 lca="${outdir}/${simple_name}.orfs.lca.tsv"
 sseqid2taxid="${outdir}/${simple_name}.orfs.sseqid2taxid.tsv"
@@ -314,6 +330,7 @@ autometa-taxonomy-lca \
     --sseqid2taxid-output $sseqid2taxid \
     --lca-error-taxids $error_taxids
 { set +x; } 2>/dev/null
+
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 
 votes="${outdir}/${simple_name}.taxids.tsv"
@@ -324,7 +341,6 @@ autometa-taxonomy-majority-vote \
     --dbdir $ncbi
 
 # Step 4.3: Split assigned taxonomies into kingdoms
-
 autometa-taxonomy \
     --votes $votes \
     --output $outdir \
@@ -333,8 +349,8 @@ autometa-taxonomy \
     --assembly $filtered_assembly \
     --ncbi $ncbi
 { set +x; } 2>/dev/null
-# Step 5: Perform k-mer counting on respective kingdoms
 
+# Step 5: Perform k-mer counting on respective kingdoms
 kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
