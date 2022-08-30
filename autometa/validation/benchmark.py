@@ -98,7 +98,9 @@ def get_categorical_labels(
     return Labels(true=labels_true, pred=labels_pred)
 
 
-def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
+def compute_clustering_metrics(
+    labels: NamedTuple, average_method: str
+) -> Dict[str, float]:
     """Calculate various clustering performance metrics listed below.
 
     Note
@@ -146,17 +148,17 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
     # Calculate cluster variety of cluster evaluation metrics with labels
     ami = adjusted_mutual_info_score(labels_true=labels.true, labels_pred=labels.pred)
     ari = adjusted_rand_score(labels_true=labels.true, labels_pred=labels.pred)
-    gnmi = normalized_mutual_info_score(
+    nmi = normalized_mutual_info_score(
         labels_true=labels.true,
         labels_pred=labels.pred,
-        average_method="geometric",
+        average_method=average_method,  # choices: min, geometric, arithmetic, max
     )
     fowlkes_score = fowlkes_mallows_score(
         labels_true=labels.true, labels_pred=labels.pred
     )
     return {
         "adjusted mutual info score": ami,
-        "geometric normalized mutual info score": gnmi,
+        f"{average_method} normalized mutual info score": nmi,
         "adjusted rand score": ari,
         "homogeneity score": homogeneity_score(labels.true, labels.pred),
         "completeness score": completeness_score(labels.true, labels.pred),
@@ -165,7 +167,9 @@ def compute_clustering_metrics(labels: NamedTuple) -> Dict[str, float]:
     }
 
 
-def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
+def evaluate_clustering(
+    predictions: Iterable, reference: str, average_method: str
+) -> pd.DataFrame:
     """Evaluate clustering performance of `predictions` against `reference`
 
     Parameters
@@ -186,7 +190,7 @@ def evaluate_clustering(predictions: Iterable, reference: str) -> pd.DataFrame:
     )
     for prediction in predictions:
         labels = get_categorical_labels(predictions=prediction, reference=reference)
-        metrics = compute_clustering_metrics(labels)
+        metrics = compute_clustering_metrics(labels, average_method)
         metrics.update({"dataset": os.path.basename(prediction)})
         all_metrics.append(metrics)
     df = pd.DataFrame(all_metrics).set_index("dataset")
@@ -564,6 +568,12 @@ def main():
         required=True,
     )
     parser.add_argument(
+        "--average-method",
+        help="Normalizer to select for normalized mutual information score clustering metric",
+        choices={"min", "geometric", "arithmetic", "max"},
+        default="max",
+    )
+    parser.add_argument(
         "--output-wide",
         help="Path to write benchmarking evaluation metrics (each metric receives its own column) (Default: `benchmark_type`_benchmarks.tsv.gz",
         metavar="filepath",
@@ -591,7 +601,11 @@ def main():
 
     logger.info(f"Evaluating {args.benchmark} benchmarks")
     if args.benchmark == "clustering":
-        df = evaluate_clustering(predictions=args.predictions, reference=args.reference)
+        df = evaluate_clustering(
+            predictions=args.predictions,
+            reference=args.reference,
+            average_method=args.average_method,
+        )
         if args.output_long:
             # Write out stacked dataframe for visualization with `plot-cluster-evaluation-metrics.R`
             dff = df.stack()
