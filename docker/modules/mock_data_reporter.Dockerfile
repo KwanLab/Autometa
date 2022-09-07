@@ -17,7 +17,8 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     libnetcdf-dev \
     udunits-bin \
     libudunits2-dev \
-    curl
+    curl \
+    procps
 
 # R packages
 ENV R_PACKAGES='c("ggbeeswarm","data.table","plotly","crosstalk","DT","patchwork")'
