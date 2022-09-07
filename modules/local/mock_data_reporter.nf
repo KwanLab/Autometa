@@ -13,7 +13,6 @@ process MOCK_DATA_REPORT {
 
     container "jasonkwan/autometa-nf-modules-mock_data_reporter:main"
 
-
     input:
         tuple val(meta), path(bins_path), path(assembly_to_locus_path), path(assembly_report_path)
         path(rmarkdown_file)
@@ -25,15 +24,6 @@ process MOCK_DATA_REPORT {
     script:
         """
         #!/usr/bin/env Rscript
-
-        packages <- c("markdown","data.table", "ggplot2", "plotly", "crosstalk", "magrittr", "DT", "stringi")
-
-        for (i in packages) {
-          if (!requireNamespace(i)) {
-            install.packages(i)
-          }
-          library(i, character.only = T)
-        }
 
         rmarkdown::render(
           input="${rmarkdown_file}",
