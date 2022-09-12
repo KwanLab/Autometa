@@ -40,6 +40,37 @@ The next command installs Autometa in the provided environment:
 
     conda install -n <your-env-name> -c bioconda autometa
 
+NCBI Preparation
+****************
+
+If you are running Autometa for the first time you'll have to download the NCBI databases.
+
+.. code-block:: bash
+
+    # First configure where you want to download the NCBI databases
+    autometa-config \\
+        --section databases \\
+        --option ncbi \\
+        --value <path/to/your/ncbi/database/directory>
+
+    # Now download and format the NCBI databases
+    autometa-update-databases --update-ncbi
+
+.. note::
+    You can check the default config paths using ``autometa-config --print``.
+
+    See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
+
+The previous command will download the following NCBI databases:
+
+- Non-redundant nr database
+    - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
+- prot.accession2taxid.gz
+    - `ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz <https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`_
+- nodes.dmp, names.dmp and merged.dmp - Found within
+    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
+
+
 Download Workflow Template
 **************************
 
@@ -187,35 +218,6 @@ Diamond blastp Preparation
 
 .. _ncbi-preparation:
 
-NCBI Preparation
-****************
-
-If you are running Autometa for the first time you'll have to download the NCBI databases.
-
-.. code-block:: bash
-
-    # First configure where you want to download the NCBI databases
-    autometa-config \\
-        --section databases \\
-        --option ncbi \\
-        --value <path/to/your/ncbi/database/directory>
-
-    # Now download and format the NCBI databases
-    autometa-update-databases --update-ncbi
-
-.. note::
-    You can check the default config paths using ``autometa-config --print``.
-
-    See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
-
-The previous command will download the following NCBI databases:
-
-- Non-redundant nr database
-    - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
-- prot.accession2taxid.gz
-    - `ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz <https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`_
-- nodes.dmp, names.dmp and merged.dmp - Found within
-    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
 
 Input Sample Name
 *****************
