@@ -19,7 +19,9 @@ Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en
 
 This step is optional, but we recommend using `mamba <https://github.com/mamba-org/mamba>`_ for faster installation
 .. code-block:: bash
+
     conda install mamba
+
 
 You may either create a new Conda environment named "autometa"...
 
