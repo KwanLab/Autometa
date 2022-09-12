@@ -17,6 +17,8 @@ Compute Environment Setup
 If you have not previously installed/used Conda, you can get it using the
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
 
+This step is optional, but we recommend using `mamba <https://github.com/mamba-org/mamba>`_
+
 You may either create a new Conda environment named "autometa"...
 
 .. code-block:: bash
