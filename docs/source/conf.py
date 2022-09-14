@@ -47,6 +47,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
+    "myst-parser"
 ]
 
 todo_include_todos = True
@@ -63,7 +64,7 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 # The suffix of source filenames.
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 
 # The encoding of source files.
 source_encoding = "utf-8-sig"
