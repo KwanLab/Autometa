@@ -28,5 +28,3 @@ dependencies:
   - trimap
   - tsne
   - umap-learn>=0.5 # https://github.com/lmcinnes/umap/releases/tag/0.5.0 : umap, densmap
-  - pip:
-    - gtdb_to_taxdump # https://github.com/nick-youngblut/gtdb_to_taxdump

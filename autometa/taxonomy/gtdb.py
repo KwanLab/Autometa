@@ -8,16 +8,17 @@ File containing definition of the GTDB class and containing functions useful for
 import gzip
 import logging
 import os
+import re
 import subprocess
 import shutil
+import tarfile
 
 from typing import Dict, List, Set, Tuple
 from itertools import chain
+from tqdm import tqdm
 
 import pandas as pd
 import multiprocessing as mp
-
-from tqdm import tqdm
 
 from autometa.common.utilities import file_length
 from autometa.common.external import diamond
@@ -46,83 +47,41 @@ def is_gz_file(filepath) -> bool:
         return test_f.read(2) == b"\x1f\x8b"
 
 
-def make_taxdump_files(taxa_files: List[str], dbdir: str) -> Dict[str, str]:
-    """
-    Create taxdump files (names.dmp and nodes.dmp) for GTDB database
+def create_gtdb_db(reps_faa: str, dbdir: str):
 
-    Parameters
-    ----------
-    taxa_files : List[str]
-        Path to taxonomy.tsv files from GTDB database, either ar53_taxonomy or bac120_taxonomy or both.
-    dbdir : str
-        Path to output database directory
-    """
-    cmd = ["gtdb_to_taxdump.py"]
-    for taxa_file in taxa_files:
-        cmd.append(taxa_file)
-    if os.path.exists(dbdir):
-        shutil.rmtree(dbdir)
-    os.makedirs(dbdir)
-    cmd.extend(["--outdir", dbdir])
-    logger.debug(f'Running gtdb_to_taxdump.py: {" ".join(cmd)}')
-    taxa_stdOut = os.path.join(dbdir, "taxID_info.tsv")
-    fh = open(taxa_stdOut, "w")
-    subprocess.run(cmd, stdout=fh, check=True)
-    fh.close()
-    return {
-        "nodes": os.path.join(dbdir, "nodes.dmp"),
-        "names": os.path.join(dbdir, "names.dmp"),
-    }
+    if reps_faa.endswith(".tar.gz"):
+        logger.debug(
+            f"Extracting tarball containing GTDB ref genome animo acid data sequences to: {dbdir}/protein_faa_reps"
+        )
+        tar = tarfile.open(reps_faa)
+        tar.extractall(path=dbdir)
+        tar.close()
+        logger.debug("Extraction done.")
+        reps_faa = dbdir
 
+    faa_index = {}
+    for dirpath, dirs, files in os.walk(reps_faa):
+        for file in files:
+            if file.endswith("_protein.faa"):
+                faa_file = os.path.join(dirpath, file)
+                # Regex to get the genome accession from the file path
+                acc = re.search(r"GCA_\d+.\d?|GCF_\d+.\d?", file)
+                faa_index[faa_file] = acc.group()
 
-def make_gtdb_db(
-    faa_tarball: str,
-    names_fpath: str,
-    nodes_fpath: str,
-    dbdir: str,
-    tmpdir: str = None,
-    keep_temp: bool = False,
-) -> Dict[str, str]:
-    """
-    Create accession2taxid.tsv and GTDB database that can be used by diamond makedb
+    # Create dbdir if it doesn't exist
+    if not os.path.isdir(dbdir):
+        os.makedirs(dbdir)
 
-    Parameters
-    ----------
-    faa_tarball : str
-        Path to tarball containing GTDB ref genome animo acid data sequences
-    names_fpath : str
-        Path to GTDB names.dmp file
-    nodes_fpath : str
-        Path to GTDB nodes.dmp file
-    dbdir : str
-        Path to output database directory
-    tmpdir : str, optional
-        Path to temporary directory, by default directory from which the enterypoint is run
-    keep_temp : bool, optional
-        Keep temporary files, by default False
-    """
-    dbdir = os.path.join(dbdir, "gtdb_to_diamond")
-    os.makedirs(dbdir, exist_ok=True)
-    cmd = [
-        "gtdb_to_diamond.py",
-        faa_tarball,
-        names_fpath,
-        nodes_fpath,
-        "--outdir",
-        dbdir,
-    ]
-    if tmpdir:
-        cmd.extend(["--tmpdir", tmpdir])
-    if keep_temp:
-        cmd.append("--keep-temp")
-    logger.debug(f'Running gtdb_to_diamond.py: {" ".join(cmd)}')
-    subprocess.run(cmd, check=True)
-    return {
-        "faa": os.path.join(dbdir, "gtdb_all.faa"),
-        "accession2taxid": os.path.join(dbdir, "accession2taxid.tsv"),
-        "names": os.path.join(dbdir, "names.dmp"),
-        "nodes": os.path.join(dbdir, "nodes.dmp"),
-    }
+    logger.debug("Merging faa files.")
+    with open(os.path.join(dbdir, "gtdb_all.faa"), "w") as f_out:
+        for faa_file, acc in faa_index.items():
+            with open(faa_file) as f_in:
+                for line in f_in:
+                    if line.startswith(">"):
+                        line = ">" + acc + " " + line.lstrip(">")
+                    f_out.write(line)
+    logger.debug(f"Combined GTDB faa file written to {dbdir}")
+    return os.path.join(dbdir, "gtdb.faa")
 
 
 class GTDB(TaxonomyDatabase):
@@ -137,12 +96,16 @@ class GTDB(TaxonomyDatabase):
         self.verbose = verbose
         self.disable = not self.verbose
         self.dmnd_db = os.path.join(self.dbdir, "gtdb.dmnd")
-        self.accession2taxid = os.path.join(self.dbdir, "accession2taxid.tsv")
+        self.accession2taxid = os.path.join(self.dbdir, "taxid.map")
         self.nodes_fpath = os.path.join(self.dbdir, "nodes.dmp")
         self.names_fpath = os.path.join(self.dbdir, "names.dmp")
+        self.merged_fpath = os.path.join(self.dbdir, "merged.dmp")
+        self.delnodes_fpath = os.path.join(self.dbdir, "delnodes.dmp")
         self.verify_databases()
         self.names = self.parse_names()
         self.nodes = self.parse_nodes()
+        self.merged = self.parse_merged()
+        self.delnodes = self.parse_delnodes()
 
     def verify_databases(self):
         """
@@ -187,7 +150,7 @@ class GTDB(TaxonomyDatabase):
 
     def search_genome_accessions(self, accessions: set) -> Dict[str, int]:
         """
-        Search accession2taxid.tsv file
+        Search taxid.map file
 
         Parameters
         ----------
@@ -212,7 +175,7 @@ class GTDB(TaxonomyDatabase):
         converted_sseqid_count = 0
         logger.debug(f"parsing {self.accession2taxid}...")
         for line in fh:
-            acc_num, acc_ver, taxid = line.strip().split("\t")
+            acc_ver, taxid = line.strip().split("\t")
             taxid = int(taxid)
             if acc_ver in accessions:
                 sseqids_to_taxids[acc_ver] = taxid
@@ -263,6 +226,54 @@ class GTDB(TaxonomyDatabase):
         fh.close()
         return names
 
+    def parse_merged(self) -> Dict[int, int]:
+        """
+        Parse the merged.dmp database
+        Note: This is performed when a new NCBI class instance is constructed
+
+        Returns
+        -------
+        dict
+            {old_taxid: new_taxid, ...}
+        """
+        if self.verbose:
+            logger.debug(f"Processing nodes from {self.merged_fpath}")
+        fh = open(self.merged_fpath)
+        merged = {}
+        for line in tqdm(fh, disable=self.disable, desc="parsing merged", leave=False):
+            old_taxid, new_taxid = [
+                int(taxid) for taxid in line.strip("\t|\n").split("\t|\t")
+            ]
+            merged.update({old_taxid: new_taxid})
+        fh.close()
+        if self.verbose:
+            logger.debug("merged loaded")
+        return merged
+
+    def parse_delnodes(self) -> Set[int]:
+        """
+        Parse the delnodes.dmp database
+        Note: This is performed when a new NCBI class instance is constructed
+
+        Returns
+        -------
+        set
+            {taxid, ...}
+        """
+        if self.verbose:
+            logger.debug(f"Processing delnodes from {self.delnodes_fpath}")
+        fh = open(self.delnodes_fpath)
+        delnodes = set()
+        for line in tqdm(
+            fh, disable=self.disable, desc="parsing delnodes", leave=False
+        ):
+            del_taxid = int(line.strip("\t|\n"))
+            delnodes.add(del_taxid)
+        fh.close()
+        if self.verbose:
+            logger.debug("delnodes loaded")
+        return delnodes
+
     def convert_accessions_to_taxids(
         self, accessions: Dict[str, Set[str]]
     ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
@@ -312,33 +323,23 @@ class GTDB(TaxonomyDatabase):
 
 def main():
     import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--taxa-files",
-        help="Path to taxonomy.tsv files for GTDB, either ar53_taxonomy or bac120_taxonomy or both.",
-        required=True,
-        nargs="+",
-    )
-    parser.add_argument(
         "--faa-tarball",
-        help="Path to tarball containing GTDB ref genome animo acid data sequences",
+        help="Path to directory containing GTDB ref genome animo acid data sequences. Can be tarballed.",
         required=True,
     )
     parser.add_argument(
         "--dbdir", help="Path to output GTDB database directory", required=True
-    )
-    parser.add_argument(
-        "--tmpdir",
-        help="Path to temporary directory",
-        required=False,
-    )
-    parser.add_argument(
-        "--keep-temp",
-        help="Keep temporary files.",
-        action="store_true",
-        default=False,
     )
     parser.add_argument(
         "--cpus",
@@ -348,19 +349,12 @@ def main():
 
     args = parser.parse_args()
 
-    taxdump_files = make_taxdump_files(args.taxa_files, args.dbdir)
-
-    gtdb_files = make_gtdb_db(
-        args.faa_tarball,
-        taxdump_files["names"],
-        taxdump_files["nodes"],
-        args.dbdir,
-        args.tmpdir,
-        args.keep_temp,
+    gtdb_combined = create_gtdb_db(reps_faa=args.reps_faa, dbdir=args.dbdir)
+    diamond.makedatabase(
+        fasta=gtdb_combined,
+        database=gtdb_combined.replace(".faa", ".dmnd"),
+        cpus=args.cpus,
     )
-
-    database = gtdb_files["faa"].replace(".faa", ".dmnd")
-    diamond.makedatabase(fasta=gtdb_files["faa"], database=database, cpus=args.cpus)
 
 
 if __name__ == "__main__":

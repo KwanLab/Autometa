@@ -33,7 +33,7 @@ from autometa.config.utilities import DEFAULT_FPATH
 from autometa.config.utilities import DEFAULT_CONFIG
 from autometa.config.utilities import AUTOMETA_DIR
 from autometa.config.utilities import put_config, get_config
-from autometa.taxonomy.gtdb import make_taxdump_files, make_gtdb_db
+from autometa.taxonomy.gtdb import create_gtdb_db
 
 
 logger = logging.getLogger(__name__)
@@ -405,23 +405,15 @@ class Databases:
 
     def download_gtdb_files(self) -> None:
         proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
-        bac120_taxonomy_url = self.config.get("database_urls", "bac120_taxonomy")
-        ar53_taxonomy_url = self.config.get("database_urls", "ar53_taxonomy")
+        gtdb_taxdmp_url = self.config.get("database_urls", "gtdb_taxdmp")
+
         # User path:
         proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
-        bac120_taxonomy_filepath = self.config.get("gtdb", "bac120_taxonomy")
-        ar53_taxonomy_filepath = self.config.get("gtdb", "ar53_taxonomy")
+        gtdb_taxdmp_filepath = self.config.get("gtdb", "gtdb_taxdmp")
 
-        urls = [
-            proteins_aa_reps_url,
-            # bac120_taxonomy_url,
-            # ar53_taxonomy_url,
-        ]
-        filepaths = [
-            proteins_aa_reps_filepath,
-            # bac120_taxonomy_filepath,
-            # ar53_taxonomy_filepath,
-        ]
+        urls = [proteins_aa_reps_url, gtdb_taxdmp_url]
+        filepaths = [proteins_aa_reps_filepath, gtdb_taxdmp_filepath]
+
         logger.debug(f"starting GTDB databases download")
         for url, filepath in zip(urls, filepaths):
             cmd = ["wget", url, "-O", filepath]
@@ -812,24 +804,15 @@ def main():
     elif args.update_ncbi:
         section = "ncbi"
     elif args.update_gtdb:
-        # Download, generate and format GTDB databases
-        taxa_files = [
-            dbs.config.get("database_urls", "ar53_taxonomy"),
-            dbs.config.get("database_urls", "bac120_taxonomy"),
-        ]
-        taxdump_files = make_taxdump_files(
-            taxa_files=taxa_files, dbdir=dbs.config.get("databases", "gtdb")
+        # Download, generate and format GTDB amino acid database
+        gtdb_combined = create_gtdb_db(
+            reps_faa=dbs.config.get("gtdb", "proteins_aa_reps"),
+            dbdir=dbs.config.get("databases", "gtdb"),
         )
-        dbs.download_gtdb_files()
-        gtdb_files = make_gtdb_db(
-            dbs.config.get("gtdb", "proteins_aa_reps"),
-            taxdump_files["names"],
-            taxdump_files["nodes"],
-            dbs.config.get("databases", "gtdb"),
-        )
-        database = gtdb_files["faa"].replace(".faa", ".dmnd")
         diamond.makedatabase(
-            fasta=gtdb_files["faa"], database=database, cpus=args.nproc
+            fasta=gtdb_combined,
+            database=gtdb_combined.replace(".faa", ".dmnd"),
+            cpus=args.cpus,
         )
         sys.exit(0)
     else:
