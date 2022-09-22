@@ -47,7 +47,7 @@ def is_gz_file(filepath) -> bool:
         return test_f.read(2) == b"\x1f\x8b"
 
 
-def create_gtdb_db(reps_faa: str, dbdir: str):
+def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
 
     if reps_faa.endswith(".tar.gz"):
         logger.debug(
@@ -72,13 +72,14 @@ def create_gtdb_db(reps_faa: str, dbdir: str):
     if not os.path.isdir(dbdir):
         os.makedirs(dbdir)
 
-    logger.debug("Merging faa files.")
+    logger.debug(f"Merging {len(faa_index):,} faa files.")
     with open(os.path.join(dbdir, "gtdb_all.faa"), "w") as f_out:
         for faa_file, acc in faa_index.items():
             with open(faa_file) as f_in:
                 for line in f_in:
                     if line.startswith(">"):
-                        line = ">" + acc + " " + line.lstrip(">")
+                        seqheader = line.lstrip(">")
+                        line = f">{acc} {seqheader}"
                     f_out.write(line)
     logger.debug(f"Combined GTDB faa file written to {dbdir}")
     return os.path.join(dbdir, "gtdb.faa")

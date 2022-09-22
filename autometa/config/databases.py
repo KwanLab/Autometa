@@ -405,14 +405,14 @@ class Databases:
 
     def download_gtdb_files(self) -> None:
         proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
-        gtdb_taxdmp_url = self.config.get("database_urls", "gtdb_taxdmp")
+        gtdb_taxdump_url = self.config.get("database_urls", "taxonkit_gtdb_taxdump")
 
         # User path:
         proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
-        gtdb_taxdmp_filepath = self.config.get("gtdb", "gtdb_taxdmp")
+        gtdb_taxdump_filepath = self.config.get("gtdb", "taxonkit_gtdb_taxdump")
 
-        urls = [proteins_aa_reps_url, gtdb_taxdmp_url]
-        filepaths = [proteins_aa_reps_filepath, gtdb_taxdmp_filepath]
+        urls = [proteins_aa_reps_url, gtdb_taxdump_url]
+        filepaths = [proteins_aa_reps_filepath, gtdb_taxdump_filepath]
 
         logger.debug(f"starting GTDB databases download")
         for url, filepath in zip(urls, filepaths):
