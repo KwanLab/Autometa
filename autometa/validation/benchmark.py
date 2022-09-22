@@ -126,11 +126,12 @@ def compute_clustering_metrics(
 
     Parameters
     ----------
-    predictions : str
-        Path to Autometa binning results.
+    labels : Labels
+        Labels NamedTuple with `Labels.pred` (predictions) and `Labels.true` (reference) namespaces
 
-    reference : str|pd.DataFrame
-        Path to or dataframe of known reference community assignments to compare against Autometa binning results.
+    average_method: str
+        Normalizer to select for normalized mutual information score clustering metric. choices: min, geometric, arithmetic, max
+
 
     Returns
     -------
@@ -176,8 +177,12 @@ def evaluate_clustering(
     ----------
     predictions : Iterable
         Paths to binning predictions. Paths should be tab-delimited files with 'cluster' and 'contig' columns.
+
     reference : str
         Path to ground truth reference genome assignments. Should be tab-delimited file with 'contig' and 'reference_genome' columns.
+
+    average_method: str
+        Normalizer to select for normalized mutual information score clustering metric. choices: min, geometric, arithmetic, max
 
     Returns
     -------
