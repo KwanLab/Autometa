@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import shutil
+import string
 import tarfile
 import glob
 from pathlib import Path
@@ -26,6 +27,7 @@ import multiprocessing as mp
 from autometa.common.utilities import file_length
 from autometa.common.external import diamond
 from autometa.taxonomy.database import TaxonomyDatabase
+from autometa.common.exceptions import DatabaseOutOfSyncError
 
 
 logger = logging.getLogger(__name__)

@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import logging
+import string
 
 from abc import ABC, abstractmethod
 from typing import Dict, Set, Tuple, List, Union, Iterable
+from autometa.common.exceptions import DatabaseOutOfSyncError
 
 import pandas as pd
 
@@ -82,6 +84,81 @@ class TaxonomyDatabase(ABC):
 
         """
 
+    def convert_taxid_dtype(self, taxid: int) -> int:
+        """
+        1. Converts the given `taxid` to an integer and checks whether it is positive.
+        2. Checks whether `taxid` is present in both nodes.dmp and names.dmp.
+        3a. If (2) is false, will check for corresponding `taxid` in merged.dmp and convert to this then redo (2).
+        3b. If (2) is true, will return converted taxid.
+        4. If (3a) is false will look for `taxid` in delnodes.dmp. If present will convert to root (taxid=1)
+
+        Parameters
+        ----------
+        taxid : int
+            identifier for a taxon in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
+
+        Returns
+        -------
+        int
+            `taxid` if the `taxid` is a positive integer and present in either nodes.dmp or names.dmp or
+            taxid recovered from merged.dmp
+
+        Raises
+        ------
+        ValueError
+            Provided `taxid` is not a positive integer
+        DatabaseOutOfSyncError
+            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
+        """
+        #  Step 1 Converts the given `taxid` to an integer and checks whether it is positive.
+        # Checking taxid instance format
+        # This checks if an integer has been added as str, eg. "562"
+        if isinstance(taxid, str):
+            invalid_chars = set(string.punctuation + string.ascii_letters)
+            invalid_chars.discard(".")
+            if set(taxid).intersection(invalid_chars) or taxid.count(".") > 1:
+                raise ValueError(f"taxid contains invalid character(s)! Given: {taxid}")
+            taxid = float(taxid)
+        # a boolean check is needed as they will evaluate silently to 0 or 1 when cast as ints. FALSE=0, TRUE=1
+        # float(taxid).is_integer() checks if it is something like 12.0 vs. 12.9
+        # is_integer only takes float as input else raises error, thus isinstance( ,float) is used before it to make sure a float is being passed
+        if isinstance(taxid, bool) or (
+            isinstance(taxid, float) and not taxid.is_integer()
+        ):
+            raise ValueError(f"taxid must be an integer! Given: {taxid}")
+        taxid = int(taxid)
+        if taxid <= 0:
+            raise ValueError(f"Taxid must be a positive integer! Given: {taxid}")
+        # Checking databases
+        #  Step 2: Check whether taxid is present in both nodes.dmp and names.dmp.
+        if taxid not in self.names and taxid not in self.nodes:
+            # Step 3a. Check for corresponding taxid in merged.dmp
+            if taxid not in self.merged:
+                # Step 4: look for taxid in delnodes.dmp. If present will convert to root (taxid=1)
+                if taxid in self.delnodes:
+                    # Assign deleted taxid to root...
+                    if self.verbose:
+                        logger.debug(
+                            f"Found {taxid} in delnodes.dmp, converting to root (taxid=1)"
+                        )
+                    taxid = 1
+                else:
+                    err_message = f"Databases out of sync. {taxid} not in found in nodes.dmp, names.dmp, merged.dmp or delnodes.dmp"
+                    raise DatabaseOutOfSyncError(err_message)
+            else:
+                # Step 3b. convert taxid from merged.
+                if self.verbose:
+                    logger.debug(
+                        f"Converted {taxid} to {self.merged[taxid]} from merged.dmp"
+                    )
+                taxid = self.merged[taxid]
+                if taxid not in self.names and taxid not in self.nodes:
+                    # NOTE: Do not check delnodes.dmp here, as at this point it appears the databases are indeed out of sync.
+                    # i.e. The taxid should either be in merged.dmp or in delnodes.dmp if not in nodes.dmp or names.dmp
+                    err_message = f"Databases out of sync. Merged taxid ({taxid}) not found in nodes.dmp or names.dmp!"
+                    raise DatabaseOutOfSyncError(err_message)
+        return taxid
+
     def name(self, taxid: int, rank: str = None) -> str:
         """
         Parses through the names.dmp in search of the given `taxid` and returns its name.
@@ -101,6 +178,11 @@ class TaxonomyDatabase(ABC):
             Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
 
         """
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         if not rank:
             return self.names.get(taxid, "unclassified")
         if rank not in set(TaxonomyDatabase.CANONICAL_RANKS):
@@ -131,6 +213,11 @@ class TaxonomyDatabase(ABC):
             rank name if taxid is found in nodes else "unclassified"
 
         """
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
 
     def parent(self, taxid: int) -> int:
@@ -148,6 +235,11 @@ class TaxonomyDatabase(ABC):
             Parent taxid if found in nodes otherwise 1
 
         """
+        try:
+            taxid = self.convert_taxid_dtype(taxid)
+        except DatabaseOutOfSyncError as err:
+            logger.warning(err)
+            taxid = 0
         return self.nodes.get(taxid, {"parent": 1}).get("parent")
 
     def lineage(
