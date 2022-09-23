@@ -12,10 +12,13 @@ import re
 import subprocess
 import shutil
 import tarfile
+import glob
+from pathlib import Path
 
 from typing import Dict, List, Set, Tuple
 from itertools import chain
 from tqdm import tqdm
+from typing import Dict
 
 import pandas as pd
 import multiprocessing as mp
@@ -48,6 +51,21 @@ def is_gz_file(filepath) -> bool:
 
 
 def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
+    """
+    Generate a combined faa file to create the GTDB-t database.
+
+    Parameters
+    ----------
+    reps_faa : str
+        Directory having faa file of all representative genomes. Can be tarballed.
+    dbdir : str
+        Path to output directory.
+
+    Returns
+    -------
+    str
+        Path to combined faa file. This can be used to make a diamond database.
+    """
 
     if reps_faa.endswith(".tar.gz"):
         logger.debug(
@@ -59,14 +77,24 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         logger.debug("Extraction done.")
         reps_faa = dbdir
 
-    faa_index = {}
-    for dirpath, dirs, files in os.walk(reps_faa):
-        for file in files:
-            if file.endswith("_protein.faa"):
-                faa_file = os.path.join(dirpath, file)
-                # Regex to get the genome accession from the file path
-                acc = re.search(r"GCA_\d+.\d?|GCF_\d+.\d?", file)
-                faa_index[faa_file] = acc.group()
+    genome_protein_faa_filepaths = glob.glob(
+        os.path.join(reps_faa, "**", "*_protein.faa"), recursive=True
+    )
+
+    faa_index: Dict[str, str] = {}
+    for genome_protein_faa_filepath in genome_protein_faa_filepaths:
+        # Regex to get the genome accession from the file path
+        try:
+            genome_acc_search = re.search(
+                r"GCA_\d+.\d?|GCF_\d+.\d?", genome_protein_faa_filepath
+            )
+        except AttributeError:
+            print(
+                f"Genbank or RefSeq identifier (GCA/GCF) not found in - {genome_protein_faa_filepath}"
+            )
+        if not genome_acc_search:
+            continue
+        faa_index[genome_protein_faa_filepath] = genome_acc_search.group()
 
     # Create dbdir if it doesn't exist
     if not os.path.isdir(dbdir):
@@ -335,7 +363,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--faa-tarball",
+        "--reps-faa",
         help="Path to directory containing GTDB ref genome animo acid data sequences. Can be tarballed.",
         required=True,
     )
