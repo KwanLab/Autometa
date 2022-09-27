@@ -1,16 +1,17 @@
-(license)=
+.. _License:
 
-# License
+=======
+License
+=======
 
 GNU AFFERO GENERAL PUBLIC LICENSE
+   Version 3, 19 November 2007
 
-: Version 3, 19 November 2007
-
-Copyright (C) 2007 Free Software Foundation, Inc. \<<https://fsf.org/>>
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
 Everyone is permitted to copy and distribute verbatim copies
 of this license document, but changing it is not allowed.
 
-> Preamble
+        Preamble
 
 The GNU Affero General Public License is a free, copyleft license for
 software and other kinds of works, specifically designed to ensure
@@ -61,7 +62,7 @@ this license.
 The precise terms and conditions for copying, distribution and
 modification follow.
 
-> TERMS AND CONDITIONS
+   TERMS AND CONDITIONS
 
 0. Definitions.
 
@@ -209,7 +210,7 @@ it, and giving a relevant date.
 
 b) The work must carry prominent notices stating that it is
 released under this License and any conditions added under section
-7\.  This requirement modifies the requirement in section 4 to
+7.  This requirement modifies the requirement in section 4 to
 "keep intact all notices".
 
 c) You must license the entire work, as a whole, under this
@@ -621,7 +622,7 @@ an absolute waiver of all civil liability in connection with the
 Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
-> END OF TERMS AND CONDITIONS
+ END OF TERMS AND CONDITIONS
 
 How to Apply These Terms to Your New Programs
 
@@ -634,8 +635,8 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-\<one line to give the program's name and a brief idea of what it does.>
-Copyright (C) \<year>  \<name of author>
+<one line to give the program's name and a brief idea of what it does.>
+Copyright (C) <year>  <name of author>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -648,7 +649,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see \<<https://www.gnu.org/licenses/>>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 Also add information on how to contact you by electronic and paper mail.
 
@@ -663,4 +664,4 @@ specific requirements.
 You should also get your employer (if you work as a programmer) or school,
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
-\<<https://www.gnu.org/licenses/>>.
+<https://www.gnu.org/licenses/>.

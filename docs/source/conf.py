@@ -63,7 +63,7 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 # The suffix of source filenames.
-source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
+source_suffix = {".rst": "restructuredtext"}
 
 # The encoding of source files.
 source_encoding = "utf-8-sig"
@@ -104,7 +104,7 @@ def setup(app):
     # Exclude COPYRIGHT block in scripts using the autodoc between function
     app.connect("autodoc-process-docstring", between("^.*COPYRIGHT.*$", exclude=True))
     return app
-    app.add_source_parser(MarkdownParser)
+    
 
 def sphinx_apidoc(header="Autometa modules"):
     """
