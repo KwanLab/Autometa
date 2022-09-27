@@ -47,7 +47,11 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
+<<<<<<< Updated upstream
+    "sphinx_markdown_builder"
+=======
     "sphinx_copybutton"
+>>>>>>> Stashed changes
 ]
 
 todo_include_todos = True
