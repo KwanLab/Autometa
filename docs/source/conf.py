@@ -10,7 +10,6 @@ import sys
 
 from sphinx.ext.autodoc import between
 from datetime import datetime
-from sphinx_markdown_parser.parser import MarkdownParser, CommonMarkParser
 
 sys.path.append(os.path.abspath("./_ext"))
 
@@ -47,11 +46,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
-<<<<<<< Updated upstream
-    "sphinx_markdown_builder"
-=======
     "sphinx_copybutton"
->>>>>>> Stashed changes
 ]
 
 todo_include_todos = True
@@ -110,39 +105,6 @@ def setup(app):
     app.connect("autodoc-process-docstring", between("^.*COPYRIGHT.*$", exclude=True))
     return app
     app.add_source_parser(MarkdownParser)
-
-def setup(app):
-    app.add_source_suffix('.md', 'markdown')
-    app.add_source_parser(MarkdownParser)
-    app.add_config_value('markdown_parser_config', {
-        'auto_toc_tree_section': 'Content',
-        'enable_auto_doc_ref': True,
-        'enable_auto_toc_tree': True,
-        'enable_eval_rst': True,
-        'extensions': [
-            'extra',
-            'nl2br',
-            'sane_lists',
-            'smarty',
-            'toc',
-            'wikilinks',
-            'pymdownx.arithmatex',
-        ],
-    }, True)
-
-from recommonmark.parser import CommonMarkParser
-
-def setup(app):
-    app.add_source_suffix('.md', 'markdown')
-    app.add_source_parser(CommonMarkParser)
-    app.add_config_value('markdown_parser_config', {
-        'auto_toc_tree_section': 'Content',
-        'enable_auto_doc_ref': True,
-        'enable_auto_toc_tree': True,
-        'enable_eval_rst': True,
-        'enable_inline_math': True,
-        'enable_math': True,
-    }, True)
 
 def sphinx_apidoc(header="Autometa modules"):
     """
