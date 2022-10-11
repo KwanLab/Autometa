@@ -68,9 +68,8 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         genome_acc_search = re.search(
             r"GCA_\d+.\d?|GCF_\d+.\d?", genome_protein_faa_filepath
         )
-        if not genome_acc_search:
-            continue
-        faa_index[genome_protein_faa_filepath] = genome_acc_search.group()
+        if genome_acc_search:
+            faa_index[genome_protein_faa_filepath] = genome_acc_search.group()
 
     # Create dbdir if it doesn't exist
     if not os.path.isdir(dbdir):
@@ -86,8 +85,8 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
                         seqheader = line.lstrip(">")
                         line = f"\n>{acc} {seqheader}"
                     f_out.write(line)
-    logger.debug(f"Combined GTDB faa file written to {dbdir}")
-    return os.path.join(dbdir, "gtdb.faa")
+    logger.debug(f"Combined GTDB faa file written to {combined_faa}")
+    return combined_faa
 
 
 class GTDB(TaxonomyDatabase):
@@ -235,7 +234,6 @@ class GTDB(TaxonomyDatabase):
     def parse_merged(self) -> Dict[int, int]:
         """
         Parse the merged.dmp database
-        Note: This is performed when a new NCBI class instance is constructed
 
         Returns
         -------
@@ -259,7 +257,6 @@ class GTDB(TaxonomyDatabase):
     def parse_delnodes(self) -> Set[int]:
         """
         Parse the delnodes.dmp database
-        Note: This is performed when a new NCBI class instance is constructed
 
         Returns
         -------
