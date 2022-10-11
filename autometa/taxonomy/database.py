@@ -14,45 +14,46 @@ logger = logging.getLogger(__name__)
 
 
 class TaxonomyDatabase(ABC):
-"""
-TaxonomyDatabase Abstract Base Class
 
-Abstract methods
+    """
+    TaxonomyDatabase Abstract Base Class
 
-1. parse_nodes(self)
-2. parse_names(self)
-3. parse_merged(self)
-4. parse_delnodes(self)
-5. convert_accessions_to_taxids(self)
+    Abstract methods
 
-e.g.
+    1. parse_nodes(self)
+    2. parse_names(self)
+    3. parse_merged(self)
+    4. parse_delnodes(self)
+    5. convert_accessions_to_taxids(self)
 
-class GTDB(TaxonomyDatabase):
-    def parse_nodes(self):
-        ...
-    def parse_nodes(self):
-        ...
-    def parse_merged(self):
-        ...
-    def parse_delnodes(self):
-        ...
-    def convert_accessions_to_taxids(self):
-        ...
+    e.g.
 
-Available methods (after aforementioned implementations):
+    class GTDB(TaxonomyDatabase):
+        def parse_nodes(self):
+            ...
+        def parse_nodes(self):
+            ...
+        def parse_merged(self):
+            ...
+        def parse_delnodes(self):
+            ...
+        def convert_accessions_to_taxids(self):
+            ...
 
-1. convert_taxid_dtype
-2. name
-3. rank
-4. parent
-5. lineage
-6. is_common_ancestor
-7. get_lineage_dataframe
+    Available methods (after aforementioned implementations):
 
-Available attributes:
+    1. convert_taxid_dtype
+    2. name
+    3. rank
+    4. parent
+    5. lineage
+    6. is_common_ancestor
+    7. get_lineage_dataframe
 
-CANONICAL_RANKS
-"""
+    Available attributes:
+
+    CANONICAL_RANKS
+    """
 
     CANONICAL_RANKS = [
         "species",
@@ -97,17 +98,26 @@ CANONICAL_RANKS
 
         """
 
-
     @abstractmethod
     def parse_merged(self) -> Dict[int, int]:
         """
         Parses merged.dmp such that merged `taxid`s may be updated with their up-to-date `taxid`s
+
+        Returns
+        -------
+        dict
+            {old_taxid: new_taxid, ...}
         """
 
     @abstractmethod
     def parse_delnodes(self) -> Dict[int, int]:
         """
         Parses delnodes.dmp such that deleted `taxid`s may be updated with their up-to-date `taxid`s
+
+        Returns
+        -------
+        set
+            {taxid, ...}
         """
 
     @abstractmethod
