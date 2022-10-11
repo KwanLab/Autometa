@@ -29,6 +29,12 @@ class TaxonomyDatabase(ABC):
     e.g.
 
     class GTDB(TaxonomyDatabase):
+        def __init__(self, ...):
+            self.nodes = self.parse_nodes()
+            self.names = self.parse_names()            
+            self.merged = self.parse_merged()
+            self.delnodes = self.parse_delnodes()
+            ...
         def parse_nodes(self):
             ...
         def parse_nodes(self):
@@ -37,7 +43,7 @@ class TaxonomyDatabase(ABC):
             ...
         def parse_delnodes(self):
             ...
-        def convert_accessions_to_taxids(self):
+        def convert_accessions_to_taxids(self, accessions):
             ...
 
     Available methods (after aforementioned implementations):
@@ -110,7 +116,7 @@ class TaxonomyDatabase(ABC):
         """
 
     @abstractmethod
-    def parse_delnodes(self) -> Dict[int, int]:
+    def parse_delnodes(self) -> Set[int]:
         """
         Parses delnodes.dmp such that deleted `taxid`s may be updated with their up-to-date `taxid`s
 
