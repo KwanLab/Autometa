@@ -27,6 +27,25 @@ from functools import wraps
 logger = logging.getLogger(__name__)
 
 
+def is_gz_file(filepath) -> bool:
+    """
+    Check if the given file is gzipped compressed or not.
+
+    Parameters
+    ----------
+    filepath : str
+        Filepath to check
+
+    Returns
+    -------
+    bool
+        True if file is gzipped else False
+    """
+    # https://stackoverflow.com/a/47080739
+    with open(filepath, "rb") as test_f:
+        return test_f.read(2) == b"\x1f\x8b"
+
+
 def unpickle(fpath: str) -> Any:
     """Load a serialized `fpath` from :func:`make_pickle`.
 

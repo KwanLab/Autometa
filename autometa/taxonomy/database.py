@@ -26,12 +26,6 @@ class TaxonomyDatabase(ABC):
         "root",
     ]
 
-    def __init__(
-        self,
-        nodes: Dict[str, int],
-    ) -> None:
-        self.nodes = nodes
-
     @abstractmethod
     def parse_nodes(self) -> Dict[int, Dict[str, Union[str, int]]]:
         """

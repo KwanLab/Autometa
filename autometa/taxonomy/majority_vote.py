@@ -82,7 +82,7 @@ def lowest_majority(rank_counts: Dict[str, Dict], taxa_db: TaxonomyDatabase) -> 
     rank_counts : dict
         {canonical_rank:{taxid:num_hits, ...}, rank2: {...}, ...}
     taxa_db : TaxonomyDatabase instance
-        NCBI or GTDB subclass object of autometa.taxonomy.database
+        NCBI or GTDB subclass object of autometa.taxonomy.database.TaxonomyDatabase
 
     Returns
     -------
@@ -264,7 +264,7 @@ def majority_vote(
     out : str
         Path to write assigned taxids.
     taxa_db : TaxonomyDatabase
-        Path to taxonomy database directory.
+        An instance of TaxonomyDatabase
     verbose : bool, optional
         Increase verbosity of logging stream
     orfs: str, optional

@@ -405,11 +405,11 @@ class Databases:
 
     def download_gtdb_files(self) -> None:
         proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
-        gtdb_taxdump_url = self.config.get("database_urls", "taxonkit_gtdb_taxdump")
+        gtdb_taxdump_url = self.config.get("database_urls", "gtdb_taxdmp")
 
         # User path:
         proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
-        gtdb_taxdump_filepath = self.config.get("gtdb", "taxonkit_gtdb_taxdump")
+        gtdb_taxdump_filepath = self.config.get("gtdb", "gtdb_taxdmp")
 
         urls = [proteins_aa_reps_url, gtdb_taxdump_url]
         filepaths = [proteins_aa_reps_filepath, gtdb_taxdump_filepath]
@@ -550,7 +550,7 @@ class Databases:
         ----------
         section : str, optional
             Section to check for missing database files (the default is None).
-            Choices include 'ncbi' and 'markers'.
+            Choices include 'ncbi', 'markers' and 'gtdb'.
 
         Returns
         -------
@@ -566,6 +566,7 @@ class Databases:
         dispatcher = {
             "ncbi": self.download_ncbi_files,
             "markers": self.download_markers,
+            "gtdb": self.download_gtdb_files,
         }
         if section and section not in dispatcher:
             raise ValueError(f"{section} does not match {dispatcher.keys()}")
@@ -699,7 +700,7 @@ class Databases:
 
         Raises
         -------
-        ValueError Provided `section` does not match 'ncbi' or 'markers'.
+        ValueError Provided `section` does not match 'ncbi', 'markers' or 'gtdb'.
             ConnectionError A connection issue occurred when connecting to NCBI
             or GitHub.
 
