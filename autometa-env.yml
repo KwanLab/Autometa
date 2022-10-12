@@ -12,7 +12,7 @@ dependencies:
   - gdown
   - hdbscan
   - hmmer
-  - joblib
+  - joblib==1.1.0 # See https://stackoverflow.com/a/73830525/12671809
   - numba>=0.47
   - numpy>=1.13
   - pandas>=1.1

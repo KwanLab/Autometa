@@ -550,7 +550,7 @@ class Databases:
         ----------
         section : str, optional
             Section to check for missing database files (the default is None).
-            Choices include 'ncbi', 'markers' and 'gtdb'.
+            Choices include 'ncbi', and 'markers'.
 
         Returns
         -------
@@ -566,7 +566,6 @@ class Databases:
         dispatcher = {
             "ncbi": self.download_ncbi_files,
             "markers": self.download_markers,
-            "gtdb": self.download_gtdb_files,
         }
         if section and section not in dispatcher:
             raise ValueError(f"{section} does not match {dispatcher.keys()}")
@@ -700,7 +699,7 @@ class Databases:
 
         Raises
         -------
-        ValueError Provided `section` does not match 'ncbi', 'markers' or 'gtdb'.
+        ValueError Provided `section` does not match 'ncbi', or 'markers'.
             ConnectionError A connection issue occurred when connecting to NCBI
             or GitHub.
 
@@ -805,6 +804,7 @@ def main():
     elif args.update_ncbi:
         section = "ncbi"
     elif args.update_gtdb:
+        dbs.download_gtdb_files()
         # Download, generate and format GTDB amino acid database
         gtdb_combined = create_gtdb_db(
             reps_faa=dbs.config.get("gtdb", "proteins_aa_reps"),
