@@ -79,7 +79,7 @@ You can either run the following script or manually download the respective data
 
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-The previous command will download the following GTDB databases and format the `gtdb_proteins_aa_reps.tar.gz` to be used by Autometa:
+The previous command will download the following GTDB databases and format the `gtdb_proteins_aa_reps.tar.gz` to generate `gtdb.dmnd` to be used by Autometa:
 
 - Amino acid sequences of representative genome
     - `gtdb_proteins_aa_reps.tar.gz <https://data.gtdb.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
@@ -91,7 +91,7 @@ Once unzipped `gtdb-taxdump.tar.gz` will have the taxdump files of all the respe
 
 All the taxonomy files for a specific taxonomy database should be in a single directory. You can now copy the taxdump files of the desired release version in the sample directory as `gtdb.dmnd`
 
-Alternatively if you have manually downloaded `gtdb_proteins_aa_reps.tar.gz` and `gtdb-taxdump.tar.gz` you can run the following command to format the `gtdb_proteins_aa_reps.tar.gz` file and make it ready for Autometa.
+Alternatively if you have manually downloaded `gtdb_proteins_aa_reps.tar.gz` and `gtdb-taxdump.tar.gz` you can run the following command to format the `gtdb_proteins_aa_reps.tar.gz` to generate `gtdb.dmnd` and make it ready for Autometa.
 
 .. code-block:: bash
 

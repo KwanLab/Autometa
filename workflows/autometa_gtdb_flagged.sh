@@ -368,18 +368,18 @@ kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
 
-    grep ">" ${outdir}/${simpleName}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " > ${outdir}/${simpleName}.${kingdom}.contigIDs
+    grep ">" ${outdir}/${simple_name}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.contigIDs
 
-    grep -f ${outdir}/${simpleName}.${kingdom}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simpleName}.${kingdom}.orfIds
+    grep -f ${outdir}/${simple_name}.${kingdom}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.orfIds
 
-    seqkit grep -f ${outdir}/${simpleName}.${kingdom}.orfIds $orfs -o ${outdir}/${simpleName}.${kingdom}.orfs.faa
+    seqkit grep -f ${outdir}/${simple_name}.${kingdom}.orfIds $orfs -o ${outdir}/${simple_name}.${kingdom}.orfs.faa
 
     #Step 5.2: Run blastp
     blast="${outdir}/${simple_name}.${kingdom}.blastp.gtdb.tsv" #Generate output file name
 
     set -x
     diamond blastp \
-        --query ${outdir}/${simpleName}.${kingdom}.orfs.faa \
+        --query ${outdir}/${simple_name}.${kingdom}.orfs.faa \
         --db "$gtdb/gtdb.dmnd" \
         --evalue 1e-5 \
         --max-target-seqs 200 \

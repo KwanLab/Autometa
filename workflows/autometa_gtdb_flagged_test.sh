@@ -19,6 +19,7 @@ usage()
    echo "-a     File path to your assembly file (include file name)"
    echo "-s     Simple name to prefix output files"
    echo "-n     Path to NCBI databases directory"
+   echo "-g     Path to GTDB databases directory"
    echo "-m     Path to marker files directory"
    echo "-l     Contig length cutoff in base pairs. (NOTE: Change this according to the metagenome assembly's N50)"
    echo "-v     Coverage calculation. Options are 'spades' or 'paired'. If you assembled your metagenome with spades, choose the spades option. If you used a different assembler, please use the 'paired' option for the coverage calculation. Paired reads used for assembly are required as input"
@@ -28,13 +29,14 @@ usage()
 }
 
 #Define flags
-while getopts "o:a:s:n:m:l:v:f:r:c:h" flag
+while getopts "o:a:s:n:g:m:l:v:f:r:c:h" flag
 do
     case "${flag}" in
         o) work_dir=${OPTARG};;
         a) assembly=${OPTARG};;
         s) simple_name=${OPTARG};;
         n) ncbi=${OPTARG};;
+        g) gtdb=${OPTARG};;
         m) marker_db=${OPTARG};;
         l) length_cutoff=${OPTARG};;
         v) coverage_method=${OPTARG};;
@@ -81,6 +83,11 @@ fi
 
 if [ -z $ncbi ]; then
     echo "Path to ncbi database not provided"
+    exit 1
+fi
+
+if [ -z $gtdb ]; then
+    echo "Path to gtdb database not provided"
     exit 1
 fi
 
@@ -151,6 +158,7 @@ echo "Contig length cutoff: ${length_cutoff}"
 echo "Coverage calculation method: ${coverage_method}"
 echo "CPUS to be used: ${cpus}"
 echo "Path to NCBI files: ${ncbi}"
+echo "Path to GTDB files: ${gtdb}"
 echo "Path to marker files: ${marker_db}"
 echo
 
@@ -163,7 +171,7 @@ fi
 # Default Autometa Parameters - If you don't know what you're doing, leave these alone!!
 kmer_size=5
 norm_method="am_clr" # choices: am_clr, clr, ilr
-pca_dimensions=50 # NOTE: must be greater than $embed_dimensions
+pca_dimensions=10 # NOTE: must be greater than $embed_dimensions
 embed_dimensions=2 # NOTE: must be less than $pca_dimensions
 embed_method="bhsne" # choices: bhsne, sksne, umap, densmap, trimap
 cluster_method="hdbscan" # choices: hdbscan, dbscan
@@ -183,13 +191,13 @@ autometa --version
 filtered_assembly="${outdir}/${simple_name}.filtered.fna"
 gc_content="${outdir}/${simple_name}.gc_content.tsv"
 
-set -x
-autometa-length-filter \
-    --assembly $assembly \
-    --cutoff $length_cutoff \
-    --output-fasta $filtered_assembly \
-    --output-gc-content $gc_content
-{ set +x; } 2>/dev/null
+# set -x
+# autometa-length-filter \
+#     --assembly $assembly \
+#     --cutoff $length_cutoff \
+#     --output-fasta $filtered_assembly \
+#     --output-gc-content $gc_content
+# { set +x; } 2>/dev/null
 
 #Step 2: Determine coverages from assembly read alignments
 coverages="${outdir}/${simple_name}.coverages.tsv"
@@ -250,13 +258,13 @@ orfs="${outdir}/${simple_name}.orfs.faa"
 orfs_nuc="${outdir}/${simple_name}.orfs.fna"
 
 #Get ORFs
-set -x
-autometa-orfs \
-    --assembly $filtered_assembly \
-    --output-nucls $orfs_nuc \
-    --output-prots $orfs \
-    --cpus $cpus
-{ set +x; } 2>/dev/null
+# set -x
+# autometa-orfs \
+#     --assembly $filtered_assembly \
+#     --output-nucls $orfs_nuc \
+#     --output-prots $orfs \
+#     --cpus $cpus
+# { set +x; } 2>/dev/null
 
 #Check if marker files are pressed, if not, press them
 echo "Checking if hmm files are pressed..."
@@ -281,40 +289,40 @@ fi
 
 
 # NOTE: We iterate through both sets of markers for binning both bacterial and archeal kingdoms
-kingdoms=(bacteria archaea)
-for kingdom in ${kingdoms[@]};do
-    # kingdom-specific output:
-    hmmscan="${outdir}/${simple_name}.${kingdom}.hmmscan.tsv"
-    markers="${outdir}/${simple_name}.${kingdom}.markers.tsv"
+# kingdoms=(bacteria archaea)
+# for kingdom in ${kingdoms[@]};do
+#     # kingdom-specific output:
+#     hmmscan="${outdir}/${simple_name}.${kingdom}.hmmscan.tsv"
+#     markers="${outdir}/${simple_name}.${kingdom}.markers.tsv"
 
-    # script:
-    set -x
-    autometa-markers \
-        --orfs $orfs \
-        --hmmscan $hmmscan \
-        --dbdir $marker_db \
-        --out $markers \
-        --kingdom $kingdom \
-        --parallel \
-        --cpus $cpus \
-        --seed $seed
-    { set +x; } 2>/dev/null
-done
+#     # script:
+#     set -x
+#     autometa-markers \
+#         --orfs $orfs \
+#         --hmmscan $hmmscan \
+#         --dbdir $marker_db \
+#         --out $markers \
+#         --kingdom $kingdom \
+#         --parallel \
+#         --cpus $cpus \
+#         --seed $seed
+#     { set +x; } 2>/dev/null
+# done
 
 # Step 4.1: Determine ORF lowest common ancestor (LCA) amongst top hits
 
 #Run blastp
 blast="${outdir}/${simple_name}.blastp.tsv" #Generate output file name
-set -x
-diamond blastp \
-    --query $orfs \
-    --db "$ncbi/nr.dmnd" \
-    --evalue 1e-5 \
-    --max-target-seqs 200 \
-    --threads $cpus \
-    --outfmt 6 \
-    --out $blast
-{ set +x; } 2>/dev/null
+# set -x
+# diamond blastp \
+#     --query $orfs \
+#     --db "$ncbi/nr.dmnd" \
+#     --evalue 1e-5 \
+#     --max-target-seqs 200 \
+#     --threads $cpus \
+#     --outfmt 6 \
+#     --out $blast
+# { set +x; } 2>/dev/null
 
 # output:
 lca="${outdir}/${simple_name}.orfs.lca.tsv"
@@ -322,42 +330,109 @@ sseqid2taxid="${outdir}/${simple_name}.orfs.sseqid2taxid.tsv"
 error_taxids="${outdir}/${simple_name}.orfs.errortaxids.tsv"
 
 # script:
-set -x
-autometa-taxonomy-lca \
-    --blast $blast \
-    --dbdir $ncbi \
-    --lca-output $lca \
-    --sseqid2taxid-output $sseqid2taxid \
-    --lca-error-taxids $error_taxids \
-    --dbtype ncbi
-{ set +x; } 2>/dev/null
+# set -x
+# autometa-taxonomy-lca \
+#     --blast $blast \
+#     --dbdir $ncbi \
+#     --lca-output $lca \
+#     --sseqid2taxid-output $sseqid2taxid \
+#     --lca-error-taxids $error_taxids \
+#     --dbtype ncbi
+# { set +x; } 2>/dev/null
 
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 
 votes="${outdir}/${simple_name}.taxids.tsv"
-set -x
-autometa-taxonomy-majority-vote \
-    --lca $lca \
-    --output $votes \
-    --dbdir $ncbi \
-    --dbtype ncbi
+# set -x
+# autometa-taxonomy-majority-vote \
+#     --lca $lca \
+#     --output $votes \
+#     --dbdir $ncbi \
+#     --dbtype ncbi
 
 # Step 4.3: Split assigned taxonomies into kingdoms
-autometa-taxonomy \
-    --votes $votes \
-    --output $outdir \
-    --prefix $simple_name \
-    --split-rank-and-write superkingdom \
-    --assembly $filtered_assembly \
-    --dbdir $ncbi \
-    --dbtype ncbi
-{ set +x; } 2>/dev/null
+# autometa-taxonomy \
+#     --votes $votes \
+#     --output $outdir \
+#     --prefix $simple_name \
+#     --split-rank-and-write superkingdom \
+#     --assembly $filtered_assembly \
+#     --dbdir $ncbi \
+#     --dbtype ncbi
+# { set +x; } 2>/dev/null
 
-# Step 5: Perform k-mer counting on respective kingdoms
-kingdoms=(bacteria archaea)
+# Run the taxonomy steps using GTDB database
+# Step 5.1: Extract bacterial ORFs and run GTDB
+
+kingdoms=(bacteria)
 
 for kingdom in ${kingdoms[@]};do
-    fasta="${outdir}/${simple_name}.${kingdom}.fna"
+
+    # grep ">" ${outdir}/${simple_name}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.contigIDs
+
+    # grep -f ${outdir}/${simple_name}.${kingdom}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.orfIds
+
+    # seqkit grep -f ${outdir}/${simple_name}.${kingdom}.orfIds $orfs -o ${outdir}/${simple_name}.${kingdom}.orfs.faa
+
+    #Step 5.2: Run blastp
+    # blast="${outdir}/${simple_name}.${kingdom}.blastp.gtdb.tsv" #Generate output file name
+
+    # set -x
+    # diamond blastp \
+    #     --query ${outdir}/${simple_name}.${kingdom}.orfs.faa \
+    #     --db "$gtdb/gtdb.dmnd" \
+    #     --evalue 1e-5 \
+    #     --max-target-seqs 200 \
+    #     --threads $cpus \
+    #     --outfmt 6 \
+    #     --out $blast
+    # { set +x; } 2>/dev/null
+
+    # output:
+    lca="${outdir}/${simple_name}.${kingdom}.orfs.lca.gtdb.tsv"
+    sseqid2taxid="${outdir}/${simple_name}.${kingdom}.orfs.sseqid2taxid.gtdb.tsv"
+    error_taxids="${outdir}/${simple_name}.${kingdom}.orfs.errortaxids.gtdb.tsv"
+
+    # script:
+    # set -x
+    # autometa-taxonomy-lca \
+    #     --blast $blast \
+    #     --dbdir $gtdb \
+    #     --lca-output $lca \
+    #     --sseqid2taxid-output $sseqid2taxid \
+    #     --lca-error-taxids $error_taxids \
+    #     --dbtype gtdb
+    # { set +x; } 2>/dev/null
+
+    # Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
+
+    votes="${outdir}/${simple_name}.${kingdom}.taxids.gtdb.tsv"
+    # set -x
+    # autometa-taxonomy-majority-vote \
+    #     --lca $lca \
+    #     --output $votes \
+    #     --dbdir $gtdb \
+    #     --dbtype gtdb
+
+    # Step 5.4: Split assigned taxonomies into kingdoms
+    # autometa-taxonomy \
+    #     --votes $votes \
+    #     --output "${outdir}/gtdb_taxa/${kingdom}" \
+    #     --prefix $simple_name \
+    #     --split-rank-and-write superkingdom \
+    #     --assembly $filtered_assembly \
+    #     --dbdir $gtdb \
+    #     --dbtype gtdb
+    # { set +x; } 2>/dev/null
+
+done
+
+
+# Step 6: Perform k-mer counting on respective kingdoms
+kingdoms=(bacteria)
+
+for kingdom in ${kingdoms[@]};do
+    fasta="${outdir}/gtdb_taxa/${kingdom}/${simple_name}.${kingdom}.fna"
 
     # kingdom-specific output:
     counts="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.tsv"
@@ -385,11 +460,11 @@ for kingdom in ${kingdoms[@]};do
     { set +x; } 2>/dev/null
 done
 
-# Step 6: Perform binning on each set of bacterial and archaeal contigs
+# Step 7: Perform binning on each set of bacterial and archaeal contigs
 
-taxonomy="${outdir}/${simple_name}.taxonomy.tsv"
+taxonomy="${outdir}/gtdb_taxa/${kingdom}/${simple_name}.taxonomy.tsv"
 
-kingdoms=(bacteria archaea)
+kingdoms=(bacteria)
 
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific input:
@@ -429,7 +504,7 @@ for kingdom in ${kingdoms[@]};do
     { set +x; } 2>/dev/null
 done
 
-# Step 7: Create binning summary files
+# Step 8: Create binning summary files
 
 kingdoms=(bacteria archaea)
 
@@ -454,10 +529,10 @@ for kingdom in ${kingdoms[@]};do
         --binning-main $binning_main \
         --markers $markers \
         --metagenome $filtered_assembly \
-        --dbdir $ncbi \
-        --dbtype ncbi \
         --output-stats $output_stats \
         --output-taxonomy $output_taxonomy \
-        --output-metabins $output_metabins
+        --output-metabins $output_metabins \
+        --dbdir $gtdb \
+        --dbtype gtdb
     { set +x; } 2>/dev/null
 done
