@@ -24,8 +24,9 @@ dependencies:
   - rsync
   - samtools>=1.11
   - scikit-bio
-  - scipy==1.8 #force scipy 1.8 until scikit-bio updates to 1.9, https://github.com/KwanLab/Autometa/issues/285
+  - scipy==1.8.1 #force scipy 1.8 until scikit-bio updates to 1.9, https://github.com/KwanLab/Autometa/issues/285
   - scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
+  - seqkit
   - tqdm
   - trimap
   - tsne

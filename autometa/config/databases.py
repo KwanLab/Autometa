@@ -404,15 +404,15 @@ class Databases:
             self.format_nr()
 
     def download_gtdb_files(self) -> None:
-        proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
         gtdb_taxdump_url = self.config.get("database_urls", "gtdb_taxdmp")
+        proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
 
         # User path:
-        proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
         gtdb_taxdump_filepath = self.config.get("gtdb", "gtdb_taxdmp")
+        proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
 
-        urls = [proteins_aa_reps_url, gtdb_taxdump_url]
-        filepaths = [proteins_aa_reps_filepath, gtdb_taxdump_filepath]
+        urls = [gtdb_taxdump_url, proteins_aa_reps_url]
+        filepaths = [gtdb_taxdump_filepath, proteins_aa_reps_filepath]
 
         logger.debug(f"starting GTDB databases download")
         for url, filepath in zip(urls, filepaths):
@@ -804,8 +804,12 @@ def main():
     elif args.update_ncbi:
         section = "ncbi"
     elif args.update_gtdb:
-        dbs.download_gtdb_files()
-        # Download, generate and format GTDB amino acid database
+        if not os.path.exists(
+            dbs.config.get("gtdb", "proteins_aa_reps")
+        ) and not os.path.exists(dbs.config.get("gtdb", "gtdb_taxdmp")):
+            logger.info(f"GTDB database downloading: ")
+            dbs.download_gtdb_files()
+        # Format GTDB amino acid database
         gtdb_combined = create_gtdb_db(
             reps_faa=dbs.config.get("gtdb", "proteins_aa_reps"),
             dbdir=dbs.config.get("databases", "gtdb"),
@@ -813,7 +817,7 @@ def main():
         diamond.makedatabase(
             fasta=gtdb_combined,
             database=gtdb_combined.replace(".faa", ".dmnd"),
-            cpus=args.cpus,
+            cpus=args.nproc,
         )
         sys.exit(0)
     else:
