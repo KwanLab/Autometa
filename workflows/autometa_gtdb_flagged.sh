@@ -368,71 +368,71 @@ kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
 
-    grep ">" ${outdir}/${simple_name}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.contigIDs
-
-    grep -f ${outdir}/${simple_name}.${kingdom}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simple_name}.${kingdom}.orfIds
-
-    seqkit grep -f ${outdir}/${simple_name}.${kingdom}.orfIds $orfs -o ${outdir}/${simple_name}.${kingdom}.orfs.faa
-
-    #Step 5.2: Run blastp
-    blast="${outdir}/${simple_name}.${kingdom}.blastp.gtdb.tsv" #Generate output file name
-
-    set -x
-    diamond blastp \
-        --query ${outdir}/${simple_name}.${kingdom}.orfs.faa \
-        --db "$gtdb/gtdb.dmnd" \
-        --evalue 1e-5 \
-        --max-target-seqs 200 \
-        --threads $cpus \
-        --outfmt 6 \
-        --out $blast
-    { set +x; } 2>/dev/null
-
-    # output:
-    lca="${outdir}/${simple_name}.${kingdom}.orfs.lca.gtdb.tsv"
-    sseqid2taxid="${outdir}/${simple_name}.${kingdom}.orfs.sseqid2taxid.gtdb.tsv"
-    error_taxids="${outdir}/${simple_name}.${kingdom}.orfs.errortaxids.gtdb.tsv"
-
-    # script:
-    set -x
-    autometa-taxonomy-lca \
-        --blast $blast \
-        --dbdir $gtdb \
-        --lca-output $lca \
-        --sseqid2taxid-output $sseqid2taxid \
-        --lca-error-taxids $error_taxids \
-        --dbtype gtdb
-    { set +x; } 2>/dev/null
-
-    # Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
-
-    votes="${outdir}/${simple_name}.${kingdom}.taxids.gtdb.tsv"
-    set -x
-    autometa-taxonomy-majority-vote \
-        --lca $lca \
-        --output $votes \
-        --dbdir $gtdb \
-        --dbtype gtdb
-
-    # Step 5.4: Split assigned taxonomies into kingdoms
-    autometa-taxonomy \
-        --votes $votes \
-        --output "${outdir}/gtdb_taxa/${kingdom}" \
-        --prefix $simple_name \
-        --split-rank-and-write superkingdom \
-        --assembly $filtered_assembly \
-        --dbdir $gtdb \
-        --dbtype gtdb
-    { set +x; } 2>/dev/null
-
+    grep ">" ${outdir}/${simple_name}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " >> ${outdir}/${simple_name}.contigIDs
 done
+
+grep -f ${outdir}/${simple_name}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simple_name}.orfIds
+
+seqkit grep -f ${outdir}/${simple_name}.orfIds $orfs -o ${outdir}/${simple_name}.orfs."gtdb".faa
+
+#Step 5.2: Run blastp
+blast="${outdir}/${simple_name}.blastp.gtdb.tsv" #Generate output file name
+
+set -x
+diamond blastp \
+    --query ${outdir}/${simple_name}.orfs."gtdb".faa \
+    --db "$gtdb/gtdb.dmnd" \
+    --evalue 1e-5 \
+    --max-target-seqs 200 \
+    --threads $cpus \
+    --outfmt 6 \
+    --out $blast
+{ set +x; } 2>/dev/null
+
+# output:
+lca="${outdir}/${simple_name}.orfs.lca.gtdb.tsv"
+sseqid2taxid="${outdir}/${simple_name}.orfs.sseqid2taxid.gtdb.tsv"
+error_taxids="${outdir}/${simple_name}.orfs.errortaxids.gtdb.tsv"
+
+# script:
+set -x
+autometa-taxonomy-lca \
+    --blast $blast \
+    --dbdir $gtdb \
+    --lca-output $lca \
+    --sseqid2taxid-output $sseqid2taxid \
+    --lca-error-taxids $error_taxids \
+    --dbtype gtdb
+{ set +x; } 2>/dev/null
+
+# Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
+
+votes="${outdir}/${simple_name}.taxids.gtdb.tsv"
+set -x
+autometa-taxonomy-majority-vote \
+    --lca $lca \
+    --output $votes \
+    --dbdir $gtdb \
+    --dbtype gtdb
+
+# Step 5.4: Split assigned taxonomies into kingdoms
+autometa-taxonomy \
+    --votes $votes \
+    --output "${outdir}/gtdb_taxa/" \
+    --prefix $simple_name \
+    --split-rank-and-write superkingdom \
+    --assembly $filtered_assembly \
+    --dbdir $gtdb \
+    --dbtype gtdb
+{ set +x; } 2>/dev/null
+
 
 
 # Step 6: Perform k-mer counting on respective kingdoms
 kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
-    fasta="${outdir}/gtdb_taxa/${kingdom}/${simple_name}.${kingdom}.fna"
+    fasta="${outdir}/gtdb_taxa/${simple_name}.${kingdom}.fna"
 
     # kingdom-specific output:
     counts="${outdir}/${simple_name}.${kingdom}.${kmer_size}mers.tsv"
@@ -462,7 +462,7 @@ done
 
 # Step 7: Perform binning on each set of bacterial and archaeal contigs
 
-taxonomy="${outdir}/gtdb_taxa/${kingdom}/${simple_name}.taxonomy.tsv"
+taxonomy="${outdir}/gtdb_taxa/${simple_name}.taxonomy.tsv"
 
 kingdoms=(bacteria archaea)
 

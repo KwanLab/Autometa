@@ -27,7 +27,7 @@
 assembly="Path to metagenome assembly fasta file"
 bam="Path to metagenome read alignments.bam"
 orfs="Path to orfs used as input to diamond blastp"
-blast="Path to diamond blastp results (outfmt 6)"
+blast="Path to diamond output file (outfmt 6). BlastP should be done against the NCBI `nr` database."
 ncbi="Path to NCBI databases directory" # should contain prot.accession2taxid.gz, names.dmp, nodes.dmp and merged.dmp
 gtdb="Path to GTDB databases directory"
 markers_dbdir="Path to autometa markers databases" # should contain marker hmms and cutoffs files (can be downloaded from Autometa repo under `Autometa/autometa/databases/markers`)
@@ -131,10 +131,10 @@ errorTaxids="${outdir}/${simpleName}.orfs.errortaxids.tsv"
 # script:
 autometa-taxonomy-lca \
     --blast $blast \
-    --dbdir $ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
     --lca-error-taxids $errorTaxids \
+    --dbdir $ncbi \
     --dbtype ncbi
 
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
@@ -176,62 +176,62 @@ autometa-taxonomy \
 # Run the taxonomy steps using GTDB database
 # Step 5.1: Extract bacterial ORFs and run GTDB
 
-kingdoms=(bacteria archaea)
 
 for kingdom in ${kingdoms[@]};do
 
-    grep ">" ${outdir}/${simpleName}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " > ${outdir}/${simpleName}.${kingdom}.contigIDs
-
-    grep -f ${outdir}/${simpleName}.${kingdom}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simpleName}.${kingdom}.orfIds
-
-    seqkit grep -f ${outdir}/${simpleName}.${kingdom}.orfIds $orfs -o ${outdir}/${simpleName}.${kingdom}.orfs.faa
-
-    #Step 5.2: Run blastp
-    blast="${outdir}/${simpleName}.${kingdom}.blastp.gtdb.tsv" #Generate output file name
-
-    diamond blastp \
-        --query ${outdir}/${simpleName}.${kingdom}.orfs.faa \
-        --db "$gtdb/gtdb.dmnd" \
-        --evalue 1e-5 \
-        --max-target-seqs 200 \
-        --threads $cpus \
-        --outfmt 6 \
-        --out $blast
-
-    # output:
-    lca="${outdir}/${simpleName}.${kingdom}.orfs.lca.gtdb.tsv"
-    sseqid2taxid="${outdir}/${simpleName}.${kingdom}.orfs.sseqid2taxid.gtdb.tsv"
-    error_taxids="${outdir}/${simpleName}.${kingdom}.orfs.errortaxids.gtdb.tsv"
-
-    # script:
-    autometa-taxonomy-lca \
-        --blast $blast \
-        --dbdir $gtdb \
-        --lca-output $lca \
-        --sseqid2taxid-output $sseqid2taxid \
-        --lca-error-taxids $error_taxids \
-        --dbtype gtdb
-
-    # Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
-
-    votes="${outdir}/${simpleName}.${kingdom}.taxids.gtdb.tsv"
-    autometa-taxonomy-majority-vote \
-        --lca $lca \
-        --output $votes \
-        --dbdir $gtdb \
-        --dbtype gtdb
-
-    # Step 5.4: Split assigned taxonomies into kingdoms
-    autometa-taxonomy \
-        --votes $votes \
-        --output "${outdir}/gtdb_taxa/${kingdom}" \
-        --prefix $simpleName \
-        --split-rank-and-write superkingdom \
-        --assembly $filtered_assembly \
-        --dbdir $gtdb \
-        --dbtype gtdb
-
+    grep ">" ${outdir}/${simpleName}.${kingdom}.fna | sed 's/^>//' | sed 's/$/_/' | cut -f 1 -d " " >> ${outdir}/${simpleName}.contigIDs
 done
+
+grep -f ${outdir}/${simpleName}.contigIDs $orfs |  sed 's/^>//' | cut -f 1 -d " " > ${outdir}/${simpleName}.orfIds
+
+seqkit grep -f ${outdir}/${simpleName}.orfIds $orfs -o ${outdir}/${simpleName}.orfs."gtdb".faa
+
+#Step 5.2: Run blastp
+blast="${outdir}/${simpleName}.blastp.gtdb.tsv" #Generate output file name
+
+diamond blastp \
+    --query ${outdir}/${simpleName}.orfs."gtdb".faa \
+    --db "$gtdb/gtdb.dmnd" \
+    --evalue 1e-5 \
+    --max-target-seqs 200 \
+    --threads $cpus \
+    --outfmt 6 \
+    --out $blast
+
+# output:
+lca="${outdir}/${simpleName}.orfs.lca.gtdb.tsv"
+sseqid2taxid="${outdir}/${simpleName}.orfs.sseqid2taxid.gtdb.tsv"
+error_taxids="${outdir}/${simpleName}.orfs.errortaxids.gtdb.tsv"
+
+# script:
+autometa-taxonomy-lca \
+    --blast $blast \
+    --dbdir $gtdb \
+    --lca-output $lca \
+    --sseqid2taxid-output $sseqid2taxid \
+    --lca-error-taxids $error_taxids \
+    --dbtype gtdb
+
+# Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
+
+votes="${outdir}/${simpleName}.taxids.gtdb.tsv"
+autometa-taxonomy-majority-vote \
+    --lca $lca \
+    --output $votes \
+    --dbdir $gtdb \
+    --dbtype gtdb
+
+# Step 5.4: Split assigned taxonomies into kingdoms
+autometa-taxonomy \
+    --votes $votes \
+    --output "${outdir}/gtdb_taxa/" \
+    --prefix $simpleName \
+    --split-rank-and-write superkingdom \
+    --assembly $filtered_assembly \
+    --dbdir $gtdb \
+    --dbtype gtdb
+
+
 
 
 # Step 6: Perform k-mer counting on respective kingdoms
@@ -249,7 +249,7 @@ kingdoms=(bacteria archaea)
 for kingdom in ${kingdoms[@]};do
     # kingdom-specific input:
     # NOTE: $fasta --> Generated by step 4.3
-    fasta="${outdir}/gtdb_taxa/${kingdom}/${simpleName}.${kingdom}.fna"
+    fasta="${outdir}/gtdb_taxa/${simpleName}.${kingdom}.fna"
     if [ ! -f $fasta ]
     then
         echo "${fasta} does not exist, skipping..."
@@ -272,7 +272,7 @@ done
 # input:
 # $cpus --> User input
 # $seed --> User input
-taxonomy="${outdir}/gtdb_taxa/${kingdom}/${simpleName}.taxonomy.tsv" # Generated by step 5.4
+taxonomy="${outdir}/gtdb_taxa/${simpleName}.taxonomy.tsv" # Generated by step 5.4
 # $gc_content --> Generated by step 1
 
 kingdoms=(bacteria archaea)
