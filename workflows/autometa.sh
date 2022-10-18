@@ -44,6 +44,12 @@ seed=42
 # using the kingdom-specific ORFs retrieved from the NCBI taxon-assignment sub-workflow.
 taxa_routine="ncbi" # Choices are "ncbi" or "ncbi_gtdb"
 
+if [[ $taxa_routine != "ncbi" ]] && [[ $taxa_routine != "ncbi_gtdb" ]]
+then
+    echo "ERROR: Invalid Taxonomic routine value. Please chose between ncbi or ncbi_gtdb. Current selection: $taxa_routine"
+    exit 1
+fi
+
 # Step 0: Do some Path handling with the provided `assembly` filepath
 simpleName="TemplateAssemblyName"
 outdir="AutometaOutdir"
@@ -52,6 +58,7 @@ then mkdir -p $outdir
 fi
 
 ######### BEGIN #########
+
 
 # Step 00: Report autometa version
 autometa --version
