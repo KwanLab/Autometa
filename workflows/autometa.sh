@@ -128,10 +128,10 @@ errorTaxids="${outdir}/${simpleName}.orfs.errortaxids.tsv"
 set -x
 autometa-taxonomy-lca \
     --blast $blast \
-    --dbdir $ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
     --lca-error-taxids $errorTaxids \
+    --dbdir $ncbi \
     --dbtype ncbi
 { set +x; } 2>/dev/null
 
