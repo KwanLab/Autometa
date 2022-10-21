@@ -38,7 +38,7 @@ kmer_size=5
 norm_method="am_clr" # choices: am_clr, clr, ilr
 pca_dimensions=50 # NOTE: must be greater than $embed_dimensions
 embed_dimensions=2 # NOTE: must be less than $pca_dimensions
-embed_method="umap" # choices: bhsne, sksne, umap, densne, trimap
+embed_method="umap" # choices: bhsne, sksne, umap, densmap, trimap
 # Binning clustering method
 clustering_method="hdbscan" # choices: hdbscan, dbscan
 # Binning metrics cutoffs
@@ -131,10 +131,10 @@ errorTaxids="${outdir}/${simpleName}.orfs.errortaxids.tsv"
 autometa-taxonomy-lca \
     --blast $blast \
     --dbdir $ncbi \
+    --dbtype ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
-    --lca-error-taxids $errorTaxids \
-    --dbtype ncbi
+    --lca-error-taxids $errorTaxids
 
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 
@@ -206,10 +206,10 @@ for kingdom in ${kingdoms[@]};do
     autometa-taxonomy-lca \
         --blast $blast \
         --dbdir $gtdb \
+        --dbtype gtdb \
         --lca-output $lca \
         --sseqid2taxid-output $sseqid2taxid \
-        --lca-error-taxids $error_taxids \
-        --dbtype gtdb
+        --lca-error-taxids $error_taxids
 
     # Step 5.3: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
 

@@ -326,10 +326,10 @@ set -x
 autometa-taxonomy-lca \
     --blast $blast \
     --dbdir $ncbi \
+    --dbtype ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
-    --lca-error-taxids $error_taxids \
-    --dbtype ncbi
+    --lca-error-taxids $error_taxids
 { set +x; } 2>/dev/null
 
 # Step 4.2: Perform Modified Majority vote of ORF LCAs for all contigs that returned hits in blast search
