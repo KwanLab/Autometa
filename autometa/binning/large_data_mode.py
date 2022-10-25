@@ -309,7 +309,12 @@ def cluster_by_taxon_partitioning(
         No marker information is available for contigs to be binned.
     FileNotFoundError
         Provided `binning_checkpoints_fpath` does not exist
+    TableFormatError
+        No marker information is availble for contigs to be binned.
     """
+    if binning_checkpoints_fpath and not os.path.exists(binning_checkpoints_fpath):
+        raise FileNotFoundError(binning_checkpoints_fpath)
+
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         canonical_ranks = [
@@ -330,15 +335,17 @@ def cluster_by_taxon_partitioning(
     starting_rank_name_txt = None
     # Retrieve appropriate starting canonical rank and rank_name_txt from cached binning checkpoints if cache was provided
     if cache:
-        if binning_checkpoints_fpath and not os.path.exists(binning_checkpoints_fpath):
-            raise FileNotFoundError(binning_checkpoints_fpath)
+        if not os.path.exists(cache):
+            os.makedirs(os.path.realpath(cache), exist_ok=True)
+            logger.debug(f"Created cache dir: {cache}")
+        if not os.path.isdir(cache):
+            raise NotADirectoryError(cache)
         if not binning_checkpoints_fpath:
             binning_checkpoints_fpath = os.path.join(
                 cache, "binning_checkpoints.tsv.gz"
             )
-        if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(
-            binning_checkpoints_fpath
-        ):
+    if binning_checkpoints_fpath:
+        if os.path.getsize(binning_checkpoints_fpath):
             checkpoint_info = get_checkpoint_info(binning_checkpoints_fpath)
             binning_checkpoints = checkpoint_info["binning_checkpoints"]
             starting_rank = checkpoint_info["starting_rank"]
@@ -398,7 +405,7 @@ def cluster_by_taxon_partitioning(
             # Create canonical rank cache outdir if it does not exist
             rank_cache_outdir = os.path.join(cache, canonical_rank)
             if embedding_cache_fpath and not os.path.isdir(rank_cache_outdir):
-                os.makedirs(rank_cache_outdir)
+                os.makedirs(rank_cache_outdir, exist_ok=True)
             rank_embedding = get_kmer_embedding(
                 rank_counts,
                 cache_fpath=embedding_cache_fpath,
@@ -550,7 +557,7 @@ def cluster_by_taxon_partitioning(
             num_clusters += clustered.cluster.nunique()
             clusters.append(clustered)
             # Cache binning at rank_name_txt stage (rank-name-txt checkpointing)
-            if cache:
+            if binning_checkpoints_fpath:
                 binning_checkpoints = checkpoint(
                     checkpoints_df=binning_checkpoints,
                     clustered=clustered,
