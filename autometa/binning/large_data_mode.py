@@ -306,7 +306,7 @@ def cluster_by_taxon_partitioning(
     Raises
     -------
     TableFormatError
-        No marker information is availble for contigs to be binned.
+        No marker information is available for contigs to be binned.
     FileNotFoundError
         Provided `binning_checkpoints_fpath` does not exist
     """
