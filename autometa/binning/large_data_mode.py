@@ -345,7 +345,7 @@ def cluster_by_taxon_partitioning(
                 cache, "binning_checkpoints.tsv.gz"
             )
     if binning_checkpoints_fpath:
-        if os.path.getsize(binning_checkpoints_fpath):
+        if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(binning_checkpoints_fpath):
             checkpoint_info = get_checkpoint_info(binning_checkpoints_fpath)
             binning_checkpoints = checkpoint_info["binning_checkpoints"]
             starting_rank = checkpoint_info["starting_rank"]
