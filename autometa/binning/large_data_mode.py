@@ -403,7 +403,7 @@ def cluster_by_taxon_partitioning(
                 else None
             )
             # Create canonical rank cache outdir if it does not exist
-            rank_cache_outdir = os.path.join(cache, canonical_rank)
+            rank_cache_outdir = os.path.join(cache, canonical_rank) if cache else None
             if embedding_cache_fpath and not os.path.isdir(rank_cache_outdir):
                 os.makedirs(rank_cache_outdir, exist_ok=True)
             rank_embedding = get_kmer_embedding(
