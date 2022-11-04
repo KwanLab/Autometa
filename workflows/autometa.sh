@@ -204,13 +204,13 @@ autometa-taxonomy \
 # contig_ids --> text file containing metagenome contig IDs classified within NCBI bacteria and archaea
 # orf_ids --> text file containing contig ORF IDs classified within NCBI bacteria and archaea
 # kingdom_orfs --> fasta file containing metagenome ORFs classified within NCBI bacteria or archaea
-# gtdb_orfs --> metagenome orfs classified within NCBI bacteria *and* archaea
+# gtdb_input_orfs --> metagenome orfs classified within NCBI bacteria *and* archaea
 
 if [[ "$taxa_routine" == "ncbi_gtdb" ]]
 then
     echo "Running GTDB taxon assignment step."
     # output
-    gtdb_orfs="${outdir}/${prefix}.orfs.faa"
+    gtdb_input_orfs="${outdir}/${prefix}.orfs.faa"
     
 
     for kingdom in ${kingdoms[@]};do
@@ -241,7 +241,7 @@ then
             --out-file $kingdom_orfs \
             $orfs
         # Concatenate kingdom ORFs to single file for GTDB blastp
-        cat $kingdom_orfs >> $gtdb_orfs
+        cat $kingdom_orfs >> $gtdb_input_orfs
         { set +x; } 2>/dev/null
     done
     dbtype="gtdb"
@@ -249,7 +249,7 @@ then
     
     # Step 5.2: Run blastp
     # input:
-    # $gtdb_orfs --> Generated from step 5.1
+    # $gtdb_input_orfs --> Generated from step 5.1
     gtdb_dmnd_db="${gtdb}/gtdb.dmnd" # generated using autometa-setup-gtdb (Must be performed prior to using this script)
     # output
     blast="${outdir}/${prefix}.blastp.tsv"
@@ -257,7 +257,7 @@ then
     # script
     set -x
     diamond blastp \
-        --query $gtdb_orfs \
+        --query $gtdb_input_orfs \
         --db $gtdb_dmnd_db \
         --evalue 1e-5 \
         --max-target-seqs 200 \
@@ -270,8 +270,6 @@ then
     # input:
     # $blast --> Generated from step 5.2
     # $gtdb --> User Input
-    # $dbtype --> Updated according to $taxa_routine
-    dbtype="gtdb"
 
     # output:
     lca="${outdir}/${prefix}.orfs.lca.tsv"
