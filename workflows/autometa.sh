@@ -314,9 +314,9 @@ then
 
     # output:
     # Will write recovered superkingdoms to $outdir
-    # e.g. ${outdir}/${prefix}.gtdb.bacteria.fna
-    # e.g. ${outdir}/${prefix}.gtdb.archaea.fna
-    # e.g. ${outdir}/${prefix}.gtdb.taxonomy.tsv
+    # e.g. ${outdir}/${prefix}.bacteria.fna
+    # e.g. ${outdir}/${prefix}.archaea.fna
+    # e.g. ${outdir}/${prefix}.taxonomy.tsv
 
     # script:
     set -x
