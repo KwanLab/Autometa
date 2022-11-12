@@ -211,7 +211,7 @@ autometa-taxonomy \
 # $orfs --> User Input
 
 # output:
-# contig_ids --> text file containing metagenome contig IDs classified within NCBI bacteria and archaea
+# orf_prefixes --> text file containing metagenome contig IDs classified within NCBI bacteria and archaea
 # orf_ids --> text file containing contig ORF IDs classified within NCBI bacteria and archaea
 # kingdom_orfs --> fasta file containing metagenome ORFs classified within NCBI bacteria or archaea
 # gtdb_input_orfs --> metagenome orfs classified within NCBI bacteria *and* archaea
@@ -227,7 +227,7 @@ then
 
         kingdom_fasta="${outdir}/${prefix}.${kingdom}.fna"
         
-        contig_ids="${outdir}/${prefix}.${kingdom}.contigIDs.txt"
+        orf_prefixes="${outdir}/${prefix}.${kingdom}.contigIDs.txt"
         orf_ids="${outdir}/${prefix}.${kingdom}.orfIDs.txt"
         kingdom_orfs="${outdir}/${prefix}.${kingdom}.orfs.faa"
 
@@ -242,9 +242,9 @@ then
         grep ">" $kingdom_fasta | \
             sed 's/^>//' | \
             sed 's/$/_/' | \
-            cut -f1 -d" " > $contig_ids
+            cut -f1 -d" " > $orf_prefixes
         # Retrieve ORF IDs from contig IDs
-        grep -f $contig_ids $orfs | sed 's/^>//' | cut -f1 -d" " > $orf_ids
+        grep -f $orf_prefixes $orfs | sed 's/^>//' | cut -f1 -d" " > $orf_ids
         # Retrieve ORF seqs from ORF IDs
         seqkit grep \
             --pattern-file $orf_ids \
@@ -260,7 +260,7 @@ then
     # Step 5.2: Run blastp
     # input:
     # $gtdb_input_orfs --> Generated from step 5.1
-    gtdb_dmnd_db="${gtdb}/gtdb.dmnd" # generated using autometa-setup-gtdb (Must be performed prior to using this script)
+    gtdb_dmnd_db=$(find $gtdb -name "gtdb.dmnd") # generated using autometa-setup-gtdb (Must be performed prior to using this script)
     # output
     blast="${outdir}/${prefix}.blastp.tsv"
 
