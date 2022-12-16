@@ -281,7 +281,6 @@ then
     # $blast --> Generated from step 5.2
     # $gtdb --> User Input
     # $dbtype --> Updated according to $taxa_routine
-    dbtype="gtdb"
 
     # output:
     lca="${outdir}/${prefix}.orfs.lca.tsv"
@@ -510,7 +509,8 @@ done
 #     fi
 
 #     # NOTE: autometa-binning-summary writes out all bins with the <cluster>.fna extension
-#     # Unclustered sequences are written to one file with the .fasta extension. e.g. outdir/unclustered.fasta
+#     # Unclustered sequences are written to one file with the .fasta extension.
+#     # e.g. ${outdir}/${prefix}_${kingdom}_metabins/unclustered.fasta
 
 #     # First run `gtdbtk check_install` to ensure the following command will run
 #     gtdbtk classify_wf \
