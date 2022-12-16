@@ -72,7 +72,7 @@ class Databases:
     """
 
     SECTIONS = {
-        "ncbi": ["nodes", "names", "merged", "accession2taxid", "nr"],
+        "ncbi": ["nodes", "names", "merged", "delnodes", "accession2taxid", "nr"],
         "markers": [
             "bacteria_single_copy",
             "bacteria_single_copy_cutoffs",
@@ -299,7 +299,7 @@ class Databases:
         into ncbi databases directory and update user config with extracted
         paths.
 
-        This only extracts nodes.dmp, names.dmp and merged.dmp from
+        This only extracts nodes.dmp, names.dmp, merged.dmp and delnodes.dmp from
         taxdump.tar.gz if the files do not already exist. If `update`
         was originally supplied as `True` to the Databases instance, then the
         previous files will be replaced by the new taxdump files.
@@ -310,8 +310,7 @@ class Databases:
         Returns
         -------
         NoneType
-            Will update `self.config` section `ncbi` with options 'nodes',
-            'names','merged'
+            Will update `self.config` section `ncbi` with options 'nodes', 'names', 'merged', 'delnodes'
 
         """
         taxdump_fpath = self.config.get("ncbi", "taxdump")
@@ -319,6 +318,7 @@ class Databases:
             ("nodes", "nodes.dmp"),
             ("names", "names.dmp"),
             ("merged", "merged.dmp"),
+            ("delnodes", "delnodes.dmp"),
         ]
         for option, fname in taxdump_files:
             outfpath = os.path.join(self.ncbi_dir, fname)
@@ -362,7 +362,7 @@ class Databases:
         options = set(options)
         # If any of the taxdump.tar.gz files are missing,
         # we need to check that taxdump tarball is available to extract them (see self.extract_taxdump).
-        for taxdump_option in {"nodes", "names", "merged"}:
+        for taxdump_option in {"nodes", "names", "merged", "delnodes"}:
             if taxdump_option in options:
                 options.add("taxdump")
                 options.discard(taxdump_option)
@@ -604,7 +604,7 @@ class Databases:
                     # Skip user added options not required by Autometa
                     continue
                 # nodes.dmp, names.dmp and merged.dmp are all in taxdump.tar.gz
-                option = "taxdump" if option in {"nodes", "names", "merged"} else option
+                option = "taxdump" if option in {"nodes", "names", "merged", "delnodes"} else option
                 fpath = self.config.get(section, option)
                 fpath_md5 = f"{fpath}.md5"
                 # We can not checksum a file that does not exist.
