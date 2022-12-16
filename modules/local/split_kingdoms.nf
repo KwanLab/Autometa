@@ -36,7 +36,8 @@ process SPLIT_KINGDOMS {
             --output . \\
             --split-rank-and-write superkingdom \\
             --assembly "${assembly}" \\
-            --ncbi "${ncbi_tax_dir}"
+            --dbdir "${ncbi_tax_dir}" \\
+            --dbtype ncbi
 
         autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """
