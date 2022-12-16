@@ -12,7 +12,9 @@ import logging
 import os
 import string
 import sys
-from typing import Dict, Iterable, List, Set
+
+from typing import Dict, Set, Tuple
+from itertools import chain
 
 import pandas as pd
 
@@ -21,6 +23,7 @@ from tqdm import tqdm
 from autometa.common.utilities import file_length
 from autometa.common.exceptions import DatabaseOutOfSyncError
 from autometa.config.utilities import DEFAULT_CONFIG
+from autometa.taxonomy.database import TaxonomyDatabase
 
 
 logger = logging.getLogger(__name__)
@@ -30,43 +33,32 @@ NCBI_DIR = DEFAULT_CONFIG.get("databases", "ncbi")
 NCBI_DIR = NCBI_DIR if not "None" in NCBI_DIR else NCBI_DIR.replace("None", ".")
 
 
-class NCBI:
+class NCBI(TaxonomyDatabase):
     """Taxonomy utilities for NCBI databases."""
 
-    CANONICAL_RANKS = [
-        "species",
-        "genus",
-        "family",
-        "order",
-        "class",
-        "phylum",
-        "superkingdom",
-        "root",
-    ]
-
-    def __init__(self, dirpath, verbose=False):
+    def __init__(self, dbdir, verbose=False):
         """
         Instantiates the NCBI class
 
         Parameters
         ----------
 
-        dirpath : str
+        dbdir : str
             Path to the database directory
 
         verbose : bool, optional
             log progress to terminal, by default False
 
         """
-        self.dirpath = dirpath
+        self.dbdir = dbdir
         self.verbose = verbose
         self.disable = not self.verbose
-        self.names_fpath = os.path.join(self.dirpath, "names.dmp")
-        self.nodes_fpath = os.path.join(self.dirpath, "nodes.dmp")
-        self.merged_fpath = os.path.join(self.dirpath, "merged.dmp")
-        self.delnodes_fpath = os.path.join(self.dirpath, "delnodes.dmp")
+        self.names_fpath = os.path.join(self.dbdir, "names.dmp")
+        self.nodes_fpath = os.path.join(self.dbdir, "nodes.dmp")
+        self.merged_fpath = os.path.join(self.dbdir, "merged.dmp")
+        self.delnodes_fpath = os.path.join(self.dbdir, "delnodes.dmp")
         # Set prot.accession2taxid filepath
-        self.accession2taxid_fpath = os.path.join(self.dirpath, "prot.accession2taxid")
+        self.accession2taxid_fpath = os.path.join(self.dbdir, "prot.accession2taxid")
         acc2taxid_gz = ".".join([self.accession2taxid_fpath, "gz"])
         if not os.path.exists(self.accession2taxid_fpath) and os.path.exists(
             acc2taxid_gz
@@ -74,7 +66,7 @@ class NCBI:
             self.accession2taxid_fpath = acc2taxid_gz
         # Set prot.accession2taxid.FULL.gz filepath
         self.accession2taxidfull_fpath = os.path.join(
-            self.dirpath, "prot.accession2taxid.FULL"
+            self.dbdir, "prot.accession2taxid.FULL"
         )
         acc2taxid_gz = ".".join([self.accession2taxidfull_fpath, "gz"])
         if not os.path.exists(self.accession2taxidfull_fpath) and os.path.exists(
@@ -83,7 +75,7 @@ class NCBI:
             self.accession2taxidfull_fpath = acc2taxid_gz
         # Set dead_prot.accession2taxid filepath
         self.dead_accession2taxid_fpath = os.path.join(
-            self.dirpath, "dead_prot.accession2taxid"
+            self.dbdir, "dead_prot.accession2taxid"
         )
         acc2taxid_gz = ".".join([self.dead_accession2taxid_fpath, "gz"])
         if not os.path.exists(self.dead_accession2taxid_fpath) and os.path.exists(
@@ -91,10 +83,10 @@ class NCBI:
         ):
             self.dead_accession2taxid_fpath = acc2taxid_gz
         # Check formatting for nr database
-        self.nr_fpath = os.path.join(self.dirpath, "nr.gz")
+        self.nr_fpath = os.path.join(self.dbdir, "nr.gz")
         nr_bname = os.path.splitext(os.path.basename(self.nr_fpath))[0]
         nr_dmnd_fname = ".".join([nr_bname, "dmnd"])
-        nr_dmnd_fpath = os.path.join(self.dirpath, nr_dmnd_fname)
+        nr_dmnd_fpath = os.path.join(self.dbdir, nr_dmnd_fname)
         if os.path.exists(nr_dmnd_fpath):
             self.nr_fpath = nr_dmnd_fpath
         if "dmnd" not in os.path.basename(self.nr_fpath):
@@ -129,186 +121,7 @@ class NCBI:
             Directory path of the class object
         """
         # Perhaps should place summary here of files that do or do not exist?
-        return self.dirpath
-
-    def name(self, taxid: int, rank: str = None) -> str:
-        """
-        Parses through the names.dmp in search of the given `taxid` and returns its name. If the `taxid` is
-        deprecated, suppressed, withdrawn from NCBI (basically old) the updated name will be retrieved
-
-        Parameters
-        ----------
-        taxid : int
-            `taxid` whose name is being returned
-        rank : str, optional
-            If  provided, will return `taxid` name at `rank`, by default None
-            Must be a canonical rank, choices: species, genus, family, order, class, phylum, superkingdom
-            Eg. self.name(562, 'genus') would return 'Escherichia', where 562 is the taxid for Escherichia coli
-
-        Returns
-        -------
-        str
-            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
-
-        Raises
-        ------
-        DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
-        """
-        try:
-            taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError as err:
-            logger.warning(err)
-            taxid = 0
-        if not rank:
-            return self.names.get(taxid, "unclassified")
-        if rank not in set(NCBI.CANONICAL_RANKS):
-            logger.warning(f"{rank} not in canonical ranks!")
-            return "unclassified"
-        ancestor_taxid = taxid
-        while ancestor_taxid != 1:
-            ancestor_rank = self.rank(ancestor_taxid)
-            if ancestor_rank == rank:
-                return self.names.get(ancestor_taxid, "unclassified")
-            ancestor_taxid = self.parent(ancestor_taxid)
-        # At this point we have not encountered a name for the taxid rank
-        # so we will place this as unclassified.
-        return "unclassified"
-
-    def lineage(self, taxid: int, canonical: bool = True) -> List[Dict]:
-        """
-        Returns the lineage of `taxids` encountered when traversing to root
-
-        Parameters
-        ----------
-        taxid : int
-            `taxid` in nodes.dmp, whose lineage is being returned
-        canonical : bool, optional
-            Lineage includes both canonical and non-canonical ranks when False, and only the canonical ranks when True
-            Canonical ranks include : species, genus , family, order, class, phylum, superkingdom, root
-
-        Returns
-        -------
-        ordered list of dicts
-            [{'taxid':taxid, 'rank':rank,'name':name}, ...]
-        """
-        lineage = []
-        while taxid != 1:
-            if canonical and self.rank(taxid) not in NCBI.CANONICAL_RANKS:
-                taxid = self.parent(taxid)
-                continue
-            lineage.append(
-                {"taxid": taxid, "name": self.name(taxid), "rank": self.rank(taxid)}
-            )
-            taxid = self.parent(taxid)
-        return lineage
-
-    def get_lineage_dataframe(
-        self, taxids: Iterable, fillna: bool = True
-    ) -> pd.DataFrame:
-        """
-        Given an iterable of taxids generate a pandas DataFrame of their canonical
-        lineages
-
-        Parameters
-        ----------
-        taxids : iterable
-            `taxids` whose lineage dataframe is being returned
-        fillna : bool, optional
-            Whether to fill the empty cells  with 'unclassified' or not, default True
-
-        Returns
-        -------
-        pd.DataFrame
-            index = taxid
-            columns = [superkingdom,phylum,class,order,family,genus,species]
-
-        Example
-        -------
-
-        If you would like to merge the returned DataFrame ('this_df') with another
-        DataFrame ('your_df'). Let's say where you retrieved your taxids:
-
-        .. code-block:: python
-
-            merged_df = pd.merge(
-                left=your_df,
-                right=this_df,
-                how='left',
-                left_on=<taxid_column>,
-                right_index=True)
-        """
-        canonical_ranks = [
-            rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"
-        ]
-        taxids = list(set(taxids))
-        ranked_taxids = {}
-        for rank in canonical_ranks:
-            for taxid in taxids:
-                name = self.name(taxid, rank=rank)
-                if taxid not in ranked_taxids:
-                    ranked_taxids.update({taxid: {rank: name}})
-                else:
-                    ranked_taxids[taxid].update({rank: name})
-        df = pd.DataFrame(ranked_taxids).transpose()
-        df.index.name = "taxid"
-        if fillna:
-            df.fillna(value="unclassified", inplace=True)
-        return df
-
-    def rank(self, taxid: int) -> str:
-        """
-        Return the respective rank of provided `taxid`. If the `taxid` is deprecated, suppressed,
-        withdrawn from NCBI (basically old) the updated rank will be retrieved
-
-        Parameters
-        ----------
-        taxid : int
-            `taxid` to retrieve rank from nodes.dmp
-
-        Returns
-        -------
-        str
-            rank name if taxid is found in nodes.dmp else "unclassified"
-
-        Raises
-        ------
-        DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
-        """
-        try:
-            taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError as err:
-            logger.warning(err)
-            taxid = 0
-        return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
-
-    def parent(self, taxid: int) -> int:
-        """
-        Retrieve the parent taxid of provided `taxid`. If the `taxid` is deprecated, suppressed,
-        withdrawn from NCBI (basically old) the updated parent will be retrieved
-
-        Parameters
-        ----------
-        taxid : int
-           child taxid to retrieve parent
-
-        Returns
-        -------
-        int
-            Parent taxid if found in nodes.dmp otherwise 1
-
-        Raises
-        ------
-        DatabaseOutOfSyncError
-            NCBI databases nodes.dmp, names.dmp and merged.dmp are out of sync with each other
-        """
-        try:
-            taxid = self.convert_taxid_dtype(taxid)
-        except DatabaseOutOfSyncError as err:
-            logger.warning(err)
-            taxid = 0
-        return self.nodes.get(taxid, {"parent": 1}).get("parent")
+        return self.dbdir
 
     def parse_names(self) -> Dict[int, str]:
         """
@@ -407,28 +220,6 @@ class NCBI:
         if self.verbose:
             logger.debug("delnodes loaded")
         return delnodes
-
-    def is_common_ancestor(self, taxid_A: int, taxid_B: int) -> bool:
-        """
-        Determines whether the provided taxids have a non-root common ancestor
-
-        Parameters
-        ----------
-        taxid_A : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
-        taxid_B : int
-            taxid in NCBI taxonomy databases - nodes.dmp, names.dmp or merged.dmp
-
-        Returns
-        -------
-        boolean
-            True if taxids share a common ancestor else False
-        """
-        lineage_a_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_A)}
-        lineage_b_taxids = {ancestor.get("taxid") for ancestor in self.lineage(taxid_B)}
-        common_ancestor = lineage_b_taxids.intersection(lineage_a_taxids)
-        common_ancestor.discard(1)  # This discards root
-        return True if common_ancestor else False
 
     def convert_taxid_dtype(self, taxid: int) -> int:
         """
@@ -600,6 +391,78 @@ class NCBI:
         fh.close()
         logger.debug(f"sseqids converted from {filename}: {converted_sseqid_count:,}")
         return sseqids_to_taxids
+
+    def convert_accessions_to_taxids(
+        self, accessions: set
+    ) -> Tuple[Dict[str, Set[int]], pd.DataFrame]:
+        # We first get all unique accessions that were retrieved from the blast output
+        recovered_accessions = set(
+            chain.from_iterable(
+                [qseqid_sseqids for qseqid_sseqids in accessions.values()]
+            )
+        )
+        # Check for sseqid in dead_prot.accession2taxid.gz in case an old db was used.
+        # Any accessions not found in live prot.accession2taxid db *may* be here.
+        # This *attempts* to prevent accessions from being assigned root (root taxid=1)
+        try:
+            sseqids_to_taxids = self.search_prot_accessions(
+                accessions=recovered_accessions,
+                db="dead",
+                sseqids_to_taxids=None,
+            )
+            dead_sseqids_found = set(sseqids_to_taxids.keys())
+        except FileNotFoundError as db_fpath:
+            logger.warn(f"Skipping taxid conversion from {db_fpath}")
+            sseqids_to_taxids = None
+            dead_sseqids_found = set()
+
+        # Now build the mapping from sseqid to taxid from the full/live accession2taxid dbs
+        # Possibly overwriting any merged accessions to live accessions
+        sseqids_to_taxids = self.search_prot_accessions(
+            accessions=recovered_accessions,
+            db="full",
+            sseqids_to_taxids=sseqids_to_taxids,
+        )
+
+        # Remove accessions: Ignore any accessions already found
+        live_sseqids_found = set(sseqids_to_taxids.keys())
+        live_sseqids_found -= dead_sseqids_found
+        recovered_accessions -= live_sseqids_found
+        if recovered_accessions:
+            logger.warn(
+                f"accessions without corresponding taxid: {len(recovered_accessions):,}"
+            )
+        root_taxid = 1
+        taxids = {}
+        sseqid_not_found = pd.NA
+        sseqid_to_taxid_df = pd.DataFrame(
+            [
+                {
+                    "qseqid": qseqid,
+                    "sseqid": sseqid,
+                    "raw_taxid": sseqids_to_taxids.get(sseqid, sseqid_not_found),
+                }
+                for qseqid, qseqid_sseqids in accessions.items()
+                for sseqid in qseqid_sseqids
+            ]
+        )
+        # Update taxids if they are old.
+        sseqid_to_taxid_df["merged_taxid"] = sseqid_to_taxid_df.raw_taxid.map(
+            lambda tid: self.merged.get(tid, tid)
+        )
+        # If we still have missing taxids, we will set the sseqid value to the root taxid
+        # fill missing taxids with root_taxid
+        sseqid_to_taxid_df["cleaned_taxid"] = sseqid_to_taxid_df.merged_taxid.fillna(
+            root_taxid
+        )
+        root_taxid = 1
+        for qseqid, qseqid_sseqids in accessions.items():
+            # NOTE: we only want to retrieve the set of unique taxids (not a list) for LCA query
+            qseqid_taxids = {
+                sseqids_to_taxids.get(sseqid, root_taxid) for sseqid in qseqid_sseqids
+            }
+            taxids[qseqid] = qseqid_taxids
+        return taxids, sseqid_to_taxid_df
 
 
 if __name__ == "__main__":

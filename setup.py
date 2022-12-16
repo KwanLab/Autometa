@@ -34,6 +34,7 @@ setup(
             "autometa-taxonomy = autometa.taxonomy.vote:main",
             "autometa-taxonomy-lca = autometa.taxonomy.lca:main",
             "autometa-taxonomy-majority-vote = autometa.taxonomy.majority_vote:main",
+            "autometa-setup-gtdb = autometa.taxonomy.gtdb:main",
             "autometa-binning = autometa.binning.recursive_dbscan:main",
             "autometa-binning-summary = autometa.binning.summary:main",
             "autometa-binning-ldm = autometa.binning.large_data_mode:main",

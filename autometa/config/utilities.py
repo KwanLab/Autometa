@@ -216,7 +216,7 @@ def main():
     update_group.add_argument(
         "--section",
         help="config section to update",
-        choices=["environ", "databases", "ncbi", "markers"],
+        choices=["environ", "databases", "ncbi", "markers", "gtdb"],
         required=False,
     )
     update_group.add_argument(

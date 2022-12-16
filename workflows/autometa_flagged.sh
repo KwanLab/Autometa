@@ -326,6 +326,7 @@ set -x
 autometa-taxonomy-lca \
     --blast $blast \
     --dbdir $ncbi \
+    --dbtype ncbi \
     --lca-output $lca \
     --sseqid2taxid-output $sseqid2taxid \
     --lca-error-taxids $error_taxids
@@ -338,7 +339,8 @@ set -x
 autometa-taxonomy-majority-vote \
     --lca $lca \
     --output $votes \
-    --dbdir $ncbi
+    --dbdir $ncbi \
+    --dbtype ncbi
 
 # Step 4.3: Split assigned taxonomies into kingdoms
 autometa-taxonomy \
@@ -347,7 +349,8 @@ autometa-taxonomy \
     --prefix $simple_name \
     --split-rank-and-write superkingdom \
     --assembly $filtered_assembly \
-    --ncbi $ncbi
+    --dbdir $ncbi \
+    --dbtype ncbi
 { set +x; } 2>/dev/null
 
 # Step 5: Perform k-mer counting on respective kingdoms
@@ -451,7 +454,8 @@ for kingdom in ${kingdoms[@]};do
         --binning-main $binning_main \
         --markers $markers \
         --metagenome $filtered_assembly \
-        --ncbi $ncbi \
+        --dbdir $ncbi \
+        --dbtype ncbi \
         --output-stats $output_stats \
         --output-taxonomy $output_taxonomy \
         --output-metabins $output_metabins

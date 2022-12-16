@@ -33,7 +33,7 @@ import pandas as pd
 
 from typing import Iterable, Tuple
 
-from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.database import TaxonomyDatabase
 
 
 logger = logging.getLogger(__name__)
@@ -98,7 +98,7 @@ def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
         Provided `name` not found in `rank` column.
     """
     # First clean the assigned taxa by broadcasting lowercase and replacing any whitespace with underscores
-    for canonical_rank in NCBI.CANONICAL_RANKS:
+    for canonical_rank in TaxonomyDatabase.CANONICAL_RANKS:
         if canonical_rank not in df.columns:
             continue
         df[canonical_rank] = df[canonical_rank].map(
@@ -395,7 +395,11 @@ def write_results(
         outcols.extend(annotation_cols)
         # Add in taxonomy columns if taxa are present
         # superkingdom, phylum, class, order, family, genus, species
-        taxa_cols = [rank for rank in reversed(NCBI.CANONICAL_RANKS) if rank != "root"]
+        taxa_cols = [
+            rank
+            for rank in reversed(TaxonomyDatabase.CANONICAL_RANKS)
+            if rank != "root"
+        ]
         taxa_cols.append("taxid")
         # superkingdom, phylum, class, order, family, genus, species, taxid
         for taxa_col in taxa_cols:
