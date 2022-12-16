@@ -17,7 +17,9 @@ import numpy as np
 
 from Bio import SeqIO
 
+from autometa.taxonomy.database import TaxonomyDatabase
 from autometa.taxonomy.ncbi import NCBI
+from autometa.taxonomy.gtdb import GTDB
 from autometa.taxonomy import majority_vote
 from autometa.common.markers import load as load_markers
 
@@ -226,7 +228,7 @@ def get_metabin_stats(
 
 
 def get_metabin_taxonomies(
-    bin_df: pd.DataFrame, ncbi: NCBI, cluster_col: str = "cluster"
+    bin_df: pd.DataFrame, taxa_db: TaxonomyDatabase, cluster_col: str = "cluster"
 ) -> pd.DataFrame:
     """Retrieve taxonomies of all clusters recovered from Autometa binning.
 
@@ -234,8 +236,8 @@ def get_metabin_taxonomies(
     ----------
     bin_df : pd.DataFrame
         Autometa binning table. index=contig, cols=['cluster','length','taxid', *canonical_ranks]
-    ncbi : autometa.taxonomy.ncbi.NCBI instance
-        Autometa NCBI class instance
+    taxa_db : autometa.taxonomy.ncbi.TaxonomyDatabase instance
+        Autometa NCBI or GTDB class instance
     cluster_col : str, optional
         Clustering column by which to group metabins
 
@@ -246,7 +248,9 @@ def get_metabin_taxonomies(
         Indexed by cluster
     """
     logger.info(f"Retrieving metabin taxonomies for {cluster_col}")
-    canonical_ranks = [rank for rank in NCBI.CANONICAL_RANKS if rank != "root"]
+    canonical_ranks = [
+        rank for rank in TaxonomyDatabase.CANONICAL_RANKS if rank != "root"
+    ]
     is_clustered = bin_df[cluster_col].notnull()
     bin_df = bin_df[is_clustered]
     outcols = [cluster_col, "length", "taxid", *canonical_ranks]
@@ -277,11 +281,13 @@ def get_metabin_taxonomies(
             taxonomies[cluster][canonical_rank].update({taxid: length})
         else:
             taxonomies[cluster][canonical_rank][taxid] += length
-    cluster_taxonomies = majority_vote.rank_taxids(taxonomies, ncbi)
+    cluster_taxonomies = majority_vote.rank_taxids(taxonomies, taxa_db=taxa_db)
     # With our cluster taxonomies, let's place these into a dataframe for easy data accession
     cluster_taxa_df = pd.Series(data=cluster_taxonomies, name="taxid").to_frame()
     # With the list of taxids, we'll retrieve their complete canonical-rank information
-    lineage_df = ncbi.get_lineage_dataframe(cluster_taxa_df.taxid.tolist(), fillna=True)
+    lineage_df = taxa_db.get_lineage_dataframe(
+        cluster_taxa_df.taxid.tolist(), fillna=True
+    )
     # Now put it all together
     cluster_taxa_df = pd.merge(
         cluster_taxa_df, lineage_df, how="left", left_on="taxid", right_index=True
@@ -323,10 +329,17 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--ncbi",
-        help="Path to user NCBI databases directory (Required for retrieving metabin taxonomies)",
+        "--dbdir",
+        help="Path to user taxonomy database directory (Required for retrieving metabin taxonomies)",
         metavar="dirpath",
         required=False,
+    )
+    parser.add_argument(
+        "--dbtype",
+        help="Taxonomy database type to use (NOTE: must correspond to the same database type used during contig taxon assignment.)",
+        choices=["ncbi", "gtdb"],
+        required=False,
+        default="ncbi",
     )
     parser.add_argument(
         "--binning-column",
@@ -377,14 +390,17 @@ def main():
     logger.info(f"Wrote metabin stats to {args.output_stats}")
     # Finally if taxonomy information is available then write out each metabin's taxonomy by modified majority voting method.
     if "taxid" in bin_df.columns:
-        if not args.ncbi:
+        if not args.dbdir:
             logger.warn(
-                "taxid found in dataframe. --ncbi argument is required to retrieve metabin taxonomies. Skipping..."
+                "taxid found in dataframe. --dbdir argument is required to retrieve metabin taxonomies. Skipping..."
             )
         else:
-            ncbi = NCBI(dirpath=args.ncbi)
+            if args.dbtype == "ncbi":
+                taxa_db = NCBI(dbdir=args.dbdir)
+            elif args.dbtype == "gtdb":
+                taxa_db = GTDB(dbdir=args.dbdir)
             taxa_df = get_metabin_taxonomies(
-                bin_df=bin_df, ncbi=ncbi, cluster_col=args.binning_column
+                bin_df=bin_df, taxa_db=taxa_db, cluster_col=args.binning_column
             )
             taxa_df.to_csv(args.output_taxonomy, sep="\t", index=True, header=True)
 
