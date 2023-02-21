@@ -1,4 +1,4 @@
-include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/modules/bedtools/genomecov.nf'
+include { BEDTOOLS_GENOMECOV } from './../../modules/nf-core/bedtools/genomecov.nf'
 
 workflow GENOME_COVERAGE {
     take:
