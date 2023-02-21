@@ -1,5 +1,5 @@
 process GET_GENOMES_FOR_MOCK {
-    def genome_count = options.args2.tokenize('|').size()
+    def genome_count = task.ext.args2.tokenize('|').size()
     tag "fetching ${genome_count} genomes"
 
     cache 'lenient'
