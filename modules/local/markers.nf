@@ -31,11 +31,13 @@ process MARKERS {
 
     script:
         def software = getSoftwareName(task.process)
-        if (params.enable_conda)
-        """
-        exit 1
-        """
-        else
+
+     // TODO: nf-core linter now checks and flags any instances of 'params.enable_conda'. Is this check below still necessary?
+     //   if (params.enable_conda)
+     //   """
+     //   exit 1
+     //   """
+     //   else
         """
         autometa-markers \\
             --orfs $orfs \\
