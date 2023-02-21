@@ -2,7 +2,6 @@ process GET_GENOMES_FOR_MOCK {
     def genome_count = options.args2.tokenize('|').size()
     tag "fetching ${genome_count} genomes"
 
-    storeDir = 'mock_data/genomes'
     cache 'lenient'
 
     conda (params.enable_conda ? "bioconda::emboss=6.6.0" : null)
@@ -16,10 +15,13 @@ process GET_GENOMES_FOR_MOCK {
         path "assemblies.txt", emit: assemblies
         path "assembly_report.txt", emit: assembly_report
 
+    script:
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
     """
-    curl -s ${options.args} > assembly_report.txt
+    curl -s ${args} > assembly_report.txt
 
-    grep -E "${options.args2}" assembly_report.txt |\\
+    grep -E ${args2} assembly_report.txt |\\
         awk -F '\\t' '{print \$20}' |\\
         sed 's,https://,rsync://,' |\\
             xargs -n 1 -I {} \

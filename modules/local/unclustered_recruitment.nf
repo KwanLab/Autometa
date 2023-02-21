@@ -2,8 +2,6 @@ process RECRUIT {
     tag "sample:${meta.id}, classifier:${params.classification_method}, kmer dims:${params.classification_kmer_pca_dimensions}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
@@ -22,6 +20,9 @@ process RECRUIT {
         tuple val(meta), path("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
         tuple val(meta), path("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
         path  '*.version.txt'                                                 , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

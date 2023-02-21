@@ -5,7 +5,6 @@ process MARKERS {
     tag "Finding markers for ${meta.id}"
     label "process_medium"
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -26,6 +25,9 @@ process MARKERS {
         tuple val(meta), path("${params.kingdom}.markers.tsv"), emit: markers_tsv
         tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmmscan_tsv
         path  '*.version.txt'               , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

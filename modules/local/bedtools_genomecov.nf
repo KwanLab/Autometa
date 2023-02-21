@@ -2,8 +2,6 @@ process BEDTOOLS_GENOMECOV {
     tag "${meta.id}"
     label 'process_medium'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::bedtools=2.30.0" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/bedtools:2.30.0--hc088bd4_0"
@@ -20,6 +18,9 @@ process BEDTOOLS_GENOMECOV {
 
     when:
         meta.cov_from_assembly.equals('0')
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

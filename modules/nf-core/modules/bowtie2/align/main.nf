@@ -1,7 +1,6 @@
 process BOWTIE2_ALIGN {
     tag "$meta.id"
     label 'process_high'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? 'bioconda::bowtie2=2.4.2 bioconda::samtools=1.11 conda-forge::pigz=2.3.4' : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -19,6 +18,9 @@ process BOWTIE2_ALIGN {
     tuple val(meta), path('*.log'), emit: log
     path  '*.version.txt'         , emit: version
     tuple val(meta), path('*fastq.gz'), optional:true, emit: fastq
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
     def split_cpus = Math.floor(task.cpus/2)

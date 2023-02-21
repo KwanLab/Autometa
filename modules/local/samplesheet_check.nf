@@ -2,7 +2,6 @@
 process SAMPLESHEET_CHECK {
     tag "$samplesheet"
     label 'process_low'
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -16,6 +15,9 @@ process SAMPLESHEET_CHECK {
 
     output:
         path '*.csv'
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """

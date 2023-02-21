@@ -2,7 +2,6 @@
 process MAJORITY_VOTE {
     tag "Performing taxon majority vote on ${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -19,7 +18,11 @@ process MAJORITY_VOTE {
         tuple val(meta), path("votes.tsv"), emit: votes
         path  '*.version.txt'             , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         def software = getSoftwareName(task.process)
         """
         autometa-taxonomy-majority-vote \\

@@ -1,7 +1,6 @@
 process NORMALIZE_KMERS {
     tag "method:${params.norm_method}, sample:${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -16,6 +15,9 @@ process NORMALIZE_KMERS {
     output:
         tuple val(meta), path("kmers.normalized.tsv"), emit: normalized
         path  '*.version.txt'                        , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

@@ -1,7 +1,6 @@
 process BINNING {
     tag "sample:${meta.id}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -20,6 +19,9 @@ process BINNING {
         tuple val(meta), path("${params.kingdom}.binning.tsv.gz")     , emit: binning
         tuple val(meta), path("${params.kingdom}.binning.main.tsv.gz"), emit: main
         path  '*.version.txt'                                         , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

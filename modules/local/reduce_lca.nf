@@ -2,8 +2,6 @@ process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_medium'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
@@ -22,6 +20,9 @@ process REDUCE_LCA {
         path "sseqid2taxid.tsv"         , emit: sseqid_to_taxids
         path '*.version.txt'            , emit: version
 
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

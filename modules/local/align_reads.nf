@@ -5,8 +5,6 @@ process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
@@ -24,17 +22,20 @@ process ALIGN_READS {
 
     when:
         meta.cov_from_assembly.equals('0')
+        task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
+    def args2 = task.ext.args2 ?: ''
         """
         bowtie2-build \\
-            ${options.args} \\
+            ${args} \\
             ${metagenome} \\
             ${meta.id}.db
 
         bowtie2 \\
             -x ${meta.id}.db \\
-            ${options.args2} \\
+            ${args2} \\
             -p ${task.cpus} \\
             -S alignments.sam \\
             -1 $fwd_reads \\

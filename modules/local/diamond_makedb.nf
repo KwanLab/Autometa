@@ -20,6 +20,9 @@ params.nr_dmnd_dir = nullprocess DIAMOND_MAKEDB {
         path("*.dmnd"), emit: diamond_db
         path  "*.version.txt"         , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         def software = getSoftwareName(task.process)
         """

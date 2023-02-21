@@ -16,6 +16,9 @@ process SEQKIT_SPLIT {
         tuple val(meta), path("outfolder/*")    , emit: fasta
         path "*.version.txt"                    , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         def software = getSoftwareName(task.process)
         def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"

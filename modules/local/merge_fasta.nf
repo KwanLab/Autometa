@@ -2,8 +2,6 @@ process MERGE_FASTA {
     tag "Merging ${meta.id} FASTA"
     label 'process_low'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
@@ -18,6 +16,9 @@ process MERGE_FASTA {
     output:
         tuple val(meta), path("${meta.id}.${extension}"), emit: merged
         path '*.version.txt'                            , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

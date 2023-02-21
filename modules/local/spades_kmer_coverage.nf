@@ -2,8 +2,6 @@ process SPADES_KMER_COVERAGE {
     tag "${meta.id}"
     label 'process_low'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
@@ -21,6 +19,7 @@ process SPADES_KMER_COVERAGE {
 
     when:
         meta.cov_from_assembly.equals('spades')
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

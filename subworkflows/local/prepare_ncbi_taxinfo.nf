@@ -17,6 +17,9 @@ process TEST_DOWNLOAD {
     output:
         path("prot.accession2taxid"), emit: singlefile
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         """
         # https://github.com/nextflow-io/nextflow/issues/1564
@@ -41,6 +44,9 @@ process DOWNLOAD_ACESSION2TAXID {
         // hack nf-core options.args3 and use for output name
         path "prot.accession2taxid.gz" , emit: accession2taxid
         path  "*.version.txt"   , emit: version
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         """
         rsync -a \\
@@ -72,6 +78,9 @@ process DOWNLOAD_TAXDUMP {
     output:
         path "*" , emit: taxdump_files
         path  "*.version.txt"   , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """

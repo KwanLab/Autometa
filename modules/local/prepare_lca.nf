@@ -19,6 +19,9 @@ process PREPARE_LCA {
         path "cache"           , emit: cache
         path '*.version.txt'   , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         def software = getSoftwareName(task.process)
         """

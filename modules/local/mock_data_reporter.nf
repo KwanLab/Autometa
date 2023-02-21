@@ -16,6 +16,9 @@ process MOCK_DATA_REPORT {
         tuple val(meta), path("*.html"), emit: results
 
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         """
         #!/usr/bin/env Rscript

@@ -5,7 +5,6 @@ process DIAMOND_BLASTP {
     // TODO: There appears to be features for multiprocessing available now
     // See: https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing
     maxForks 1
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
     conda (params.enable_conda ? "bioconda::diamond=2.0.14" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -22,10 +21,13 @@ process DIAMOND_BLASTP {
         tuple val(meta), path("blastp.tsv"), emit: diamond_results
         path "*.version.txt"               , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
-        def software = getSoftwareName(task.process)
+        def args = task.ext.args ?: ''
         """
-        diamond blastp $options.args \\
+        diamond blastp $args \\
             --query ${protein_fasta} \\
             --db ${diamond_database} \\
             --threads ${task.cpus} \\

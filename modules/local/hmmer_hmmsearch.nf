@@ -30,17 +30,24 @@ process HMMER_HMMSEARCH {
         tuple val(meta), path("*.domtblout"), emit: domtblout
         path "*.version.txt"                , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
-        def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
-        def fastacmd = fasta.getExtension() == 'gz' ? "gunzip -c $fasta" : "cat $fasta"
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
         """
+        # hmmsearch can'ts use or pipe in gzipped fasta
+
+        zcat "${fasta}" > temp.fa
+
         hmmsearch \\
             --domtblout "${hmm.simpleName}.domtblout" \\
-            ${options.args} \\
-            ${options.args2} \\
-            $hmm \\
-            $fasta > /dev/null 2>&1
+            --cpu $task.cpus \\
+            $args \\
+            $args2 \\
+            "${hmm}" \\
+            temp.fa > /dev/null 2>&1
 
         echo \$(hmmalign -h | grep -o '^# HMMER [0-9.]*') | sed 's/^# HMMER *//' > HMMER.version.txt
         """

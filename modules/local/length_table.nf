@@ -2,8 +2,6 @@ process LENGTH_TABLE {
     tag "${meta.id}"
     label 'process_low'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
@@ -17,6 +15,9 @@ process LENGTH_TABLE {
     output:
         tuple val(meta), path("lengths.tsv"), emit: lengths
         path  '*.version.txt'               , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

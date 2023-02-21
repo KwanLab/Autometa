@@ -16,6 +16,9 @@ process DOWNLOAD_NR {
     output:
         path("nr.gz"), emit: singlefile
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         """
         rsync -a \\
@@ -44,6 +47,9 @@ process TEST_DOWNLOAD {
 
     output:
         path("nr.gz"), emit: singlefile
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """

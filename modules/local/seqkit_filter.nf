@@ -2,8 +2,6 @@ process SEQKIT_FILTER {
     tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
     conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
@@ -18,6 +16,9 @@ process SEQKIT_FILTER {
         tuple val(meta), path("filtered.fna")  , emit: fasta
         tuple val(meta), path("gc_content.tsv"), emit: gc_content
         path  '*.version.txt'                             , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         def software = getSoftwareName(task.process)

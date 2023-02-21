@@ -1,8 +1,6 @@
 process PRODIGAL {
     tag "Annotating $meta.id"
     label 'process_low'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
 
     conda (params.enable_conda ? "bioconda::prodigal=2.6.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -22,11 +20,14 @@ process PRODIGAL {
     tuple val(meta), path("orfs_all.txt"), emit: all_gene_annotations
     path "*.version.txt"          , emit: version
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
-    def software = getSoftwareName(task.process)
+    def args = task.ext.args ?: ''
     """
     prodigal -i ${genome} \\
-        $options.args \\
+        $args \\
         -f $output_format \\
         -d "orfs.fna" \\
         -o "orfs.${output_format}" \\

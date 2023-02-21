@@ -5,9 +5,6 @@ This file is left in from the template, that's mainly used for QUAST (http://cab
 There's a discussion that can be had later about incorporating that module fully or removing the remaining template that feeds into it
 */process GET_SOFTWARE_VERSIONS {
     label 'process_low'
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'pipeline_info', meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -25,6 +22,9 @@ There's a discussion that can be had later about incorporating that module fully
         path "software_versions.tsv"     , emit: tsv
         path 'software_versions_mqc.yaml', emit: yaml
         path  '*.version.txt'            , emit: version
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         // Add soft-links to original FastQs for consistent naming in pipeline
