@@ -9,9 +9,6 @@ the results of this process
 =======================
 */
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process HMMER_HMMSEARCH {
     tag "Annotating ORFs in $meta.id"
     label 'process_medium'

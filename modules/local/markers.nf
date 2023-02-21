@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 
 
 // TODO: For faster results/less I/O this could be replaced with hmmsearch

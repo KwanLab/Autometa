@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_medium'

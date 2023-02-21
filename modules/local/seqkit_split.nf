@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process SEQKIT_SPLIT {
     tag "Splitting $meta.id for parallel processing"
     label 'process_medium'

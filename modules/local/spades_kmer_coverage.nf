@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process SPADES_KMER_COVERAGE {
     tag "${meta.id}"
     label 'process_low'

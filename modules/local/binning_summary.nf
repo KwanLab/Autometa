@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
     label 'process_high'

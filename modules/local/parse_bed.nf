@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process PARSE_BED {
     tag "$meta.id"
     label 'process_low'

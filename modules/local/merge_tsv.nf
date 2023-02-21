@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process MERGE_TSV_WITH_HEADERS {
     tag "Merging files from parallel split for ${meta.id}"
     label 'process_low'

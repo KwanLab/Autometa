@@ -7,9 +7,6 @@ TODO: Not yet implemented
 */
 
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process HMMER_HMMSEARCH_FILTER {
     tag "Filtering marker hmms in ${meta.id}"
     label 'process_medium'

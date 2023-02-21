@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process BEDTOOLS_GENOMECOV {
     tag "${meta.id}"
     label 'process_medium'

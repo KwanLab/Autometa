@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process MOCK_DATA_REPORT {
 
     tag 'Preparing mock data report'

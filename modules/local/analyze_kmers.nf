@@ -1,5 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
 
 process ANALYZE_KMERS {
     tag "Counting kmers for ${meta.id}"

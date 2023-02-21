@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 
 process MAJORITY_VOTE {
     tag "Performing taxon majority vote on ${meta.id}"

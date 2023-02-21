@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process SEQKIT_FILTER {
     tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'

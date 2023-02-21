@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process MERGE_FASTA {
     tag "Merging ${meta.id} FASTA"
     label 'process_low'

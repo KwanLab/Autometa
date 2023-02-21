@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process LENGTH_TABLE {
     tag "${meta.id}"
     label 'process_low'

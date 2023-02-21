@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process PRODIGAL {
     tag "Annotating $meta.id"
     label 'process_low'

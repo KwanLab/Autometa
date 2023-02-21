@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process SAMTOOLS_VIEW_AND_SORT {
     tag "$meta.id"
     label 'process_medium'

@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process SPLIT_KINGDOMS {
     tag "Splitting votes into kingdoms for ${meta.id}"
     label 'process_medium'

@@ -1,6 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 process NORMALIZE_KMERS {
     tag "method:${params.norm_method}, sample:${meta.id}"
     label 'process_medium'

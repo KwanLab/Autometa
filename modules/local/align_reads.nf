@@ -1,8 +1,5 @@
 #!/usr/bin/env nextflow
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
 
 process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"
