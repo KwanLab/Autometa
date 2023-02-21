@@ -17,9 +17,10 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     libnetcdf-dev \
     udunits-bin \
     libudunits2-dev \
-    curl
+    curl \
+    procps
 
 # R packages
-ENV R_PACKAGES='c("ggbeeswarm","data.table","plotly","crosstalk","DT","patchwork")'
+ENV R_PACKAGES='c("rmarkdown", "data.table", "ggplot2", "plotly", "crosstalk", "magrittr", "DT", "ggbeeswarm", "patchwork")'
 RUN echo 'options("repos"="https://mran.microsoft.com/snapshot/2022-01-19")' >> /usr/local/lib/R/etc/Rprofile.site
 RUN Rscript -e "install.packages(${R_PACKAGES}, Ncpus=parallel::detectCores())"
