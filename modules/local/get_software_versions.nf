@@ -1,15 +1,12 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
+
 
 /*
 This file is left in from the template, that's mainly used for QUAST (http://cab.spbu.ru/software/quast/).
 There's a discussion that can be had later about incorporating that module fully or removing the remaining template that feeds into it
-*/
-
-process GET_SOFTWARE_VERSIONS {
+*/process GET_SOFTWARE_VERSIONS {
     label 'process_low'
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,

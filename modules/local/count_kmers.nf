@@ -1,9 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 process COUNT_KMERS {
     tag "Counting ${params.kmer_size}-mers for ${meta.id}"
     label 'process_medium'

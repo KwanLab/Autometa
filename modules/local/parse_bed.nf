@@ -1,9 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 process PARSE_BED {
     tag "$meta.id"
     label 'process_low'

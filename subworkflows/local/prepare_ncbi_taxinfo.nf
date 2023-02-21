@@ -2,12 +2,10 @@
 // perspective since the python code assumes file/directory structure
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
+
 params.taxdump_tar_gz_dir = [:]
 params.prot_accession2taxid_gz_dir = [:]
-options = initOptions(params.options)
-
-process TEST_DOWNLOAD {
+options = initOptions(params.options)process TEST_DOWNLOAD {
     // For development work so you don't download the entire prot.accession2taxid.gz database
     tag "Downloading first 10,000 lines of prot.accession2taxid.gz"
     label 'process_low'
@@ -29,9 +27,7 @@ process TEST_DOWNLOAD {
         trap 'echo OK; exit 0;' EXIT
         curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 > prot.accession2taxid
         """
-}
-
-process DOWNLOAD_ACESSION2TAXID {
+}process DOWNLOAD_ACESSION2TAXID {
     tag "Downloading prot.accession2taxid.gz"
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
@@ -62,8 +58,6 @@ process DOWNLOAD_ACESSION2TAXID {
         rsync --version | head -n1 > rsync.version.txt
         """
 }
-
-
 process DOWNLOAD_TAXDUMP {
     tag "Downloading taxdump.tar.gz"
     label 'process_low'

@@ -1,9 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_medium'

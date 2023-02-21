@@ -4,7 +4,7 @@
 
 nextflow.enable.dsl=2
 
-params.options = [:]
+
 
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check' addParams( options: params.options )
 

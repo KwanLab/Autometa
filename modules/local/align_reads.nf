@@ -3,9 +3,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 
 process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"

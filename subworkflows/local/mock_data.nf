@@ -1,9 +1,7 @@
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
 params.get_genomes_for_mock = [:]
-include { GET_GENOMES_FOR_MOCK  } from './../../modules/local/get_genomes_for_mock.nf' addParams( options: params.get_genomes_for_mock )
-
-process SAMTOOLS_WGSIM {
+include { GET_GENOMES_FOR_MOCK  } from './../../modules/local/get_genomes_for_mock.nf' addParams( options: params.get_genomes_for_mock )process SAMTOOLS_WGSIM {
     // This process is used to create simulated reads from an input FASTA file
     label 'process_low'
 

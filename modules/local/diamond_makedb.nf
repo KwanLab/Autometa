@@ -1,11 +1,8 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-params.nr_dmnd_dir = null
-options        = initOptions(params.options)
 
-process DIAMOND_MAKEDB {
+params.nr_dmnd_dir = nullprocess DIAMOND_MAKEDB {
     tag ' Preparing Diamond database'
     label 'process_high'
 

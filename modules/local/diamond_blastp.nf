@@ -1,9 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 process DIAMOND_BLASTP {
     tag "Aligning ORFS in ${meta.id} against ${diamond_database}"
     label 'process_high'

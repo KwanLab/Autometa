@@ -1,9 +1,6 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
-
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
     label 'process_high'

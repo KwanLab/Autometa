@@ -1,8 +1,7 @@
 // Import generic module functions
 include { initOptions; saveFiles; getSoftwareName } from './functions'
 
-params.options = [:]
-options        = initOptions(params.options)
+
 
 // TODO: For faster results/less I/O this could be replaced with hmmsearch
 process MARKERS {
