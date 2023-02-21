@@ -238,11 +238,6 @@
                     "fa_icon": "fas fa-clock",
                     "description": "Max time a *single* process is allowed to run"
                 },
-                "enable_conda": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-snake",
-                    "description": "Use conda?"
-                },
                 "use_run_name": {
                     "type": "boolean",
                     "hidden": true,
