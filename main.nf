@@ -41,7 +41,7 @@ Results directory: ${params.outdir}
 ========================================================================================
 */
 
-include { AUTOMETA } from './workflows/autometa.nf' addParams(single_db_dir: params.single_db_dir)
+include { AUTOMETA } from './workflows/autometa.nf'
 
 /*
 ========================================================================================

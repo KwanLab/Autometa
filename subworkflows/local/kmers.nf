@@ -1,6 +1,6 @@
-include { COUNT_KMERS as COUNT            } from '../../modules/local/count_kmers'     addParams( options: params.count_kmers_options      )
-include { NORMALIZE_KMERS as NORMALIZE    } from '../../modules/local/normalize_kmers' addParams( options: params.normalize_kmers_options  )
-include { EMBED_KMERS as EMBED            } from '../../modules/local/embed_kmers'     addParams( options: params.embed_kmers_options      )
+include { COUNT_KMERS as COUNT            } from '../../modules/local/count_kmers'
+include { NORMALIZE_KMERS as NORMALIZE    } from '../../modules/local/normalize_kmers'
+include { EMBED_KMERS as EMBED            } from '../../modules/local/embed_kmers'
 
 
 workflow KMERS {

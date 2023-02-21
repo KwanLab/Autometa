@@ -1,9 +1,7 @@
 
+include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'
 
-params.diamond_makedb_options = [:]
-params.nr_dmnd_dir            = [:]
-
-include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'  addParams( options: params.diamond_makedb_options, nr_dmnd_dir: params.nr_dmnd_dir)process DOWNLOAD_NR {
+process DOWNLOAD_NR {
     tag "Downloading nr.gz (>100GB download. May take some time.)"
     label 'process_low'
     storeDir "${params.nr_dmnd_dir}"
@@ -31,6 +29,7 @@ include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'  addPa
         md5sum -c *.md5
         """
 }
+
 process TEST_DOWNLOAD {
     // For development work so you don't download the entire nr.gz database
     tag "Downloading first 10,000 lines of nr.gz"

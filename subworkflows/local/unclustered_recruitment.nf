@@ -1,10 +1,6 @@
-params.binning_options                  = [:]
-params.unclustered_recruitment_options  = [:]
-params.binning_summary_options          = [:]
-params.taxdump_tar_gz_dir               = [:]
 
-include { RECRUIT                                         } from './../../modules/local/unclustered_recruitment.nf' addParams( options: params.unclustered_recruitment_options  )
-include { BINNING_SUMMARY as UNCLUSTERED_BINNING_SUMMARY  } from './../../modules/local/binning_summary.nf'         addParams( options: params.binning_summary_options, taxdump_tar_gz_dir: params.taxdump_tar_gz_dir )
+include { RECRUIT                                         } from './../../modules/local/unclustered_recruitment.nf'
+include { BINNING_SUMMARY as UNCLUSTERED_BINNING_SUMMARY  } from './../../modules/local/binning_summary.nf'
 
 
 workflow UNCLUSTERED_RECRUITMENT {

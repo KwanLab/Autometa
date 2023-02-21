@@ -1,10 +1,5 @@
-params.binning_options                  = [:]
-params.binning_summary_options          = [:]
-params.taxdump_tar_gz_dir               = [:]
-
-include { BIN_CONTIGS     } from './../../modules/local/bin_contigs.nf'             addParams( options: params.binning_options                                                        )
-include { BINNING_SUMMARY } from './../../modules/local/binning_summary.nf'         addParams( options: params.binning_summary_options, taxdump_tar_gz_dir: params.taxdump_tar_gz_dir )
-
+include { BIN_CONTIGS     } from './../../modules/local/bin_contigs.nf'
+include { BINNING_SUMMARY } from './../../modules/local/binning_summary.nf'
 
 workflow BINNING {
 

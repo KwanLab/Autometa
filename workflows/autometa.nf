@@ -39,14 +39,14 @@ if (!params.taxonomy_aware) {
  * -------------------------------------------------
 */
 
-include { GET_SOFTWARE_VERSIONS                   } from '../modules/local/get_software_versions'   addParams( options: [publish_files : ['csv':'']]     )
-include { SEQKIT_FILTER                           } from '../modules/local/seqkit_filter'           addParams( options: [publish_files : ['*':'']]       )
-include { SPADES_KMER_COVERAGE as COV_FROM_SPADES } from '../modules/local/spades_kmer_coverage'    addParams( options: modules['spades_kmer_coverage']  )
-include { MARKERS                                 } from '../modules/local/markers'                 addParams( options: modules['seqkit_split_options']  )
-include { BINNING                                 } from '../modules/local/binning'                 addParams( options: modules['binning_options']   )
-include { RECRUIT                                 } from '../modules/local/unclustered_recruitment' addParams( options: modules['unclustered_recruitment_options'])
-include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'         addParams( options: modules['binning_summary_options']   )
-include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'      addParams( options: modules['mock_data_report']      )
+include { GET_SOFTWARE_VERSIONS                   } from '../modules/local/get_software_versions'
+include { SEQKIT_FILTER                           } from '../modules/local/seqkit_filter'
+include { SPADES_KMER_COVERAGE as COV_FROM_SPADES } from '../modules/local/spades_kmer_coverage'
+include { MARKERS                                 } from '../modules/local/markers'
+include { BINNING                                 } from '../modules/local/binning'
+include { RECRUIT                                 } from '../modules/local/unclustered_recruitment'
+include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'
+include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'
 
 /*
  * -------------------------------------------------
@@ -56,7 +56,7 @@ include { MOCK_DATA_REPORT                        } from '../modules/local/mock_
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
-include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParams( options: modules['prodigal_options'] )
+include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'
 
 /*
  * -------------------------------------------------
@@ -64,11 +64,11 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
  * -------------------------------------------------
 */
 
-include { CREATE_MOCK                 } from '../subworkflows/local/mock_data'        addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
-include { INPUT_CHECK                 } from '../subworkflows/local/input_check'      addParams( )
-include { CONTIG_COVERAGE as COVERAGE } from '../subworkflows/local/contig_coverage'  addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
-include { KMERS                       } from '../subworkflows/local/kmers'            addParams( count_kmers_options: modules['count_kmers_options'], normalize_kmers_options: modules['normalize_kmers_options'], embed_kmers_options: modules['embed_kmers_options'])
-include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
+include { CREATE_MOCK                 } from '../subworkflows/local/mock_data'
+include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
+include { CONTIG_COVERAGE as COVERAGE } from '../subworkflows/local/contig_coverage'
+include { KMERS                       } from '../subworkflows/local/kmers'
+include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment'
 
 workflow AUTOMETA {
     // Software versions channel

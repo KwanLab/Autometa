@@ -1,17 +1,13 @@
 
+//TODO: These don't map to anything
 params.fwd_reads = null
 params.rev_reads = null
 params.se_reads = null
 
-params.align_reads_options        = [:]
-params.samtools_viewsort_options  = [:]
-params.bedtools_genomecov_options    = [:]
-
-include { ALIGN_READS               } from '../../modules/local/align_reads'            addParams( options: params.align_reads_options                          )
-include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_sort'     addParams( samtools_viewsort_options: params.samtools_viewsort_options  )
-include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'     addParams( options: params.bedtools_genomecov_options                   )
-include { PARSE_BED                 } from '../../modules/local/parse_bed'              addParams( )
-
+include { ALIGN_READS               } from '../../modules/local/align_reads'
+include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_sort'
+include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'
+include { PARSE_BED                 } from '../../modules/local/parse_bed'
 
 workflow CONTIG_COVERAGE {
     take:
