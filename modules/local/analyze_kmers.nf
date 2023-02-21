@@ -23,7 +23,6 @@ process ANALYZE_KMERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-kmers \\
             --fasta ${metagenome} \\
