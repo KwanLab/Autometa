@@ -20,7 +20,6 @@ process LENGTH_TABLE {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         #!/usr/bin/env python
         from Bio import SeqIO
@@ -31,6 +30,6 @@ process LENGTH_TABLE {
         lengths.index.name = "contig"
         lengths.to_csv(lengths.tsv, sep="\t", index=True, header=True)
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

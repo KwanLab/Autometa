@@ -25,7 +25,6 @@ process REDUCE_LCA {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-taxonomy-lca \\
             --blast ${blast} \\
@@ -35,6 +34,6 @@ process REDUCE_LCA {
             --lca-error-taxids lca_error_taxids.tsv \\
             --sseqid2taxid-output sseqid2taxid.tsv \\
             --lca-output lca.tsv
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

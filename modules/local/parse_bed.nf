@@ -21,7 +21,6 @@ process PARSE_BED {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         # NOTE: Here we supply an argument to ibam to prevent raising an error
         # However, bed is the only arg required for nextflow since bed is generated from BEDTOOLS_GENOMECOV...
@@ -30,6 +29,6 @@ process PARSE_BED {
             --bed $bed \\
             --output coverage.tsv
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

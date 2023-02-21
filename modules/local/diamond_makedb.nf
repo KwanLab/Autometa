@@ -1,5 +1,5 @@
 
-params.nr_dmnd_dir = nullprocess DIAMOND_MAKEDB {
+process DIAMOND_MAKEDB {
     tag ' Preparing Diamond database'
     label 'process_high'
 
@@ -24,7 +24,6 @@ params.nr_dmnd_dir = nullprocess DIAMOND_MAKEDB {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         diamond makedb --in ${fasta} \\
             $options.args \\

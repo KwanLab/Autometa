@@ -24,7 +24,6 @@ process BINNING {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         taxonomy_call = params.taxonomy_aware ? "--taxonomy $taxonomy" : "" // https://github.com/nextflow-io/nextflow/issues/1694#issuecomment-683272275
         """
         autometa-binning \\
@@ -45,6 +44,6 @@ process BINNING {
             --rank-filter superkingdom \\
             --rank-name-filter ${params.kingdom}
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

@@ -24,7 +24,6 @@ process SPLIT_KINGDOMS {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-taxonomy \\
             --votes "${votes}" \\
@@ -34,6 +33,6 @@ process SPLIT_KINGDOMS {
             --dbdir "${ncbi_tax_dir}" \\
             --dbtype ncbi
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

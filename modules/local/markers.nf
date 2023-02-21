@@ -30,7 +30,6 @@ process MARKERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
 
      // TODO: nf-core linter now checks and flags any instances of 'params.enable_conda'. Is this check below still necessary?
      //   if (params.enable_conda)
@@ -50,6 +49,6 @@ process MARKERS {
             --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
             --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

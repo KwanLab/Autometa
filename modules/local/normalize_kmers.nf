@@ -20,7 +20,6 @@ process NORMALIZE_KMERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-kmers \\
             --kmers $counts \\
@@ -28,6 +27,6 @@ process NORMALIZE_KMERS {
             --norm-method "${params.norm_method}" \\
             --seed 42
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

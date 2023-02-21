@@ -28,12 +28,11 @@ There's a discussion that can be had later about incorporating that module fully
 
     script:
         // Add soft-links to original FastQs for consistent naming in pipeline
-        def software = getSoftwareName(task.process)
         """
         echo $workflow.manifest.version > pipeline.version.txt
         echo $workflow.nextflow.version > nextflow.version.txt
         scrape_software_versions.py &> software_versions_mqc.yaml
 
-        echo "make linter happy" > ${software}.version.txt
+        echo "make linter happy" > software.version.txt
         """
 }

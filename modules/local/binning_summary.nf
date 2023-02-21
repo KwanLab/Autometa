@@ -24,7 +24,6 @@ process BINNING_SUMMARY {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-binning-summary \\
             --dbdir $ncbi \\
@@ -37,6 +36,6 @@ process BINNING_SUMMARY {
             --output-taxonomy "metabin_taxonomy.tsv" \\
             --output-metabins "metabins"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

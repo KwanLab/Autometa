@@ -5,7 +5,7 @@ process MOCK_DATA_REPORT {
 
     publishDir "${options.publish_dir}", mode: params.publish_dir_mode
 
-    container "jasonkwan/autometa-nf-modules-mock_data_reporter:${params.autometa_image_tag}"
+    container "jasonkwan/autometa-nf-modules-mock_data_reporter:main"
 
 
     input:
@@ -22,16 +22,6 @@ process MOCK_DATA_REPORT {
     script:
         """
         #!/usr/bin/env Rscript
-
-        packages <- c("markdown","data.table", "ggplot2", "plotly", "crosstalk", "magrittr", "DT", "stringi")
-
-        for (i in packages) {
-          if (!requireNamespace(i)) {
-            install.packages(i)
-          }
-          library(i, character.only = T)
-        }
-
         rmarkdown::render(
           input="${rmarkdown_file}",
           params=list(

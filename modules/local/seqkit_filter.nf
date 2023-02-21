@@ -21,7 +21,6 @@ process SEQKIT_FILTER {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         def metagenomecmd = metagenome.getExtension() == 'gz' ? "gunzip -c $metagenome" : "cat $metagenome"
         """
         # filter contigs by specified length
@@ -40,6 +39,6 @@ process SEQKIT_FILTER {
         rm temp
         rm temp2
 
-        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        seqkit version | sed 's/seqkit v//g' > software.version.txt
         """
 }

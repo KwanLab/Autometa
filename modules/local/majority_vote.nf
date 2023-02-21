@@ -23,7 +23,6 @@ process MAJORITY_VOTE {
 
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
-        def software = getSoftwareName(task.process)
         """
         autometa-taxonomy-majority-vote \\
             --lca ${lca} \\
@@ -31,6 +30,6 @@ process MAJORITY_VOTE {
             --dbdir "${ncbi_tax_dir}" \\
             --dbtype ncbi
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

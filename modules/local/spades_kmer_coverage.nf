@@ -22,13 +22,12 @@ process SPADES_KMER_COVERAGE {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         autometa-coverage \\
             --assembly ${metagenome} \\
             --from-spades \\
             --out "coverage.tsv"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

@@ -22,7 +22,6 @@ process MERGE_TSV_WITH_HEADERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         awk 'FNR==1 && NR!=1{next;}{print}' *.tsv > "${meta.id}.${extension}"
         """

@@ -20,7 +20,6 @@ process SEQKIT_SPLIT {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
         """
         seqkit \\
@@ -30,6 +29,6 @@ process SEQKIT_SPLIT {
             ${options.args2} \\
             -O outfolder
 
-        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        seqkit version | sed 's/seqkit v//g' > software.version.txt
         """
 }

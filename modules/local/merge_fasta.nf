@@ -21,11 +21,10 @@ process MERGE_FASTA {
         task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         """
         # If errors occur because of issues with symlinks,
         # try:  cat * | seqkit sort -n > "${meta.id}.${extension}"
         seqkit sort -n * > "${meta.id}.${extension}"
-        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        seqkit version | sed 's/seqkit v//g' > software.version.txt
         """
 }

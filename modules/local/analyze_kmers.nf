@@ -37,6 +37,6 @@ process ANALYZE_KMERS {
             --cpus "${task.cpus}" \\
             --seed 42
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }

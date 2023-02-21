@@ -1,11 +1,11 @@
 process GET_GENOMES_FOR_MOCK {
-    def genome_count = task.ext.args2.tokenize('|').size()
+    def genome_count = 2
     tag "fetching ${genome_count} genomes"
 
     cache 'lenient'
 
     conda "bioconda::emboss=6.6.0"
-    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock:${params.autometa_image_tag}"
+    container "jasonkwan/autometa-nf-modules-get_genomes_for_mock:main"
 
     output:
         path "metagenome.fna.gz", emit: metagenome
@@ -21,16 +21,16 @@ process GET_GENOMES_FOR_MOCK {
     """
     curl -s ${args} > assembly_report.txt
 
-    grep -E ${args2} assembly_report.txt |\\
+    grep -E "${args2}" assembly_report.txt |\\
         awk -F '\\t' '{print \$20}' |\\
         sed 's,https://,rsync://,' |\\
-            xargs -n 1 -I {} \
-                rsync -am \
-                    --exclude='*_rna_from_genomic.fna.gz' \
-                    --exclude='*_cds_from_genomic.fna.gz' \
-                    --include="*_genomic.fna.gz" \
-                    --include="*_protein.faa.gz" \
-                    --include='*/' \
+            xargs -n 1 -I {} \\
+                rsync -am \\
+                    --exclude='*_rna_from_genomic.fna.gz' \\
+                    --exclude='*_cds_from_genomic.fna.gz' \\
+                    --include="*_genomic.fna.gz" \\
+                    --include="*_protein.faa.gz" \\
+                    --include='*/' \\
                     --exclude='*' {} .
 
     # "clean_mock_data.sh" is here: ~/Autometa/bin/clean_mock_data.sh

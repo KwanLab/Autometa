@@ -43,6 +43,6 @@ process HMMER_HMMSEARCH_FILTER {
             --seqdb "$fasta" \\
             --out "markers.tsv"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """
 }
