@@ -5,7 +5,7 @@ params.nr_dmnd_dir = nullprocess DIAMOND_MAKEDB {
 
     storeDir "${params.nr_dmnd_dir}"
 
-    conda (params.enable_conda ? "bioconda::diamond=2.0.9" : null)
+    conda "bioconda::diamond=2.0.9"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/diamond:2.0.9--hdcc8f71_0"
     } else {

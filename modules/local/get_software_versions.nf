@@ -6,7 +6,7 @@ There's a discussion that can be had later about incorporating that module fully
 */process GET_SOFTWARE_VERSIONS {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    conda "conda-forge::python=3.8.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/python:3.8.3"
     } else {

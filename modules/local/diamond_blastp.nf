@@ -6,7 +6,7 @@ process DIAMOND_BLASTP {
     // See: https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing
     maxForks 1
 
-    conda (params.enable_conda ? "bioconda::diamond=2.0.14" : null)
+    conda "bioconda::diamond=2.0.14"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/diamond:2.0.14--hdcc8f71_0"
     } else {

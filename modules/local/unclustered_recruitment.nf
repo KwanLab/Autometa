@@ -2,7 +2,7 @@ process RECRUIT {
     tag "sample:${meta.id}, classifier:${params.classification_method}, kmer dims:${params.classification_kmer_pca_dimensions}"
     label 'process_high'
 
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

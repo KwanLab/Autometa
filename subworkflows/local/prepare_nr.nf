@@ -6,7 +6,7 @@ process DOWNLOAD_NR {
     label 'process_low'
     storeDir "${params.nr_dmnd_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -38,7 +38,7 @@ process TEST_DOWNLOAD {
     tag "Downloading first 10,000 lines of nr.gz"
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

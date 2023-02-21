@@ -7,7 +7,7 @@ process TEST_DOWNLOAD {
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -33,7 +33,7 @@ process DOWNLOAD_ACESSION2TAXID {
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -68,7 +68,7 @@ process DOWNLOAD_TAXDUMP {
     label 'process_low'
     storeDir "${params.taxdump_tar_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

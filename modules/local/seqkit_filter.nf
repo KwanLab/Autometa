@@ -2,7 +2,7 @@ process SEQKIT_FILTER {
     tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'
 
-    conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
+    conda "bioconda::seqkit=0.16.1"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
     } else {

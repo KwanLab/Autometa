@@ -2,7 +2,7 @@ process EMBED_KMERS {
     tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}"
     label 'process_medium'
 
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa"
     } else {

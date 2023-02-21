@@ -2,7 +2,7 @@ process SAMTOOLS_VIEW_AND_SORT {
     tag "$meta.id"
     label 'process_medium'
 
-    conda (params.enable_conda ? "bioconda::samtools=1.13" : null)
+    conda "bioconda::samtools=1.13"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/samtools:1.12--hd5e65b6_0"
     } else {

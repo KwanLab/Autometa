@@ -2,7 +2,7 @@ process MERGE_TSV_WITH_HEADERS {
     tag "Merging files from parallel split for ${meta.id}"
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
 
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"

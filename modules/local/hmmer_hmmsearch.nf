@@ -15,7 +15,7 @@ process HMMER_HMMSEARCH {
 
     // no publishdir
 
-    conda (params.enable_conda ? "bioconda::hmmer=3.3.2" : null)
+    conda "bioconda::hmmer=3.3.2"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/hmmer:3.3.2--h1b792b2_1"
     } else {

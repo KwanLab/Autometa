@@ -2,7 +2,7 @@ process SEQKIT_SPLIT {
     tag "Splitting $meta.id for parallel processing"
     label 'process_medium'
 
-    conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
+    conda "bioconda::seqkit=0.16.1"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
     } else {

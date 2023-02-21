@@ -2,7 +2,7 @@ process REDUCE_LCA {
     tag "Finding LCA for ${meta.id}"
     label 'process_medium'
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

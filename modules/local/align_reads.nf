@@ -5,7 +5,7 @@ process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"
     label 'process_high'
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

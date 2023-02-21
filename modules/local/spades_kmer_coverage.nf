@@ -2,7 +2,7 @@ process SPADES_KMER_COVERAGE {
     tag "${meta.id}"
     label 'process_low'
 
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

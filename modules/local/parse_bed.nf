@@ -2,7 +2,7 @@ process PARSE_BED {
     tag "$meta.id"
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/bedtools:2.30.0--hc088bd4_0"
     } else {
