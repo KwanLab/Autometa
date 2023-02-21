@@ -37,3 +37,4 @@ lint:
   schema_lint: true
   template_strings: false
   nextflow_config: false
+repository_type: pipeline
