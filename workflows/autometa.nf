@@ -4,8 +4,6 @@
  * -------------------------------------------------
 */
 
-def modules = params.modules.clone()
-
 if (params.single_db_dir) {
     internal_nr_dmnd_dir = params.single_db_dir
     internal_prot_accession2taxid_gz_dir = params.single_db_dir
@@ -56,7 +54,7 @@ include { MOCK_DATA_REPORT                        } from '../modules/local/mock_
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
-include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'
+include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
 
 /*
  * -------------------------------------------------
