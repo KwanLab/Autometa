@@ -1,5 +1,5 @@
 process PREPARE_LCA {
-    tag "Preparing db cache from ${blastdb_dir}"
+    //tag "Preparing db cache from ${blastdb_dir}"
     label 'process_medium'
 
     conda "bioconda::autometa"
@@ -9,11 +9,10 @@ process PREPARE_LCA {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
 
-    storeDir 'db/lca'
     cache 'lenient'
 
     input:
-        path(blastdb_dir)
+        path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
         path "cache"           , emit: cache
@@ -24,10 +23,11 @@ process PREPARE_LCA {
 
     script:
         """
+        # https://autometa.readthedocs.io/en/latest/scripts/taxonomy/lca.html
         autometa-taxonomy-lca \\
             --blast . \\
             --lca-output . \\
-            --dbdir ${blastdb_dir} \\
+            --dbdir . \\
             --dbtype ncbi \\
             --cache cache \\
             --only-prepare-cache

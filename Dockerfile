@@ -20,13 +20,17 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 RUN apt-get update --allow-releaseinfo-change \
-    && apt-get install -y procps make \
+    && apt-get install -y procps make curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY autometa-env.yml ./
-RUN conda env update -n base --file=autometa-env.yml \
+
+RUN conda install -c conda-forge mamba -y \
     && conda clean --all -y
+
+RUN mamba env update -n base --file=autometa-env.yml \
+    && mamba clean --all -y
 
 
 COPY . .

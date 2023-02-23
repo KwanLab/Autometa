@@ -12,14 +12,12 @@ process SPADES_KMER_COVERAGE {
     input:
         tuple val(meta), path(metagenome)
 
-
     output:
         tuple val(meta), path("coverage.tsv")     , emit: coverage
         path  '*.version.txt'                     , emit: version
 
     when:
         meta.cov_from_assembly.equals('spades')
-        task.ext.when == null || task.ext.when
 
     script:
         """

@@ -42,7 +42,8 @@ process BINNING {
             --starting-rank ${params.binning_starting_rank} \\
             --cpus ${task.cpus} \\
             --rank-filter superkingdom \\
-            --rank-name-filter ${params.kingdom}
+            --rank-name-filter ${params.kingdom} \\
+            --verbose
 
         autometa --version | sed -e "s/autometa: //g" > software.version.txt
         """

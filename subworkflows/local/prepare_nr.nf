@@ -4,7 +4,9 @@ include { DIAMOND_MAKEDB } from './../../modules/local/diamond_makedb.nf'
 process DOWNLOAD_NR {
     tag "Downloading nr.gz (>100GB download. May take some time.)"
     label 'process_low'
-    storeDir "${params.nr_dmnd_dir}"
+    label 'process_long'
+
+    println '\033[0;34m Downloading nr.gz from NCBI, this may take a long time. \033[0m'
 
     conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -35,7 +37,7 @@ process DOWNLOAD_NR {
 
 process TEST_DOWNLOAD {
     // For development work so you don't download the entire nr.gz database
-    tag "Downloading first 10,000 lines of nr.gz"
+    tag "Downloading small set of FASTA"
     label 'process_low'
 
     conda "conda-forge::rsync=3.2.3"
@@ -46,16 +48,46 @@ process TEST_DOWNLOAD {
     }
 
     output:
-        path("nr.gz"), emit: singlefile
+        path "nr.gz", emit: singlefile
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
         """
-        # https://github.com/nextflow-io/nextflow/issues/1564
-        trap 'echo OK; exit 0;' EXIT
-        curl -s ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz | zcat | head -n 10000 | gzip > nr.gz
+
+cat <<-END_VERSIONS > nr
+>KJX92028.1 hypothetical protein TI39_contig5958g00003 [Zymoseptoria brevis]
+MAWTRQLVPLMLLFCGAHGLQRSSTATDQLSNSALQALGSHADLAAFVNDVEAVPEIANVILAHRGITIMAPVDSAWLRV
+DAIKRRNPAFLAWHIMNANVLTSDVPLVQYEQHPGITIPTFLSGSKNWTYSGEPASLISGGQSLTAITLKTEDNVIWVSG
+ASNVSYIKQANISYDRGIIHKIDPALQFPTSAYETAFAVGLYSYCWAVFTAGLDQEIRRIPNSTFLLPINEAFHAALPFL
+LGASREEFKRIVYRHVIPGRVLWSHEFYNASHETFEGSIVQIRGGNGRRWFVDDAMILDGSDKPLYNGVGHVVNKVLLPT
+>EFG1759503.1 decarboxylating NADP(+)-dependent phosphogluconate dehydrogenase [Escherichia coli]EGJ4377881.1 decarboxylating NADP(+)-dependent phosphogluconate dehydrogenase [Escherichia coli]
+LKPYLDKGDIIIDGGNTFFQDTIRRNRELSAEGFNFIGTGVSGGEEGALKGPSIMPGGQKEAYELVAPILTKIAAVAEDG
+EPCVTYIGADGAGHYVKMVHNGIEYGDMQLIAEAYSLLKGGLNLTNEELAQTFTEWNNGELSSYLIDITKDIFTKKDEDG
+NYLVDVILDEAANKGTGKWTSQSALDLGEPLSLITESVFARYISSLKEQRVAASKVLSGPQAQPAGDKGEFIEKVRRALY
+LGKIVSYAQGFSQLRAASEEYNWDLNYGEIAKIFRAGCIIRAQFLQKITDAYIENPQIANLLLAPYFKQIADNYQQALRE
+VVAYAVQNGIPVPTFAAAVAYYDSYRAAVLPANLIQAQRDYFGAHTYKRIDKEGVFHTEWL
+>WP_198835266.1 pilus assembly protein [Paracoccus sp. IB05]MBJ2149627.1 pilus assembly protein [Paracoccus sp. IB05]
+MTWRPLQRFLTRSDAAVTAEFVIVFPLVLALIFLIVFISMYISAASDLQQVVHELARYSYRYAGRPEANQLCATLERDAV
+PILVNASLLLHPENFTLISCSPPQGPDRIIVITASYDFAGSFVQSVGRTLGLSIGTISRQSLFIP
+>MBD3193859.1 hypothetical protein [Candidatus Lokiarchaeota archaeon]MBD3198741.1 hypothetical protein [Candidatus Lokiarchaeota archaeon]
+MKKGFIVLILIALVSAGGLILFFYYSNDSGNGNFNTNSEKMIINHNHAHLEDFTSIPSEWIIAAKANLSIVYWHTSHGSQ
+ITTGMSLLDAFMGDNDVYEFNNAGTGGALHYHEPSIDYSRRDLTGYTDQFDDETRTFLSSNPEYNVVIWSWCGLDKNNAS
+INAYLTNMNQLESEYPNVHFVYMTAHLEGTGEDGDLHIYNQMIRRYCNKNNKTLYDFGDIESYNPENEYFLDRDANDGCY
+YDSDGNGSLDANWATEWQSTHDGTHTYPNGGEWYDCSPAHSEAVNGNLKAYAAWYLFARLAGWNGT
+>UMM52736.1 protein ORF58 [Lake sturgeon herpesvirus]
+MGSMVKKRSRSLIPTSSITRWKTQSLKRPKATCASLRLTPRSTLSPQCHAGYGQSSPGANGLNRPVIDTWTRPSTAFGPS
+TSLGWTPQTHIFLNGNFVSHTHGCSPAFFTATQHVNIVYNKKQQTSVFAPHLLPHKQIQSGTVLTDNNKFVTDKKKTFSV
+QGVKNTRIEFTSLKNRSSNYTTNCRPLYQPAFQQFFELTGLCHGETSVTMSAMVVNNVNYTTCLYGLTNPFSFNFKICKD
+HKKFHNTLFFPSVNLYKQAKGRQHQIFESRYINSQKIYPGDVNQFGFYLQTVVAQTEYDPCLNWYFCRHFEATKSFLNTP
+NKTLILWFNERFYLAHPQVDIADPASYWPAYVTFMDLCVTPHLNHFIGFFSSGFGQYHNKNPEFIHLIPFLIFGAARGHN
+QGLDLIASYAHRLSRLQRHESLLELRLILQIAVELLKNPQITLCDDPVRGMELSYPQSDDPDNDREKRAKKRRLVVVTKP
+LCPPATVVRPLAGHQQSLVKKIQVYCQTCRRG
+END_VERSIONS
+
+gzip nr
+
         """
 }
 
@@ -76,12 +108,14 @@ workflow PREPARE_NR_DB {
             DIAMOND_MAKEDB(nr_db_ch, "nr")
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
-        } else {
+        } else if (params.large_downloads_permission) {
             DOWNLOAD_NR().singlefile
                 .set{nr_db_ch}
             DIAMOND_MAKEDB(nr_db_ch, "nr")
             DIAMOND_MAKEDB.out.diamond_db
                 .set{out_ch}
+        } else {
+            println '\033[0;34m Neither nr.dmnd or nr.gz were found and `--large_downloads_permission` is set to false. \033[0m'
         }
 
     emit:

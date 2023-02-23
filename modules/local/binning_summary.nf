@@ -26,7 +26,7 @@ process BINNING_SUMMARY {
     script:
         """
         autometa-binning-summary \\
-            --dbdir $ncbi \\
+            --dbdir . \\
             --dbtype ncbi \\
             --binning-main $binning_main \\
             --markers $markers \\

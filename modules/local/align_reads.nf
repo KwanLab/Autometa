@@ -21,7 +21,6 @@ process ALIGN_READS {
         path "*.version.txt"                   , emit: version
 
     when:
-        meta.cov_from_assembly.equals('0')
         task.ext.when == null || task.ext.when
 
     script:

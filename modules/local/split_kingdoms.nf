@@ -11,7 +11,7 @@ process SPLIT_KINGDOMS {
 
     input:
         tuple val(meta), path(assembly), path(votes)
-        path(ncbi_tax_dir)
+        path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
         tuple val(meta), path("taxonomy.tsv"), emit: taxonomy
@@ -30,7 +30,7 @@ process SPLIT_KINGDOMS {
             --output . \\
             --split-rank-and-write superkingdom \\
             --assembly "${assembly}" \\
-            --dbdir "${ncbi_tax_dir}" \\
+            --dbdir . \\
             --dbtype ncbi
 
         autometa --version | sed -e "s/autometa: //g" > software.version.txt

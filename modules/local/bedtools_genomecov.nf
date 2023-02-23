@@ -23,11 +23,12 @@ process BEDTOOLS_GENOMECOV {
         task.ext.when == null || task.ext.when
 
     script:
+        def args = task.ext.args ?: ''
         """
         bedtools \\
             genomecov \\
             -ibam ${bam} \\
-            $options.args  > alignments.bed
+            ${args}  > alignments.bed
 
         bedtools --version | sed -e "s/bedtools v//g" > software.version.txt
         """

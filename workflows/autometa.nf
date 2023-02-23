@@ -38,8 +38,6 @@ if (!params.taxonomy_aware) {
 */
 
 include { GET_SOFTWARE_VERSIONS                   } from '../modules/local/get_software_versions'
-include { SEQKIT_FILTER                           } from '../modules/local/seqkit_filter'
-include { SPADES_KMER_COVERAGE as COV_FROM_SPADES } from '../modules/local/spades_kmer_coverage'
 include { MARKERS                                 } from '../modules/local/markers'
 include { BINNING                                 } from '../modules/local/binning'
 include { RECRUIT                                 } from '../modules/local/unclustered_recruitment'
@@ -62,10 +60,9 @@ include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
  * -------------------------------------------------
 */
 
-include { CREATE_MOCK                 } from '../subworkflows/local/mock_data'
-include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
-include { CONTIG_COVERAGE as COVERAGE } from '../subworkflows/local/contig_coverage'
+include { COVERAGE                       } from '../subworkflows/local/coverage'
 include { KMERS                       } from '../subworkflows/local/kmers'
+include { PROCESS_METAGENOME          } from '../subworkflows/local/process_metagenome'
 include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment'
 
 workflow AUTOMETA {
@@ -73,67 +70,17 @@ workflow AUTOMETA {
     Channel
         .empty()
         .set{ch_software_versions}
-    // Samplesheet channel
-    Channel
-        .fromPath(params.input)
-        .set{samplesheet_ch}
 
-    // Set the metagenome and coverage channels
-    if (params.mock_test){
-        CREATE_MOCK()
-        CREATE_MOCK.out.fasta
-            .set{metagenome_ch}
-        Channel
-            .empty()
-            .set{coverage_tab_ch}
-    } else {
-        INPUT_CHECK(samplesheet_ch)
-        INPUT_CHECK.out.metagenome
-            .set{metagenome_ch}
-        INPUT_CHECK.out.coverage
-            .set{coverage_tab_ch}
-    }
+    PROCESS_METAGENOME()
 
-
-    SEQKIT_FILTER(
-        metagenome_ch
+    COVERAGE(
+        PROCESS_METAGENOME.out.filtered_metagenome_fasta,
+        PROCESS_METAGENOME.out.filtered_metagenome_fasta_and_reads,
+        PROCESS_METAGENOME.out.user_provided_coverage_table
     )
-    SEQKIT_FILTER.out.fasta
-        .set{fasta_ch}
 
-    /*
-    * -------------------------------------------------
-    *  Find coverage, currently only pulling from SPADES output
-    * -------------------------------------------------
-    */
-
-
-    if (!params.mock_test) {
-        fasta_ch
-            .join(INPUT_CHECK.out.reads)
-            .set{coverage_input_ch}
-    } else {
-        Channel
-            .empty()
-            .set{coverage_input_ch}
-    }
-
-    COVERAGE (
-        coverage_input_ch
-    )
-    COVERAGE.out.coverage
-        .set{contig_coverage_ch}
-
-    COV_FROM_SPADES (
-        fasta_ch,
-    )
-    COV_FROM_SPADES.out.coverage
-        .set{spades_kmer_coverage_ch}
-    // https://nextflow-io.github.io/patterns/index.html#_conditional_process_executions
-    contig_coverage_ch
-        .mix(spades_kmer_coverage_ch)
-        .mix(coverage_tab_ch)
-        .set{coverage_ch}
+    filtered_metagenome_fasta = PROCESS_METAGENOME.out.filtered_metagenome_fasta
+    coverage_ch = COVERAGE.out.coverage_ch
 
     /*
     * -------------------------------------------------
@@ -142,7 +89,7 @@ workflow AUTOMETA {
     */
 
     PRODIGAL (
-        fasta_ch,
+        filtered_metagenome_fasta,
         "gbk"
     )
 
@@ -157,25 +104,27 @@ workflow AUTOMETA {
 
     if (params.taxonomy_aware) {
         TAXON_ASSIGNMENT (
-            fasta_ch,
+            filtered_metagenome_fasta,
             orfs_ch
         )
-        TAXON_ASSIGNMENT.out.taxonomy
-            .set{taxonomy_results}
+
+        taxonomy_results = TAXON_ASSIGNMENT.out.taxonomy
+        taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
+
         if (params.kingdom.equals('bacteria')) {
-            TAXON_ASSIGNMENT.out.bacteria
-                .set{kmers_input_ch}
+            kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
         } else {
             // params.kingdom.equals('archaea')
-            TAXON_ASSIGNMENT.out.archaea
-                .set{kmers_input_ch}
+            kmers_input_ch = TAXON_ASSIGNMENT.out.archaea
         }
     } else {
-        fasta_ch
-            .set{kmers_input_ch}
+        kmers_input_ch = filtered_metagenome_fasta
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
             .set{taxonomy_results}
+        Channel
+            .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
+            .set{taxdump_files}
     }
 
     /*
@@ -184,32 +133,22 @@ workflow AUTOMETA {
     * -------------------------------------------------
     */
 
-    KMERS(
-        kmers_input_ch
-    )
-    KMERS.out.normalized
-        .set{kmers_normalized_ch}
-
-    KMERS.out.embedded
-        .set{kmers_embedded_ch}
-
+    KMERS( kmers_input_ch )
 
     // --------------------------------------------------------------------------------
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------
 
-    MARKERS(
-        orfs_ch
-    )
-    MARKERS.out.markers_tsv
-        .set{markers_ch}
+    MARKERS( orfs_ch )
+    markers_ch = MARKERS.out.markers_tsv
 
     // Prepare inputs for binning channel
-    kmers_embedded_ch
+    KMERS.out.embedded
         .join(coverage_ch)
-        .join(SEQKIT_FILTER.out.gc_content)
+        .join(PROCESS_METAGENOME.out.filtered_metagenome_gc_content)
         .join(markers_ch)
         .set{binning_ch}
+
     if (params.taxonomy_aware) {
         binning_ch
             .join(taxonomy_results)
@@ -226,7 +165,7 @@ workflow AUTOMETA {
 
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
-        kmers_normalized_ch
+        KMERS.out.normalized
             .join(coverage_ch)
             .join(BINNING.out.main)
             .join(markers_ch)
@@ -259,25 +198,21 @@ workflow AUTOMETA {
     // Set inputs for binning summary
     binning_results_ch
         .join(markers_ch)
-        .join(fasta_ch)
+        .join(filtered_metagenome_fasta)
         .set{binning_summary_ch}
 
-    if (params.single_db_dir) {
-        ncbi = file(params.single_db_dir)
-    } else {
-        ncbi = file("$baseDir/assets/dummy_file.txt")
-    }
+
 
     BINNING_SUMMARY(
         binning_summary_ch,
         binning_col,
-        ncbi,
+        taxdump_files,
     )
 
     if (params.mock_test){
         binning_results_ch
-            .join(CREATE_MOCK.out.assembly_to_locus)
-            .join(CREATE_MOCK.out.assembly_report)
+            .join(PROCESS_METAGENOME.out.assembly_to_locus)
+            .join(PROCESS_METAGENOME.out.assembly_report)
             .set { mock_input_ch }
 
         MOCK_DATA_REPORT(

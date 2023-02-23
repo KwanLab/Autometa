@@ -3,8 +3,6 @@ process DIAMOND_MAKEDB {
     tag ' Preparing Diamond database'
     label 'process_high'
 
-    storeDir "${params.nr_dmnd_dir}"
-
     conda "bioconda::diamond=2.0.9"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/diamond:2.0.9--hdcc8f71_0"
@@ -24,9 +22,10 @@ process DIAMOND_MAKEDB {
         task.ext.when == null || task.ext.when
 
     script:
+        def args = task.ext.args   ?: ''
         """
         diamond makedb --in ${fasta} \\
-            $options.args \\
+            $args \\
             --threads ${task.cpus} \\
             --db ${dbname}
 

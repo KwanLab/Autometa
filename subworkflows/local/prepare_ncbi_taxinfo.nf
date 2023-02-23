@@ -66,7 +66,6 @@ process DOWNLOAD_ACESSION2TAXID {
 process DOWNLOAD_TAXDUMP {
     tag "Downloading taxdump.tar.gz"
     label 'process_low'
-    storeDir "${params.taxdump_tar_gz_dir}"
 
     conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -76,7 +75,7 @@ process DOWNLOAD_TAXDUMP {
     }
 
     output:
-        path "*" , emit: taxdump_files
+        path "*.dmp" , emit: taxdump_files
         path  "*.version.txt"   , emit: version
 
     when:
@@ -97,7 +96,7 @@ process DOWNLOAD_TAXDUMP {
         tar -xf taxdump.tar.gz
         rm taxdump.tar.gz
 
-        rsync --version | head -n1 > rsync.version.txt
+        echo "sd" > rsync.version.txt
         """
 }
 
@@ -107,19 +106,22 @@ workflow PREPARE_TAXONOMY_DATABASES {
         taxdump_dir_files = taxdump_dir.list()
         expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
 
-        if (taxdump_dir_files.containsAll(expected_files)){
-            taxdump_files = taxdump_dir_files
+        dmp_files = file("${params.taxdump_tar_gz_dir}/*.dmp")
+        taxonomy_files_exist = dmp_files.name.containsAll(expected_files)
+
+        if (taxonomy_files_exist){
+            taxdump_files = dmp_files
         } else {
             DOWNLOAD_TAXDUMP()
             DOWNLOAD_TAXDUMP.out.taxdump_files
                 .set{taxdump_files}
         }
 
-        accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
-        accession2taxid_dir_files = accession2taxid_dir_files.list()
-        expected_files = ['prot.accession2taxid']
+        expected_files2 = ['prot.accession2taxid']
 
-        if (accession2taxid_dir_files.containsAll(expected_files)){
+        taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
+
+        if (taxonomy_files_exist2){
             prot_accession2taxid_ch = accession2taxid_dir_files
         } else if (params.debug){
             TEST_DOWNLOAD().singlefile
@@ -130,7 +132,7 @@ workflow PREPARE_TAXONOMY_DATABASES {
         }
 
     emit:
-        taxdump = taxdump_files
+        taxdump_files = taxdump_files
         prot_accession2taxid = prot_accession2taxid_ch
 
 }

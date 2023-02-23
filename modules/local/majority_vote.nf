@@ -12,7 +12,7 @@ process MAJORITY_VOTE {
 
     input:
         tuple val(meta), path(lca)
-        path(ncbi_tax_dir)
+        path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
         tuple val(meta), path("votes.tsv"), emit: votes
@@ -27,7 +27,7 @@ process MAJORITY_VOTE {
         autometa-taxonomy-majority-vote \\
             --lca ${lca} \\
             --output votes.tsv \\
-            --dbdir "${ncbi_tax_dir}" \\
+            --dbdir . \\
             --dbtype ncbi
 
         autometa --version | sed -e "s/autometa: //g" > software.version.txt

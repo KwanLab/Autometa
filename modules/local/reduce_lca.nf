@@ -11,8 +11,9 @@ process REDUCE_LCA {
 
     input:
         tuple val(meta), path(blast)
-        path(blastdb_dir)
-        path(lca_cache)
+        path taxdump_files // instead of passing to --dbdir, stage and pass '.'
+        path lca_cache
+        path prot_accession2taxid
 
     output:
         tuple val(meta), path("lca.tsv"), emit: lca
@@ -28,7 +29,7 @@ process REDUCE_LCA {
         """
         autometa-taxonomy-lca \\
             --blast ${blast} \\
-            --dbdir ${blastdb_dir} \\
+            --dbdir . \\
             --dbtype ncbi \\
             --cache ${lca_cache} \\
             --lca-error-taxids lca_error_taxids.tsv \\

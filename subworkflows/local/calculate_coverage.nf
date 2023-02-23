@@ -9,7 +9,7 @@ include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_so
 include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'
 include { PARSE_BED                 } from '../../modules/local/parse_bed'
 
-workflow CONTIG_COVERAGE {
+workflow CALCULATE_COVERAGE {
     take:
         metagenome_reads_ch
 

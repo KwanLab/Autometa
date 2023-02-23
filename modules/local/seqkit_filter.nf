@@ -24,8 +24,9 @@ process SEQKIT_FILTER {
         def metagenomecmd = metagenome.getExtension() == 'gz' ? "gunzip -c $metagenome" : "cat $metagenome"
         """
         # filter contigs by specified length
+        # `seqkit seq -i` "print ID instead of full head"
         ${metagenomecmd} | \\
-            seqkit seq -j ${task.cpus} -m ${params.length_cutoff} | \\
+            seqkit seq -i -j ${task.cpus} -m ${params.length_cutoff} | \\
             seqkit sort -n > "filtered.fna"
 
         # calculate gc content

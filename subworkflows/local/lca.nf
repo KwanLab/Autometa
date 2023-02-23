@@ -9,16 +9,19 @@ workflow LCA {
 
     take:
         blastp_results
-        blastp_dbdir
+        taxdump_files
+        prot_accession2taxid
 
     main:
+
         PREP_DBS(
-            blastp_dbdir
+            taxdump_files
         )
         REDUCE(
             blastp_results,
-            blastp_dbdir,
-            PREP_DBS.out.cache
+            taxdump_files,
+            PREP_DBS.out.cache,
+            prot_accession2taxid
         )
 
     emit:
