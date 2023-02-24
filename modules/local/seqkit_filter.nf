@@ -13,8 +13,8 @@ process SEQKIT_FILTER {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("filtered.fna")  , emit: fasta
-        tuple val(meta), path("gc_content.tsv"), emit: gc_content
+        tuple val(meta), path("*filtered.fna")  , emit: fasta
+        tuple val(meta), path("*gc_content.tsv"), emit: gc_content
         path  'versions.yml'                             , emit: versions
 
     when:
@@ -22,19 +22,20 @@ process SEQKIT_FILTER {
 
     script:
         def metagenomecmd = metagenome.getExtension() == 'gz' ? "gunzip -c $metagenome" : "cat $metagenome"
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         # filter contigs by specified length
         # `seqkit seq -i` "print ID instead of full head"
         ${metagenomecmd} | \\
             seqkit seq -i -j ${task.cpus} -m ${params.length_cutoff} | \\
-            seqkit sort -n > "filtered.fna"
+            seqkit sort -n > "${prefix}.filtered.fna"
 
         # calculate gc content
-        seqkit fx2tab -j ${task.cpus} -n -lg "filtered.fna" > temp
+        seqkit fx2tab -j ${task.cpus} -n -lg "${prefix}.filtered.fna" > temp
 
         # Extract columns, create tsv
         awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
-        echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "gc_content.tsv"
+        echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${prefix}.gc_content.tsv"
 
         # Remove temporary files
         rm temp

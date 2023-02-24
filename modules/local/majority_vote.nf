@@ -15,7 +15,7 @@ process MAJORITY_VOTE {
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("votes.tsv"), emit: votes
+        tuple val(meta), path("*votes.tsv"), emit: votes
         path  'versions.yml'             , emit: versions
 
     when:
@@ -26,7 +26,7 @@ process MAJORITY_VOTE {
         """
         autometa-taxonomy-majority-vote \\
             --lca ${lca} \\
-            --output votes.tsv \\
+            --output ${prefix}.votes.tsv \\
             --dbdir . \\
             --dbtype ncbi
 

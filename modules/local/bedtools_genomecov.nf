@@ -13,7 +13,7 @@ process BEDTOOLS_GENOMECOV {
         tuple val(meta), path(bam)
 
     output:
-        tuple val(meta), path("alignments.bed"), emit: bed
+        tuple val(meta), path("*alignments.bed"), emit: bed
         path  "versions.yml"                  , emit: versions
 
     when:
@@ -24,11 +24,12 @@ process BEDTOOLS_GENOMECOV {
 
     script:
         def args = task.ext.args ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         bedtools \\
             genomecov \\
             -ibam ${bam} \\
-            ${args}  > alignments.bed
+            ${args}  > ${prefix}.alignments.bed
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

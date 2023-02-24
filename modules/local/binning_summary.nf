@@ -10,20 +10,19 @@ process BINNING_SUMMARY {
     }
 
     input:
-        tuple val(meta), path(binning_main), path(markers), path(metagenome)
-        val(binning_column)
-        path(ncbi)
+        tuple val(meta), path(binning_main), path(markers), path(metagenome), val(binning_column), path(ncbi)
 
     output:
-        tuple val(meta), path("metabin_stats.tsv")   , emit: stats
-        tuple val(meta), path("metabins")            , emit: metabins
-        tuple val(meta), path("metabin_taxonomy.tsv"), emit: taxonomies, optional: true
+        tuple val(meta), path("*metabin_stats.tsv")   , emit: stats
+        tuple val(meta), path("*metabins")            , emit: metabins
+        tuple val(meta), path("*metabin_taxonomy.tsv"), emit: taxonomies, optional: true
         path 'versions.yml'                          , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-binning-summary \\
             --dbdir . \\
@@ -32,9 +31,9 @@ process BINNING_SUMMARY {
             --markers $markers \\
             --metagenome $metagenome \\
             --binning-column $binning_column \\
-            --output-stats "metabin_stats.tsv" \\
-            --output-taxonomy "metabin_taxonomy.tsv" \\
-            --output-metabins "metabins"
+            --output-stats "${prefix}.metabin_stats.tsv" \\
+            --output-taxonomy "${prefix}.metabin_taxonomy.tsv" \\
+            --output-metabins "${prefix}.metabins"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

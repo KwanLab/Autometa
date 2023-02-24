@@ -20,7 +20,7 @@ process SEQKIT_SPLIT {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         seqkit \\
             split \\

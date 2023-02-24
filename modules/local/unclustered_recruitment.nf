@@ -25,6 +25,7 @@ process RECRUIT {
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         if (!params.taxonomy_aware)
         """
         autometa-unclustered-recruitment \\
@@ -35,9 +36,9 @@ process RECRUIT {
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
-            --output-features ${params.kingdom}.recruitment.features.tsv.gz
+            --output-binning ${prefix}.${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${prefix}.${params.kingdom}.recruitment.features.tsv.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -47,17 +48,17 @@ process RECRUIT {
         else
         """
         autometa-unclustered-recruitment \\
-            --classifier ${params.classification_method} \\
-            --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
+            --classifier ${prefix}.${params.classification_method} \\
+            --kmer-dimensions ${prefix}.${params.classification_kmer_pca_dimensions} \\
             --seed 42 \\
             --taxonomy $taxonomy \\
             --kmers $kmers \\
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
-            --output-features ${params.kingdom}.recruitment.features.tsv.gz
+            --output-binning ${prefix}.${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${prefix}.${params.kingdom}.recruitment.features.tsv.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

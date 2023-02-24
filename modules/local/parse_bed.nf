@@ -13,7 +13,7 @@ process PARSE_BED {
         tuple val(meta), path(bed)
 
     output:
-        tuple val(meta), path("coverage.tsv"), emit: coverage
+        tuple val(meta), path("*coverage.tsv"), emit: coverage
         path  "versions.yml"                , emit: versions
 
     when:
@@ -21,13 +21,14 @@ process PARSE_BED {
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         # NOTE: Here we supply an argument to ibam to prevent raising an error
         # However, bed is the only arg required for nextflow since bed is generated from BEDTOOLS_GENOMECOV...
         autometa-bedtools-genomecov \\
             --ibam . \\
             --bed $bed \\
-            --output coverage.tsv
+            --output ${prefix}.coverage.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -16,23 +16,24 @@ process BINNING {
         tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path("${params.kingdom}.binning.tsv.gz")     , emit: binning
-        tuple val(meta), path("${params.kingdom}.binning.main.tsv.gz"), emit: main
-        path 'versions.yml'                                           , emit: versions
+        tuple val(meta), path("*.binning.tsv.gz")        , emit: binning
+        tuple val(meta), path("*.binning.main.tsv.gz")   , emit: main
+        path 'versions.yml'                              , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
         taxonomy_call = params.taxonomy_aware ? "--taxonomy $taxonomy" : "" // https://github.com/nextflow-io/nextflow/issues/1694#issuecomment-683272275
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-binning \\
             --kmers $kmers \\
             --coverages $coverage \\
             --gc-content $gc_content \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.binning.tsv.gz \\
-            --output-main ${params.kingdom}.binning.main.tsv.gz \\
+            --output-binning ${prefix}.${params.kingdom}.binning.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.binning.main.tsv.gz \\
             --clustering-method ${params.clustering_method} \\
             --completeness ${params.completeness} \\
             --purity ${params.purity} \\

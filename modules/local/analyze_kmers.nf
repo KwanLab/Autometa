@@ -14,9 +14,9 @@ process ANALYZE_KMERS {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("kmers.tsv")           , emit: counts
-        tuple val(meta), path("kmers.normalized.tsv"), emit: normalized
-        tuple val(meta), path("kmers.embedded.tsv")  , emit: embedded
+        tuple val(meta), path("*kmers.tsv")           , emit: counts
+        tuple val(meta), path("*kmers.normalized.tsv"), emit: normalized
+        tuple val(meta), path("*kmers.embedded.tsv")  , emit: embedded
         path 'versions.yml'                          , emit: versions
 
     when:
@@ -26,12 +26,12 @@ process ANALYZE_KMERS {
         """
         autometa-kmers \\
             --fasta ${metagenome} \\
-            --kmers "kmers.tsv" \\
+            --kmers "${prefix}.kmers.tsv" \\
             --size "${params.kmer_size}" \\
-            --norm-output "kmers.normalized.tsv" \\
+            --norm-output "${prefix}.kmers.normalized.tsv" \\
             --norm-method "${params.norm_method}" \\
             --pca-dimensions "${params.pca_dimensions}" \\
-            --embedding-output "kmers.embedded.tsv" \\
+            --embedding-output "${prefix}.kmers.embedded.tsv" \\
             --embedding-method "${params.embedding_method}" \\
             --embedding-dimensions "${params.embedding_dimensions}" \\
             --cpus "${task.cpus}" \\

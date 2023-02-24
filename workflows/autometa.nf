@@ -191,29 +191,22 @@ workflow AUTOMETA {
 
         RECRUIT.out.main
             .set{binning_results_ch}
-        Channel
-            .value("recruited_cluster")
-            .set{binning_col}
+        binning_col = Channel.of("recruited_cluster")
     } else {
-        BINNING.out.main
-            .set{binning_results_ch}
-        Channel
-            .value("cluster")
-            .set{binning_col}
+        binning_results_ch = BINNING.out.main
+        binning_col = Channel.of("cluster")
     }
 
     // Set inputs for binning summary
     binning_results_ch
         .join(markers_ch)
         .join(filtered_metagenome_fasta)
+        .combine(binning_col)
+        .combine(taxdump_files)
         .set{binning_summary_ch}
 
-
-
     BINNING_SUMMARY(
-        binning_summary_ch,
-        binning_col,
-        taxdump_files,
+        binning_summary_ch
     )
     ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 

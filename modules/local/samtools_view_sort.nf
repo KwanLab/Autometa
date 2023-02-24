@@ -13,7 +13,7 @@ process SAMTOOLS_VIEW_AND_SORT {
         tuple val(meta), path(sam)
 
     output:
-        tuple val(meta), path("alignments.bam"), emit: bam
+        tuple val(meta), path("*.alignments.bam"), emit: bam
         path "versions.yml"                   , emit: versions
 
     when:
@@ -23,10 +23,11 @@ process SAMTOOLS_VIEW_AND_SORT {
     script:
         def args = task.ext.args ?: ''
         def args2 = task.ext.args2 ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
 
         """
         samtools view ${args} -@ ${task.cpus} -bS ${sam} \\
-            | samtools sort ${args2} -@ ${task.cpus} -o alignments.bam
+            | samtools sort ${args2} -@ ${task.cpus} -o ${prefix}.alignments.bam
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

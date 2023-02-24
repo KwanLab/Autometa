@@ -20,6 +20,7 @@ process MOCK_DATA_REPORT {
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         mock_data_report.R ${rmarkdown_file} ${bins_path} ${assembly_to_locus_path} ${assembly_report_path}
 

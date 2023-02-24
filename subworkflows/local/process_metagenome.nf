@@ -13,6 +13,9 @@ workflow PROCESS_METAGENOME {
         .fromPath(params.input)
         .set{samplesheet_ch}
 
+    assembly_to_locus = Channel.empty()
+    assembly_report   = Channel.empty()
+
     // Set the metagenome and coverage channels
     if (params.mock_test){
 
@@ -29,6 +32,9 @@ workflow PROCESS_METAGENOME {
         CREATE_MOCK.out.reads
             .set{reads_ch}
 
+        assembly_to_locus = CREATE_MOCK.out.assembly_to_locus
+        assembly_report = CREATE_MOCK.out.assembly_report
+
     } else {
 
         INPUT_CHECK(samplesheet_ch)
@@ -42,6 +48,8 @@ workflow PROCESS_METAGENOME {
 
         INPUT_CHECK.out.reads
             .set{reads_ch}
+
+
     }
 
     SEQKIT_FILTER(
@@ -60,7 +68,7 @@ workflow PROCESS_METAGENOME {
         reads                               = reads_ch
         filtered_metagenome_fasta_and_reads = combined_contigs_reads
         filtered_metagenome_gc_content      = SEQKIT_FILTER.out.gc_content
-        assembly_to_locus                   = CREATE_MOCK.out.assembly_to_locus
-        assembly_report                     = CREATE_MOCK.out.assembly_report
-        versions = ch_versions
+        assembly_to_locus                   = assembly_report
+        assembly_report                     = assembly_report
+        versions                            = ch_versions
 }

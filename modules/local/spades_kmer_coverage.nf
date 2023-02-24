@@ -13,18 +13,19 @@ process SPADES_KMER_COVERAGE {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("coverage.tsv")     , emit: coverage
+        tuple val(meta), path("*coverage.tsv")     , emit: coverage
         path  'versions.yml'                     , emit: versions
 
     when:
         meta.cov_from_assembly.equals('spades')
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-coverage \\
             --assembly ${metagenome} \\
             --from-spades \\
-            --out "coverage.tsv"
+            --out "${prefix}.coverage.tsv"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -14,17 +14,18 @@ process COUNT_KMERS {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("kmers.tsv")           , emit: counts
+        tuple val(meta), path("*kmers.tsv")           , emit: counts
         path  'versions.yml'                        , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-kmers \\
             --fasta $metagenome \\
-            --kmers "kmers.tsv" \\
+            --kmers "${prefix}.kmers.tsv" \\
             --size "${params.kmer_size}" \\
             --cpus "${task.cpus}" \\
             --seed 42

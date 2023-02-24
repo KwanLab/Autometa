@@ -22,26 +22,20 @@ process MARKERS {
         //path(cutoffs) currently only inside docker
 
     output:
-        tuple val(meta), path("${params.kingdom}.markers.tsv"), emit: markers_tsv
-        tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmmscan_tsv
-        path  'versions.yml'               , emit: versions
+        tuple val(meta), path("*.markers.tsv")  , emit: markers_tsv
+        tuple val(meta), path("*.hmmscan.tsv")  , emit: hmmscan_tsv
+        path  'versions.yml'                    , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
-
-     // TODO: nf-core linter now checks and flags any instances of 'params.enable_conda'. Is this check below still necessary?
-     //   if (params.enable_conda)
-     //   """
-     //   exit 1
-     //   """
-     //   else
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-markers \\
             --orfs $orfs \\
-            --hmmscan ${params.kingdom}.hmmscan.tsv \\
-            --out ${params.kingdom}.markers.tsv \\
+            --hmmscan ${prefix}.${params.kingdom}.hmmscan.tsv \\
+            --out ${prefix}.${params.kingdom}.markers.tsv \\
             --kingdom ${params.kingdom} \\
             --parallel \\
             --cpus ${task.cpus} \\
