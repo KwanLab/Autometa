@@ -16,7 +16,7 @@ process PREPARE_LCA {
 
     output:
         path "cache"           , emit: cache
-        path '*.version.txt'   , emit: version
+        path 'versions.yml'   , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -31,6 +31,9 @@ process PREPARE_LCA {
             --dbtype ncbi \\
             --cache cache \\
             --only-prepare-cache
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

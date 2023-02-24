@@ -18,7 +18,7 @@ process SPLIT_KINGDOMS {
         tuple val(meta), path("bacteria.fna"), emit: bacteria, optional: true
         tuple val(meta), path("archaea.fna") , emit: archaea,  optional: true
         tuple val(meta), path("*.fna")       , emit: kingdoms, optional: true
-        path  '*.version.txt'                , emit: version
+        path  'versions.yml'                , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -33,6 +33,9 @@ process SPLIT_KINGDOMS {
             --dbdir . \\
             --dbtype ncbi
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

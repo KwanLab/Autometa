@@ -16,21 +16,28 @@ process SAMTOOLS_WGSIM {
 
     output:
     tuple val(meta), path("reads_1.fastq"), path("reads_2.fastq"), emit: reads
-    path "*.version.txt" , emit: version
+    path "versions.yml" , emit: versions
 
     """
     # https://sarahpenir.github.io/bioinformatics/Simulating-Sequence-Reads-with-wgsim/
     wgsim -1 300 -2 300 -r 0 -R 0 -X 0 -e 0 ${metagenome} reads_1.fastq reads_2.fastq
 
-    echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > samtools.version.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
+    END_VERSIONS
     """
 }
 
 workflow CREATE_MOCK {
 
     main:
+        ch_versions = Channel.empty()
+
         // Download and format fasta files from specfied whole genome assemblies (genomes set from "get_genomes_for_mock" parameter in ~Autometa/conf/modules.config)
         GET_GENOMES_FOR_MOCK()
+        ch_versions = ch_versions.mix(GET_GENOMES_FOR_MOCK.out.versions)
         // Format everything with a meta map for use in the main Autometa pipeline
         // see "create_" functions in ~subworkflows/local/input_check.nf
         GET_GENOMES_FOR_MOCK.out.fake_spades_coverage
@@ -69,10 +76,12 @@ workflow CREATE_MOCK {
 
         // Create fake reads from input genome sequences
         SAMTOOLS_WGSIM(metagenome)
+        ch_versions = ch_versions.mix(SAMTOOLS_WGSIM.out.versions)
 
     emit:
         reads = SAMTOOLS_WGSIM.out.reads
         fasta = metagenome
         assembly_to_locus = assembly_to_locus
         assembly_report = assembly_report
+        versions = ch_versions
 }

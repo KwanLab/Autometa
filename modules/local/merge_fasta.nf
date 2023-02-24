@@ -15,7 +15,7 @@ process MERGE_FASTA {
 
     output:
         tuple val(meta), path("${meta.id}.${extension}"), emit: merged
-        path '*.version.txt'                            , emit: version
+        path 'versions.yml'                            , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -25,6 +25,10 @@ process MERGE_FASTA {
         # If errors occur because of issues with symlinks,
         # try:  cat * | seqkit sort -n > "${meta.id}.${extension}"
         seqkit sort -n * > "${meta.id}.${extension}"
-        seqkit version | sed 's/seqkit v//g' > software.version.txt
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            seqkit: \$( seqkit | sed '3!d; s/Version: //' )
+        END_VERSIONS
         """
 }

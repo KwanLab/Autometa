@@ -14,7 +14,7 @@ process SAMTOOLS_VIEW_AND_SORT {
 
     output:
         tuple val(meta), path("alignments.bam"), emit: bam
-        path "*.version.txt"                   , emit: version
+        path "versions.yml"                   , emit: versions
 
     when:
         meta.cov_from_assembly.equals('0')
@@ -28,6 +28,9 @@ process SAMTOOLS_VIEW_AND_SORT {
         samtools view ${args} -@ ${task.cpus} -bS ${sam} \\
             | samtools sort ${args2} -@ ${task.cpus} -o alignments.bam
 
-        echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
+        END_VERSIONS
         """
 }

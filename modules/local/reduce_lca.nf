@@ -19,7 +19,7 @@ process REDUCE_LCA {
         tuple val(meta), path("lca.tsv"), emit: lca
         path "lca_error_taxids.tsv"     , emit: error_taxids
         path "sseqid2taxid.tsv"         , emit: sseqid_to_taxids
-        path '*.version.txt'            , emit: version
+        path 'versions.yml'            , emit: versions
 
 
     when:
@@ -35,6 +35,9 @@ process REDUCE_LCA {
             --lca-error-taxids lca_error_taxids.tsv \\
             --sseqid2taxid-output sseqid2taxid.tsv \\
             --lca-output lca.tsv
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

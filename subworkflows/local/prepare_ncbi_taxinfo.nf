@@ -43,7 +43,7 @@ process DOWNLOAD_ACESSION2TAXID {
     output:
         // hack nf-core options.args3 and use for output name
         path "prot.accession2taxid.gz" , emit: accession2taxid
-        path  "*.version.txt"   , emit: version
+        path "versions.yml"            , emit: versions
     when:
         task.ext.when == null || task.ext.when
 
@@ -59,7 +59,10 @@ process DOWNLOAD_ACESSION2TAXID {
 
         md5sum -c *.md5
 
-        rsync --version | head -n1 > rsync.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+        END_VERSIONS
         """
 }
 
@@ -75,8 +78,8 @@ process DOWNLOAD_TAXDUMP {
     }
 
     output:
-        path "*.dmp" , emit: taxdump_files
-        path  "*.version.txt"   , emit: version
+        path "*.dmp"        , emit: taxdump_files
+        path "versions.yml" , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -96,12 +99,17 @@ process DOWNLOAD_TAXDUMP {
         tar -xf taxdump.tar.gz
         rm taxdump.tar.gz
 
-        echo "sd" > rsync.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+        END_VERSIONS
         """
 }
 
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
+        ch_versions = Channel.empty()
+
         taxdump_dir = file(params.taxdump_tar_gz_dir)
         taxdump_dir_files = taxdump_dir.list()
         expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
@@ -113,6 +121,7 @@ workflow PREPARE_TAXONOMY_DATABASES {
             taxdump_files = dmp_files
         } else {
             DOWNLOAD_TAXDUMP()
+            ch_versions = ch_versions.mix(DOWNLOAD_TAXDUMP.out.versions)
             DOWNLOAD_TAXDUMP.out.taxdump_files
                 .set{taxdump_files}
         }
@@ -126,14 +135,19 @@ workflow PREPARE_TAXONOMY_DATABASES {
         } else if (params.debug){
             TEST_DOWNLOAD().singlefile
                 .set{prot_accession2taxid_ch}
+
         } else {
-            DOWNLOAD_ACESSION2TAXID().accession2taxid
+            DOWNLOAD_ACESSION2TAXID()
+            DOWNLOAD_ACESSION2TAXID.out.accession2taxid
                 .set{prot_accession2taxid_ch}
+            ch_versions = ch_versions.mix(DOWNLOAD_ACESSION2TAXID.out.versions)
+
         }
 
     emit:
         taxdump_files = taxdump_files
         prot_accession2taxid = prot_accession2taxid_ch
+        versions = ch_versions
 
 }
 

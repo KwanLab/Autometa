@@ -13,7 +13,8 @@ process MOCK_DATA_REPORT {
         path(rmarkdown_file)
 
     output:
-        tuple val(meta), path("*.html"), emit: results
+        tuple val(meta), path("*.html") , emit: results
+        path "versions.yml"             , emit: versions
 
 
     when:
@@ -47,6 +48,10 @@ process MOCK_DATA_REPORT {
           output_dir=getwd(),
           output_file="mock_data_report_by_genus.html"
         )
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            R: 'jasonkwan/autometa-nf-modules-mock_data_reporter:main'
+        END_VERSIONS
 
         """
 }

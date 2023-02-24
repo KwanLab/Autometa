@@ -19,7 +19,7 @@ process DIAMOND_BLASTP {
 
     output:
         tuple val(meta), path("blastp.tsv"), emit: diamond_results
-        path "*.version.txt"               , emit: version
+        path "versions.yml"               , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -33,6 +33,9 @@ process DIAMOND_BLASTP {
             --threads ${task.cpus} \\
             --out blastp.tsv
 
-        diamond version | sed 's/^.*diamond version //' > diamond.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            diamond: \$(diamond --version 2>&1 | tail -n 1 | sed 's/^diamond version //')
+        END_VERSIONS
         """
 }

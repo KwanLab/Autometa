@@ -15,7 +15,7 @@ process COUNT_KMERS {
 
     output:
         tuple val(meta), path("kmers.tsv")           , emit: counts
-        path  '*.version.txt'                        , emit: version
+        path  'versions.yml'                        , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -29,6 +29,9 @@ process COUNT_KMERS {
             --cpus "${task.cpus}" \\
             --seed 42
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

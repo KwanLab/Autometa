@@ -18,7 +18,7 @@ process ALIGN_READS {
     output:
         tuple val(meta), path("alignments.sam"), emit: sam
         path "*.db*.bt2"                       , emit: bt2_db
-        path "*.version.txt"                   , emit: version
+        path "versions.yml"                   , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -40,6 +40,9 @@ process ALIGN_READS {
             -1 $fwd_reads \\
             -2 $rev_reads
 
-        echo \$(bowtie2 --version 2>&1) | sed -n 's/^.*bowtie2-align-s version //p; s/ .*\$//' > bowtie2.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bowtie2: \$(echo \$(bowtie2 --version 2>&1) | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')
+        END_VERSIONS
         """
 }

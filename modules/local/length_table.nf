@@ -14,7 +14,7 @@ process LENGTH_TABLE {
 
     output:
         tuple val(meta), path("lengths.tsv"), emit: lengths
-        path  '*.version.txt'               , emit: version
+        path  'versions.yml'               , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -30,6 +30,9 @@ process LENGTH_TABLE {
         lengths.index.name = "contig"
         lengths.to_csv(lengths.tsv, sep="\t", index=True, header=True)
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

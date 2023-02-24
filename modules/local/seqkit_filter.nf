@@ -15,7 +15,7 @@ process SEQKIT_FILTER {
     output:
         tuple val(meta), path("filtered.fna")  , emit: fasta
         tuple val(meta), path("gc_content.tsv"), emit: gc_content
-        path  '*.version.txt'                             , emit: version
+        path  'versions.yml'                             , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -40,6 +40,10 @@ process SEQKIT_FILTER {
         rm temp
         rm temp2
 
-        seqkit version | sed 's/seqkit v//g' > software.version.txt
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            seqkit: \$( seqkit | sed '3!d; s/Version: //' )
+        END_VERSIONS
         """
 }

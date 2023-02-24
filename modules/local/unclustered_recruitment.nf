@@ -19,7 +19,7 @@ process RECRUIT {
         tuple val(meta), path("${params.kingdom}.recruitment.tsv.gz")         , emit: binning, optional: true
         tuple val(meta), path("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
         tuple val(meta), path("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
-        path  '*.version.txt'                                                 , emit: version
+        path  'versions.yml'                                                 , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -39,7 +39,10 @@ process RECRUIT {
             --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
             --output-features ${params.kingdom}.recruitment.features.tsv.gz
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
         else
         """
@@ -56,6 +59,9 @@ process RECRUIT {
             --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
             --output-features ${params.kingdom}.recruitment.features.tsv.gz
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

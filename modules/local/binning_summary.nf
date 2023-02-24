@@ -18,7 +18,7 @@ process BINNING_SUMMARY {
         tuple val(meta), path("metabin_stats.tsv")   , emit: stats
         tuple val(meta), path("metabins")            , emit: metabins
         tuple val(meta), path("metabin_taxonomy.tsv"), emit: taxonomies, optional: true
-        path  '*.version.txt'                        , emit: version
+        path 'versions.yml'                          , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -36,6 +36,9 @@ process BINNING_SUMMARY {
             --output-taxonomy "metabin_taxonomy.tsv" \\
             --output-metabins "metabins"
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

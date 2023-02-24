@@ -24,7 +24,7 @@ process MARKERS {
     output:
         tuple val(meta), path("${params.kingdom}.markers.tsv"), emit: markers_tsv
         tuple val(meta), path("${params.kingdom}.hmmscan.tsv"), emit: hmmscan_tsv
-        path  '*.version.txt'               , emit: version
+        path  'versions.yml'               , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -49,6 +49,9 @@ process MARKERS {
             --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
             --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

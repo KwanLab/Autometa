@@ -14,7 +14,8 @@ process SAMPLESHEET_CHECK {
         path samplesheet
 
     output:
-        path '*.csv'
+        path '*.csv'         , emit: csv
+        path "versions.yml"  , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -22,5 +23,10 @@ process SAMPLESHEET_CHECK {
     script:
         """
         check_samplesheet.py $samplesheet samplesheet.valid.csv
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1 | tail -n 1 | sed 's/^Python //')
+        END_VERSIONS
         """
 }

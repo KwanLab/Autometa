@@ -14,6 +14,7 @@ process GET_GENOMES_FOR_MOCK {
         path "assembly_to_locus.txt", emit: assembly_to_locus
         path "assemblies.txt", emit: assemblies
         path "assembly_report.txt", emit: assembly_report
+        path "versions.yml"            , emit: versions
 
     script:
         def args = task.ext.args ?: ''
@@ -35,5 +36,9 @@ process GET_GENOMES_FOR_MOCK {
 
     # "clean_mock_data.sh" is here: ~/Autometa/bin/clean_mock_data.sh
     clean_mock_data.sh
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+    END_VERSIONS
     """
 }

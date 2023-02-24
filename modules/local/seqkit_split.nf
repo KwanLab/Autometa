@@ -14,7 +14,7 @@ process SEQKIT_SPLIT {
 
     output:
         tuple val(meta), path("outfolder/*")    , emit: fasta
-        path "*.version.txt"                    , emit: version
+        path "versions.yml"                     , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -29,6 +29,9 @@ process SEQKIT_SPLIT {
             ${options.args2} \\
             -O outfolder
 
-        seqkit version | sed 's/seqkit v//g' > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            seqkit: \$( seqkit | sed '3!d; s/Version: //' )
+        END_VERSIONS
         """
 }

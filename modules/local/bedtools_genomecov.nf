@@ -14,7 +14,7 @@ process BEDTOOLS_GENOMECOV {
 
     output:
         tuple val(meta), path("alignments.bed"), emit: bed
-        path  "*.version.txt"                  , emit: version
+        path  "versions.yml"                  , emit: versions
 
     when:
         meta.cov_from_assembly.equals('0')
@@ -30,6 +30,9 @@ process BEDTOOLS_GENOMECOV {
             -ibam ${bam} \\
             ${args}  > alignments.bed
 
-        bedtools --version | sed -e "s/bedtools v//g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bedtools: \$(bedtools --version | sed -e "s/bedtools v//g")
+        END_VERSIONS
         """
 }

@@ -13,22 +13,27 @@ workflow LCA {
         prot_accession2taxid
 
     main:
+        ch_versions = Channel.empty()
 
         PREP_DBS(
             taxdump_files
         )
+        ch_versions = ch_versions.mix(PREP_DBS.out.versions)
+
         REDUCE(
             blastp_results,
             taxdump_files,
             PREP_DBS.out.cache,
             prot_accession2taxid
         )
+        ch_versions = ch_versions.mix(REDUCE.out.versions)
 
     emit:
         lca = REDUCE.out.lca
         error_taxid = REDUCE.out.error_taxids
         sseqid_to_taxids = REDUCE.out.sseqid_to_taxids
         cache  = PREP_DBS.out.cache
+        versions = ch_versions
 }
 
 /*

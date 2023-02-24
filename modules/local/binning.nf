@@ -18,7 +18,7 @@ process BINNING {
     output:
         tuple val(meta), path("${params.kingdom}.binning.tsv.gz")     , emit: binning
         tuple val(meta), path("${params.kingdom}.binning.main.tsv.gz"), emit: main
-        path  '*.version.txt'                                         , emit: version
+        path 'versions.yml'                                           , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -45,6 +45,9 @@ process BINNING {
             --rank-name-filter ${params.kingdom} \\
             --verbose
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

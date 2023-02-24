@@ -14,7 +14,7 @@ process SPADES_KMER_COVERAGE {
 
     output:
         tuple val(meta), path("coverage.tsv")     , emit: coverage
-        path  '*.version.txt'                     , emit: version
+        path  'versions.yml'                     , emit: versions
 
     when:
         meta.cov_from_assembly.equals('spades')
@@ -26,6 +26,9 @@ process SPADES_KMER_COVERAGE {
             --from-spades \\
             --out "coverage.tsv"
 
-        autometa --version | sed -e "s/autometa: //g" > software.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }
