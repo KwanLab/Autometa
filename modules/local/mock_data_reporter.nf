@@ -7,7 +7,6 @@ process MOCK_DATA_REPORT {
 
     container "jasonkwan/autometa-nf-modules-mock_data_reporter:main"
 
-
     input:
         tuple val(meta), path(bins_path), path(assembly_to_locus_path), path(assembly_report_path)
         path(rmarkdown_file)
@@ -22,35 +21,11 @@ process MOCK_DATA_REPORT {
 
     script:
         """
-        #!/usr/bin/env Rscript
-        rmarkdown::render(
-          input="${rmarkdown_file}",
-          params=list(
-            bins_path="${bins_path}",
-            assembly_to_locus_path="${assembly_to_locus_path}",
-            assembly_report_path="${assembly_report_path}",
-            genus=FALSE
-          ),
-          knit_root_dir=getwd(),
-          output_dir=getwd(),
-          output_file="mock_data_report_by_assembly.html"
-        )
+        mock_data_report.R ${rmarkdown_file} ${bins_path} ${assembly_to_locus_path} ${assembly_report_path}
 
-        rmarkdown::render(
-          input="${rmarkdown_file}",
-          params=list(
-            bins_path= "${bins_path}",
-            assembly_to_locus_path = "${assembly_to_locus_path}",
-            assembly_report_path = "${assembly_report_path}",
-            genus=TRUE
-          ),
-          knit_root_dir=getwd(),
-          output_dir=getwd(),
-          output_file="mock_data_report_by_genus.html"
-        )
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            R: 'jasonkwan/autometa-nf-modules-mock_data_reporter:main'
+            R: 'For R and packages, see docker: jasonkwan/autometa-nf-modules-mock_data_reporter:main'
         END_VERSIONS
 
         """
