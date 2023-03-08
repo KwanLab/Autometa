@@ -17,12 +17,6 @@ Compute Environment Setup
 If you have not previously installed/used Conda, you can get it using the
 Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
 
-This step is optional, but we recommend using `mamba <https://github.com/mamba-org/mamba>`_ for faster installation
-.. code-block:: bash
-
-    conda install mamba
-
-
 You may either create a new Conda environment named "autometa"...
 
 .. code-block:: bash
@@ -45,37 +39,6 @@ The next command installs Autometa in the provided environment:
 .. code-block:: bash
 
     conda install -n <your-env-name> -c bioconda autometa
-
-NCBI Preparation
-****************
-
-If you are running Autometa for the first time you'll have to download the NCBI databases.
-
-.. code-block:: bash
-
-    # First configure where you want to download the NCBI databases
-    autometa-config \\
-        --section databases \\
-        --option ncbi \\
-        --value <path/to/your/ncbi/database/directory>
-
-    # Now download and format the NCBI databases
-    autometa-update-databases --update-ncbi
-
-.. note::
-    You can check the default config paths using ``autometa-config --print``.
-
-    See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
-
-The previous command will download the following NCBI databases:
-
-- Non-redundant nr database
-    - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
-- prot.accession2taxid.gz
-    - `ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz <https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`_
-- nodes.dmp, names.dmp and merged.dmp - Found within
-    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
-
 
 Download Workflow Template
 **************************
@@ -170,23 +133,23 @@ Alignments Preparation
 .. code-block:: bash
 
     # First index metagenome assembly
-    bwa index \\
-        -b 550000000000 \\ # block size for the bwtsw algorithm (effective with -a bwtsw) [default=10000000]
+    bwa index \
+        -b 550000000000 \ # block size for the bwtsw algorithm (effective with -a bwtsw) [default=10000000]
         metagenome.fna     # Path to input metagenome
 
     # Now perform alignments (we are using kart, but you can use another alignment tool if you'd like)
-    kart \\
-        -i metagenome.fna                   \\ # Path to input metagenome
-        -t 20                               \\ # Number of cpus to use
-        -f /path/to/forward_reads.fastq.gz  \\ # Path to forward paired-end reads
-        -f2 /path/to/reverse_reads.fastq.gz \\ # Path to reverse paired-end reads
+    kart \
+        -i metagenome.fna                   \ # Path to input metagenome
+        -t 20                               \ # Number of cpus to use
+        -f /path/to/forward_reads.fastq.gz  \ # Path to forward paired-end reads
+        -f2 /path/to/reverse_reads.fastq.gz \ # Path to reverse paired-end reads
         -o alignments.sam                      # Path to alignments output
 
     # Now sort alignments and convert to bam format
-    samtools sort \\
-        -@ 40              \\ # Number of cpus to use
-        -m 10G             \\ # Amount of memory to use
-        alignments.sam     \\ # Input alignments file path
+    samtools sort \
+        -@ 40              \ # Number of cpus to use
+        -m 10G             \ # Amount of memory to use
+        alignments.sam     \ # Input alignments file path
         -o alignments.bam     # Output alignments file path
 
 .. _orfs-preparation:
@@ -199,11 +162,11 @@ ORFs
 
 .. code-block:: bash
 
-    prodigal -i metagenome.fna \\
-        -f "gbk" \\
-        -d "metagenome.orfs.fna" \\
-        -o "metagenome.orfs.gbk" \\
-        -a "metagenome.orfs.faa" \\ # This generated file is required as input to the bash workflow
+    prodigal -i metagenome.fna \
+        -f "gbk" \
+        -d "metagenome.orfs.fna" \
+        -o "metagenome.orfs.gbk" \
+        -a "metagenome.orfs.faa" \ # This generated file is required as input to the bash workflow
         -s "metagenome.all_orfs.txt"
 
 .. _blastp-preparation:
@@ -216,14 +179,43 @@ Diamond blastp Preparation
 
 .. code-block:: bash
 
-    diamond blastp \\
-        --query "metagenome.orfs.faa" \\ # See prodigal output from above
-        --db /path/to/nr.dmnd         \\ # See NCBI section
-        --threads <num cpus to use>   \\
+    diamond blastp \
+        --query "metagenome.orfs.faa" \ # See prodigal output from above
+        --db /path/to/nr.dmnd         \ # See NCBI section
+        --threads <num cpus to use>   \
         --out blastp.tsv # This generated file is required as input to the bash workflow
 
 .. _ncbi-preparation:
 
+NCBI Preparation
+****************
+
+If you are running Autometa for the first time you'll have to download the NCBI databases.
+
+.. code-block:: bash
+
+    # First configure where you want to download the NCBI databases
+    autometa-config \
+        --section databases \
+        --option ncbi \
+        --value <path/to/your/ncbi/database/directory>
+
+    # Now download and format the NCBI databases
+    autometa-update-databases --update-ncbi
+
+.. note::
+    You can check the default config paths using ``autometa-config --print``.
+
+    See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
+
+The previous command will download the following NCBI databases:
+
+- Non-redundant nr database
+    - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
+- prot.accession2taxid.gz
+    - `ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz <https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz>`_
+- nodes.dmp, names.dmp and merged.dmp - Found within
+    - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
 
 Input Sample Name
 *****************

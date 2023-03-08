@@ -88,7 +88,7 @@ def fixture_votes_fpath(votes, tmp_path_factory):
 
 def test_add_ranks(ncbi, votes, tmp_path):
     out = tmp_path / "taxonomy.ranks_added.tsv"
-    df = vote.add_ranks(df=votes, ncbi=ncbi)
+    df = vote.add_ranks(df=votes, taxa_db=ncbi)
     assert df.shape == (2, 8)
     assert df.index.name == "contig"
     canonical_ranks = {rank for rank in ncbi.CANONICAL_RANKS if rank != "root"}
@@ -101,10 +101,7 @@ def test_add_ranks(ncbi, votes, tmp_path):
 def test_vote_assign(blastp, ncbi_dir, prot_orfs, tmp_path):
     out = tmp_path / "votes.tsv"
     votes = vote.assign(
-        out=out,
-        prot_orfs=prot_orfs,
-        blast=blastp,
-        ncbi_dir=ncbi_dir,
+        out=out, prot_orfs=prot_orfs, blast=blastp, dbdir=ncbi_dir, dbtype="ncbi"
     )
     assert isinstance(votes, pd.DataFrame)
     assert votes.index.name == "contig"
@@ -115,7 +112,7 @@ def test_get(ncbi, votes_fpath):
     df = vote.get(
         filepath_or_dataframe=votes_fpath,
         kingdom="bacteria",
-        ncbi=ncbi,
+        taxa_db=ncbi,
     )
     # canonical ranks should have been added to table if they were not already in place.
     assert df.shape == (2, 8)
@@ -126,7 +123,7 @@ def test_get_none_recovered(ncbi, votes_fpath):
         vote.get(
             filepath_or_dataframe=votes_fpath,
             kingdom="archaea",
-            ncbi=ncbi,
+            taxa_db=ncbi,
         )
 
 
@@ -136,7 +133,7 @@ def test_get_empty_votes(ncbi_dir, tmp_path):
         vote.get(
             filepath_or_dataframe=fpath,
             kingdom="archaea",
-            ncbi=ncbi_dir,
+            taxa_db=ncbi_dir,
         )
 
 
@@ -151,7 +148,7 @@ def test_get_superkingdom_not_in_columns(monkeypatch, ncbi, votes, tmp_path):
         vote.get(
             filepath_or_dataframe=fpath,
             kingdom="archaea",
-            ncbi=ncbi,
+            taxa_db=ncbi,
         )
 
 
@@ -160,7 +157,7 @@ def fixture_ranks_added_votes(votes_fpath, ncbi):
     return vote.get(
         filepath_or_dataframe=votes_fpath,
         kingdom="bacteria",
-        ncbi=ncbi,
+        taxa_db=ncbi,
     )
 
 
@@ -173,7 +170,7 @@ def test_write_ranks(monkeypatch, tmp_path, ranks_added_votes, rank, num_expecte
     assembly = dirpath / "assembly.fna"
     assembly.write_text("records")
     if rank == "noncanonical_rank":
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             vote.write_ranks(
                 taxonomy=ranks_added_votes, assembly=assembly, outdir=dirpath, rank=rank
             )
@@ -226,13 +223,12 @@ def test_write_ranks_no_taxonomy_columns(tmp_path, votes):
         )
 
 
-@pytest.mark.slow
-@pytest.mark.skip
 @pytest.mark.entrypoint
-def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
+def test_vote_main(monkeypatch, ncbi_dir, votes_fpath, tmp_path):
     outdir = tmp_path / "outdir"
     outdir.mkdir()
-    taxonomy = outdir / "taxonomy.tsv"
+    prefix = "test"
+    taxonomy = outdir / f"{prefix}.taxonomy.tsv"
     assembly = outdir / "assembly.fna"
     assembly.write_text("records")
     lca_fpath = outdir / "lca.tsv"
@@ -240,11 +236,13 @@ def test_vote_main(monkeypatch, ncbi_dir, tmp_path):
 
     class MockArgs:
         def __init__(self):
-            self.votes = taxonomy
+            self.votes = votes_fpath
             self.output = outdir
             self.assembly = assembly
             self.split_rank_and_write = "superkingdom"
-            self.ncbi = ncbi_dir
+            self.dbdir = ncbi_dir
+            self.dbtype = "ncbi"
+            self.prefix = prefix
 
     class MockParser:
         def add_argument(self, *args, **kwargs):
