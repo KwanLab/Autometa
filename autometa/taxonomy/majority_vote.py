@@ -16,12 +16,14 @@ from tqdm import tqdm
 
 from autometa.taxonomy.lca import LCA
 from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
+from autometa.taxonomy.gtdb import GTDB
+from autometa.taxonomy.database import TaxonomyDatabase
 
 logger = logging.getLogger(__name__)
 
 
 def is_consistent_with_other_orfs(
-    taxid: int, rank: str, rank_counts: Dict[str, Dict], ncbi: NCBI
+    taxid: int, rank: str, rank_counts: Dict[str, Dict], taxa_db: TaxonomyDatabase
 ) -> bool:
     """Determines whether the majority of proteins in a contig, with rank equal
     to or above the given rank, are common ancestors of the taxid.
@@ -48,8 +50,8 @@ def is_consistent_with_other_orfs(
         return True, otherwise return False.
 
     """
-    rank_index = NCBI.CANONICAL_RANKS.index(rank)
-    ranks_to_consider = NCBI.CANONICAL_RANKS[rank_index:]
+    rank_index = TaxonomyDatabase.CANONICAL_RANKS.index(rank)
+    ranks_to_consider = TaxonomyDatabase.CANONICAL_RANKS[rank_index:]
     # Now we total up the consistent and inconsistent ORFs
     consistent = 0
     inconsistent = 0
@@ -57,7 +59,7 @@ def is_consistent_with_other_orfs(
         if rank_name not in rank_counts:
             continue
         for rank_taxid, count in rank_counts[rank_name].items():
-            if ncbi.is_common_ancestor(rank_taxid, taxid):
+            if taxa_db.is_common_ancestor(rank_taxid, taxid):
                 consistent += count
             else:
                 inconsistent += count
@@ -70,7 +72,7 @@ def is_consistent_with_other_orfs(
         return False
 
 
-def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
+def lowest_majority(rank_counts: Dict[str, Dict], taxa_db: TaxonomyDatabase) -> int:
     """Determine the lowest majority given `rank_counts` by first attempting to
     get a taxid that leads in counts with the highest specificity in terms of
     canonical rank.
@@ -79,8 +81,8 @@ def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
     ----------
     rank_counts : dict
         {canonical_rank:{taxid:num_hits, ...}, rank2: {...}, ...}
-    ncbi : NCBI instance
-        NCBI object from autometa.taxonomy.ncbi
+    taxa_db : TaxonomyDatabase instance
+        NCBI or GTDB subclass object of autometa.taxonomy.database.TaxonomyDatabase
 
     Returns
     -------
@@ -89,11 +91,11 @@ def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
 
     """
     taxid_totals = {}
-    for rank in NCBI.CANONICAL_RANKS:
+    for rank in TaxonomyDatabase.CANONICAL_RANKS:
         if rank not in rank_counts:
             continue
-        rank_index = NCBI.CANONICAL_RANKS.index(rank)
-        ranks_to_consider = NCBI.CANONICAL_RANKS[rank_index:]
+        rank_index = TaxonomyDatabase.CANONICAL_RANKS.index(rank)
+        ranks_to_consider = TaxonomyDatabase.CANONICAL_RANKS[rank_index:]
         for taxid in rank_counts[rank]:
             # Make a dictionary to total the number of canonical ranks hit
             # while traversing the path so that we can add 'unclassified' to
@@ -106,22 +108,22 @@ def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
             current_taxid = taxid
             current_rank = rank
             while current_taxid != 1:
-                if current_rank not in set(NCBI.CANONICAL_RANKS):
-                    current_taxid = ncbi.parent(current_taxid)
-                    current_rank = ncbi.rank(current_taxid)
+                if current_rank not in set(TaxonomyDatabase.CANONICAL_RANKS):
+                    current_taxid = taxa_db.parent(current_taxid)
+                    current_rank = taxa_db.rank(current_taxid)
                     continue
                 ranks_in_path[current_rank] += 1
                 if current_rank not in taxid_totals:
                     taxid_totals.update({current_rank: {current_taxid: 1}})
-                    current_taxid = ncbi.parent(current_taxid)
-                    current_rank = ncbi.rank(current_taxid)
+                    current_taxid = taxa_db.parent(current_taxid)
+                    current_rank = taxa_db.rank(current_taxid)
                     continue
                 if current_taxid in taxid_totals[current_rank]:
                     taxid_totals[current_rank][current_taxid] += 1
                 else:
                     taxid_totals[current_rank][current_taxid] = 1
-                current_taxid = ncbi.parent(current_taxid)
-                current_rank = ncbi.rank(current_taxid)
+                current_taxid = taxa_db.parent(current_taxid)
+                current_rank = taxa_db.rank(current_taxid)
             # Now go through ranks_in_path. Where total = 0, add 'unclassified'
             for rank_to_consider in ranks_to_consider:
                 if ranks_in_path[rank_to_consider] == 0:
@@ -135,7 +137,7 @@ def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
     # we need to add 'unclassified' to the relevant canonical taxonomic rank.
     # However, we must never allow 'unclassified' to win! (That just won't really tell us anything)
     # Now we need to determine which is the first level to have a majority
-    for rank in NCBI.CANONICAL_RANKS:
+    for rank in TaxonomyDatabase.CANONICAL_RANKS:
         total_votes = 0
         taxid_leader = None
         taxid_leader_votes = 0
@@ -155,7 +157,9 @@ def lowest_majority(rank_counts: Dict[str, Dict], ncbi: NCBI) -> int:
 
 
 def rank_taxids(
-    ctg_lcas: dict, ncbi: Union[NCBI, LCA], verbose: bool = False
+    ctg_lcas: Dict[str, Dict[str, Dict[int, int]]],
+    taxa_db: TaxonomyDatabase,
+    verbose: bool = False,
 ) -> Dict[str, int]:
     """Votes for taxids based on modified majority vote system where if a
     majority does not exist, the lowest majority is voted.
@@ -164,8 +168,8 @@ def rank_taxids(
     ----------
     ctg_lcas : dict
         {ctg1:{canonical_rank:{taxid:num_hits,...},...}, ctg2:{...},...}
-    ncbi : ncbi.NCBI or lca.LCA object
-        instance of NCBI subclass or NCBI containing NCBI methods.
+    taxa_db : TaxonomyDatabase
+        instance of NCBI or GTDB subclass of autometa.taxonomy.database.TaxonomyDatabase
     verbose : bool
         Description of parameter `verbose` (the default is False).
 
@@ -184,7 +188,7 @@ def rank_taxids(
         ctg_lcas, disable=disable, total=n_contigs, desc=desc, leave=False
     ):
         acceptedTaxid = None
-        for rank in NCBI.CANONICAL_RANKS:
+        for rank in TaxonomyDatabase.CANONICAL_RANKS:
             if acceptedTaxid is not None:
                 break
             # Order in descending order of votes
@@ -196,7 +200,7 @@ def rank_taxids(
                 )
                 for taxid in ordered_taxids:
                     if is_consistent_with_other_orfs(
-                        taxid, rank, ctg_lcas[contig], ncbi
+                        taxid, rank, ctg_lcas[contig], taxa_db
                     ):
                         acceptedTaxid = taxid
                         break
@@ -204,7 +208,7 @@ def rank_taxids(
         # draw, so we need to find the lowest taxonomic level where there is a
         # majority
         if acceptedTaxid is None:
-            acceptedTaxid = lowest_majority(ctg_lcas[contig], ncbi)
+            acceptedTaxid = lowest_majority(ctg_lcas[contig], taxa_db)
         top_taxids[contig] = acceptedTaxid
     return top_taxids
 
@@ -247,7 +251,7 @@ def write_votes(results: Dict[str, int], out: str) -> str:
 def majority_vote(
     lca_fpath: str,
     out: str,
-    ncbi_dir: str,
+    taxa_db: TaxonomyDatabase,
     verbose: bool = False,
     orfs: str = None,
 ) -> str:
@@ -259,8 +263,8 @@ def majority_vote(
         Path to lowest common ancestor assignments table.
     out : str
         Path to write assigned taxids.
-    ncbi_dir : str
-        Path to NCBI databases directory.
+    taxa_db : TaxonomyDatabase
+        An instance of TaxonomyDatabase
     verbose : bool, optional
         Increase verbosity of logging stream
     orfs: str, optional
@@ -275,12 +279,14 @@ def majority_vote(
 
     """
     outdir = os.path.dirname(os.path.realpath(out))
-    lca = LCA(dbdir=ncbi_dir, verbose=verbose, cache=outdir)
+    lca = LCA(taxonomy_db=taxa_db, verbose=verbose, cache=outdir)
     # retrieve lca taxids for each contig
     classifications = lca.parse(lca_fpath=lca_fpath, orfs_fpath=orfs)
     # Vote for majority lca taxid from contig lca taxids
     # We can pass in lca as the ncbi object here, because it is a subclass of NCBI.
-    voted_taxids = rank_taxids(ctg_lcas=classifications, ncbi=lca, verbose=verbose)
+    voted_taxids = rank_taxids(
+        ctg_lcas=classifications, taxa_db=taxa_db, verbose=verbose
+    )
     return write_votes(results=voted_taxids, out=out)
 
 
@@ -297,7 +303,13 @@ def main():
         "--output", help="Path to write voted taxid results table.", required=True
     )
     parser.add_argument(
-        "--dbdir", help="Path to NCBI databases directory.", default=NCBI_DIR
+        "--dbdir", help="Path to taxonomy database directory.", default=NCBI_DIR
+    )
+    parser.add_argument(
+        "--dbtype",
+        help="Taxonomy database to use",
+        choices=["ncbi", "gtdb"],
+        default="ncbi",
     )
     parser.add_argument(
         "--orfs",
@@ -312,10 +324,15 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.dbtype == "ncbi":
+        taxa_db = NCBI(args.dbdir, verbose=args.verbose)
+    elif args.dbtype == "gtdb":
+        taxa_db = GTDB(args.dbdir, verbose=args.verbose)
+
     majority_vote(
         lca_fpath=args.lca,
         out=args.output,
-        ncbi_dir=args.dbdir,
+        taxa_db=taxa_db,
         verbose=args.verbose,
         orfs=args.orfs,
     )

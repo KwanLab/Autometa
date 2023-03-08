@@ -5,7 +5,7 @@ from autometa.taxonomy.ncbi import NCBI
 
 @pytest.fixture(name="ncbi", scope="session", autouse=True)
 def fixture_ncbi(ncbi_dir):
-    return NCBI(dirpath=ncbi_dir, verbose=False)
+    return NCBI(dbdir=ncbi_dir, verbose=False)
 
 
 @pytest.fixture(name="dbdir", scope="session", autouse=True)

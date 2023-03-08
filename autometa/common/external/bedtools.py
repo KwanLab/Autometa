@@ -104,7 +104,7 @@ def parse(bed: str, out: str = None, force: bool = False) -> pd.DataFrame:
     df = pd.read_csv(bed, sep="\t", names=names, index_col="contig")
     df = df[df.index != "genome"]
     df = df.assign(depth_product=lambda x: x.depth * x.bases)
-    dff = df.groupby("contig")["depth_product", "bases"].sum()
+    dff = df.groupby("contig")[["depth_product", "bases"]].sum()
     dff = dff.assign(coverage=lambda x: x.depth_product / x.bases)
     if out and (not os.path.exists(out) or (os.path.exists(out) and force)):
         dff.to_csv(out, sep="\t", index=True, header=True)
