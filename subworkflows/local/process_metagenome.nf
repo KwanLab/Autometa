@@ -68,7 +68,7 @@ workflow PROCESS_METAGENOME {
         reads                               = reads_ch
         filtered_metagenome_fasta_and_reads = combined_contigs_reads
         filtered_metagenome_gc_content      = SEQKIT_FILTER.out.gc_content
-        assembly_to_locus                   = assembly_report
+        assembly_to_locus                   = assembly_to_locus
         assembly_report                     = assembly_report
         versions                            = ch_versions
 }
