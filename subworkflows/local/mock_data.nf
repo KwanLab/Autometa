@@ -40,19 +40,10 @@ workflow CREATE_MOCK {
         ch_versions = ch_versions.mix(GET_GENOMES_FOR_MOCK.out.versions)
         // Format everything with a meta map for use in the main Autometa pipeline
         // see "create_" functions in ~subworkflows/local/input_check.nf
-        GET_GENOMES_FOR_MOCK.out.fake_spades_coverage
-        .map { row ->
-                    def meta = [:]
-                    meta.id = "mock_data"
-                    meta.cov_from_assembly = 0
-                    return [ meta, row ]
-            }
-        .set { ch_fasta }
         GET_GENOMES_FOR_MOCK.out.assembly_to_locus
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
-                    meta.cov_from_assembly = 0
                     return [ meta, row ]
             }
         .set { assembly_to_locus }
@@ -60,7 +51,6 @@ workflow CREATE_MOCK {
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
-                    meta.cov_from_assembly = 0
                     return [ meta, row ]
             }
         .set { assembly_report }
@@ -69,7 +59,6 @@ workflow CREATE_MOCK {
         .map { row ->
                     def meta = [:]
                     meta.id = "mock_data"
-                    meta.cov_from_assembly = 0
                     return [ meta, row ]
             }
         .set { metagenome }
