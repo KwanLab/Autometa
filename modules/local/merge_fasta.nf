@@ -1,3 +1,8 @@
+/*
+=======================
+TODO: Not yet implemented
+=======================
+
 process MERGE_FASTA {
     tag "Merging ${meta.id} FASTA"
     label 'process_low'
@@ -15,7 +20,7 @@ process MERGE_FASTA {
 
     output:
         tuple val(meta), path("${meta.id}.${extension}"), emit: merged
-        path 'versions.yml'                            , emit: versions
+        path 'versions.yml'                             , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -32,3 +37,5 @@ process MERGE_FASTA {
         END_VERSIONS
         """
 }
+
+*/

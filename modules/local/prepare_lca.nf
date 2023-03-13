@@ -31,6 +31,7 @@ process PREPARE_LCA {
             --dbtype ncbi \\
             --cache cache \\
             --only-prepare-cache
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             autometa: \$(autometa --version | sed -e 's/autometa: //g')

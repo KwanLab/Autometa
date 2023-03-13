@@ -13,7 +13,7 @@ process NORMALIZE_KMERS {
         tuple val(meta), path(counts)
 
     output:
-        tuple val(meta), path("*kmers.normalized.tsv"), emit: normalized
+        tuple val(meta), path("*kmers.normalized.tsv.gz"), emit: normalized
         path  'versions.yml'                          , emit: versions
 
     when:
@@ -27,6 +27,8 @@ process NORMALIZE_KMERS {
             --norm-output ${prefix}.kmers.normalized.tsv \\
             --norm-method ${params.norm_method} \\
             --seed 42
+
+        gzip -6  ${prefix}.kmers.normalized.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

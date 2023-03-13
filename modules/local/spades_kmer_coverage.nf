@@ -13,7 +13,7 @@ process SPADES_KMER_COVERAGE {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("*coverage.tsv")     , emit: coverage
+        tuple val(meta), path("*coverage.tsv.gz")     , emit: coverage
         path  'versions.yml'                     , emit: versions
 
     when:
@@ -26,6 +26,8 @@ process SPADES_KMER_COVERAGE {
             --assembly ${metagenome} \\
             --from-spades \\
             --out "${prefix}.coverage.tsv"
+
+        gzip -6  "${prefix}.coverage.tsv"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -18,7 +18,7 @@ process DIAMOND_BLASTP {
         path(diamond_database)
 
     output:
-        tuple val(meta), path("blastp.tsv"), emit: diamond_results
+        tuple val(meta), path("*blastp.tsv.gz"), emit: diamond_results
         path "versions.yml"               , emit: versions
 
     when:
@@ -26,12 +26,15 @@ process DIAMOND_BLASTP {
 
     script:
         def args = task.ext.args ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         diamond blastp $args \\
             --query ${protein_fasta} \\
             --db ${diamond_database} \\
             --threads ${task.cpus} \\
-            --out blastp.tsv
+            --out ${prefix}.blastp.tsv
+
+        gzip -6  ${prefix}.blastp.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

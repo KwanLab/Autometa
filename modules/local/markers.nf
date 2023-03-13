@@ -22,8 +22,8 @@ process MARKERS {
         //path(cutoffs) currently only inside docker
 
     output:
-        tuple val(meta), path("*.markers.tsv")  , emit: markers_tsv
-        tuple val(meta), path("*.hmmscan.tsv")  , emit: hmmscan_tsv
+        tuple val(meta), path("*.markers.tsv.gz")  , emit: markers_tsv
+        tuple val(meta), path("*.hmmscan.tsv.gz")  , emit: hmmscan_tsv
         path  'versions.yml'                    , emit: versions
 
     when:
@@ -42,6 +42,10 @@ process MARKERS {
             --seed 42 \\
             --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
             --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
+
+
+        gzip -6  ${prefix}.${params.kingdom}.hmmscan.tsv
+        gzip -6  ${prefix}.${params.kingdom}.markers.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -14,7 +14,7 @@ process COUNT_KMERS {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("*kmers.tsv")           , emit: counts
+        tuple val(meta), path("*kmers.tsv.gz")           , emit: counts
         path  'versions.yml'                        , emit: versions
 
     when:
@@ -29,6 +29,8 @@ process COUNT_KMERS {
             --size "${params.kmer_size}" \\
             --cpus "${task.cpus}" \\
             --seed 42
+
+        gzip -6  "${prefix}.kmers.tsv"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

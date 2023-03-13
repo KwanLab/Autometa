@@ -15,7 +15,7 @@ process MAJORITY_VOTE {
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("*votes.tsv"), emit: votes
+        tuple val(meta), path("*votes.tsv.gz"), emit: votes
         path  'versions.yml'             , emit: versions
 
     when:
@@ -29,6 +29,8 @@ process MAJORITY_VOTE {
             --output ${prefix}.votes.tsv \\
             --dbdir . \\
             --dbtype ncbi
+
+        gzip -6  ${prefix}.votes.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

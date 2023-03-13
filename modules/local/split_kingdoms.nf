@@ -14,11 +14,11 @@ process SPLIT_KINGDOMS {
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("taxonomy.tsv"), emit: taxonomy
-        tuple val(meta), path("bacteria.fna"), emit: bacteria, optional: true
-        tuple val(meta), path("archaea.fna") , emit: archaea,  optional: true
-        tuple val(meta), path("*.fna")       , emit: kingdoms, optional: true
-        path  'versions.yml'                , emit: versions
+        tuple val(meta), path("taxonomy.tsv.gz"), emit: taxonomy
+        tuple val(meta), path("bacteria.fna.gz"), emit: bacteria, optional: true
+        tuple val(meta), path("archaea.fna.gz") , emit: archaea,  optional: true
+        tuple val(meta), path("*.fna.gz")       , emit: kingdoms, optional: true
+        path  'versions.yml'                    , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -32,6 +32,10 @@ process SPLIT_KINGDOMS {
             --assembly "${assembly}" \\
             --dbdir . \\
             --dbtype ncbi
+
+        gzip -6  taxonomy.tsv
+        gzip -6  "*.fna"
+
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

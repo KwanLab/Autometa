@@ -13,8 +13,8 @@ process PARSE_BED {
         tuple val(meta), path(bed)
 
     output:
-        tuple val(meta), path("*coverage.tsv"), emit: coverage
-        path  "versions.yml"                , emit: versions
+        tuple val(meta), path("*coverage.tsv.gz")   , emit: coverage
+        path  "versions.yml"                        , emit: versions
 
     when:
         meta.cov_from_assembly.equals('0')
@@ -29,6 +29,8 @@ process PARSE_BED {
             --ibam . \\
             --bed $bed \\
             --output ${prefix}.coverage.tsv
+
+        gzip -6  ${prefix}.coverage.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

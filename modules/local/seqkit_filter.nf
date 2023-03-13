@@ -1,3 +1,4 @@
+
 process SEQKIT_FILTER {
     tag "Removing contigs < ${params.length_cutoff} bp, from ${meta.id}"
     label 'process_high'
@@ -13,9 +14,9 @@ process SEQKIT_FILTER {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("*filtered.fna")  , emit: fasta
-        tuple val(meta), path("*gc_content.tsv"), emit: gc_content
-        path  'versions.yml'                             , emit: versions
+        tuple val(meta), path("*filtered.fna.gz")   , emit: fasta
+        tuple val(meta), path("*gc_content.tsv.gz") , emit: gc_content
+        path  'versions.yml'                        , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -41,6 +42,8 @@ process SEQKIT_FILTER {
         rm temp
         rm temp2
 
+        gzip -6  "${prefix}.filtered.fna"
+        gzip -6  "${prefix}.gc_content.tsv"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

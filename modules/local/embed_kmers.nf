@@ -16,7 +16,7 @@ process EMBED_KMERS {
         tuple val(meta), path(normalized)
 
     output:
-        tuple val(meta), path("*kmers.embedded.tsv")  , emit: embedded
+        tuple val(meta), path("*kmers.embedded.tsv.gz")  , emit: embedded
         path  'versions.yml'                          , emit: versions
 
     when:
@@ -33,6 +33,8 @@ process EMBED_KMERS {
             --embedding-dimensions "${params.embedding_dimensions}" \\
             --cpus "${task.cpus}" \\
             --seed 42
+
+        gzip -6  "${prefix}.kmers.embedded.tsv"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

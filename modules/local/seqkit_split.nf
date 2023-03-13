@@ -1,3 +1,8 @@
+/*
+=======================
+TODO: Not yet implemented
+=======================
+
 process SEQKIT_SPLIT {
     tag "Splitting $meta.id for parallel processing"
     label 'process_medium'
@@ -35,3 +40,5 @@ process SEQKIT_SPLIT {
         END_VERSIONS
         """
 }
+
+*/
