@@ -23,6 +23,7 @@ process ANALYZE_KMERS {
         task.ext.when == null || task.ext.when
 
     script:
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-kmers \\
             --fasta ${metagenome} \\
