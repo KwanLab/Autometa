@@ -1,6 +1,4 @@
 process GET_GENOMES_FOR_MOCK {
-    def genome_count = 2
-    tag "fetching ${genome_count} genomes"
 
     cache 'lenient'
 
