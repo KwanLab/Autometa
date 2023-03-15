@@ -4,33 +4,6 @@
  * -------------------------------------------------
 */
 
-if (params.single_db_dir) {
-    internal_nr_dmnd_dir = params.single_db_dir
-    internal_prot_accession2taxid_gz_dir = params.single_db_dir
-    internal_taxdump_tar_gz_dir = params.single_db_dir
-}
-// TODO: when implementing the ability to set individual DB dirs
-// just override e.g. 'internal_nr_dmnd_location' here so users can set
-// 'single_db_dir' but also set individual other db paths if they have them
-// e.g. if they have nr.dmnd but not the other files.
-
-if (params.large_downloads_permission) {
-    // TODO: check if files already exist, if they don't fail the pipeline early at this stage
-} else {
-    // TODO: check if files exist, if they don't fail the pipeline early at this stage
-}
-
-// if these are still null then it means they weren't set, so make them null.
-// this only works because the markov models are inside the docker image.
-// that needs to be changed in future versions
-
-if (!params.taxonomy_aware) {
-    single_db_dir = null
-    internal_nr_dmnd_dir = null
-    internal_prot_accession2taxid_gz_dir = null
-    internal_taxdump_tar_gz_dir = null
-}
-
 /*
  * -------------------------------------------------
  *  Import local modules
@@ -112,12 +85,19 @@ workflow AUTOMETA {
         taxonomy_results = TAXON_ASSIGNMENT.out.taxonomy
         taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
 
-        if (params.kingdom.equals('bacteria')) {
-            kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
-        } else {
-            // params.kingdom.equals('archaea')
-            kmers_input_ch = TAXON_ASSIGNMENT.out.archaea
-        }
+        TAXON_ASSIGNMENT
+            .out
+            .taxon_split_fasta
+            .transpose()
+            .map{meta, fasta ->
+                    {
+                        meta['taxon'] = fasta.simpleName
+                    }
+                    return[meta, fasta]
+            }
+            .set { kmers_input_ch }
+
+
     } else {
         kmers_input_ch = filtered_metagenome_fasta
         Channel

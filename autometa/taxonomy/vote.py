@@ -19,6 +19,7 @@ from typing import Union, List, Literal
 
 
 from autometa.common.external import prodigal
+from autometa.common.file_handling import open_file
 from autometa.taxonomy import majority_vote
 from autometa.taxonomy.lca import LCA
 from autometa.taxonomy.ncbi import NCBI, NCBI_DIR
@@ -271,7 +272,8 @@ def write_ranks(
         raise FileNotFoundError(assembly)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
+    with open_file(assembly) as h:
+        assembly_records = [record for record in SeqIO.parse(h, "fasta")]
     fpaths = []
     for rank_name, dff in taxonomy.groupby(rank):
         # First determine the file path respective to the rank name
@@ -367,7 +369,8 @@ def main():
 
     filename = f"{args.prefix}.taxonomy.tsv" if args.prefix else "taxonomy.tsv"
     out = os.path.join(args.output, filename)
-    taxa_df = pd.read_csv(args.votes, sep="\t", index_col="contig")
+    with open_file(args.votes) as h:
+        taxa_df = pd.read_csv(h, sep="\t", index_col="contig")
 
     if not os.path.isdir(args.output):
         os.makedirs(args.output)

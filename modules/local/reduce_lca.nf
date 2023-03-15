@@ -28,14 +28,17 @@ process REDUCE_LCA {
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
         """
+        gzip -cdfq ${blast} > blast_unzipped
         autometa-taxonomy-lca \\
-            --blast ${blast} \\
+            --blast blast_unzipped \\
             --dbdir . \\
             --dbtype ncbi \\
             --cache ${lca_cache} \\
             --lca-error-taxids ${prefix}.lca_error_taxids.tsv \\
             --sseqid2taxid-output ${prefix}.sseqid2taxid.tsv \\
             --lca-output ${prefix}.lca.tsv
+
+        rm blast_unzipped
 
         gzip -6  ${prefix}.lca_error_taxids.tsv
         gzip -6  ${prefix}.sseqid2taxid.tsv

@@ -15,9 +15,7 @@ process SPLIT_KINGDOMS {
 
     output:
         tuple val(meta), path("taxonomy.tsv.gz"), emit: taxonomy
-        tuple val(meta), path("bacteria.fna.gz"), emit: bacteria, optional: true
-        tuple val(meta), path("archaea.fna.gz") , emit: archaea,  optional: true
-        tuple val(meta), path("*.fna.gz")       , emit: kingdoms, optional: true
+        tuple val(meta), path("*.fna.gz")       , emit: fasta, optional: true
         path  'versions.yml'                    , emit: versions
 
     when:
@@ -34,8 +32,9 @@ process SPLIT_KINGDOMS {
             --dbtype ncbi
 
         gzip -6  taxonomy.tsv
-        gzip -6  "*.fna"
+        find ./ -name "*.fna" -type f -exec gzip -6 {} +
 
+        echo ">bro\naaaaaaaaaaaa\n" |gzip > bro.fna.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -43,3 +42,5 @@ process SPLIT_KINGDOMS {
         END_VERSIONS
         """
 }
+
+

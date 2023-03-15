@@ -20,6 +20,7 @@ import multiprocessing as mp
 from tqdm import tqdm
 from Bio import SeqIO
 from scipy.stats import gmean
+from autometa.common.file_handling import open_file
 from skbio.stats.composition import ilr, clr, multiplicative_replacement
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -559,7 +560,8 @@ def embed(
     """
     if isinstance(kmers, str) and os.path.exists(kmers) and os.path.getsize(kmers):
         try:
-            df = pd.read_csv(kmers, sep="\t", index_col="contig")
+            with open_file(kmers) as h:
+                df = pd.read_csv(h, sep="\t", index_col="contig")
         except ValueError:
             raise TableFormatError(f"contig column not found in {kmers}")
     elif isinstance(kmers, pd.DataFrame):
@@ -569,7 +571,8 @@ def embed(
     if out and os.path.exists(out) and os.path.getsize(out) and not force:
         logger.debug(f"k-mers frequency embedding already exists {out}")
         try:
-            return pd.read_csv(out, sep="\t", index_col="contig")
+            with open_file(kmers) as h:
+                return pd.read_csv(kmers, sep="\t", index_col="contig")
         except ValueError:
             raise TableFormatError(f"contig column not found in {out}")
 
@@ -815,10 +818,12 @@ def main():
         raise FileNotFoundError(args.kmers)
     elif args.norm_output and os.path.exists(args.norm_output) and not args.force:
         # We already have the normalized kmers
-        norm_df = pd.read_csv(args.norm_output, sep="\t", index_col="contig")
+        with open_file(args.norm_output) as h:
+            norm_df = pd.read_csv(h, sep="\t", index_col="contig")
     elif args.kmers and os.path.exists(args.kmers) and not args.force:
         # We already have the kmer counts
-        kmers_df = pd.read_csv(args.kmers, sep="\t", index_col="contig")
+        with open_file(args.kmers) as h:
+            kmers_df = pd.read_csv(h, sep="\t", index_col="contig")
     else:
         # Start with counting kmers
         kmers_df = count(

@@ -24,11 +24,15 @@ process MAJORITY_VOTE {
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
         """
+        gzip -cdfq ${lca} > lca_unzipped
+
         autometa-taxonomy-majority-vote \\
-            --lca ${lca} \\
+            --lca lca_unzipped \\
             --output ${prefix}.votes.tsv \\
             --dbdir . \\
             --dbtype ncbi
+
+        rm lca_unzipped
 
         gzip -6  ${prefix}.votes.tsv
 

@@ -20,7 +20,7 @@ process NORMALIZE_KMERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix = task.ext.prefix ?: "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         """
         autometa-kmers \\
             --kmers $counts \\

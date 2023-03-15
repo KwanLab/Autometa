@@ -16,7 +16,8 @@ process DOWNLOAD_NR {
     }
 
     output:
-        path("nr.gz")       , emit: singlefile
+        path("nr.gz")       , emit: ncbi_nr_fasta
+        path("nr.gz.md5")   , emit: md5
         path "versions.yml" , emit: versions
 
     when:
@@ -41,9 +42,9 @@ process DOWNLOAD_NR {
         """
 }
 
-process TEST_DOWNLOAD {
+process MOCK_DOWNLOAD {
     // For development work so you don't download the entire nr.gz database
-    tag "Downloading small set of FASTA"
+    tag "Using smallsubset of NCBI nr.gz"
     label 'process_low'
 
     conda "conda-forge::rsync=3.2.3"
@@ -54,7 +55,7 @@ process TEST_DOWNLOAD {
     }
 
     output:
-        path "nr.gz", emit: singlefile
+        path "nr.gz", emit: ncbi_nr_fasta
 
     when:
         task.ext.when == null || task.ext.when
@@ -104,28 +105,35 @@ workflow PREPARE_NR_DB {
 
         // TODO: this if/else can be simplified
         if (file("${params.nr_dmnd_dir}/nr.dmnd").exists()){
+
             // skip huge download and db creation if nr.dmnd already exists
             out_ch = file("${params.nr_dmnd_dir}/nr.dmnd")
+
         } else if (file("${params.nr_dmnd_dir}/nr.gz").exists()){
+
             // skip huge download if nr.gz already exists
             DIAMOND_MAKEDB(file("${params.nr_dmnd_dir}/nr.gz"), "nr")
             ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
+
             out_ch = DIAMOND_MAKEDB.out.diamond_db
 
         } else if (params.debug){
-            TEST_DOWNLOAD().singlefile
-                .set{nr_db_ch}
 
-            DIAMOND_MAKEDB(nr_db_ch, "nr")
+            MOCK_DOWNLOAD()
+
+            DIAMOND_MAKEDB(MOCK_DOWNLOAD.out.nr_db_ch, "nr")
             ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
+
             out_ch = DIAMOND_MAKEDB.out.diamond_db
 
         } else if (params.large_downloads_permission) {
-            DOWNLOAD_NR().singlefile
-                .set{nr_db_ch}
+
+            DOWNLOAD_NR()
             ch_versions = ch_versions.mix(DOWNLOAD_NR.out.versions)
-            DIAMOND_MAKEDB(nr_db_ch, "nr")
+
+            DIAMOND_MAKEDB(DOWNLOAD_NR.out.ncbi_nr_fasta, "nr")
             ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
+
             out_ch = DIAMOND_MAKEDB.out.diamond_db
 
         } else {

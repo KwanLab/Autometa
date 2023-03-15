@@ -54,12 +54,11 @@ workflow TAXON_ASSIGNMENT {
         ch_versions = ch_versions.mix(SPLIT_KINGDOMS.out.versions)
 
     emit:
-        taxonomy = SPLIT_KINGDOMS.out.taxonomy
-        bacteria = SPLIT_KINGDOMS.out.bacteria
-        archaea = SPLIT_KINGDOMS.out.archaea
-        orf_votes = LCA.out.lca
-        contig_votes = MAJORITY_VOTE.out.votes
-        taxdump_files = PREPARE_TAXONOMY_DATABASES.out.taxdump_files
-        versions    = ch_versions
+        taxonomy            = SPLIT_KINGDOMS.out.taxonomy
+        taxon_split_fasta   = SPLIT_KINGDOMS.out.fasta
+        orf_votes           = LCA.out.lca
+        contig_votes        = MAJORITY_VOTE.out.votes
+        taxdump_files       = PREPARE_TAXONOMY_DATABASES.out.taxdump_files
+        versions            = ch_versions
 
 }

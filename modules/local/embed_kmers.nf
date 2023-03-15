@@ -23,15 +23,15 @@ process EMBED_KMERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix = task.ext.prefix ?: "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         """
         autometa-kmers \\
-            --norm-output $normalized \\
-            --pca-dimensions "${params.pca_dimensions}" \\
-            --embedding-output "${prefix}.kmers.embedded.tsv" \\
-            --embedding-method "${params.embedding_method}" \\
-            --embedding-dimensions "${params.embedding_dimensions}" \\
-            --cpus "${task.cpus}" \\
+            --norm-output ${normalized} \\
+            --pca-dimensions ${params.pca_dimensions} \\
+            --embedding-output ${prefix}.kmers.embedded.tsv \\
+            --embedding-method ${params.embedding_method} \\
+            --embedding-dimensions ${params.embedding_dimensions} \\
+            --cpus ${task.cpus} \\
             --seed 42
 
         gzip -6  "${prefix}.kmers.embedded.tsv"
