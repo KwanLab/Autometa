@@ -22,19 +22,19 @@ process SEQKIT_FILTER {
         task.ext.when == null || task.ext.when
 
     script:
-        def metagenomecmd = metagenome.getExtension() == 'gz' ? "gunzip -c $metagenome" : "cat $metagenome"
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
         def prefix = task.ext.prefix ?: "${meta.id}"
         """
         # filter contigs by specified length
-        # `seqkit seq -i` "print ID instead of full head"
-        ${metagenomecmd} | \\
-            seqkit seq -i -j ${task.cpus} -m ${params.length_cutoff} | \\
-            seqkit sort -n > "${prefix}.filtered.fna"
+        gzip -fdc ${metagenome} | \\
+            seqkit seq ${args} -j ${task.cpus} -m ${params.length_cutoff} | \\
+            seqkit sort ${args2} -n > "${prefix}.filtered.fna"
 
         # calculate gc content
         seqkit fx2tab -j ${task.cpus} -n -lg "${prefix}.filtered.fna" > temp
 
-        # Extract columns, create tsv
+        # Extract columns, create tsv with columns and column order the autometa python code expects
         awk '{FS="\\t"; OFS="\\t"; print \$1,\$3,\$2}' temp > temp2
         echo -e "contig\\tgc_content\\tlength" | cat - temp2 > "${prefix}.gc_content.tsv"
 
