@@ -16,9 +16,9 @@ process ALIGN_READS {
         tuple val(meta), path(metagenome), path(fwd_reads), path(rev_reads)
 
     output:
-        tuple val(meta), path("*.alignments.sam"), emit: sam
-        path "*.db*.bt2"                       , emit: bt2_db
-        path "versions.yml"                   , emit: versions
+        tuple val(meta), path("*.alignments.bam"), emit: bam
+        path "*.db*.bt2"                         , emit: bt2_db
+        path "versions.yml"                      , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -31,15 +31,18 @@ process ALIGN_READS {
         bowtie2-build \\
             ${args} \\
             ${metagenome} \\
-            ${prefix}.db
+            ${prefix}.db \\
+            --threads ${task.cpus}
 
         bowtie2 \\
             -x ${meta.id}.db \\
             ${args2} \\
             -p ${task.cpus} \\
-            -S ${prefix}.alignments.sam \\
             -1 $fwd_reads \\
-            -2 $rev_reads
+            -2 $rev_reads \\
+                | samtools view ${args} -bS - \\
+                    | samtools sort -o ${prefix}.alignments.bam
+
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

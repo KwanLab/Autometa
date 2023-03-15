@@ -5,7 +5,6 @@ params.rev_reads = null
 params.se_reads = null
 
 include { ALIGN_READS               } from '../../modules/local/align_reads'
-include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_sort'
 include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'
 include { PARSE_BED                 } from '../../modules/local/parse_bed'
 
@@ -21,13 +20,8 @@ workflow CALCULATE_COVERAGE {
         )
         ch_versions = ch_versions.mix(ALIGN_READS.out.versions)
 
-        SAMTOOLS_VIEW_AND_SORT(
-            ALIGN_READS.out.sam
-        )
-        ch_versions = ch_versions.mix(SAMTOOLS_VIEW_AND_SORT.out.versions)
-
         BEDTOOLS_GENOMECOV(
-            SAMTOOLS_VIEW_AND_SORT.out.bam
+            ALIGN_READS.out.bam
         )
         ch_versions = ch_versions.mix(BEDTOOLS_GENOMECOV.out.versions)
 
@@ -35,8 +29,7 @@ workflow CALCULATE_COVERAGE {
         ch_versions = ch_versions.mix(PARSE_BED.out.versions)
 
     emit:
-        sam = ALIGN_READS.out.sam
-        bam = SAMTOOLS_VIEW_AND_SORT.out.bam
+        bam = ALIGN_READS.out.bam
         bed = BEDTOOLS_GENOMECOV.out.bed
         coverage = PARSE_BED.out.coverage
         versions = ch_versions
