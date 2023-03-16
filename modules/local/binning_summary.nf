@@ -10,7 +10,8 @@ process BINNING_SUMMARY {
     }
 
     input:
-        tuple val(meta), path(binning_main), path(markers), path(metagenome), val(binning_column), path(ncbi)
+        tuple val(meta), path(binning_main), path(markers), path(metagenome), val(binning_column)
+        path taxdump_files
 
     output:
         tuple val(meta), path("*metabin_stats.tsv.gz")   , emit: stats
