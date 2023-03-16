@@ -14,8 +14,8 @@ process COUNT_KMERS {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("*kmers.tsv.gz")           , emit: counts
-        path  'versions.yml'                        , emit: versions
+        tuple val(meta), path("*kmers.tsv.gz")  , emit: counts
+        path  'versions.yml'                    , emit: versions
 
     when:
         task.ext.when == null || task.ext.when

@@ -8,6 +8,7 @@ workflow KMERS {
         fasta
     main:
         ch_versions = Channel.empty()
+fasta.map{k,v -> println "$k and $v"}
 
         COUNT(fasta)
         ch_versions = ch_versions.mix(COUNT.out.versions)

@@ -68,10 +68,10 @@ workflow TAXON_ASSIGNMENT {
         // collect all the taxa from TAXON_ASSIGNMENT into a list (this should be variable)
         taxon_split_fasta
             .taxon
-            .distinct()
             .collect()
+            .flatten()
             .set{found_taxa_list_ch}
-      
+
         // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv" 
         // is split and named identically to the FASTA output would allow the logic here 
         // to be identical to TAXON_ASSIGNMENT.out.taxon_split_fasta above
@@ -80,7 +80,7 @@ workflow TAXON_ASSIGNMENT {
             .out
             .contig_taxonomy_tsv
             .combine(found_taxa_list_ch)
-            .map{ meta, fasta, taxon ->                    
+            .map{ meta, tsv, taxon ->                    
                     [meta + [taxon: taxon], tsv]
                 }
             .set{ contig_taxonomy_tsv }
