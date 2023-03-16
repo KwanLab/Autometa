@@ -199,12 +199,6 @@
                     "fa_icon": "fas fa-cogs",
                     "description": "Which taxonomic rank to start the binning from. Choices are superkingdom, phylum, class, order, family, genus, species"
                 },
-                "kingdom": {
-                    "type": "string",
-                    "default": "bacteria",
-                    "fa_icon": "fas fa-cogs",
-                    "description": "Bin contigs belonging to this kingdom. Choices are bacteria and archaea"
-                },
                 "large_downloads_permission": {
                     "type": "boolean",
                     "description": "Can Autometa download nr.gz if needed? (It's >100Gb)",

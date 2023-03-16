@@ -1,8 +1,6 @@
-
-
 // TODO: For faster results/less I/O this could be replaced with hmmsearch
 process MARKERS {
-    tag "Finding markers for ${meta.id}"
+    tag "Finding markers for ${meta.id}, taxon:${meta.taxon}"
     label "process_medium"
 
 
@@ -30,22 +28,22 @@ process MARKERS {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix = task.ext.prefix ?: "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         """
         autometa-markers \\
             --orfs $orfs \\
-            --hmmscan ${prefix}.${params.kingdom}.hmmscan.tsv \\
-            --out ${prefix}.${params.kingdom}.markers.tsv \\
-            --kingdom ${params.kingdom} \\
+            --hmmscan ${prefix}.hmmscan.tsv \\
+            --out ${prefix}.markers.tsv \\
+            --kingdom ${meta.taxon} \\
             --parallel \\
             --cpus ${task.cpus} \\
             --seed 42 \\
-            --hmmdb "/scratch/dbs/markers/${params.kingdom}.single_copy.hmm" \\
-            --cutoffs "/scratch/dbs/markers/${params.kingdom}.single_copy.cutoffs"
+            --hmmdb "/scratch/dbs/markers/${meta.taxon}.single_copy.hmm" \\
+            --cutoffs "/scratch/dbs/markers/${meta.taxon}.single_copy.cutoffs"
 
 
-        gzip -6  ${prefix}.${params.kingdom}.hmmscan.tsv
-        gzip -6  ${prefix}.${params.kingdom}.markers.tsv
+        gzip -6  ${prefix}.hmmscan.tsv
+        gzip -6  ${prefix}.markers.tsv
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -15,7 +15,7 @@ process TEST_DOWNLOAD {
     }
 
     output:
-        path("prot.accession2taxid"), emit: singlefile
+        path("prot.accession2taxid.gz"), emit: singlefile
 
     when:
         task.ext.when == null || task.ext.when
@@ -24,7 +24,7 @@ process TEST_DOWNLOAD {
         """
         # https://github.com/nextflow-io/nextflow/issues/1564
         trap 'echo OK; exit 0;' EXIT
-        curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 > prot.accession2taxid
+        curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 |gzip > prot.accession2taxid.gz
         """
 }
 
@@ -126,7 +126,7 @@ workflow PREPARE_TAXONOMY_DATABASES {
                 .set{taxdump_files}
         }
 
-        expected_files2 = ['prot.accession2taxid']
+        expected_files2 = ['prot.accession2taxid.gz']
 
         taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
 

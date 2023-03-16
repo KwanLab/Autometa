@@ -1,5 +1,5 @@
 process BINNING {
-    tag "sample:${meta.id}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
+    tag "sample:${meta.id}, taxon:${meta.taxon}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
 
     conda "bioconda::autometa"
@@ -25,15 +25,15 @@ process BINNING {
 
     script:
         taxonomy_call = params.taxonomy_aware ? "--taxonomy $taxonomy" : "" // https://github.com/nextflow-io/nextflow/issues/1694#issuecomment-683272275
-        def prefix = task.ext.prefix ?: "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         """
         autometa-binning \\
             --kmers $kmers \\
             --coverages $coverage \\
             --gc-content $gc_content \\
-            --markers $markers \\
-            --output-binning ${prefix}.${params.kingdom}.binning.tsv.gz \\
-            --output-main ${prefix}.${params.kingdom}.binning.main.tsv.gz \\
+            --markers ${markers} \\
+            --output-binning ${prefix}.binning.tsv.gz \\
+            --output-main ${prefix}.binning.main.tsv.gz \\
             --clustering-method ${params.clustering_method} \\
             --completeness ${params.completeness} \\
             --purity ${params.purity} \\
@@ -43,7 +43,7 @@ process BINNING {
             --starting-rank ${params.binning_starting_rank} \\
             --cpus ${task.cpus} \\
             --rank-filter superkingdom \\
-            --rank-name-filter ${params.kingdom} \\
+            --rank-name-filter ${meta.taxon} \\
             --verbose
 
         cat <<-END_VERSIONS > versions.yml

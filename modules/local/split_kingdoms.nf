@@ -23,6 +23,8 @@ process SPLIT_KINGDOMS {
 
     script:
         """
+        
+
         autometa-taxonomy \\
             --votes "${votes}" \\
             --output . \\
@@ -33,8 +35,6 @@ process SPLIT_KINGDOMS {
 
         gzip -6  taxonomy.tsv
         find ./ -name "*.fna" -type f -exec gzip -6 {} +
-
-        echo ">bro\naaaaaaaaaaaa\n" |gzip > bro.fna.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -1,5 +1,5 @@
 process EMBED_KMERS {
-    tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}"
+    tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}, ${meta.taxon}"
     label 'process_medium'
 
     conda "autometa"

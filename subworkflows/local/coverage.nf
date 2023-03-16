@@ -22,7 +22,7 @@ workflow COVERAGE {
 
         // https://nextflow-io.github.io/patterns/conditional-process/
         // basically "use input-table coverage, extracted spades coverage, or calculated coverage"
-        // TODO: this seems
+        // TODO: this seems like it should choose one or the other, not mix?
         user_provided_coverage_table
             .mix(CALCULATE_COVERAGE.out.coverage)
             .mix(SPADES_KMER_COVERAGE.out.coverage)

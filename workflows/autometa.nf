@@ -64,48 +64,63 @@ workflow AUTOMETA {
         filtered_metagenome_fasta,
         "gbk"
     )
+
     ch_versions = ch_versions.mix(PRODIGAL.out.versions)
 
     PRODIGAL.out.amino_acid_fasta
         .set{orfs_ch}
 
-    /*
-    * -------------------------------------------------
-    *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
-    * -------------------------------------------------
-    */
 
     if (params.taxonomy_aware) {
+        /*
+        * -------------------------------------------------
+        *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
+        * -------------------------------------------------
+        */        
         TAXON_ASSIGNMENT (
             filtered_metagenome_fasta,
             orfs_ch
         )
         ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
-        taxonomy_results = TAXON_ASSIGNMENT.out.taxonomy
-        taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
 
         TAXON_ASSIGNMENT
             .out
             .taxon_split_fasta
             .transpose()
-            .map{meta, fasta ->
-                    {
-                        meta['taxon'] = fasta.simpleName
-                    }
-                    return[meta, fasta]
-            }
-            .set { kmers_input_ch }
+            .map{ meta, fasta ->                    
+                    [meta + [taxon: fasta.simpleName], fasta]
+                }
+                .set{ kmers_input_fasta_ch }
 
+
+
+        taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
+
+       temp_tax = Channel.of("bacteria", "archaea")
+        TAXON_ASSIGNMENT.out.taxonomy
+            .combine(temp_tax)
+            .map{ meta, fasta, taxon ->                    
+                    [meta + [taxon: taxon], fasta]
+                }
+            .set{ taxonomy_results }
 
     } else {
-        kmers_input_ch = filtered_metagenome_fasta
+        
+        temp_tax = Channel.of("bacteria", "archaea")
+        aa=filtered_metagenome_fasta.combine(temp_tax)
+        aa.map{ meta, fasta, taxon ->                    
+                    [meta + [taxon: taxon], fasta]
+                }
+                .set{ kmers_input_fasta_ch }
+
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
             .set{taxonomy_results}
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
             .set{taxdump_files}
+            
     }
 
     /*
@@ -114,24 +129,62 @@ workflow AUTOMETA {
     * -------------------------------------------------
     */
 
-    KMERS( kmers_input_ch )
+    KMERS(kmers_input_fasta_ch )
     ch_versions = ch_versions.mix(KMERS.out.versions)
 
     // --------------------------------------------------------------------------------
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------
 
-    MARKERS( orfs_ch )
+    temp_tax = Channel.of("bacteria", "archaea")
+    orfs_ch
+        .combine(temp_tax)
+        .map{ meta, fasta, taxon ->                    
+                [meta + [taxon: taxon], fasta]
+            }
+        .set{ new_orf_ch }
+
+    MARKERS(new_orf_ch)
     ch_versions = ch_versions.mix(MARKERS.out.versions)
 
     markers_ch = MARKERS.out.markers_tsv
 
+
+
+
+
+
+   temp_tax = Channel.of("bacteria", "archaea")
+    coverage_ch
+        .combine(temp_tax)
+        .map{ meta, fasta, taxon ->                    
+                [meta + [taxon: taxon], fasta]
+            }
+        .set{ new_coverage_ch_ch }
+
+   temp_tax = Channel.of("bacteria", "archaea")
+    PROCESS_METAGENOME.out.filtered_metagenome_gc_content
+        .combine(temp_tax)
+        .map{ meta, fasta, taxon ->                    
+                [meta + [taxon: taxon], fasta]
+            }
+        .set{ kjsndjksdnsjk }
+
+
+
+    // KMERS.out.embedded.map{k,v -> println "$k and $v"}
+    // new_coverage_ch_ch.map{k,v -> println "$k and $v"}
+    // kjsndjksdnsjk.map{k,v -> println "$k and $v"}
+    // markers_ch.map{k,v -> println "$k and $v"}
+
     // Prepare inputs for binning channel
     KMERS.out.embedded
-        .join(coverage_ch)
-        .join(PROCESS_METAGENOME.out.filtered_metagenome_gc_content)
+        .join(new_coverage_ch_ch)
+        .join(kjsndjksdnsjk)
         .join(markers_ch)
         .set{binning_ch}
+
+
 
     if (params.taxonomy_aware) {
         binning_ch
@@ -142,6 +195,13 @@ workflow AUTOMETA {
             .combine(taxonomy_results)
             .set{binning_ch}
     }
+
+    taxonomy_results.map{k,v -> println "$k and $v"}
+
+
+
+
+
 
     BINNING(
         binning_ch
@@ -155,6 +215,7 @@ workflow AUTOMETA {
             .join(BINNING.out.main)
             .join(markers_ch)
             .set{recruitment_ch}
+            
         if (params.taxonomy_aware) {
             recruitment_ch
                 .join(taxonomy_results)

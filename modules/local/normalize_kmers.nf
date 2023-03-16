@@ -1,5 +1,5 @@
 process NORMALIZE_KMERS {
-    tag "method:${params.norm_method}, sample:${meta.id}"
+    tag "method:${params.norm_method}, sample:${meta.id}, ${meta.taxon}"
     label 'process_medium'
 
     conda "autometa"
