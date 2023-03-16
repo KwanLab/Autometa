@@ -41,6 +41,10 @@ workflow AUTOMETA {
 
     ch_versions = Channel.empty()
 
+    // only these taxa can be binned
+    taxa_with_marker_sets = ["bacteria", "archaea"]
+    taxa_with_marker_sets_ch = Channel.fromList(taxa_with_marker_sets)
+
     PROCESS_METAGENOME()
     ch_versions = ch_versions.mix(PROCESS_METAGENOME.out.versions)
 
@@ -64,16 +68,10 @@ workflow AUTOMETA {
         filtered_metagenome_fasta,
         "gbk"
     )
-
     ch_versions = ch_versions.mix(PRODIGAL.out.versions)
 
     PRODIGAL.out.amino_acid_fasta
         .set{orfs_ch}
-
-
-    // only these taxa can be binned
-    taxa_with_marker_sets = ["bacteria", "archaea"]
-
 
     if (params.taxonomy_aware) {
         /*
@@ -87,41 +85,15 @@ workflow AUTOMETA {
         )
         ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
-        // split channel based on the output fna files
-        // add the fna file name as taxon to the meta map (e.g. "bacteria", "archaea")
-        TAXON_ASSIGNMENT
-            .out
-            .taxon_split_fasta
-            .transpose()
-            .multiMap{ meta, fasta ->                    
-                   bar:[meta + [taxon: fasta.simpleName], fasta] // [[meta.id, meta.taxon], fasta]
-                   foo: fasta.simpleName
-                }
-                .set{ kmers_input_fasta_ch }
-
-        // collect all the taxa from TAXON_ASSIGNMENT into a list (this should be variable)
-        kmers_input_fasta_ch
-            .foo
-            .distinct()
-            .collect()
-            .set{found_taxa_list_ch}
-
-        taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
-        
-        // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv" 
-        // is split and named identically to the FASTA output would allow the logic here 
-        // to be identical to TAXON_ASSIGNMENT.out.taxon_split_fasta above
-
-        // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
-        TAXON_ASSIGNMENT.out.taxonomy
-            .combine(found_taxa_list_ch)
-            .map{ meta, fasta, taxon ->                    
-                    [meta + [taxon: taxon], fasta]
-                }
-            .set{ taxonomy_results }
+        taxonomy_results_ch     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv 
+        kmers_input_fasta_ch    = TAXON_ASSIGNMENT.out.taxon_split_fasta
+        found_taxa_list_ch      = TAXON_ASSIGNMENT.out.found_taxa_list
+        taxdump_files_ch        = TAXON_ASSIGNMENT.out.taxdump_files
 
     } else {
-        
+
+        found_taxa_list_ch = taxa_with_marker_sets_ch
+            
         // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
         filtered_metagenome_fasta
             .combine(
@@ -137,19 +109,12 @@ workflow AUTOMETA {
 
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
-            .set{taxonomy_results}
+            .set{taxonomy_results_ch}
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
-            .set{taxdump_files}
-            
+            .set{taxdump_files_ch}
+
     }
-
-
-
-
-
-
-
 
     /*
     * -------------------------------------------------
@@ -157,14 +122,13 @@ workflow AUTOMETA {
     * -------------------------------------------------
     */
 
-    KMERS(kmers_input_fasta_ch.bar )
+    KMERS(kmers_input_fasta_ch )
     ch_versions = ch_versions.mix(KMERS.out.versions)
 
     // --------------------------------------------------------------------------------
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------
 
-    taxa_with_marker_sets_ch = Channel.of("bacteria", "archaea")
     orfs_ch
         .combine(taxa_with_marker_sets_ch)
         .map{ meta, fasta, taxon ->                    
@@ -177,41 +141,26 @@ workflow AUTOMETA {
 
     markers_ch = MARKERS.out.markers_tsv
 
-
-
-
-
-
-   taxa_with_marker_sets_ch = Channel.of("bacteria", "archaea")
     coverage_ch
         .combine(taxa_with_marker_sets_ch)
         .map{ meta, fasta, taxon ->                    
                 [meta + [taxon: taxon], fasta]
             }
-        .set{ new_coverage_ch_ch }
+        .set{ new_coverage_ch }
 
-   taxa_with_marker_sets_ch = Channel.of("bacteria", "archaea")
     PROCESS_METAGENOME.out.filtered_metagenome_gc_content
         .combine(taxa_with_marker_sets_ch)
         .map{ meta, fasta, taxon ->                    
                 [meta + [taxon: taxon], fasta]
             }
-        .set{ kjsndjksdnsjk }
+        .set{ new_filtered_metagenome_gc_content_ch }
 
-
-
-
-
-
-    // KMERS.out.embedded.map{k,v -> println "$k and $v"}
-    // new_coverage_ch_ch.map{k,v -> println "$k and $v"}
-    // kjsndjksdnsjk.map{k,v -> println "$k and $v"}
     // markers_ch.map{k,v -> println "$k and $v"}
 
     // Prepare inputs for binning channel
     KMERS.out.embedded
-        .join(new_coverage_ch_ch)
-        .join(kjsndjksdnsjk)
+        .join(new_coverage_ch)
+        .join(new_filtered_metagenome_gc_content_ch)
         .join(markers_ch)
         .set{binning_ch}
 
@@ -219,11 +168,11 @@ workflow AUTOMETA {
 
     if (params.taxonomy_aware) {
         binning_ch
-            .join(taxonomy_results)
+            .join(taxonomy_results_ch)
             .set{binning_ch}
     } else {
         binning_ch
-            .combine(taxonomy_results)
+            .combine(taxonomy_results_ch)
             .set{binning_ch}
     }
     
@@ -245,11 +194,11 @@ workflow AUTOMETA {
             
         if (params.taxonomy_aware) {
             recruitment_ch
-                .join(taxonomy_results)
+                .join(taxonomy_results_ch)
                 .set{recruitment_ch}
         } else {
             recruitment_ch
-                .combine(taxonomy_results)
+                .combine(taxonomy_results_ch)
                 .set{recruitment_ch}
         }
         RECRUIT(
@@ -274,7 +223,7 @@ workflow AUTOMETA {
 
     BINNING_SUMMARY(
         binning_summary_ch,
-        taxdump_files
+        taxdump_files_ch
     )
     ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 

@@ -1,6 +1,6 @@
 
 process COUNT_KMERS {
-    tag "Counting ${params.kmer_size}-mers for ${meta.id}, ${meta.taxon}"
+    tag "Counting ${params.kmer_size}-mers for ${meta.id}, taxon:${meta.taxon}"
     label 'process_medium'
 
     conda "autometa"

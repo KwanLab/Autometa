@@ -53,9 +53,42 @@ workflow TAXON_ASSIGNMENT {
         )
         ch_versions = ch_versions.mix(SPLIT_KINGDOMS.out.versions)
 
+        // split channel based on the output fna files
+        // add the fna file name as taxon to the meta map (e.g. "bacteria", "archaea")
+         SPLIT_KINGDOMS
+            .out
+            .fasta
+            .transpose()
+            .multiMap{ meta, fasta ->                    
+                   fasta:[meta + [taxon: fasta.simpleName], fasta] // [[meta.id, meta.taxon], fasta]
+                   taxon: fasta.simpleName
+                }
+                .set{ taxon_split_fasta }
+        
+        // collect all the taxa from TAXON_ASSIGNMENT into a list (this should be variable)
+        taxon_split_fasta
+            .taxon
+            .distinct()
+            .collect()
+            .set{found_taxa_list_ch}
+      
+        // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv" 
+        // is split and named identically to the FASTA output would allow the logic here 
+        // to be identical to TAXON_ASSIGNMENT.out.taxon_split_fasta above
+        // This creates a separate channel for each taxon but each with an identical SPLIT_KINGDOMS.out.contig_taxonomy_tsv 
+        SPLIT_KINGDOMS
+            .out
+            .contig_taxonomy_tsv
+            .combine(found_taxa_list_ch)
+            .map{ meta, fasta, taxon ->                    
+                    [meta + [taxon: taxon], tsv]
+                }
+            .set{ contig_taxonomy_tsv }
+
     emit:
-        taxonomy            = SPLIT_KINGDOMS.out.taxonomy
-        taxon_split_fasta   = SPLIT_KINGDOMS.out.fasta
+        contig_taxonomy_tsv = contig_taxonomy_tsv   // [[meta.id, meta.taxon], tsv]
+        taxon_split_fasta   = taxon_split_fasta.fasta     // [[meta.id, meta.taxon], fasta]
+        found_taxa_list     = found_taxa_list_ch    // [meta.taxon]
         orf_votes           = LCA.out.lca
         contig_votes        = MAJORITY_VOTE.out.votes
         taxdump_files       = PREPARE_TAXONOMY_DATABASES.out.taxdump_files

@@ -14,7 +14,7 @@ process SPLIT_KINGDOMS {
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("taxonomy.tsv.gz"), emit: taxonomy
+        tuple val(meta), path("taxonomy.tsv.gz"), emit: contig_taxonomy_tsv
         tuple val(meta), path("*.fna.gz")       , emit: fasta, optional: true
         path  'versions.yml'                    , emit: versions
 
