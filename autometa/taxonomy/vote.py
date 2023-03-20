@@ -254,6 +254,7 @@ def write_ranks(
         canonical rank column in taxonomy table to split by, by default "superkingdom"
     prefix : str, optional
         Prefix each of the paths written with `prefix` string.
+        
 
     Returns
     -------
@@ -265,6 +266,7 @@ def write_ranks(
     KeyError
         `rank` not in taxonomy columns
     """
+    
     if rank not in taxonomy.columns:
         raise KeyError(f"{rank} not in taxonomy columns: {taxonomy.columns}")
     if not os.path.exists(assembly) or not os.path.getsize(assembly):
@@ -272,6 +274,26 @@ def write_ranks(
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
+    #create list of all classified contigs
+    classified_contigs = taxonomy['contig'].values.tolist()
+    #create empty list for unclassified contigs, then iterate through all contigs and add the ones
+    #missing from the list of classified contigs to the unclassified contig list
+    unclassified_contigs = []
+    for contig in assembly_records:
+        if contig not in classified_contigs:
+                unclassified_contigs.append(contig)
+    #export taxonomy column names to list
+    taxonomy_columns = taxonomy.columns.values.tolist()
+    #create empty dataframe with column names from taxonomy
+    unclassified_df = pd.Dataframe(columns=taxonomy_columns)
+    #add contig names from the unclassified contig list to the unclassified contig dataframe
+    for contig in unclassified_contigs:
+            unclassified_df = unclassified_df.append({'contig' : contig}, ignore_index=True)
+    #set index to contig, append it to taxonomy, then populate rank for unclassified contigs with
+    #the unclassified attribute
+    unclassified_df.set_index('contig', inplace=True)
+    taxonomy = pd.concat([taxonomy, unclassified_df])
+    taxonomy.loc[unclassified_contigs, rank] = TaxonomyDatabase.UNCLASSIFIED
     fpaths = []
     for rank_name, dff in taxonomy.groupby(rank):
         # First determine the file path respective to the rank name
