@@ -6,15 +6,6 @@ process DOWNLOAD_NR {
     label 'process_low'
     label 'process_long'
 
-    println '\033[0;34m Downloading nr.gz from NCBI, this may take a long time. \033[0m'
-
-    conda "conda-forge::rsync=3.2.3"
-    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-    } else {
-        container "jasonkwan/autometa:${params.autometa_image_tag}"
-    }
-
     output:
         path("nr.gz")       , emit: ncbi_nr_fasta
         path("nr.gz.md5")   , emit: md5
@@ -40,61 +31,11 @@ process DOWNLOAD_NR {
             rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
         END_VERSIONS
         """
-}
-
-process MOCK_DOWNLOAD {
-    // For development work so you don't download the entire nr.gz database
-    tag "Using smallsubset of NCBI nr.gz"
-    label 'process_low'
-
-    conda "conda-forge::rsync=3.2.3"
-    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-    } else {
-        container "jasonkwan/autometa:${params.autometa_image_tag}"
-    }
-
-    output:
-        path "nr.gz", emit: ncbi_nr_fasta
-
-    when:
-        task.ext.when == null || task.ext.when
-
-    script:
+    stub:
         """
-
-cat <<-END_VERSIONS > nr
->KJX92028.1 hypothetical protein TI39_contig5958g00003 [Zymoseptoria brevis]
-MAWTRQLVPLMLLFCGAHGLQRSSTATDQLSNSALQALGSHADLAAFVNDVEAVPEIANVILAHRGITIMAPVDSAWLRV
-DAIKRRNPAFLAWHIMNANVLTSDVPLVQYEQHPGITIPTFLSGSKNWTYSGEPASLISGGQSLTAITLKTEDNVIWVSG
-ASNVSYIKQANISYDRGIIHKIDPALQFPTSAYETAFAVGLYSYCWAVFTAGLDQEIRRIPNSTFLLPINEAFHAALPFL
-LGASREEFKRIVYRHVIPGRVLWSHEFYNASHETFEGSIVQIRGGNGRRWFVDDAMILDGSDKPLYNGVGHVVNKVLLPT
->EFG1759503.1 decarboxylating NADP(+)-dependent phosphogluconate dehydrogenase [Escherichia coli]EGJ4377881.1 decarboxylating NADP(+)-dependent phosphogluconate dehydrogenase [Escherichia coli]
-LKPYLDKGDIIIDGGNTFFQDTIRRNRELSAEGFNFIGTGVSGGEEGALKGPSIMPGGQKEAYELVAPILTKIAAVAEDG
-EPCVTYIGADGAGHYVKMVHNGIEYGDMQLIAEAYSLLKGGLNLTNEELAQTFTEWNNGELSSYLIDITKDIFTKKDEDG
-NYLVDVILDEAANKGTGKWTSQSALDLGEPLSLITESVFARYISSLKEQRVAASKVLSGPQAQPAGDKGEFIEKVRRALY
-LGKIVSYAQGFSQLRAASEEYNWDLNYGEIAKIFRAGCIIRAQFLQKITDAYIENPQIANLLLAPYFKQIADNYQQALRE
-VVAYAVQNGIPVPTFAAAVAYYDSYRAAVLPANLIQAQRDYFGAHTYKRIDKEGVFHTEWL
->WP_198835266.1 pilus assembly protein [Paracoccus sp. IB05]MBJ2149627.1 pilus assembly protein [Paracoccus sp. IB05]
-MTWRPLQRFLTRSDAAVTAEFVIVFPLVLALIFLIVFISMYISAASDLQQVVHELARYSYRYAGRPEANQLCATLERDAV
-PILVNASLLLHPENFTLISCSPPQGPDRIIVITASYDFAGSFVQSVGRTLGLSIGTISRQSLFIP
->MBD3193859.1 hypothetical protein [Candidatus Lokiarchaeota archaeon]MBD3198741.1 hypothetical protein [Candidatus Lokiarchaeota archaeon]
-MKKGFIVLILIALVSAGGLILFFYYSNDSGNGNFNTNSEKMIINHNHAHLEDFTSIPSEWIIAAKANLSIVYWHTSHGSQ
-ITTGMSLLDAFMGDNDVYEFNNAGTGGALHYHEPSIDYSRRDLTGYTDQFDDETRTFLSSNPEYNVVIWSWCGLDKNNAS
-INAYLTNMNQLESEYPNVHFVYMTAHLEGTGEDGDLHIYNQMIRRYCNKNNKTLYDFGDIESYNPENEYFLDRDANDGCY
-YDSDGNGSLDANWATEWQSTHDGTHTYPNGGEWYDCSPAHSEAVNGNLKAYAAWYLFARLAGWNGT
->UMM52736.1 protein ORF58 [Lake sturgeon herpesvirus]
-MGSMVKKRSRSLIPTSSITRWKTQSLKRPKATCASLRLTPRSTLSPQCHAGYGQSSPGANGLNRPVIDTWTRPSTAFGPS
-TSLGWTPQTHIFLNGNFVSHTHGCSPAFFTATQHVNIVYNKKQQTSVFAPHLLPHKQIQSGTVLTDNNKFVTDKKKTFSV
-QGVKNTRIEFTSLKNRSSNYTTNCRPLYQPAFQQFFELTGLCHGETSVTMSAMVVNNVNYTTCLYGLTNPFSFNFKICKD
-HKKFHNTLFFPSVNLYKQAKGRQHQIFESRYINSQKIYPGDVNQFGFYLQTVVAQTEYDPCLNWYFCRHFEATKSFLNTP
-NKTLILWFNERFYLAHPQVDIADPASYWPAYVTFMDLCVTPHLNHFIGFFSSGFGQYHNKNPEFIHLIPFLIFGAARGHN
-QGLDLIASYAHRLSRLQRHESLLELRLILQIAVELLKNPQITLCDDPVRGMELSYPQSDDPDNDREKRAKKRRLVVVTKP
-LCPPATVVRPLAGHQQSLVKKIQVYCQTCRRG
-END_VERSIONS
-
-gzip nr
-
+        curl -s https://gist.githubusercontent.com/chasemc/2fd67207f52c51edd3771a33a587bd2a/raw/38900546ffe03cfbd05d700f8dfb9f257adcfbd2/prots.faa | gzip > nr.gz
+        touch  'nr.gz.md5'
+        touch versions.yml
         """
 }
 
@@ -104,6 +45,8 @@ workflow PREPARE_NR_DB {
         ch_versions = Channel.empty()
 
         // TODO: this if/else can be simplified
+
+
         if (file("${params.nr_dmnd_dir}/nr.dmnd").exists()){
 
             // skip huge download and db creation if nr.dmnd already exists
@@ -117,16 +60,7 @@ workflow PREPARE_NR_DB {
 
             out_ch = DIAMOND_MAKEDB.out.diamond_db
 
-        } else if (params.debug){
-
-            MOCK_DOWNLOAD()
-
-            DIAMOND_MAKEDB(MOCK_DOWNLOAD.out.nr_db_ch, "nr")
-            ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
-
-            out_ch = DIAMOND_MAKEDB.out.diamond_db
-
-        } else if (params.large_downloads_permission) {
+        } else if (params.large_downloads_permission || workflow.stubRun) {
 
             DOWNLOAD_NR()
             ch_versions = ch_versions.mix(DOWNLOAD_NR.out.versions)

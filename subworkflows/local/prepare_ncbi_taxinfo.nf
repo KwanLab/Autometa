@@ -1,33 +1,3 @@
-// this file probably needs to be reevaluated, but from a python-first
-// perspective since the python code assumes file/directory structure
-
-process TEST_DOWNLOAD {
-    // For development work so you don't download the entire prot.accession2taxid.gz database
-    tag "Downloading first 10,000 lines of prot.accession2taxid.gz"
-    label 'process_low'
-    storeDir "${params.prot_accession2taxid_gz_dir}"
-
-    conda "conda-forge::rsync=3.2.3"
-    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
-    } else {
-        container "jasonkwan/autometa:${params.autometa_image_tag}"
-    }
-
-    output:
-        path("prot.accession2taxid.gz"), emit: singlefile
-
-    when:
-        task.ext.when == null || task.ext.when
-
-    script:
-        """
-        # https://github.com/nextflow-io/nextflow/issues/1564
-        trap 'echo OK; exit 0;' EXIT
-        curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 |gzip > prot.accession2taxid.gz
-        """
-}
-
 process DOWNLOAD_ACESSION2TAXID {
     tag "Downloading prot.accession2taxid.gz"
     label 'process_low'
@@ -58,6 +28,17 @@ process DOWNLOAD_ACESSION2TAXID {
             'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz.md5' 'prot.accession2taxid.gz.md5'
 
         md5sum -c *.md5
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+        END_VERSIONS
+        """
+    stub:
+        """
+        # https://github.com/nextflow-io/nextflow/issues/1564
+        trap 'echo OK; exit 0;' EXIT
+        curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 |gzip > prot.accession2taxid.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -132,10 +113,6 @@ workflow PREPARE_TAXONOMY_DATABASES {
 
         if (taxonomy_files_exist2){
             prot_accession2taxid_ch = accession2taxid_dir_files
-        } else if (params.debug){
-            TEST_DOWNLOAD().singlefile
-                .set{prot_accession2taxid_ch}
-
         } else {
             DOWNLOAD_ACESSION2TAXID()
             DOWNLOAD_ACESSION2TAXID.out.accession2taxid

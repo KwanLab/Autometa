@@ -78,14 +78,14 @@ workflow AUTOMETA {
         * -------------------------------------------------
         *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
         * -------------------------------------------------
-        */        
+        */
         TAXON_ASSIGNMENT (
             filtered_metagenome_fasta,
             orfs_ch
         )
         ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
-        taxonomy_results_ch     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv 
+        taxonomy_results_ch     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv
         kmers_input_fasta_ch    = TAXON_ASSIGNMENT.out.taxon_split_fasta
         found_taxa_list_ch      = TAXON_ASSIGNMENT.out.found_taxa_list
         taxdump_files_ch        = TAXON_ASSIGNMENT.out.taxdump_files
@@ -93,7 +93,7 @@ workflow AUTOMETA {
     } else {
 
         found_taxa_list_ch = taxa_with_marker_sets_ch
-            
+
         // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
         filtered_metagenome_fasta
             .combine(
@@ -102,7 +102,7 @@ workflow AUTOMETA {
                         taxa_with_marker_sets
                         )
             )
-            .map{ meta, fasta, taxon ->                    
+            .map{ meta, fasta, taxon ->
                     [meta + [taxon: taxon], fasta]
                 }
                 .set{ kmers_input_fasta_ch }
@@ -131,7 +131,7 @@ workflow AUTOMETA {
 
     orfs_ch
         .combine(taxa_with_marker_sets_ch)
-        .map{ meta, fasta, taxon ->                    
+        .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
         .set{ new_orf_ch }
@@ -143,14 +143,14 @@ workflow AUTOMETA {
 
     coverage_ch
         .combine(taxa_with_marker_sets_ch)
-        .map{ meta, fasta, taxon ->                    
+        .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
         .set{ new_coverage_ch }
 
     PROCESS_METAGENOME.out.filtered_metagenome_gc_content
         .combine(taxa_with_marker_sets_ch)
-        .map{ meta, fasta, taxon ->                    
+        .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
         .set{ new_filtered_metagenome_gc_content_ch }
@@ -175,7 +175,7 @@ workflow AUTOMETA {
             .combine(taxonomy_results_ch)
             .set{binning_ch}
     }
-    
+
 
 
 
@@ -187,11 +187,11 @@ workflow AUTOMETA {
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
         KMERS.out.normalized
-            .join(coverage_ch)
+            .join(new_coverage_ch)
             .join(BINNING.out.main)
             .join(markers_ch)
             .set{recruitment_ch}
-            
+
         if (params.taxonomy_aware) {
             recruitment_ch
                 .join(taxonomy_results_ch)
@@ -227,10 +227,28 @@ workflow AUTOMETA {
     )
     ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 
-    if (params.mock_test){
+    if (workflow.stubRun){
+
+        PROCESS_METAGENOME.out.assembly_to_locus
+            .combine(taxa_with_marker_sets_ch)
+            .map{ meta, fasta, taxon ->
+                    [meta + [taxon: taxon], fasta]
+                }
+            .set{ new_assembly_to_locus_ch }
+
+        PROCESS_METAGENOME.out.assembly_report
+            .combine(taxa_with_marker_sets_ch)
+            .map{ meta, fasta, taxon ->
+                    [meta + [taxon: taxon], fasta]
+                }
+            .set{ new_assembly_report_ch }
+
+        new_assembly_report_ch.map{k,v -> println "$k and $v"}
+        binning_results_ch.map{k,v -> println "$k and $v"}
+
         binning_results_ch
-            .join(PROCESS_METAGENOME.out.assembly_to_locus)
-            .join(PROCESS_METAGENOME.out.assembly_report)
+            .join(new_assembly_to_locus_ch)
+            .join(new_assembly_report_ch)
             .set { mock_input_ch }
 
         MOCK_DATA_REPORT(
