@@ -89,6 +89,8 @@ def get(
     parallel: bool = True,
     gnu_parallel: bool = False,
     seed: int = 42,
+    tax_aware: bool = False,
+    tax_aware_type: str = None
 ) -> pd.DataFrame:
     """Retrieve contigs' markers from markers database that pass cutoffs filter.
 
@@ -136,6 +138,13 @@ def get(
     kingdom = kingdom.lower()
     # if dbdir == MARKERS_DIR and hmmdb/cutoffs not set, use single dbdir
     # else dbdir was set, so use it for both hmmdb and cutoffs
+    if tax_aware == True:
+        if tax_aware_type == "single" or None:
+            hmmdb = os.path.join(dbdir, f"{kingdom}.single_tax_aware.hmm")
+            cutoffs = os.path.join(dbdir, f"{kingdom}.single_tax_aware.cutoffs")
+        if tax_aware_type == "multi":
+            hmmdb = os.path.join(dbdir, f"{kingdom}.multi_tax_aware.hmm")
+            cutoffs = os.path.join(dbdir, f"{kingdom}.multi_tax_aware.cutoffs")
     if dbdir == MARKERS_DIR:
         if hmmdb is None:
             hmmdb = os.path.join(dbdir, f"{kingdom}.single_copy.hmm")
