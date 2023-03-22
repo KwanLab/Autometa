@@ -4,8 +4,6 @@
 
 nextflow.enable.dsl=2
 
-
-
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 
 workflow INPUT_CHECK {

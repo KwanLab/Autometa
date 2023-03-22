@@ -8,11 +8,6 @@ workflow PROCESS_METAGENOME {
 
     ch_versions = Channel.empty()
 
-   // Samplesheet channel
-    Channel
-        .fromPath(params.input)
-        .set{samplesheet_ch}
-
     assembly_to_locus = Channel.empty()
     assembly_report   = Channel.empty()
 
@@ -36,6 +31,10 @@ workflow PROCESS_METAGENOME {
         assembly_report = CREATE_MOCK.out.assembly_report
 
     } else {
+
+        Channel
+            .fromPath(params.input)
+            .set{samplesheet_ch}
 
         INPUT_CHECK(samplesheet_ch)
         ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)

@@ -36,8 +36,9 @@ process DOWNLOAD_ACESSION2TAXID {
         """
     stub:
         """
-        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_1/prot.accession2taxid.gz  > prot.accession2taxid.gz
+        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_2/prot.accession2taxid.gz  > prot.accession2taxid.gz
         echo '71f15152d31947eac593060f971bfd24  prot.accession2taxid.gz' > 'prot.accession2taxid.gz.md5'
+        echo 'cc3a216f73d2d4c2a7b4b4a6ebcedc12  prot.accession2taxid.gz' > 'prot.accession2taxid.gz.md5'
         md5sum -c 'prot.accession2taxid.gz.md5'
         touch versions.yml
         """

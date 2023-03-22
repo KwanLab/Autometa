@@ -11,6 +11,7 @@ Count, normalize and embed k-mers given nucleotide sequences
 import gzip
 import logging
 import os
+import sys
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
@@ -601,10 +602,13 @@ def embed(
             raise TypeError(
                 f"pca_dimensions must be an integer! given: {pca_dimensions}"
             )
+    if df.shape[0] < pca_dimensions:
+        sys.exit(8)
     if n_components > pca_dimensions and pca_dimensions != 0:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
         )
+
         X = PCA(n_components=pca_dimensions, random_state=random_state).fit_transform(X)
         # X = PCA(n_components='mle').fit_transform(X)
         n_samples, n_components = X.shape

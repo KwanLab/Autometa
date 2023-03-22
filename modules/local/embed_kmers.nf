@@ -1,6 +1,8 @@
 process EMBED_KMERS {
     tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}, taxon:${meta.taxon}"
     label 'process_medium'
+    // Not enough contigs to perform embedding with current parameter settings...
+    errorStrategy { task.exitStatus in 8 ? 'ignore' : 'terminate' }
 
     conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -8,10 +10,6 @@ process EMBED_KMERS {
     } else {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }
-
-    // Not enough contigs to perform embedding with current parameter settings...
-    errorStrategy { task.exitStatus in 153 ? 'ignore' : 'terminate' }
-
     input:
         tuple val(meta), path(normalized)
 

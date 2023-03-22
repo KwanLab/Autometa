@@ -1,0 +1,21 @@
+name: mock_data_reporter
+
+channels:
+  - conda-forge
+  - r
+  - defaults
+
+dependencies:
+  - r-base
+  - r-r.utils
+  - r-rmarkdown
+  - r-data.table
+  - r-ggplot2
+  - r-plotly
+  - r-crosstalk
+  - r-magrittr
+  - r-DT
+  - r-ggbeeswarm
+  - r-patchwork
+  - r-htmltools
+  - procps-ng # required by nextflow

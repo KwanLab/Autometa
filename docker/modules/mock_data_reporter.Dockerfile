@@ -1,28 +1,11 @@
-FROM rocker/rstudio:4.2.2
-# Not starting from r-base b/c pandoc, etc needed
+FROM mambaorg/micromamba:1.1.0
 LABEL maintainer="jason.kwan@wisc.edu"
 
-# System packages
-RUN apt-get update -qq && apt-get -y --no-install-recommends install \
-    libxml2-dev \
-    libcairo2-dev \
-    libsqlite-dev \
-    libpq-dev \
-    libicu-dev \
-    libbz2-dev \
-    liblzma-dev \
-    libfontconfig1-dev \
-    libssl-dev \
-    libcurl4-openssl-dev \
-    libnetcdf-dev \
-    udunits-bin \
-    libudunits2-dev \
-    curl \
-    procps
+COPY mock_data_reporter.yaml environment.yaml
 
-# R packages
-ENV R_PACKAGES='c("rmarkdown", "data.table", "ggplot2", "plotly", "crosstalk", "magrittr", "DT", "ggbeeswarm", "patchwork", "htmltools")'
+RUN micromamba install -y -n base -f environment.yaml && \
+    micromamba clean --all --yes
 
-# MRAN is going away. TODO: find a suitable replacement or snaphshot with renv or just cross fingers
-# RUN echo 'options("repos"="https://mran.microsoft.com/snapshot/2023-03-03")' >> /usr/local/lib/R/etc/Rprofile.site
-RUN Rscript -e "install.packages(${R_PACKAGES}, Ncpus=parallel::detectCores())"
+USER $MAMBA_USER
+ARG MAMBA_DOCKERFILE_ACTIVATE=1  # (otherwise python will not be found)
+

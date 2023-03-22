@@ -155,8 +155,6 @@ workflow AUTOMETA {
             }
         .set{ new_filtered_metagenome_gc_content_ch }
 
-    // markers_ch.map{k,v -> println "$k and $v"}
-
     // Prepare inputs for binning channel
     KMERS.out.embedded
         .join(new_coverage_ch)
@@ -242,9 +240,6 @@ workflow AUTOMETA {
                     [meta + [taxon: taxon], fasta]
                 }
             .set{ new_assembly_report_ch }
-
-        new_assembly_report_ch.map{k,v -> println "$k and $v"}
-        binning_results_ch.map{k,v -> println "$k and $v"}
 
         binning_results_ch
             .join(new_assembly_to_locus_ch)
