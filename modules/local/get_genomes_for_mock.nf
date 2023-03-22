@@ -28,7 +28,6 @@ process GET_GENOMES_FOR_MOCK {
                     --exclude='*_rna_from_genomic.fna.gz' \\
                     --exclude='*_cds_from_genomic.fna.gz' \\
                     --include="*_genomic.fna.gz" \\
-                    --include="*_protein.faa.gz" \\
                     --include='*/' \\
                     --exclude='*' {} .
 

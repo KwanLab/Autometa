@@ -33,8 +33,9 @@ process DOWNLOAD_NR {
         """
     stub:
         """
-        curl -s https://gist.githubusercontent.com/chasemc/2fd67207f52c51edd3771a33a587bd2a/raw/38900546ffe03cfbd05d700f8dfb9f257adcfbd2/prots.faa | gzip > nr.gz
-        touch  'nr.gz.md5'
+        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_1/nr.fa.gz  > nr.gz
+        echo 'faac6c3d544e3d89f5b99377814f0c37 nr.gz' > 'nr.gz.md5'
+        md5sum -c 'nr.gz.md5'
         touch versions.yml
         """
 }

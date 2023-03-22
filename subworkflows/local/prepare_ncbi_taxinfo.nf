@@ -36,14 +36,10 @@ process DOWNLOAD_ACESSION2TAXID {
         """
     stub:
         """
-        # https://github.com/nextflow-io/nextflow/issues/1564
-        trap 'echo OK; exit 0;' EXIT
-        curl -s ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz | zcat | head -n 1000 |gzip > prot.accession2taxid.gz
-
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
-        END_VERSIONS
+        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_1/prot.accession2taxid.gz  > prot.accession2taxid.gz
+        echo '71f15152d31947eac593060f971bfd24  prot.accession2taxid.gz' > 'prot.accession2taxid.gz.md5'
+        md5sum -c 'prot.accession2taxid.gz.md5'
+        touch versions.yml
         """
 }
 

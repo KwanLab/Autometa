@@ -12,7 +12,7 @@
 include { CUSTOM_DUMPSOFTWAREVERSIONS             } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { MARKERS                                 } from '../modules/local/markers'
 include { BINNING                                 } from '../modules/local/binning'
-include { RECRUIT                                 } from '../modules/local/unclustered_recruitment'
+include { UNCLUSTERED_RECRUIT                                 } from '../modules/local/unclustered_recruitment'
 include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'
 include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'
 
@@ -32,7 +32,7 @@ include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
  * -------------------------------------------------
 */
 
-include { COVERAGE                       } from '../subworkflows/local/coverage'
+include { COVERAGE                    } from '../subworkflows/local/coverage'
 include { KMERS                       } from '../subworkflows/local/kmers'
 include { PROCESS_METAGENOME          } from '../subworkflows/local/process_metagenome'
 include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment'
@@ -201,12 +201,12 @@ workflow AUTOMETA {
                 .combine(taxonomy_results_ch)
                 .set{recruitment_ch}
         }
-        RECRUIT(
+        UNCLUSTERED_RECRUIT(
             recruitment_ch
         )
-        ch_versions = ch_versions.mix(RECRUIT.out.versions)
+        ch_versions = ch_versions.mix(UNCLUSTERED_RECRUIT.out.versions)
 
-        RECRUIT.out.main
+        UNCLUSTERED_RECRUIT.out.main
             .set{binning_results_ch}
         binning_col = Channel.of("recruited_cluster")
     } else {
