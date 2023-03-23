@@ -275,7 +275,7 @@ def write_ranks(
         os.makedirs(outdir)
     assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
     #create list of all classified contigs
-    classified_contigs = taxonomy['contig'].values.tolist()
+    classified_contigs = taxonomy.index.tolist()
     #create empty list for unclassified contigs, then iterate through all contigs and add the ones
     #missing from the list of classified contigs to the unclassified contig list
     unclassified_contigs = []
