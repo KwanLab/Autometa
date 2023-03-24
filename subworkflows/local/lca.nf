@@ -23,7 +23,7 @@ workflow LCA {
         REDUCE(
             blastp_results,
             taxdump_files,
-            PREP_DBS.out.cache,
+            PREP_DBS.out.pickles,
             prot_accession2taxid
         )
         ch_versions = ch_versions.mix(REDUCE.out.versions)
@@ -32,7 +32,7 @@ workflow LCA {
         lca = REDUCE.out.lca
         error_taxid = REDUCE.out.error_taxids
         sseqid_to_taxids = REDUCE.out.sseqid_to_taxids
-        cache  = PREP_DBS.out.cache
+        cache  = PREP_DBS.out.pickles
         versions = ch_versions
 }
 

@@ -12,7 +12,7 @@ process REDUCE_LCA {
     input:
         tuple val(meta), path(blast)
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
-        path lca_cache
+        path "lca_cache/*"
         path prot_accession2taxid
 
     output:
@@ -33,7 +33,7 @@ process REDUCE_LCA {
             --blast blast_unzipped \\
             --dbdir . \\
             --dbtype ncbi \\
-            --cache ${lca_cache} \\
+            --cache lca_cache \\
             --lca-error-taxids ${prefix}.lca_error_taxids.tsv \\
             --sseqid2taxid-output ${prefix}.sseqid2taxid.tsv \\
             --lca-output ${prefix}.lca.tsv
