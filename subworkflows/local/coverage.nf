@@ -8,15 +8,19 @@ workflow COVERAGE {
         user_provided_coverage_table
 
     main:
-        // meta.cov_from_assembly.equals('0')
 
         ch_versions = Channel.empty()
+
 
         CALCULATE_COVERAGE(filtered_metagenome_fasta_and_reads)
         ch_versions = ch_versions.mix(CALCULATE_COVERAGE.out.versions)
 
+        filtered_metagenome_fasta
+            .filter( {meta, file -> meta.cov_from_assembly == 'spades' })
+            .set {ch_for_spades_cov}
+
         SPADES_KMER_COVERAGE (
-            filtered_metagenome_fasta,
+            ch_for_spades_cov,
         )
         ch_versions = ch_versions.mix(SPADES_KMER_COVERAGE.out.versions)
 
