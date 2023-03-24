@@ -20,9 +20,9 @@ process MOCK_DATA_REPORT {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix = task.ext.prefix ?: "${meta.id}"
+        def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         """
-        mock_data_report.R ${rmarkdown_file} ${bins_path} ${assembly_to_locus_path} ${assembly_report_path}
+        mock_data_report.R ${rmarkdown_file} ${bins_path} ${assembly_to_locus_path} ${assembly_report_path} ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

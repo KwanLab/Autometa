@@ -6,23 +6,23 @@ rmarkdown::render(
   input=args[[1]],
   params=list(
     bins_path=args[[2]],
-    assembly_to_locus_path=args[[2]],
-    assembly_report_path=args[[3]],
+    assembly_to_locus_path=args[[3]],
+    assembly_report_path=args[[4]],
     genus=FALSE
   ),
   knit_root_dir=getwd(),
   output_dir=getwd(),
-  output_file="mock_data_report_by_assembly.html"
+  output_file=paste0(args[[5]],".mock_data_report_by_assembly.html")
 )
 rmarkdown::render(
   input=args[[1]],
   params=list(
     bins_path= args[[2]],
-    assembly_to_locus_path = args[[2]],
-    assembly_report_path = args[[3]],
+    assembly_to_locus_path = args[[3]],
+    assembly_report_path = args[[4]],
     genus=TRUE
   ),
   knit_root_dir=getwd(),
   output_dir=getwd(),
-  output_file="mock_data_report_by_genus.html"
+  output_file=paste0(args[[5]],".mock_data_report_by_genus.html")
 )
