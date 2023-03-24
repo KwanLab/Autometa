@@ -4,7 +4,7 @@
 
 nextflow.enable.dsl=2
 
-include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
+include { ch_samplesheetECK } from '../../modules/local/ch_samplesheeteck'
 
 workflow INPUT_CHECK {
     take:
@@ -13,22 +13,22 @@ workflow INPUT_CHECK {
     main:
         ch_versions = Channel.empty()
 
-        SAMPLESHEET_CHECK ( samplesheet )
-        ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
+        ch_samplesheetECK ( samplesheet )
+        ch_versions = ch_versions.mix(ch_samplesheetECK.out.versions)
 
         // reads channel
-        SAMPLESHEET_CHECK.out.csv
+        ch_samplesheetECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_fastq_channel(it) }
             .set { reads }
         // metagenome channel
-        SAMPLESHEET_CHECK.out.csv
+        ch_samplesheetECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_metagenome_channel(it) }
             .set { metagenome }
 
         // coverage channel
-        SAMPLESHEET_CHECK.out.csv
+        ch_samplesheetECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_coverage_channel(it) }
             .set { coverage }
@@ -117,8 +117,8 @@ metagenome.fna.gz
 
 workflow {
     main:
-        samplesheet_ch = Channel.fromPath(params.input)
-        INPUT_CHECK(samplesheet_ch)
+        ch_samplesheet = Channel.fromPath(params.input)
+        INPUT_CHECK(ch_samplesheet)
     emit:
         reads = INPUT_CHECK.out.reads
         metagenome = INPUT_CHECK.out.metagenome

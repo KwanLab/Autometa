@@ -26,10 +26,10 @@ workflow COVERAGE {
         user_provided_coverage_table
             .mix(CALCULATE_COVERAGE.out.coverage)
             .mix(SPADES_KMER_COVERAGE.out.coverage)
-            .set{coverage_ch}
+            .set{ch_coverage}
 
 
     emit:
-        coverage_ch = coverage_ch
+        ch_coverage = ch_coverage
         versions = ch_versions
 }

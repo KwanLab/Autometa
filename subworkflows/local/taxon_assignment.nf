@@ -77,7 +77,7 @@ workflow TAXON_ASSIGNMENT {
             .taxon
             .collect()
             .flatten()
-            .set{found_taxa_list_ch}
+            .set{ch_found_taxa_list}
 
         // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv"
         // is split and named identically to the FASTA output would allow the logic here
@@ -86,7 +86,7 @@ workflow TAXON_ASSIGNMENT {
         SPLIT_KINGDOMS
             .out
             .contig_taxonomy_tsv
-            .combine(found_taxa_list_ch)
+            .combine(ch_found_taxa_list)
             .map{ meta, tsv, taxon ->
                     [meta + [taxon: taxon], tsv]
                 }
@@ -95,7 +95,7 @@ workflow TAXON_ASSIGNMENT {
     emit:
         contig_taxonomy_tsv = contig_taxonomy_tsv   // [[meta.id, meta.taxon], tsv]
         taxon_split_fasta   = taxon_split_fasta.fasta     // [[meta.id, meta.taxon], fasta]
-        found_taxa_list     = found_taxa_list_ch    // [meta.taxon]
+        found_taxa_list     = ch_found_taxa_list    // [meta.taxon]
         orf_votes           = LCA.out.lca
         contig_votes        = MAJORITY_VOTE.out.votes
         taxdump_files       = PREPARE_TAXONOMY_DATABASES.out.taxdump_files

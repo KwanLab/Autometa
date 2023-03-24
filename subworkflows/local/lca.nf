@@ -45,7 +45,7 @@ nextflow run -resume $HOME/Autometa/subworkflows/local/lca.nf \\
 */
 
 workflow {
-    blastp_results_ch = Channel
+    ch_blastp_results = Channel
             .fromPath(params.input)
             .map { row ->
                     def meta = [:]
@@ -56,7 +56,7 @@ workflow {
     dbdir = Channel.value(params.dbdir)
 
     LCA(
-        blastp_results_ch,
+        ch_blastp_results,
         dbdir
     )
 }

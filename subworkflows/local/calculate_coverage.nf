@@ -46,7 +46,7 @@ nextflow run -resume $HOME/Autometa/subworkflows/local/contig_coverage.nf \\
 */
 
 workflow {
-    coverage_inputs_ch = Channel
+    ch_coverage_inputs = Channel
             .fromPath(params.input)
             .map { row ->
                     def meta = [:]
@@ -55,6 +55,6 @@ workflow {
                 }
 
     CONTIG_COVERAGE(
-        coverage_inputs_ch
+        ch_coverage_inputs
     )
 }

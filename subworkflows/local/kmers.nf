@@ -34,7 +34,7 @@ nextflow run -resume $HOME/Autometa/subworkflows/local/kmers.nf \\
 */
 
 workflow {
-    fasta_ch = Channel
+    ch_fasta = Channel
             .fromPath(params.input)
             .map { row ->
                     def meta = [:]
@@ -43,6 +43,6 @@ workflow {
                 }
 
     KMERS(
-        fasta_ch
+        ch_fasta
     )
 }

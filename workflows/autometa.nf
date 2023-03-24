@@ -44,7 +44,7 @@ workflow AUTOMETA {
     // CUrrently only "bacteria", "archaea" and have markers and can be binned
     taxa_with_marker_sets = ["bacteria", "archaea"]
 
-    taxa_with_marker_sets_ch = Channel.fromList(taxa_with_marker_sets)
+    ch_taxa_with_marker_sets = Channel.fromList(taxa_with_marker_sets)
 
     /*
     * -------------------------------------------------
@@ -66,10 +66,9 @@ workflow AUTOMETA {
         PROCESS_METAGENOME.out.filtered_metagenome_fasta_and_reads,
         PROCESS_METAGENOME.out.user_provided_coverage_table
     )
-    ch_versions = ch_versions.mix(COVERAGE.out.versions)
 
-    filtered_metagenome_fasta = PROCESS_METAGENOME.out.filtered_metagenome_fasta
-    coverage_ch = COVERAGE.out.coverage_ch
+    ch_coverage = COVERAGE.out.ch_coverage
+    ch_versions = ch_versions.mix(COVERAGE.out.versions)
 
     /*
     * -------------------------------------------------
@@ -98,14 +97,14 @@ workflow AUTOMETA {
         )
         ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
-        taxonomy_results_ch     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv
-        kmers_input_fasta_ch    = TAXON_ASSIGNMENT.out.taxon_split_fasta
-        found_taxa_list_ch      = TAXON_ASSIGNMENT.out.found_taxa_list
-        taxdump_files_ch        = TAXON_ASSIGNMENT.out.taxdump_files
+        ch_taxonomy_results     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv
+        ch_kmers_input_fasta    = TAXON_ASSIGNMENT.out.taxon_split_fasta
+        ch_found_taxa_list      = TAXON_ASSIGNMENT.out.found_taxa_list
+        ch_taxdump_files        = TAXON_ASSIGNMENT.out.taxdump_files
 
     } else {
 
-        found_taxa_list_ch = taxa_with_marker_sets_ch
+        ch_found_taxa_list = ch_taxa_with_marker_sets
 
         // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
         filtered_metagenome_fasta
@@ -118,14 +117,14 @@ workflow AUTOMETA {
             .map{ meta, fasta, taxon ->
                     [meta + [taxon: taxon], fasta]
                 }
-                .set{ kmers_input_fasta_ch }
+                .set{ ch_kmers_input_fasta }
 
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
-            .set{taxonomy_results_ch}
+            .set{ch_taxonomy_results}
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
-            .set{taxdump_files_ch}
+            .set{ch_taxdump_files}
 
     }
 
@@ -135,7 +134,7 @@ workflow AUTOMETA {
     * -------------------------------------------------
     */
 
-    KMERS(kmers_input_fasta_ch )
+    KMERS(ch_kmers_input_fasta )
     ch_versions = ch_versions.mix(KMERS.out.versions)
 
     // --------------------------------------------------------------------------------
@@ -143,73 +142,73 @@ workflow AUTOMETA {
     // --------------------------------------------------------------------------------
 
     orfs_ch
-        .combine(taxa_with_marker_sets_ch)
+        .combine(ch_taxa_with_marker_sets)
         .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
-        .set{ new_orf_ch }
+        .set{ ch_new_orf }
 
-    MARKERS(new_orf_ch)
+    MARKERS(ch_new_orf)
     ch_versions = ch_versions.mix(MARKERS.out.versions)
 
-    markers_ch = MARKERS.out.markers_tsv
+    ch_markers = MARKERS.out.markers_tsv
 
-    coverage_ch
-        .combine(taxa_with_marker_sets_ch)
+    ch_coverage
+        .combine(ch_taxa_with_marker_sets)
         .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
-        .set{ new_coverage_ch }
+        .set{ new_ch_coverage }
 
     PROCESS_METAGENOME.out.filtered_metagenome_gc_content
-        .combine(taxa_with_marker_sets_ch)
+        .combine(ch_taxa_with_marker_sets)
         .map{ meta, fasta, taxon ->
                 [meta + [taxon: taxon], fasta]
             }
-        .set{ new_filtered_metagenome_gc_content_ch }
+        .set{ ch_new_filtered_metagenome_gc_content }
 
     // Prepare inputs for binning channel
     KMERS.out.embedded
-        .join(new_coverage_ch)
-        .join(new_filtered_metagenome_gc_content_ch)
-        .join(markers_ch)
-        .set{binning_ch}
+        .join(new_ch_coverage)
+        .join(ch_new_filtered_metagenome_gc_content)
+        .join(ch_markers)
+        .set{ch_binning}
 
 
 
     if (params.taxonomy_aware) {
-        binning_ch
-            .join(taxonomy_results_ch)
-            .set{binning_ch}
+        ch_binning
+            .join(ch_taxonomy_results)
+            .set{ch_binning}
     } else {
-        binning_ch
-            .combine(taxonomy_results_ch)
-            .set{binning_ch}
+        ch_binning
+            .combine(ch_taxonomy_results)
+            .set{ch_binning}
     }
 
 
 
 
     BINNING(
-        binning_ch
+        ch_binning
     )
     ch_versions = ch_versions.mix(BINNING.out.versions)
 
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
         KMERS.out.normalized
-            .join(new_coverage_ch)
+            .join(new_ch_coverage)
             .join(BINNING.out.main)
-            .join(markers_ch)
+            .join(ch_markers)
             .set{recruitment_ch}
 
         if (params.taxonomy_aware) {
             recruitment_ch
-                .join(taxonomy_results_ch)
+                .join(ch_taxonomy_results)
                 .set{recruitment_ch}
         } else {
             recruitment_ch
-                .combine(taxonomy_results_ch)
+                .combine(ch_taxonomy_results)
                 .set{recruitment_ch}
         }
         UNCLUSTERED_RECRUIT(
@@ -218,49 +217,49 @@ workflow AUTOMETA {
         ch_versions = ch_versions.mix(UNCLUSTERED_RECRUIT.out.versions)
 
         UNCLUSTERED_RECRUIT.out.main
-            .set{binning_results_ch}
+            .set{ch_binning_results}
         binning_col = Channel.of("recruited_cluster")
     } else {
-        binning_results_ch = BINNING.out.main
+        ch_binning_results = BINNING.out.main
         binning_col = Channel.of("cluster")
     }
 
     // Set inputs for binning summary
-    binning_results_ch
-        .join(markers_ch)
-        .join(kmers_input_fasta_ch)
+    ch_binning_results
+        .join(ch_markers)
+        .join(ch_kmers_input_fasta)
         .combine(binning_col)
         .set{binning_summary_ch}
 
     BINNING_SUMMARY(
         binning_summary_ch,
-        taxdump_files_ch
+        ch_taxdump_files
     )
     ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 
     if (workflow.stubRun){
 
         PROCESS_METAGENOME.out.assembly_to_locus
-            .combine(taxa_with_marker_sets_ch)
+            .combine(ch_taxa_with_marker_sets)
             .map{ meta, fasta, taxon ->
                     [meta + [taxon: taxon], fasta]
                 }
-            .set{ new_assembly_to_locus_ch }
+            .set{ ch_new_assembly_to_locus }
 
         PROCESS_METAGENOME.out.assembly_report
-            .combine(taxa_with_marker_sets_ch)
+            .combine(ch_taxa_with_marker_sets)
             .map{ meta, fasta, taxon ->
                     [meta + [taxon: taxon], fasta]
                 }
-            .set{ new_assembly_report_ch }
+            .set{ ch_new_assembly_report }
 
-        binning_results_ch
-            .join(new_assembly_to_locus_ch)
-            .join(new_assembly_report_ch)
-            .set { mock_input_ch }
+        ch_binning_results
+            .join(ch_new_assembly_to_locus)
+            .join(ch_new_assembly_report)
+            .set { ch_mock_input }
 
         MOCK_DATA_REPORT(
-            mock_input_ch,
+            ch_mock_input,
             file("$baseDir/lib/mock_data_report.Rmd")
         )
         ch_versions = ch_versions.mix(MOCK_DATA_REPORT.out.versions)

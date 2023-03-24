@@ -52,7 +52,7 @@ workflow PREPARE_NR_DB {
         if (file("${params.nr_dmnd_dir}/nr.dmnd").exists()){
 
             // skip huge download and db creation if nr.dmnd already exists
-            out_ch = file("${params.nr_dmnd_dir}/nr.dmnd")
+            ch_out = file("${params.nr_dmnd_dir}/nr.dmnd")
 
         } else if (file("${params.nr_dmnd_dir}/nr.gz").exists()){
 
@@ -60,7 +60,7 @@ workflow PREPARE_NR_DB {
             DIAMOND_MAKEDB(file("${params.nr_dmnd_dir}/nr.gz"), "nr")
             ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
 
-            out_ch = DIAMOND_MAKEDB.out.diamond_db
+            ch_out = DIAMOND_MAKEDB.out.diamond_db
 
         } else if (params.large_downloads_permission || workflow.stubRun) {
 
@@ -70,13 +70,13 @@ workflow PREPARE_NR_DB {
             DIAMOND_MAKEDB(DOWNLOAD_NR.out.ncbi_nr_fasta, "nr")
             ch_versions = ch_versions.mix(DIAMOND_MAKEDB.out.versions)
 
-            out_ch = DIAMOND_MAKEDB.out.diamond_db
+            ch_out = DIAMOND_MAKEDB.out.diamond_db
 
         } else {
             println '\033[0;34m Neither nr.dmnd or nr.gz were found and `--large_downloads_permission` is set to false. \033[0m'
         }
 
     emit:
-        diamond_db = out_ch
+        diamond_db = ch_out
         versions = ch_versions
 }

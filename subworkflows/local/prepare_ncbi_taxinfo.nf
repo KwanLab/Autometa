@@ -109,18 +109,18 @@ workflow PREPARE_TAXONOMY_DATABASES {
         taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
 
         if (taxonomy_files_exist2){
-            prot_accession2taxid_ch = accession2taxid_dir_files
+            ch_prot_accession2taxid = accession2taxid_dir_files
         } else {
             DOWNLOAD_ACESSION2TAXID()
             DOWNLOAD_ACESSION2TAXID.out.accession2taxid
-                .set{prot_accession2taxid_ch}
+                .set{ch_prot_accession2taxid}
             ch_versions = ch_versions.mix(DOWNLOAD_ACESSION2TAXID.out.versions)
 
         }
 
     emit:
         taxdump_files = taxdump_files
-        prot_accession2taxid = prot_accession2taxid_ch
+        prot_accession2taxid = ch_prot_accession2taxid
         versions = ch_versions
 
 }
