@@ -1,11 +1,10 @@
 #!/usr/bin/env nextflow
 
-
 process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"
     label 'process_high'
 
-    conda "bioconda::autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

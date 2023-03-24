@@ -1,4 +1,5 @@
 // TODO: For faster results/less I/O this could be replaced with hmmsearch
+// TODO: Don't remember if HMMpress is implemented for conda vs docker runs (already pressed in docker container)
 process MARKERS {
     tag "Finding markers for ${meta.id}, taxon:${meta.taxon}"
     label "process_medium"
@@ -22,7 +23,7 @@ process MARKERS {
     output:
         tuple val(meta), path("*.markers.tsv.gz")  , emit: markers_tsv
         tuple val(meta), path("*.hmmscan.tsv.gz")  , emit: hmmscan_tsv
-        path  'versions.yml'                    , emit: versions
+        path  'versions.yml'                       , emit: versions
 
     when:
         task.ext.when == null || task.ext.when

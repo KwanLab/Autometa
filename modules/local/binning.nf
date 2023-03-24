@@ -2,7 +2,7 @@ process BINNING {
     tag "sample:${meta.id}, taxon:${meta.taxon}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
 
-    conda "bioconda::autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

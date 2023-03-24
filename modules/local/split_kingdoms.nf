@@ -2,7 +2,7 @@ process SPLIT_KINGDOMS {
     tag "Splitting votes into kingdoms for ${meta.id}"
     label 'process_medium'
 
-    conda "bioconda::autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

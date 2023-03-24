@@ -27,42 +27,42 @@ process UNCLUSTERED_RECRUIT {
     script:
         def prefix = task.ext.prefix ?: "${meta.id}.${meta.taxon}"
         if (!params.taxonomy_aware)
-        """
-        autometa-unclustered-recruitment \\
-            --classifier ${params.classification_method} \\
-            --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
-            --seed 42 \\
-            --kmers $kmers \\
-            --coverage $coverage \\
-            --binning $binning \\
-            --markers $markers \\
-            --output-binning ${prefix}.recruitment.tsv.gz \\
-            --output-main ${prefix}.recruitment.main.tsv.gz \\
-            --output-features ${prefix}.recruitment.features.tsv.gz
+            """
+            autometa-unclustered-recruitment \\
+                --classifier ${params.classification_method} \\
+                --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
+                --seed 42 \\
+                --kmers $kmers \\
+                --coverage $coverage \\
+                --binning $binning \\
+                --markers $markers \\
+                --output-binning ${prefix}.recruitment.tsv.gz \\
+                --output-main ${prefix}.recruitment.main.tsv.gz \\
+                --output-features ${prefix}.recruitment.features.tsv.gz
 
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            autometa: \$(autometa --version | sed -e 's/autometa: //g')
-        END_VERSIONS
-        """
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                autometa: \$(autometa --version | sed -e 's/autometa: //g')
+            END_VERSIONS
+            """
         else
-        """
-        autometa-unclustered-recruitment \\
-            --classifier ${params.classification_method} \\
-            --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
-            --seed 42 \\
-            --taxonomy $taxonomy \\
-            --kmers $kmers \\
-            --coverage $coverage \\
-            --binning $binning \\
-            --markers $markers \\
-            --output-binning ${prefix}.recruitment.tsv.gz \\
-            --output-main ${prefix}.recruitment.main.tsv.gz \\
-            --output-features ${prefix}.recruitment.features.tsv.gz
+            """
+            autometa-unclustered-recruitment \\
+                --classifier ${params.classification_method} \\
+                --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
+                --seed 42 \\
+                --taxonomy $taxonomy \\
+                --kmers $kmers \\
+                --coverage $coverage \\
+                --binning $binning \\
+                --markers $markers \\
+                --output-binning ${prefix}.recruitment.tsv.gz \\
+                --output-main ${prefix}.recruitment.main.tsv.gz \\
+                --output-features ${prefix}.recruitment.features.tsv.gz
 
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            autometa: \$(autometa --version | sed -e 's/autometa: //g')
-        END_VERSIONS
-        """
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                autometa: \$(autometa --version | sed -e 's/autometa: //g')
+            END_VERSIONS
+            """
 }
