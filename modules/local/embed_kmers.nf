@@ -1,8 +1,6 @@
 process EMBED_KMERS {
     tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}, taxon:${meta.taxon}"
     label 'process_medium'
-    // Not enough contigs to perform embedding with current parameter settings...
-    errorStrategy { task.exitStatus in 8 ? 'ignore' : 'terminate' }
 
     conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -14,8 +12,10 @@ process EMBED_KMERS {
         tuple val(meta), path(normalized)
 
     output:
-        tuple val(meta), path("*kmers.embedded.tsv.gz")  , emit: embedded
-        path  'versions.yml'                          , emit: versions
+        // optional because autometa will exit with 0 if not enough contigs are present
+        // don't want to raise an error because even if ignored users will see a Note and be confused
+        tuple val(meta), path("*kmers.embedded.tsv.gz") , emit: embedded, optional:true
+        path  'versions.yml'                            , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -32,7 +32,8 @@ process EMBED_KMERS {
             --cpus ${task.cpus} \\
             --seed 42
 
-        gzip -6  "${prefix}.kmers.embedded.tsv"
+        # gzip if file exists
+        find ./ -name "${prefix}.kmers.embedded.tsv" -type f -exec gzip -6 {} +
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

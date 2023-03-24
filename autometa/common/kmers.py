@@ -603,7 +603,13 @@ def embed(
                 f"pca_dimensions must be an integer! given: {pca_dimensions}"
             )
     if df.shape[0] < pca_dimensions:
-        sys.exit(8)
+        logger.info(
+            f"Stopping. Number of contigs ({str(df.shape[0])}) is less than pca_dimensions ({str(pca_dimensions)})"
+        )
+        # exit with 0 if not enough contigs are present
+        # don't want to raise an actual error, because even if ignored Nextflow users will see a Note and be confused
+        # TODO: write a file with the log message
+        sys.exit(0)
     if n_components > pca_dimensions and pca_dimensions != 0:
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
