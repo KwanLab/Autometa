@@ -1,5 +1,5 @@
 process PREPARE_LCA {
-    //tag "Preparing db cache from ${blastdb_dir}"
+    tag "Preparing db cache from ${params.taxdump_tar_gz_dir}"
     label 'process_medium'
 
     conda "bioconda::autometa>=${params.autometa_image_tag}"
@@ -16,7 +16,7 @@ process PREPARE_LCA {
 
     output:
         tuple path("./cache/level.pkl.gz"), path("./cache/occurrence.pkl.gz"), path("./cache/precomputed_lcas.pkl.gz"), path("./cache/tour.pkl.gz"), emit: pickles
-        path 'versions.yml'            , emit: versions
+        path 'versions.yml' , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -31,8 +31,6 @@ process PREPARE_LCA {
             --dbtype ncbi \\
             --cache cache \\
             --only-prepare-cache
-
-
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

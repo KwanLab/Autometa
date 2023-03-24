@@ -14,7 +14,7 @@ process NORMALIZE_KMERS {
 
     output:
         tuple val(meta), path("*kmers.normalized.tsv.gz"), emit: normalized
-        path  'versions.yml'                          , emit: versions
+        path  'versions.yml'                             , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
