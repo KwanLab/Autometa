@@ -273,13 +273,19 @@ def write_ranks(
         raise FileNotFoundError(assembly)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
+    assembly_records = [record for record in SeqIO.parse(assembly, "fasta")] #cannot compare seq records directly
+    #create list of all contig IDs
+    contig_ids = []
+    with open(assembly, 'r') as assembly_fh:
+        for line in assembly_fh.readlines():
+            if '>' in line:
+                contig_ids.append(line)
     #create list of all classified contigs
     classified_contigs = taxonomy.index.tolist()
     #create empty list for unclassified contigs, then iterate through all contigs and add the ones
     #missing from the list of classified contigs to the unclassified contig list
     unclassified_contigs = []
-    for contig in assembly_records:
+    for contig in contig_ids:
         if contig not in classified_contigs:
                 unclassified_contigs.append(contig)
     #export taxonomy column names to list
