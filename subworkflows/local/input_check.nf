@@ -4,7 +4,7 @@
 
 nextflow.enable.dsl=2
 
-include { ch_samplesheetECK } from '../../modules/local/ch_samplesheeteck'
+include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 
 workflow INPUT_CHECK {
     take:
@@ -14,21 +14,21 @@ workflow INPUT_CHECK {
         ch_versions = Channel.empty()
 
         ch_samplesheetECK ( samplesheet )
-        ch_versions = ch_versions.mix(ch_samplesheetECK.out.versions)
+        ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
 
         // reads channel
-        ch_samplesheetECK.out.csv
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_fastq_channel(it) }
             .set { reads }
         // metagenome channel
-        ch_samplesheetECK.out.csv
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_metagenome_channel(it) }
             .set { metagenome }
 
         // coverage channel
-        ch_samplesheetECK.out.csv
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_coverage_channel(it) }
             .set { coverage }
