@@ -279,7 +279,7 @@ def write_ranks(
     with open(assembly, 'r') as assembly_fh:
         for line in assembly_fh.readlines():
             if '>' in line:
-                contig_ids.append(line)
+                contig_ids.append(line.strip().replace('>', ''))
     #create list of all classified contigs
     classified_contigs = taxonomy.index.tolist()
     #create empty list for unclassified contigs, then iterate through all contigs and add the ones
