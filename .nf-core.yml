@@ -14,6 +14,8 @@ lint:
     - docs/images/nf-core-autometa_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.md
     - .github/ISSUE_TEMPLATE/feature_request.md
+    - conf/test.config
+    - conf/test_full.config
 
   files_unchanged:
     - manifest

@@ -17,7 +17,7 @@ process SPADES_KMER_COVERAGE {
         path  'versions.yml'                        , emit: versions
 
     when:
-        meta.cov_from_assembly.equals('spades')
+        task.ext.when == null || task.ext.when
 
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
