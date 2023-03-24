@@ -10,9 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "publish_dir_mode"
-            ],
+            "required": ["publish_dir_mode"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -109,25 +107,25 @@
                 },
                 "completeness": {
                     "type": "number",
-                    "default": 20,
+                    "default": 20.0,
                     "fa_icon": "fas fa-cogs",
                     "description": "Minimum completeness needed to keep a cluster (default is at least 20% complete)"
                 },
                 "purity": {
                     "type": "number",
-                    "default": 95,
+                    "default": 95.0,
                     "fa_icon": "fas fa-cogs",
                     "description": "Minimum purity needed to keep a cluster (default is at least 95% pure)"
                 },
                 "gc_stddev_limit": {
                     "type": "number",
-                    "default": 5,
+                    "default": 5.0,
                     "fa_icon": "fas fa-cogs",
                     "description": "Maximum GC% standard deviation under which a cluster is kept (default is 5%)"
                 },
                 "cov_stddev_limit": {
                     "type": "number",
-                    "default": 25,
+                    "default": 25.0,
                     "fa_icon": "fas fa-cogs",
                     "description": "Maximum coverage standard deviation under which a cluster is kept (default is  25%)"
                 },
@@ -257,11 +255,7 @@
                     "help_text": "Appends input to `jasonkwan/autometa`\n\njasonkwan/autometa:${params.autometa_image_tag}\""
                 }
             },
-            "required": [
-                "max_cpus",
-                "max_memory",
-                "max_time"
-            ]
+            "required": ["max_cpus", "max_memory", "max_time"]
         },
         "generic_nf_core_options": {
             "title": "Generic nf-core options",
@@ -352,9 +346,7 @@
                     "hidden": true
                 }
             },
-            "required": [
-                "validate_params"
-            ]
+            "required": ["validate_params"]
         }
     },
     "allOf": [
@@ -373,5 +365,11 @@
         {
             "$ref": "#/definitions/generic_nf_core_options"
         }
-    ]
+    ],
+    "properties": {
+        "lca_dir": {
+            "type": "string",
+            "default": null
+        }
+    }
 }
