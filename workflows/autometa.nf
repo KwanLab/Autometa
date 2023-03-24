@@ -16,18 +16,8 @@ include { BINNING                       } from '../modules/local/binning'
 include { UNCLUSTERED_RECRUIT           } from '../modules/local/unclustered_recruitment'
 include { BINNING_SUMMARY               } from '../modules/local/binning_summary'
 include { MOCK_DATA_REPORT              } from '../modules/local/mock_data_reporter'
+include { PRODIGAL                      } from '../modules/prodigal/main.nf'
 
-/*
- * -------------------------------------------------
- *  Import nf-core modules
- * -------------------------------------------------
-*/
-
-// https://github.com/nf-core/modules/tree/master/modules
-// https://nf-co.re/tools/#modules
-// nf-core modules --help
-
-include { PRODIGAL                      } from './../modules/nf-core/prodigal/main.nf'
 
 /*
  * -------------------------------------------------
