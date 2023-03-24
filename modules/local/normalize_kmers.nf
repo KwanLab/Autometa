@@ -2,7 +2,7 @@ process NORMALIZE_KMERS {
     tag "method:${params.norm_method}, sample:${meta.id}, taxon:${meta.taxon}"
     label 'process_medium'
 
-    conda "bioconda::autometa>=${params.autometa_image_tag}"
+    conda "bioconda::autometa=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa"
     } else {

@@ -2,7 +2,7 @@ process PREPARE_LCA {
     tag "Preparing db cache from ${params.taxdump_tar_gz_dir}"
     label 'process_medium'
 
-    conda "bioconda::autometa>=${params.autometa_image_tag}"
+    conda "bioconda::autometa=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

@@ -2,7 +2,6 @@ process GET_GENOMES_FOR_MOCK {
 
     cache 'lenient'
 
-    conda "bioconda::emboss=6.6.0"
     container "jasonkwan/autometa-nf-modules-get_genomes_for_mock:main"
 
     output:
