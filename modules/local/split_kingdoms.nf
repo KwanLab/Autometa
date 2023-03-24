@@ -14,17 +14,15 @@ process SPLIT_KINGDOMS {
         path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("taxonomy.tsv.gz"), emit: contig_taxonomy_tsv
-        tuple val(meta), path("*.fna.gz")       , emit: fasta, optional: true
-        path  'versions.yml'                    , emit: versions
+        tuple val(meta), path("*.tsv.gz")   , emit: contig_taxonomy_tsv
+        tuple val(meta), path("*.fna.gz")   , emit: fasta, optional: true
+        path  'versions.yml'                , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
         """
-        
-
         autometa-taxonomy \\
             --votes "${votes}" \\
             --output . \\
@@ -33,7 +31,13 @@ process SPLIT_KINGDOMS {
             --dbdir . \\
             --dbtype ncbi
 
-        gzip -6  taxonomy.tsv
+
+        # prepend the sample_id to the output files
+        for f in *.fna; do mv "\$f" "${meta.id}.\$f"; done
+
+        mv taxonomy.tsv "${meta.id}.taxonomy.tsv"
+
+        gzip -6  "${meta.id}.taxonomy.tsv"
         find ./ -name "*.fna" -type f -exec gzip -6 {} +
 
         cat <<-END_VERSIONS > versions.yml

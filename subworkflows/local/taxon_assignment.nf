@@ -55,16 +55,23 @@ workflow TAXON_ASSIGNMENT {
 
         // split channel based on the output fna files
         // add the fna file name as taxon to the meta map (e.g. "bacteria", "archaea")
-         SPLIT_KINGDOMS
+
+        def retrieve_taxon_name  = {
+            def filename = it.getName()
+            // filename.split = [mock_data, archaea, fna, gz]
+            filename.split("\\.")[1]
+            }
+
+        SPLIT_KINGDOMS
             .out
             .fasta
             .transpose()
-            .multiMap{ meta, fasta ->                    
-                   fasta:[meta + [taxon: fasta.simpleName], fasta] // [[meta.id, meta.taxon], fasta]
-                   taxon: fasta.simpleName
+            .multiMap{ meta, fasta ->
+                   fasta:[meta + [taxon: retrieve_taxon_name(fasta)], fasta] // [[meta.id, meta.taxon], fasta]
+                   taxon: retrieve_taxon_name(fasta)
                 }
                 .set{ taxon_split_fasta }
-        
+
         // collect all the taxa from TAXON_ASSIGNMENT into a list (this should be variable)
         taxon_split_fasta
             .taxon
@@ -72,15 +79,15 @@ workflow TAXON_ASSIGNMENT {
             .flatten()
             .set{found_taxa_list_ch}
 
-        // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv" 
-        // is split and named identically to the FASTA output would allow the logic here 
+        // TODO: not necessary but modifying autometa-taxonomy so that "taxonomy.tsv"
+        // is split and named identically to the FASTA output would allow the logic here
         // to be identical to TAXON_ASSIGNMENT.out.taxon_split_fasta above
-        // This creates a separate channel for each taxon but each with an identical SPLIT_KINGDOMS.out.contig_taxonomy_tsv 
+        // This creates a separate channel for each taxon but each with an identical SPLIT_KINGDOMS.out.contig_taxonomy_tsv
         SPLIT_KINGDOMS
             .out
             .contig_taxonomy_tsv
             .combine(found_taxa_list_ch)
-            .map{ meta, tsv, taxon ->                    
+            .map{ meta, tsv, taxon ->
                     [meta + [taxon: taxon], tsv]
                 }
             .set{ contig_taxonomy_tsv }
