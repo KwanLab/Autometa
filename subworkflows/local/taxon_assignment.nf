@@ -95,7 +95,6 @@ workflow TAXON_ASSIGNMENT {
     emit:
         contig_taxonomy_tsv = contig_taxonomy_tsv   // [[meta.id, meta.taxon], tsv]
         taxon_split_fasta   = taxon_split_fasta.fasta     // [[meta.id, meta.taxon], fasta]
-        found_taxa_list     = ch_found_taxa_list    // [meta.taxon]
         orf_votes           = LCA.out.lca
         contig_votes        = MAJORITY_VOTE.out.votes
         taxdump_files       = PREPARE_TAXONOMY_DATABASES.out.taxdump_files

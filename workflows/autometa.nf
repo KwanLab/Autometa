@@ -9,6 +9,7 @@
  *  Import local modules
  * -------------------------------------------------
 */
+
 include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { MARKERS                       } from '../modules/local/markers'
 include { BINNING                       } from '../modules/local/binning'
@@ -21,9 +22,11 @@ include { MOCK_DATA_REPORT              } from '../modules/local/mock_data_repor
  *  Import nf-core modules
  * -------------------------------------------------
 */
+
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
+
 include { PRODIGAL                      } from './../modules/nf-core/prodigal/main.nf'
 
 /*
@@ -41,9 +44,15 @@ workflow AUTOMETA {
 
     ch_versions = Channel.empty()
 
-    // CUrrently only "bacteria", "archaea" and have markers and can be binned
-    taxa_with_marker_sets = ["bacteria", "archaea"]
-
+    /*
+    * -------------------------------------------------
+    *  Init marker sets used for contamination/completion
+    *  evalution during binning process
+    *  Currently only "bacteria", "archaea"
+    *  These are used when taxonomic splitting isn't performed
+    * -------------------------------------------------
+    */
+    taxa_with_marker_sets    = ["bacteria", "archaea"]
     ch_taxa_with_marker_sets = Channel.fromList(taxa_with_marker_sets)
 
     /*
@@ -54,7 +63,7 @@ workflow AUTOMETA {
     PROCESS_METAGENOME()
 
     filtered_metagenome_fasta = PROCESS_METAGENOME.out.filtered_metagenome_fasta
-    ch_versions = ch_versions.mix(PROCESS_METAGENOME.out.versions)
+    ch_versions               = ch_versions.mix(PROCESS_METAGENOME.out.versions)
 
     /*
     * -------------------------------------------------
@@ -72,41 +81,38 @@ workflow AUTOMETA {
 
     /*
     * -------------------------------------------------
-    *  Find open reading frames with Prodigal
+    *  Find open reading frames (proteins) with Prodigal
     * -------------------------------------------------
     */
-
     PRODIGAL (
         filtered_metagenome_fasta,
         "gbk"
     )
+
+    orfs_ch     = PRODIGAL.out.amino_acid_fasta
     ch_versions = ch_versions.mix(PRODIGAL.out.versions)
 
-    PRODIGAL.out.amino_acid_fasta
-        .set{orfs_ch}
-
+    /*
+    * -------------------------------------------------
+    *  If requested, split contigs into taxonomic groups
+    * -------------------------------------------------
+    */
     if (params.taxonomy_aware) {
-        /*
-        * -------------------------------------------------
-        *  OPTIONAL: Run Diamond BLASTp and split contigs into taxonomic groups
-        * -------------------------------------------------
-        */
+
         TAXON_ASSIGNMENT (
             filtered_metagenome_fasta,
             orfs_ch
         )
-        ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
-        ch_taxonomy_results     = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv
-        ch_kmers_input_fasta    = TAXON_ASSIGNMENT.out.taxon_split_fasta
-        ch_found_taxa_list      = TAXON_ASSIGNMENT.out.found_taxa_list
-        ch_taxdump_files        = TAXON_ASSIGNMENT.out.taxdump_files
+        ch_taxonomy_results  = TAXON_ASSIGNMENT.out.contig_taxonomy_tsv // [[meta.id, meta.taxon], tsv]
+        ch_kmers_input_fasta = TAXON_ASSIGNMENT.out.taxon_split_fasta   // [[meta.id, meta.taxon], fasta]
+        ch_taxdump_files     = TAXON_ASSIGNMENT.out.taxdump_files
+        ch_versions          = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
 
     } else {
 
-        ch_found_taxa_list = ch_taxa_with_marker_sets
-
         // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
+        // e.g. [[sample_id, taxon:bacteria], fastapath]
         filtered_metagenome_fasta
             .combine(
                 Channel
@@ -137,22 +143,11 @@ workflow AUTOMETA {
     KMERS(ch_kmers_input_fasta )
     ch_versions = ch_versions.mix(KMERS.out.versions)
 
-    // --------------------------------------------------------------------------------
-    // Run hmmscan and look for marker genes in contig orfs
-    // --------------------------------------------------------------------------------
-
-    orfs_ch
-        .combine(ch_taxa_with_marker_sets)
-        .map{ meta, fasta, taxon ->
-                [meta + [taxon: taxon], fasta]
-            }
-        .set{ ch_new_orf }
-
-    MARKERS(ch_new_orf)
-    ch_versions = ch_versions.mix(MARKERS.out.versions)
-
-    ch_markers = MARKERS.out.markers_tsv
-
+    /*
+    * -------------------------------------------------
+    * Map channels and taxonomic
+    * -------------------------------------------------
+    */
     ch_coverage
         .combine(ch_taxa_with_marker_sets)
         .map{ meta, fasta, taxon ->
@@ -167,14 +162,32 @@ workflow AUTOMETA {
             }
         .set{ ch_new_filtered_metagenome_gc_content }
 
-    // Prepare inputs for binning channel
+    orfs_ch
+        .combine(ch_taxa_with_marker_sets)
+        .map{ meta, fasta, taxon ->
+                [meta + [taxon: taxon], fasta]
+            }
+        .set{ ch_new_orf }
+
+    /*
+    * -------------------------------------------------
+    * Run hmmscan and look for marker genes in contig orfs
+    * -------------------------------------------------
+    */
+    MARKERS(ch_new_orf)
+    ch_markers  = MARKERS.out.markers_tsv
+    ch_versions = ch_versions.mix(MARKERS.out.versions)
+
+    /*
+    * -------------------------------------------------
+    * Prepare inputs for binning channel
+    * -------------------------------------------------
+    */
     KMERS.out.embedded
         .join(new_ch_coverage)
         .join(ch_new_filtered_metagenome_gc_content)
         .join(ch_markers)
         .set{ch_binning}
-
-
 
     if (params.taxonomy_aware) {
         ch_binning
@@ -186,14 +199,21 @@ workflow AUTOMETA {
             .set{ch_binning}
     }
 
-
-
-
+    /*
+    * -------------------------------------------------
+    * Bin contigs
+    * -------------------------------------------------
+    */
     BINNING(
         ch_binning
     )
     ch_versions = ch_versions.mix(BINNING.out.versions)
 
+    /*
+    * -------------------------------------------------
+    * Recruit unclustered contigs
+    * -------------------------------------------------
+    */
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
         KMERS.out.normalized
@@ -224,7 +244,11 @@ workflow AUTOMETA {
         binning_col = Channel.of("cluster")
     }
 
-    // Set inputs for binning summary
+    /*
+    * -------------------------------------------------
+    * Summarize binning results
+    * -------------------------------------------------
+    */
     ch_binning_results
         .join(ch_markers)
         .join(ch_kmers_input_fasta)
@@ -237,6 +261,11 @@ workflow AUTOMETA {
     )
     ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 
+    /*
+    * -------------------------------------------------
+    * Create reports for stub runs (testing the workflow)
+    * -------------------------------------------------
+    */
     if (workflow.stubRun){
 
         PROCESS_METAGENOME.out.assembly_to_locus
@@ -265,6 +294,12 @@ workflow AUTOMETA {
         ch_versions = ch_versions.mix(MOCK_DATA_REPORT.out.versions)
     }
 
+    /*
+    * -------------------------------------------------
+    * Collect software versions from all processes that
+    * ran into a single output yeahml! file
+    * -------------------------------------------------
+    */
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
