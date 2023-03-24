@@ -9,12 +9,12 @@
  *  Import local modules
  * -------------------------------------------------
 */
-include { CUSTOM_DUMPSOFTWAREVERSIONS             } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { MARKERS                                 } from '../modules/local/markers'
-include { BINNING                                 } from '../modules/local/binning'
-include { UNCLUSTERED_RECRUIT                     } from '../modules/local/unclustered_recruitment'
-include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'
-include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'
+include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { MARKERS                       } from '../modules/local/markers'
+include { BINNING                       } from '../modules/local/binning'
+include { UNCLUSTERED_RECRUIT           } from '../modules/local/unclustered_recruitment'
+include { BINNING_SUMMARY               } from '../modules/local/binning_summary'
+include { MOCK_DATA_REPORT              } from '../modules/local/mock_data_reporter'
 
 /*
  * -------------------------------------------------
@@ -24,7 +24,7 @@ include { MOCK_DATA_REPORT                        } from '../modules/local/mock_
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
-include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
+include { PRODIGAL                      } from './../modules/nf-core/prodigal/main.nf'
 
 /*
  * -------------------------------------------------
@@ -32,22 +32,35 @@ include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
  * -------------------------------------------------
 */
 
-include { COVERAGE                    } from '../subworkflows/local/coverage'
-include { KMERS                       } from '../subworkflows/local/kmers'
-include { PROCESS_METAGENOME          } from '../subworkflows/local/process_metagenome'
-include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment'
+include { COVERAGE                      } from '../subworkflows/local/coverage'
+include { KMERS                         } from '../subworkflows/local/kmers'
+include { PROCESS_METAGENOME            } from '../subworkflows/local/process_metagenome'
+include { TAXON_ASSIGNMENT              } from '../subworkflows/local/taxon_assignment'
 
 workflow AUTOMETA {
 
     ch_versions = Channel.empty()
 
-    // only these taxa can be binned
+    // CUrrently only "bacteria", "archaea" and have markers and can be binned
     taxa_with_marker_sets = ["bacteria", "archaea"]
+
     taxa_with_marker_sets_ch = Channel.fromList(taxa_with_marker_sets)
 
+    /*
+    * -------------------------------------------------
+    *  Process sample list or mock input; filter reads
+    * -------------------------------------------------
+    */
     PROCESS_METAGENOME()
+
+    filtered_metagenome_fasta = PROCESS_METAGENOME.out.filtered_metagenome_fasta
     ch_versions = ch_versions.mix(PROCESS_METAGENOME.out.versions)
 
+    /*
+    * -------------------------------------------------
+    *  Extract SPADES coverage or align reads to metagenome(s)
+    * -------------------------------------------------
+    */
     COVERAGE(
         PROCESS_METAGENOME.out.filtered_metagenome_fasta,
         PROCESS_METAGENOME.out.filtered_metagenome_fasta_and_reads,
