@@ -16,7 +16,7 @@ include { BINNING                       } from '../modules/local/binning'
 include { UNCLUSTERED_RECRUIT           } from '../modules/local/unclustered_recruitment'
 include { BINNING_SUMMARY               } from '../modules/local/binning_summary'
 include { MOCK_DATA_REPORT              } from '../modules/local/mock_data_reporter'
-include { PRODIGAL                      } from '../modules/prodigal/main.nf'
+include { PRODIGAL                      } from '../modules/local/prodigal/main.nf'
 
 
 /*
