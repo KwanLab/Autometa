@@ -20,7 +20,7 @@ process SAMTOOLS_WGSIM {
 
     """
     # https://sarahpenir.github.io/bioinformatics/Simulating-Sequence-Reads-with-wgsim/
-    wgsim -1 300 -2 300 -r 0 -R 0 -X 0 -e 0 -N 100 ${metagenome} reads_1.fastq reads_2.fastq
+    wgsim -1 300 -2 300 -r 0 -R 0 -X 0 -e 0 -N 1 -S 42 ${metagenome} reads_1.fastq reads_2.fastq
 
 
     cat <<-END_VERSIONS > versions.yml
