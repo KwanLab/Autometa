@@ -14,7 +14,7 @@ process BEDTOOLS_GENOMECOV {
 
     output:
         tuple val(meta), path("*alignments.bed"), emit: bed
-        path  "versions.yml"                  , emit: versions
+        path  "versions.yml"                    , emit: versions
 
     when:
         meta.cov_from_assembly.equals('0')

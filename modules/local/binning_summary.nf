@@ -14,10 +14,10 @@ process BINNING_SUMMARY {
         path taxdump_files
 
     output:
-        tuple val(meta), path("*metabin_stats.tsv.gz")   , emit: stats
-        tuple val(meta), path("*metabins/*")            , emit: metabins
-        tuple val(meta), path("*metabin_taxonomy.tsv.gz"), emit: taxonomies, optional: true
-        path 'versions.yml'                          , emit: versions
+        tuple val(meta), path("*metabin_stats.tsv.gz")      , emit: stats
+        tuple val(meta), path("*metabins/*")                , emit: metabins
+        tuple val(meta), path("*metabin_taxonomy.tsv.gz")   , emit: taxonomies, optional: true
+        path 'versions.yml'                                 , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -46,7 +46,6 @@ process BINNING_SUMMARY {
             fi
 
             gzip -6  ${prefix}.metabin_stats.tsv
-
             gzip -6 ${prefix}.metabins/*
 
 

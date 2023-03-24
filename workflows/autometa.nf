@@ -12,7 +12,7 @@
 include { CUSTOM_DUMPSOFTWAREVERSIONS             } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { MARKERS                                 } from '../modules/local/markers'
 include { BINNING                                 } from '../modules/local/binning'
-include { UNCLUSTERED_RECRUIT                                 } from '../modules/local/unclustered_recruitment'
+include { UNCLUSTERED_RECRUIT                     } from '../modules/local/unclustered_recruitment'
 include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'
 include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'
 
@@ -215,7 +215,7 @@ workflow AUTOMETA {
     // Set inputs for binning summary
     binning_results_ch
         .join(markers_ch)
-        .join(filtered_metagenome_fasta)
+        .join(kmers_input_fasta_ch)
         .combine(binning_col)
         .set{binning_summary_ch}
 
