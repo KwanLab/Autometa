@@ -3,7 +3,7 @@ process COUNT_KMERS {
     tag "Counting ${params.kmer_size}-mers for ${meta.id}, taxon:${meta.taxon}"
     label 'process_medium'
 
-    conda "autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa"
     } else {

@@ -31,12 +31,13 @@ process SPLIT_KINGDOMS {
             --dbdir . \\
             --dbtype ncbi
 
-
         # prepend the sample_id to the output files
         for f in *.fna; do mv "\$f" "${meta.id}.\$f"; done
 
+        # rename
         mv taxonomy.tsv "${meta.id}.taxonomy.tsv"
 
+        # compress output files
         gzip -6  "${meta.id}.taxonomy.tsv"
         find ./ -name "*.fna" -type f -exec gzip -6 {} +
 

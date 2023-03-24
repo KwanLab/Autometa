@@ -65,7 +65,7 @@ process HMMER_HMMSEARCH_FILTER {
     // if running in parallel, the results are published from the process
     // that merges the individual results from this process
 
-    conda "autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {

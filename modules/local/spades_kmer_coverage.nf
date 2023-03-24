@@ -2,7 +2,7 @@ process SPADES_KMER_COVERAGE {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "autometa"
+    conda "bioconda::autometa>=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -13,8 +13,8 @@ process SPADES_KMER_COVERAGE {
         tuple val(meta), path(metagenome)
 
     output:
-        tuple val(meta), path("*coverage.tsv.gz")     , emit: coverage
-        path  'versions.yml'                     , emit: versions
+        tuple val(meta), path("*coverage.tsv.gz")   , emit: coverage
+        path  'versions.yml'                        , emit: versions
 
     when:
         meta.cov_from_assembly.equals('spades')
