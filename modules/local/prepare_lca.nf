@@ -32,6 +32,7 @@ process PREPARE_LCA {
             --blast . \\
             --lca-output . \\
             --dbdir ${blastdb_dir} \\
+            --dbtype ncbi \\
             --cache cache \\
             --only-prepare-cache
         autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt

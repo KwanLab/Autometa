@@ -28,7 +28,11 @@ process MAJORITY_VOTE {
     script:
         def software = getSoftwareName(task.process)
         """
-        autometa-taxonomy-majority-vote --lca ${lca} --output votes.tsv --dbdir "${ncbi_tax_dir}"
+        autometa-taxonomy-majority-vote \\
+            --lca ${lca} \\
+            --output votes.tsv \\
+            --dbdir "${ncbi_tax_dir}" \\
+            --dbtype ncbi
 
         autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
         """

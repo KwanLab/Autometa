@@ -21,9 +21,7 @@ Quickstart
 
 ### :shell: Bash workflow
 
-[![Install with Conda Badge](https://anaconda.org/bioconda/autometa/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
-[![Platforms Badge](https://anaconda.org/bioconda/autometa/badges/platforms.svg)](https://anaconda.org/bioconda/autometa)
-[![Downloads Badge](https://anaconda.org/bioconda/autometa/badges/downloads.svg)](https://anaconda.org/bioconda/autometa)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/autometa/README.html) [![Conda](https://img.shields.io/conda/dn/bioconda/autometa.svg)](https://anaconda.org/bioconda/autometa/files)
 
 #### 1. Setup env
 
