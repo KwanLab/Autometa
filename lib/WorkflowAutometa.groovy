@@ -1,8 +1,8 @@
 //
-// This file holds several functions specific to the workflow/socialgene.nf in thesocialgene/sgnf pipeline
+// This file holds several functions specific to the workflow/autometa.nf in the autometa pipeline
 //
 
-class WorkflowSocialgene {
+class WorkflowMain {
 
     //
     // Check and validate parameters
