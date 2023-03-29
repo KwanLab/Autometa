@@ -3,7 +3,7 @@ process DOWNLOAD_ACESSION2TAXID {
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
-    conda "conda-forge::rsync=3.2.3"
+    conda "bioconda::autometa=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
@@ -48,7 +48,7 @@ process DOWNLOAD_TAXDUMP {
     tag "Downloading taxdump.tar.gz"
     label 'process_low'
 
-    conda "conda-forge::rsync=3.2.3"
+    conda "bioconda::autometa=${params.autometa_image_tag}"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
     } else {
