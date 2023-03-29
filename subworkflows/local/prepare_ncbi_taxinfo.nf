@@ -1,5 +1,5 @@
 process DOWNLOAD_ACESSION2TAXID {
-    tag "Downloading prot.accession2taxid.gz"
+    tag "Downloading prot.accession2taxid.FULL.gz"
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
@@ -12,8 +12,8 @@ process DOWNLOAD_ACESSION2TAXID {
 
     output:
         // hack nf-core options.args3 and use for output name
-        path "prot.accession2taxid.gz" , emit: accession2taxid
-        path "versions.yml"            , emit: versions
+        path "prot.accession2taxid.FULL.gz" , emit: accession2taxid
+        path "versions.yml"                 , emit: versions
     when:
         task.ext.when == null || task.ext.when
 
@@ -21,11 +21,11 @@ process DOWNLOAD_ACESSION2TAXID {
         """
         rsync -a \\
             --quiet \\
-            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz' 'prot.accession2taxid.gz'
+            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz' 'prot.accession2taxid.FULL.gz'
 
         rsync -a \\
             --quiet \\
-            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz.md5' 'prot.accession2taxid.gz.md5'
+            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz.gz.md5' 'prot.accession2taxid.FULL.gz.md5'
 
         md5sum -c *.md5
 
@@ -36,10 +36,10 @@ process DOWNLOAD_ACESSION2TAXID {
         """
     stub:
         """
-        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_2/prot.accession2taxid.gz  > prot.accession2taxid.gz
-        echo '71f15152d31947eac593060f971bfd24  prot.accession2taxid.gz' > 'prot.accession2taxid.gz.md5'
-        echo 'cc3a216f73d2d4c2a7b4b4a6ebcedc12  prot.accession2taxid.gz' > 'prot.accession2taxid.gz.md5'
-        md5sum -c 'prot.accession2taxid.gz.md5'
+        curl https://raw.githubusercontent.com/chasemc/autometa_test_data/main/example_2/prot.accession2taxid.FULL.gz  > prot.accession2taxid.FULL.gz
+        echo '71f15152d31947eac593060f971bfd24  prot.accession2taxid.FULL.gz' > 'prot.accession2taxid.FULL.gz.md5'
+        echo 'cc3a216f73d2d4c2a7b4b4a6ebcedc12  prot.accession2taxid.FULL.gz' > 'prot.accession2taxid.FULL.gz.md5'
+        md5sum -c 'prot.accession2taxid.FULL.gz.md5'
         touch versions.yml
         """
 }
@@ -104,7 +104,7 @@ workflow PREPARE_TAXONOMY_DATABASES {
                 .set{taxdump_files}
         }
 
-        expected_files2 = ['prot.accession2taxid.gz']
+        expected_files2 = ['prot.accession2taxid.FULL.gz']
 
         taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
 
