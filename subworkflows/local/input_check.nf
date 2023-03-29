@@ -13,7 +13,7 @@ workflow INPUT_CHECK {
     main:
         ch_versions = Channel.empty()
 
-        ch_samplesheetECK ( samplesheet )
+        SAMPLESHEET_CHECK( samplesheet )
         ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
 
         // reads channel
