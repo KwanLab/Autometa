@@ -12,7 +12,7 @@ workflow PROCESS_METAGENOME {
     assembly_report   = Channel.empty()
 
     // Set the metagenome and coverage channels
-    if (workflow.stubRun){
+    if (workflow.profile.contains("test")){
 
         CREATE_MOCK()
         ch_versions = ch_versions.mix(CREATE_MOCK.out.versions)

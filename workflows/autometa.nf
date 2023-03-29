@@ -253,10 +253,11 @@ workflow AUTOMETA {
 
     /*
     * -------------------------------------------------
-    * Create reports for stub runs (testing the workflow)
+    * Create reports for test runs (testing the workflow)
     * -------------------------------------------------
     */
-    if (workflow.stubRun){
+
+    if (workflow.profile.contains("test")){
 
         PROCESS_METAGENOME.out.assembly_to_locus
             .combine(ch_taxa_with_marker_sets)
