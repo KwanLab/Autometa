@@ -17,6 +17,7 @@ import pandas as pd
 from Bio import SeqIO
 from typing import Union, List, Literal
 
+import pdb
 
 from autometa.common.external import prodigal
 from autometa.taxonomy import majority_vote
@@ -285,14 +286,14 @@ def write_ranks(
     #create empty list for unclassified contigs, then iterate through all contigs and add the ones
     #missing from the list of classified contigs to the unclassified contig list
     unclassified_contigs = []
-    for contig in contig_ids:
-        if contig not in classified_contigs:
-                unclassified_contigs.append({"contig":contig})
     #export taxonomy column names to list
     taxonomy_columns = taxonomy.columns.values.tolist()
-    print(*taxonomy_columns)
+    for contig in contig_ids:
+        if contig not in classified_contigs:
+                unclassified_contigs.append(contig)
     #create dataframe with column names from taxonomy and contig IDs
-    unclassified_df = pd.DataFrame(unclassified_contigs, columns=taxonomy_columns)
+    unclassified_df = pd.DataFrame(columns=taxonomy_columns)
+    unclassified_df['contig'] = unclassified_contigs
     #set index to contig, append it to taxonomy, then populate rank for unclassified contigs with
     #the unclassified attribute
     unclassified_df.set_index('contig', inplace=True)
