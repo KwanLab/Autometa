@@ -25,7 +25,7 @@ process DOWNLOAD_ACESSION2TAXID {
 
         rsync -a \\
             --quiet \\
-            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz.gz.md5' 'prot.accession2taxid.FULL.gz.md5'
+            'rsync://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz.md5' 'prot.accession2taxid.FULL.gz.md5'
 
         md5sum -c *.md5
 
