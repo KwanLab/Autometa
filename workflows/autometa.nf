@@ -101,20 +101,6 @@ workflow AUTOMETA {
 
     } else {
 
-        // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
-        // e.g. [[sample_id, taxon:bacteria], fastapath]
-        filtered_metagenome_fasta
-            .combine(
-                Channel
-                    .fromList(
-                        taxa_with_marker_sets
-                        )
-            )
-            .map{ meta, fasta, taxon ->
-                    [meta + [taxon: taxon], fasta]
-                }
-                .set{ ch_kmers_input_fasta }
-
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
             .set{ch_taxonomy_results}
@@ -129,9 +115,60 @@ workflow AUTOMETA {
     * Calculate k-mer frequencies
     * -------------------------------------------------
     */
+    if (params.taxonomy_aware) {
 
-    KMERS(ch_kmers_input_fasta )
-    ch_versions = ch_versions.mix(KMERS.out.versions)
+        KMERS(ch_kmers_input_fasta )
+        ch_kmers_embedded   = KMERS.out.embedded
+        ch_kmers_normalized = KMERS.out.normalized
+        ch_versions         = ch_versions.mix(KMERS.out.versions)
+
+
+
+
+
+    } else {
+        // prevent computing kmers multiple times on the same data
+        KMERS(filtered_metagenome_fasta )
+        ch_versions         = ch_versions.mix(KMERS.out.versions)
+
+        KMERS.out.embedded
+            .combine(
+                Channel
+                    .fromList(
+                        taxa_with_marker_sets
+                        )
+            )
+            .map{ meta, fasta, taxon ->
+                    [meta + [taxon: taxon], fasta]
+                }
+                .set{ ch_kmers_embedded }
+
+        KMERS.out.normalized
+            .combine(
+                Channel
+                    .fromList(
+                        taxa_with_marker_sets
+                        )
+            )
+            .map{ meta, fasta, taxon ->
+                    [meta + [taxon: taxon], fasta]
+                }
+                .set{ ch_kmers_normalized }
+
+        // This adds taxon to the TAXON_ASSIGNMENT.out.taxonomy meta map
+        // e.g. [[sample_id, taxon:bacteria], fastapath]
+        filtered_metagenome_fasta
+            .combine(
+                Channel
+                    .fromList(
+                        taxa_with_marker_sets
+                        )
+            )
+            .map{ meta, fasta, taxon ->
+                    [meta + [taxon: taxon], fasta]
+                }
+                .set{ ch_kmers_input_fasta }
+    }
 
     /*
     * -------------------------------------------------
@@ -173,7 +210,7 @@ workflow AUTOMETA {
     * Prepare inputs for binning channel
     * -------------------------------------------------
     */
-    KMERS.out.embedded
+    ch_kmers_embedded
         .join(new_ch_coverage)
         .join(ch_new_filtered_metagenome_gc_content)
         .join(ch_markers)
@@ -204,9 +241,10 @@ workflow AUTOMETA {
     * Recruit unclustered contigs
     * -------------------------------------------------
     */
+
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
-        KMERS.out.normalized
+        ch_kmers_normalized
             .join(new_ch_coverage)
             .join(BINNING.out.main)
             .join(ch_markers)
