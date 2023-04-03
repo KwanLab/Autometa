@@ -17,7 +17,6 @@ import pandas as pd
 from Bio import SeqIO
 from typing import Union, List, Literal
 
-import pdb
 
 from autometa.common.external import prodigal
 from autometa.taxonomy import majority_vote
