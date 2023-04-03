@@ -285,12 +285,12 @@ def write_ranks(
     classified_contigs = taxonomy.index.tolist()
     #create empty list for unclassified contigs, then iterate through all contigs and add the ones
     #missing from the list of classified contigs to the unclassified contig list
-    unclassified_contigs = []
+    unclassified_contigs = [contig for contig in contig_ids if contig not in classified_contigs]
     #export taxonomy column names to list
     taxonomy_columns = taxonomy.columns.values.tolist()
-    for contig in contig_ids:
-        if contig not in classified_contigs:
-                unclassified_contigs.append(contig)
+ #   for contig in contig_ids:
+ #       if contig not in classified_contigs:
+ #               unclassified_contigs.append(contig)
     #create dataframe with column names from taxonomy and contig IDs
     unclassified_df = pd.DataFrame(columns=taxonomy_columns)
     unclassified_df['contig'] = unclassified_contigs
