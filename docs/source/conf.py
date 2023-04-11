@@ -24,10 +24,11 @@ autodoc_mock_imports = [
     "sklearn",
     "umap",
     "tqdm",
-    "pandas",
-    "numpy",
+    # "pandas",
+    # "numpy",
 ]
 
+autoapi_dirs = ["../../autometa/binning"]
 # fmt: off
 import parse_argparse
 
@@ -51,7 +52,7 @@ release = version
 # ones.
 
 extensions = [
-    "sphinx.ext.autodoc",
+    "autoapi.extension",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
