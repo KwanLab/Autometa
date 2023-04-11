@@ -26,7 +26,6 @@ autodoc_mock_imports = [
     "tqdm",
     "pandas",
     "numpy",
-    "attr",
 ]
 
 # fmt: off
