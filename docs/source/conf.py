@@ -28,6 +28,7 @@ autodoc_mock_imports = [
     "numpy",
     "scipy",
     "numba",
+    "skbio",
 ]
 
 # autoapi_dirs = ["../../autometa/binning"]
