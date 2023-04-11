@@ -24,8 +24,10 @@ autodoc_mock_imports = [
     "sklearn",
     "umap",
     "tqdm",
-    # "pandas",
-    # "numpy",
+    "pandas",
+    "numpy",
+    "scipy",
+    "numba",
 ]
 
 # autoapi_dirs = ["../../autometa/binning"]
