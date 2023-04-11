@@ -28,7 +28,7 @@ autodoc_mock_imports = [
     # "numpy",
 ]
 
-autoapi_dirs = ["../../autometa/binning"]
+# autoapi_dirs = ["../../autometa/binning"]
 # fmt: off
 import parse_argparse
 
@@ -52,7 +52,7 @@ release = version
 # ones.
 
 extensions = [
-    "autoapi.extension",
+    "sphinx.ext.autodoc",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
