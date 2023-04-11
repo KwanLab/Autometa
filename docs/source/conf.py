@@ -34,7 +34,6 @@ autodoc_mock_imports = [
     "gdown",
 ]
 
-# autoapi_dirs = ["../../autometa/binning"]
 # fmt: off
 import parse_argparse
 
