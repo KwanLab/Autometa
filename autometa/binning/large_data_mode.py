@@ -344,7 +344,11 @@ def cluster_by_taxon_partitioning(
             binning_checkpoints_fpath = os.path.join(
                 cache, "binning_checkpoints.tsv.gz"
             )
-    if binning_checkpoints_fpath and os.path.exists(binning_checkpoints_fpath) and os.path.getsize(binning_checkpoints_fpath):
+    if (
+        binning_checkpoints_fpath
+        and os.path.exists(binning_checkpoints_fpath)
+        and os.path.getsize(binning_checkpoints_fpath)
+    ):
         checkpoint_info = get_checkpoint_info(binning_checkpoints_fpath)
         binning_checkpoints = checkpoint_info["binning_checkpoints"]
         starting_rank = checkpoint_info["starting_rank"]
@@ -354,16 +358,18 @@ def cluster_by_taxon_partitioning(
         most_recent_binning_checkpoint = (
             binning_checkpoints.fillna(axis=1, method="ffill").iloc[:, -1].dropna()
         )
-        clustered_contigs = set(
-            most_recent_binning_checkpoint.index.unique().tolist()
-        )
+        clustered_contigs = set(most_recent_binning_checkpoint.index.unique().tolist())
         most_recent_clustered_df = most_recent_binning_checkpoint.to_frame().rename(
             columns={starting_rank_name_txt: "cluster"}
         )
         num_clusters = most_recent_clustered_df.cluster.nunique()
         clusters.append(most_recent_clustered_df)
     else:
-        logger_message = f"Binning checkpoints not found. Writing checkpoints to {binning_checkpoints_fpath}" if binning_checkpoints_fpath else "Binning checkpoints not found. Initializing..."
+        logger_message = (
+            f"Binning checkpoints not found. Writing checkpoints to {binning_checkpoints_fpath}"
+            if binning_checkpoints_fpath
+            else "Binning checkpoints not found. Initializing..."
+        )
         logger.debug(logger_message)
         binning_checkpoints = pd.DataFrame()
 
