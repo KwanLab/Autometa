@@ -59,7 +59,7 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         tar.close()
         logger.debug("Extraction done.")
         reps_faa = dbdir
-
+ 
     genome_protein_faa_filepaths = glob.glob(
         os.path.join(reps_faa, "**", "*_protein.faa.gz"), recursive=True
     )
