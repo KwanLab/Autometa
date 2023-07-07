@@ -59,21 +59,9 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         tar.close()
         logger.debug("Extraction done.")
         reps_faa = dbdir
-        
-    # Unzip all the gzipped fasta files
-    print("UNzipping all faa fasta files....")
-    for dirpath, dirnames, filenames in os.walk(f"{dbdir}/protein_faa_reps"):
-        for filename in filenames:
-            if filename.endswith('.gz'):
-                filepath = os.path.join(dirpath, filename)
-                new_filepath = filepath[:-3]  # Remove the .gz extension
-                with gzip.open(filepath, 'rb') as f_in:
-                    with open(new_filepath, 'wb') as f_out:
-                        shutil.copyfileobj(f_in, f_out)
-                os.remove(filepath)
-                
+
     genome_protein_faa_filepaths = glob.glob(
-        os.path.join(reps_faa, "**", "*_protein.faa"), recursive=True
+        os.path.join(reps_faa, "**", "*_protein.faa.gz"), recursive=True
     )
 
     faa_index: Dict[str, str] = {}
@@ -90,17 +78,20 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         os.makedirs(dbdir)
 
     logger.debug(f"Merging {len(faa_index):,} faa files.")
-    combined_faa = os.path.join(dbdir, "gtdb.faa")
+    combined_faa = os.path.join(dbdir, "gtdb.faa") 
     with open(combined_faa, "w") as f_out:
         for faa_file, acc in faa_index.items():
-            with open(faa_file) as f_in:
+            with gzip.open(faa_file, "rb") as f_in:
                 for line in f_in:
-                    if line.startswith(">"):
-                        seqheader = line.lstrip(">")
+                    # print(line.decode('utf-8'))
+                    if line.decode('utf-8').startswith(">"):
+                        seqheader = line.decode('utf-8').lstrip(">")
                         line = f"\n>{acc} {seqheader}"
-                    f_out.write(line)
-    logger.debug(f"Combined GTDB faa file written to {combined_faa}")
-    return combined_faa
+                        f_out.write(line)
+                    else:    
+                        f_out.write(line.decode('utf-8'))
+    logger.debug(f"Combined GTDB faa file written to {combined_faa}") 
+    return combined_faa 
 
 
 class GTDB(TaxonomyDatabase):
