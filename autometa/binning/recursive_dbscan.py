@@ -12,6 +12,7 @@ import shutil
 import sys
 import tempfile
 from typing import List, Tuple
+import os
 
 import pandas as pd
 import numpy as np
@@ -22,17 +23,19 @@ from numba import config
 
 
 from autometa.common.markers import load as load_markers
-
+from autometa.config.utilities import DEFAULT_FPATH
 from autometa.common.exceptions import TableFormatError, BinningError
 from autometa.taxonomy.database import TaxonomyDatabase
 from autometa.binning.utilities import (
     write_results,
     read_annotations,
     add_metrics,
+    add_metrics_dynamic,
     filter_taxonomy,
     apply_binning_metrics_filter,
     reindex_bin_names,
     zero_pad_bin_names,
+    majority_vote,
 )
 
 pd.set_option("mode.chained_assignment", None)
@@ -112,7 +115,7 @@ def run_dbscan(
     return pd.merge(df, clusters, how="left", left_index=True, right_index=True)
 
 
-def recursive_dbscan(
+def recursive_dbscan_w_LCA(
     table: pd.DataFrame,
     markers_df: pd.DataFrame,
     completeness_cutoff: float,
@@ -124,6 +127,11 @@ def recursive_dbscan(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one
     group.
+
+
+
+    * This includes an LCA step at the cluster level so that we can use the dynamic marker sets *
+
 
     Break conditions to speed up pipeline:
     Give up if we've got up to eps 1.3 and still no complete and pure clusters.
@@ -160,6 +168,9 @@ def recursive_dbscan(
     verbose : bool
         log stats for each recursive_dbscan clustering iteration.
 
+    tax_aware : bool
+        will use tax aware marker gene sets if True (default is False)
+
     Returns
     -------
     2-tuple
@@ -180,6 +191,10 @@ def recursive_dbscan(
     while n_clusters > 1:
         binned_df = run_dbscan(df=table, eps=eps, n_jobs=n_jobs)
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
+
+        # run LCA
+        df = add_LCA(df=df, markers_df=markers_df)
+
         filtered_df = apply_binning_metrics_filter(
             df=metrics_df,
             completeness_cutoff=completeness_cutoff,
@@ -187,6 +202,207 @@ def recursive_dbscan(
             coverage_stddev_cutoff=coverage_stddev_cutoff,
             gc_content_stddev_cutoff=gc_content_stddev_cutoff,
         )
+        median_completeness = filtered_df.completeness.median()
+        if median_completeness >= best_median:
+            best_median = median_completeness
+            best_df = df
+        # Count the number of clusters
+        n_clusters = df["cluster"].nunique()
+        if n_clusters in clustering_rounds:
+            clustering_rounds[n_clusters] += 1
+        else:
+            clustering_rounds[n_clusters] = 1
+        # We speed this up if we are getting a lot of tables with the same number of clusters
+        if clustering_rounds[n_clusters] > 10:
+            step *= 10
+        if median_completeness == 0:
+            clustering_rounds[0] += 1
+        if clustering_rounds[0] >= 10:
+            break
+        if verbose:
+            logger.debug(
+                f"EPS: {eps:3.2f} Clusters: {n_clusters:,}"
+                f" Completeness: Median={median_completeness:4.2f} Best={best_median:4.2f}"
+            )
+        eps += step
+    if best_df.empty:
+        if verbose:
+            logger.debug("No complete or pure clusters found")
+        return pd.DataFrame(), table
+
+    clustered_df = apply_binning_metrics_filter(
+        df=best_df,
+        completeness_cutoff=completeness_cutoff,
+        purity_cutoff=purity_cutoff,
+        coverage_stddev_cutoff=coverage_stddev_cutoff,
+        gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+    )
+    unclustered_df = best_df.loc[~best_df.index.isin(clustered_df.index)]
+    if verbose:
+        logger.debug(f"Best completeness median: {best_median:4.2f}")
+    logger.debug(
+        f"clustered: {clustered_df.shape[0]:,} unclustered: {unclustered_df.shape[0]:,}"
+    )
+    return clustered_df, unclustered_df
+
+
+def recursive_dbscan(
+    table: pd.DataFrame,
+    markers_df: pd.DataFrame,
+    contig_at_rank_tax: pd.DataFrame,
+    completeness_cutoff: float,
+    purity_cutoff: float,
+    coverage_stddev_cutoff: float,
+    gc_content_stddev_cutoff: float,
+    n_jobs: int = -1,
+    verbose: bool = False,
+    metrics_method: str = "static_gene_sets",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Carry out DBSCAN, starting at eps=0.3 and continuing until there is just one
+    group.
+
+    Break conditions to speed up pipeline:
+    Give up if we've got up to eps 1.3 and still no complete and pure clusters.
+    Often when you start at 0.3 there are zero complete and pure clusters, because
+    the groups are too small. Later, some are found as the groups enlarge enough, but
+    after it becomes zero again, it is a lost cause and we may as well stop. On the
+    other hand, sometimes we never find any groups, so perhaps we should give up if
+    by EPS 1.3 we never find any complete/pure groups.
+
+    Parameters
+    ----------
+    table : pd.DataFrame
+        Contigs with embedded k-mer frequencies ('x','y'), 'coverage' and 'gc_content' columns
+
+    markers_df : pd.DataFrame
+        wide format, i.e. index=contig cols=[marker,marker,...]
+
+    contig_at_rank_tax : pd.DataFrame
+        index=contig, cols=ranks
+
+    completeness_cutoff : float
+        `completeness_cutoff` threshold to retain cluster (the default is 20.0).
+        e.g. cluster completeness >= completeness_cutoff
+
+    purity_cutoff : float
+        `purity_cutoff` threshold to retain cluster (the default is 95.0).
+        e.g. cluster purity >= purity_cutoff
+
+    coverage_stddev_cutoff : float
+        `coverage_stddev_cutoff` threshold to retain cluster (the default is 25.0).
+        e.g. cluster coverage std.dev. <= coverage_stddev_cutoff
+
+    gc_content_stddev_cutoff : float
+        `gc_content_stddev_cutoff` threshold to retain cluster (the default is 5.0).
+        e.g. cluster gc_content std.dev. <= gc_content_stddev_cutoff
+
+    verbose : bool
+        log stats for each recursive_dbscan clustering iteration.
+
+    tax_aware : bool
+        will use tax aware marker gene sets if True (default is False)
+
+    metrics_method : str, default 'dynamic_gene_sets'
+        ['static_gene_sets', 'dynamic_gene_sets']
+
+
+    Returns
+    -------
+    2-tuple
+        (pd.DataFrame(<passed cutoffs>), pd.DataFrame(<failed cutoffs>))
+        DataFrames consisting of contigs that passed/failed clustering cutoffs, respectively.
+
+        DataFrame:
+            index = contig
+            columns = ['x,'y','coverage','gc_content','cluster','purity','completeness','coverage_stddev','gc_content_stddev']
+    """
+    eps = 0.3
+    step = 0.1
+    clustering_rounds = {0: 0}
+    n_clusters = float("inf")
+    best_median = float("-inf")
+    best_df = pd.DataFrame()
+
+    add_metrics_machines = {
+        "static_gene_sets": add_metrics,
+        "dynamic_gene_sets": add_metrics_dynamic,
+    }
+    if metrics_method not in add_metrics_machines:
+        raise ValueError(
+            f"Method: {metrics_method} not a choice. choose between {add_metrics_machines.keys()}"
+        )
+    add_metrics_machine = add_metrics_machines[metrics_method]
+
+    while n_clusters > 1:
+        binned_df = run_dbscan(df=table, eps=eps, n_jobs=n_jobs)
+        if metrics_method == "static_gene_sets":
+            df, metrics_df = add_metrics_machine(df=binned_df, markers_df=markers_df)
+            
+            filtered_df = apply_binning_metrics_filter(
+            df=metrics_df,
+            completeness_cutoff=completeness_cutoff,
+            purity_cutoff=purity_cutoff,
+            coverage_stddev_cutoff=coverage_stddev_cutoff,
+            gc_content_stddev_cutoff=gc_content_stddev_cutoff,
+        )
+        else:
+            # take binned_df into majority_vote
+
+
+            # contig_at_rank_tax has the full tax for all contigs at this rank at this step
+
+            # to be sure to not take in contigs that werent binned, make pd.DF for for binned contigs only w tax info
+
+
+            # shane check to see if I need to use summary.get_metabin_taxonomies.  
+            # i think i can just use majority_vote as I oriinally thought
+
+
+            binned_tax_df = pd.DataFrame(
+                index=binned_df.index, columns=contig_at_rank_tax.columns
+            )
+            # shane figure this out
+            binned_tax_df = contig_at_rank_tax.loc[binned_df]
+            
+            # do majority vote here
+
+            # variables need to pull in:
+            # lca_fpath, out_dor, taxa_db, PATH_TO_ORFS
+
+
+            #pull outdir later
+
+            #cfg = get_config(DEFAULT_FPATH)
+            #home_dir = cfg.get("common", "home_dir")
+
+            lca_fpath = os.path.join(outdir, "lca.tsv")
+            out=out_dir
+            taxa_db=TaxonomyDatabase
+            orfs= os.path.join(outdir, 'orfs.faa')
+
+            bin_tax_votes= majority_vote(
+                lca_fpath= lca_fpath,
+                out= out_dir,
+                taxa_db= taxa_db,
+                orfs= orfs,
+                output_type= "series",
+                )
+
+            # need pd series of index= bin, col= tax
+
+
+            df, metrics_df = add_metrics_machine(
+                df=binned_df, markers_df=markers_df, tax=binned_tax_df
+            )
+            
+            filtered_df = apply_binning_metrics_filter(
+            df=metrics_df,
+            completeness_cutoff=completeness_cutoff,
+            purity_cutoff=purity_cutoff,
+            coverage_stddev_cutoff=coverage_stddev_cutoff,
+            gc_content_stddev_cutoff=gc_content_stddev_cutoff)
+
+        
         median_completeness = filtered_df.completeness.median()
         if median_completeness >= best_median:
             best_median = median_completeness
@@ -446,6 +662,7 @@ def recursive_hdbscan(
 def get_clusters(
     main: pd.DataFrame,
     markers_df: pd.DataFrame,
+    contig_at_rank_tax: pd.DataFrame,
     completeness: float,
     purity: float,
     coverage_stddev: float,
@@ -453,6 +670,7 @@ def get_clusters(
     method: str,
     n_jobs: int = -1,
     verbose: bool = False,
+    dynamic_marker_sets: bool = False,
 ) -> pd.DataFrame:
     """Find best clusters retained after applying metrics filters.
 
@@ -464,6 +682,10 @@ def get_clusters(
 
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
+
+    contig_at_rank_tax : pd.DataFrame
+        index= contig
+        cols= ranks
 
     completeness : float
         completeness threshold to retain cluster.
@@ -488,6 +710,9 @@ def get_clusters(
     verbose : bool
         log stats for each recursive_dbscan clustering iteration
 
+    dynamic_marker_sets : bool
+        whether to use dynamic marker sets for binning stats calculations (default: False)
+
     Returns
     -------
     pd.DataFrame
@@ -505,16 +730,22 @@ def get_clusters(
     clusters = []
     # Continue until clusters are no longer being recovered
     # break when either clustered_df or unclustered_df is empty
+    if dynamic_marker_sets == True:
+        metrics_method="dynamic_marker_sets"
+    else: 
+        metrics_method="static_marker_sets"
     while True:
         clustered_df, unclustered_df = clusterer(
             table=main,
             markers_df=markers_df,
+            contig_at_rank_tax=contig_at_rank_tax,
             completeness_cutoff=completeness,
             purity_cutoff=purity,
             coverage_stddev_cutoff=coverage_stddev,
             gc_content_stddev_cutoff=gc_content_stddev,
             verbose=verbose,
-            n_jobs=n_jobs,
+            n_jobs=n_jobs
+            metrics_method=metrics_method,
         )
         # No contigs can be clustered, label as unclustered and add the final df
         # of (unclustered) contigs
@@ -629,6 +860,177 @@ def taxon_guided_binning(
     if reverse_ranks:
         # species, genus, family, order, class, phylum, superkingdom
         ranks = [rank for rank in TaxonomyDatabase.CANONICAL_RANKS if rank != "root"]
+        full_ranks = ranks
+    else:
+        # superkingdom, phylum, class, order, family, genus, species
+        ranks = [
+            rank
+            for rank in reversed(TaxonomyDatabase.CANONICAL_RANKS)
+            if rank != "root"
+        ]
+        full_ranks = ranks
+    starting_rank_index = ranks.index(starting_rank)
+    ranks = ranks[starting_rank_index:]
+    logger.debug(f"Using ranks: {', '.join(ranks)}")
+    clustered_contigs = set()
+    num_clusters = 0
+    clusters = []
+    for rank in ranks:
+        # TODO: We should account for novel taxa here instead of removing 'unclassified'
+        unclassified_filter = main[rank] != "unclassified"
+        main_grouped_by_rank = main.loc[unclassified_filter].groupby(rank)
+        taxa_counts = main_grouped_by_rank[rank].count()
+        n_contigs_in_taxa = taxa_counts.sum()
+        n_taxa = taxa_counts.index.nunique()
+        logger.info(
+            f"Examining {rank}: {n_taxa:,} unique taxa ({n_contigs_in_taxa:,} contigs)"
+        )
+        # Group contigs by rank and find best clusters within subset
+        for rank_name_txt, dff in main_grouped_by_rank:
+            if dff.empty:
+                continue
+            # Only cluster contigs that have not already been assigned a bin.
+            # First filter with 'cluster' column
+            rank_df = (
+                dff.loc[dff["cluster"].isna()] if "cluster" in dff.columns else dff
+            )
+            # Second filter with previous clustering rounds' clustered contigs
+            if clustered_contigs:
+                rank_df = rank_df.loc[~rank_df.index.isin(clustered_contigs)]
+            # After all of the filters, are there multiple contigs to cluster?
+            if rank_df.empty:
+                continue
+            # Find best clusters
+            logger.debug(
+                f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
+            )
+
+            
+
+            clusters_df = get_clusters(
+                main=rank_df,
+                markers_df=markers,
+                contig_at_rank_w_tax=contig_at_rank_tax,
+                completeness=completeness,
+                purity=purity,
+                coverage_stddev=coverage_stddev,
+                gc_content_stddev=gc_content_stddev,
+                method=method,
+                n_jobs=n_jobs,
+                verbose=verbose,
+            )
+            # Store clustered contigs
+            is_clustered = clusters_df["cluster"].notnull()
+            clustered = clusters_df.loc[is_clustered]
+            if clustered.empty:
+                continue
+            clustered_contigs.update({contig for contig in clustered.index})
+            translation = {
+                c: f"bin_{1+i+num_clusters:04d}"
+                for i, c in enumerate(clustered.cluster.unique())
+            }
+
+            def rename_cluster(c):
+                return translation[c]
+
+            clustered.cluster = clustered.cluster.map(rename_cluster)
+            num_clusters += clustered.cluster.nunique()
+            clusters.append(clustered)
+
+    if not clusters:
+        raise BinningError("Failed to recover any clusters from dataset")
+    # At this point we've went through all ranks and have clusters for each canonical-rank
+    # We place these into one table and then...
+    clustered_df = pd.concat(clusters, sort=True)
+    # create a dataframe for any contigs *not* in the clustered dataframe
+    unclustered_df = main.loc[~main.index.isin(clustered_df.index)]
+    unclustered_df["cluster"] = pd.NA
+    return pd.concat([clustered_df, unclustered_df], sort=True)
+
+
+# write a version of tax_guided_clustering that performs LCA at this step
+
+
+def tax_guided_clustering_dynamic_markers(
+    main: pd.DataFrame,
+    markers: pd.DataFrame,
+    completeness: float = 20.0,
+    purity: float = 95.0,
+    coverage_stddev: float = 25.0,
+    gc_content_stddev: float = 5.0,
+    starting_rank: str = "superkingdom",
+    method: str = "dbscan",
+    reverse_ranks: bool = False,
+    n_jobs: int = -1,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """Perform clustering of contigs by provided `method` and use metrics to
+    filter clusters that should be retained via `completeness` and `purity`
+    thresholds.
+
+    * Uses dynamic marker sets and therefore runs LCA for each cluster *
+
+    Parameters
+    ----------
+    main : pd.DataFrame
+        index=contig,
+        cols=['x','y', 'coverage', 'gc_content']
+        taxa cols should be present if `taxonomy` is True.
+        i.e. [taxid,superkingdom,phylum,class,order,family,genus,species]
+
+    markers : pd.DataFrame
+        wide format, i.e. index=contig cols=[marker,marker,...]
+
+    completeness : float, optional
+        Description of parameter `completeness` (the default is 20.).
+
+    purity : float, optional
+        purity threshold to retain cluster (the default is 95.0).
+        e.g. cluster purity >= purity_cutoff
+
+    coverage_stddev : float, optional
+        cluster coverage threshold to retain cluster (the default is 25.0).
+
+    gc_content_stddev : float, optional
+        cluster GC content threshold to retain cluster (the default is 5.0).
+
+    starting_rank : str, optional
+        Starting canonical rank at which to begin subsetting taxonomy (the default is superkingdom).
+        Choices are superkingdom, phylum, class, order, family, genus, species.
+
+    method : str, optional
+        Clustering `method` (the default is 'dbscan').
+        choices = ['dbscan','hdbscan']
+
+    reverse_ranks : bool, optional
+        False - [superkingdom,phylum,class,order,family,genus,species] (Default)
+        True - [species,genus,family,order,class,phylum,superkingdom]
+
+    verbose : bool, optional
+        log stats for each recursive_dbscan clustering iteration
+
+    Returns
+    -------
+    pd.DataFrame
+        main with ['cluster','completeness','purity', 'tax'] columns added
+
+    Raises
+    -------
+    TableFormatError
+        No marker information is availble for contigs to be binned.
+    """
+    # First check needs to ensure we have markers available to check binning quality...
+    if main.loc[main.index.isin(markers.index)].empty:
+        raise TableFormatError(
+            "No markers for contigs in table. Unable to assess binning quality"
+        )
+    if main.shape[0] <= 1:
+        raise BinningError("Not enough contigs in table for binning")
+
+    logger.info(f"Using {method} clustering method")
+    if reverse_ranks:
+        # species, genus, family, order, class, phylum, superkingdom
+        ranks = [rank for rank in TaxonomyDatabase.CANONICAL_RANKS if rank != "root"]
     else:
         # superkingdom, phylum, class, order, family, genus, species
         ranks = [
@@ -671,6 +1073,19 @@ def taxon_guided_binning(
             logger.debug(
                 f"Examining taxonomy: {rank} : {rank_name_txt} : {rank_df.shape}"
             )
+
+            # # Shane figure out why this drops the tax info and figure out gow to keep it
+            # pd.DataFrame - index= contigs at rank, cols= ranks
+            # shane need to pull tax_id and length from main - double check is there at this tep
+            # shane make sure I only need tax from starting rank to spp. instead of entire cannonical ranks to perform LCA
+            # i think yes.  it now has all ranks
+
+            # ok i dont think i need any length after all and I think I can just run majority votes.
+            # need to figure out how to run majority votes on just the contigs in the putative bin.
+            contig_at_rank_tax = main.loc[rank_df.index][full_ranks]
+
+            
+            
             clusters_df = get_clusters(
                 main=rank_df,
                 markers_df=markers,
@@ -804,6 +1219,13 @@ def main():
         help="Path to Autometa assigned taxonomies table",
     )
     parser.add_argument(
+        "--dynamic-marker-sets",
+        help="Whether to use dynamic marker sets for binning",
+        choices=[True,False],
+        default=False,
+        type=bool,
+    )
+    parser.add_argument(
         "--starting-rank",
         help="Canonical rank at which to begin subsetting taxonomy",
         default="superkingdom",
@@ -891,7 +1313,34 @@ def main():
         sys.exit(204)
     logger.info(f"Selected clustering method: {args.clustering_method}")
 
-    if args.taxonomy:
+    if args.dynamic_marker_sets == True:
+        logger.info("Using dynamic marker sets for binning")
+        try:
+            main_out = tax_guided_clustering_dynamic_markers(
+                main=main_df,
+                markers=markers_df,
+                completeness=args.completeness,
+                purity=args.purity,
+                coverage_stddev=args.cov_stddev_limit,
+                gc_content_stddev=args.gc_stddev_limit,
+                method=args.clustering_method,
+                starting_rank=args.starting_rank,
+                reverse_ranks=args.reverse_ranks,
+                n_jobs=args.cpus,
+                verbose=args.verbose,
+            )
+        except BinningError as err:
+            # Failed to recover any clusters from dataset
+            logger.warn(err)
+            logger.warn(
+                "This may be due to too few input contigs, too few marker-containing contigs, or some other reason!"
+            )
+            logger.warn(
+                "Please inspect your input data before proceeding with"
+                " `--dynamic-marker-set` option"
+
+
+    elif args.taxonomy:
         try:
             main_out = taxon_guided_binning(
                 main=main_df,

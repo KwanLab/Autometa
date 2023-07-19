@@ -120,6 +120,170 @@ def filter_taxonomy(df: pd.DataFrame, rank: str, name: str) -> pd.DataFrame:
     return filtered_df
 
 
+def add_metrics_dynamic(
+    df: pd.DataFrame,
+    markers_df: pd.DataFrame,
+    tax_marker_sets_type: str = 'single',
+    contig_at_tax_df: pd.DataFrame,
+    tax_marker_set_dict=dict,
+    tax_assignment_dict=dict,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Adds cluster metrics to each respective contig in df using metrics calculations to accommodate for dynamic gene marker sets
+
+     * runs LCA to each cluster to determine which marker genes to use *
+     * note to shane - make sure this is taking in the tax_id column from an earlier step *
+
+
+
+
+    Parameters
+     ----------
+     df : pd.DataFrame
+         index='contig' cols=['coverage','gc_content','cluster','x_1','x_2',...,'x_n']
+
+     markers_df : pd.DataFrame
+         wide format, i.e. index=contig cols=[marker,marker,...]
+
+     tax_marker_sets_type: str
+         will calculate metrics using either single or multi count marker genes.  ["single", "multi"]
+
+     contig_at_tax_df : pd.DataFrame
+         contig_at_rank_df, i.e. index=contig cols=ranks
+
+     tax_marker_set_dict: dict
+         {tax_id: [gene_set_to_use]}
+
+    tax_assignment_dict: dict
+        {bin: tax_id}
+         
+     Returns
+     -------
+     2-tuple
+         `df` with added cluster metrics columns=['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev']
+         pd.DataFrame(index=clusters,  cols=['completeness', 'purity', 'coverage_stddev', 'gc_content_stddev'])
+
+    """
+
+    metrics = [
+        "completeness",
+        "purity",
+        "coverage_stddev",
+        "gc_content_stddev",
+        "present_marker_count",
+        "single_copy_marker_count",
+    ]
+
+    if "cluster" not in df.columns:
+        cluster_metrics_df = pd.DataFrame(
+            data={metric: pd.NA for metric in metrics}, index=df.index
+        )
+        # Remove previous metrics to avoid creating metrics with suffixes
+        contig_metrics_df = (
+            df.copy().convert_dtypes().drop(columns=metrics, errors="ignore")
+        )
+        contig_metrics_df[metrics] = pd.NA
+
+    else:
+
+        # Remove previous metrics to avoid creating metrics with suffixes
+        df = df.drop(columns=metrics, errors="ignore")
+        # join cluster and marker data -> group contigs by cluster
+        main_grouped_by_cluster = df.join(markers_df, how="outer").groupby("cluster")
+
+
+        # shane make sure all markers are being used.
+        # double check tax_bin assignment
+
+
+        if tax_marker_sets_type == "single":
+            # marker counts per cluster
+
+            cluster_marker_counts = main_grouped_by_cluster[markers_df.columns].sum()
+            # ie index= cluster 1, col= markers
+
+
+            # number of single count markers per cluster
+            single_copy_marker_count = cluster_marker_counts.eq(1).sum(axis=1)
+
+            # this must be for only those in gene set
+            # present_marker_count = cluster_marker_counts.ge(1).sum(axis=1)
+            # [df[test_dict[key]].sum(axis=1).loc[key] for key in test_dict.keys()]
+           
+            present_marker_count = pd.Series()
+            reference_marker_counts= pd.Series()
+            single_copy_marker_count = pd.Series()
+            
+            # assumes df_tax_assignment = dict
+            # gene_set_dict = dict
+
+            for cluster in cluster_marker_counts.index:
+                # get tax for this contig
+                tax = tax_assignment_dict[cluster]
+                # find which marker genes to look for
+                marker_gene_set = tax_marker_set_dict[tax]
+                # get counts for this contig for this gene set
+                counts_in_this_cluster = cluster_marker_counts[marker_gene_set].loc[cluster]
+                # number of marker genes present
+                present_marker_count[cluster] = counts_in_this_cluster.ge(1)
+                # number of single copy marker genes present
+                single_copy_marker_count[cluster] = counts_in_this_cluster.eq(1)
+                # number of marker genes in reference set
+                reference_marker_counts[cluster] = len(marker_gene_set)
+
+
+                
+
+                ## cluster_marker_counts[marker_gene_set].loc[contig].sum(axis=1)
+
+            # need to get lookup for this
+            # pd.Series(test_list).map(test_dict).to_list()
+            # [len(x) for x in pd.Series(test_list).map(test_dict).values]
+
+            reference_marker_counts = [
+                len(marker_list)
+                for marker_list in cluster_marker_counts.index.map(
+                    tax_gene_set_dict
+                ).to_list()
+            ]
+
+            completeness = present_marker_count / reference_marker_counts * 100
+            purity = single_copy_marker_count / present_marker_count * 100
+
+            coverage_stddev = main_grouped_by_cluster.coverage.std()
+            gc_content_stddev = main_grouped_by_cluster.gc_content.std()
+
+        else:
+            cluster_marker_counts = main_grouped_by_cluster[
+                main_grouped_by_cluster[markers_df.columns] >= 1
+            ].counts()
+
+        # NOTE: df.ge(...) and df.eq(...) operators return boolean pd.DataFrame
+        # count single-copy
+        
+
+        cluster_metrics_df = pd.DataFrame(
+            {
+                "completeness": completeness,
+                "purity": purity,
+                "coverage_stddev": coverage_stddev,
+                "gc_content_stddev": gc_content_stddev,
+                "present_marker_count": present_marker_count,
+                "single_copy_marker_count": single_copy_marker_count,
+            }
+        )
+
+
+        # TODO: add redundant marker count to mag summary
+        # ... or 1, 2, 3, 4, 5+ count cols similar to CheckM output table
+        # redundant_marker_count = cluster_marker_counts.gt(1).sum(axis=1)
+        # calculate completeness and purity and std. dev. metrics
+
+        contig_metrics_df = pd.merge(
+            df, cluster_metrics_df, how="left", left_on="cluster", right_index=True
+        )
+    return contig_metrics_df, cluster_metrics_df
+
+
 def add_metrics(
     df: pd.DataFrame, markers_df: pd.DataFrame
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -141,6 +305,8 @@ def add_metrics(
     markers_df : pd.DataFrame
         wide format, i.e. index=contig cols=[marker,marker,...]
 
+    tax_aware : Bool
+        will use different metrics calculations to accommodate for tax aware marker sets (default: False)
     Returns
     -------
     2-tuple
@@ -313,6 +479,7 @@ def reindex_bin_names(
         for bin_num, bin_name in enumerate(df[cluster_col].dropna().unique())
     }
     # Define function to apply mapping
+
     def reindex_cluster(bin_name):
         return reindexed_bin_names[bin_name]
 
@@ -351,6 +518,7 @@ def zero_pad_bin_names(df: pd.DataFrame, cluster_col: str = "cluster") -> pd.Dat
         for bin_num, bin_name in enumerate(df[cluster_col].dropna().unique())
     }
     # Define function to apply mapping
+
     def zero_pad_cluster(cluster_name):
         return zero_padded_bin_names[cluster_name]
 

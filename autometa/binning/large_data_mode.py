@@ -244,6 +244,7 @@ def cluster_by_taxon_partitioning(
     binning_checkpoints_fpath: str = None,
     n_jobs: int = -1,
     verbose: bool = False,
+    dynamic_marker_sets: bool = False,
 ) -> pd.DataFrame:
     """Perform clustering of contigs by provided `method` and use metrics to
     filter clusters that should be retained via `completeness` and `purity`
@@ -298,6 +299,9 @@ def cluster_by_taxon_partitioning(
     verbose : bool, optional
         log stats for each recursive_dbscan clustering iteration
 
+    dynamic_marker_sets : bool, optional
+        Whether to use dynamic marker sets for binning stats calculation (the default is False).
+
     Returns
     -------
     pd.DataFrame
@@ -345,7 +349,9 @@ def cluster_by_taxon_partitioning(
                 cache, "binning_checkpoints.tsv.gz"
             )
     if binning_checkpoints_fpath:
-        if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(binning_checkpoints_fpath):
+        if os.path.exists(binning_checkpoints_fpath) and os.path.getsize(
+            binning_checkpoints_fpath
+        ):
             checkpoint_info = get_checkpoint_info(binning_checkpoints_fpath)
             binning_checkpoints = checkpoint_info["binning_checkpoints"]
             starting_rank = checkpoint_info["starting_rank"]
@@ -546,6 +552,7 @@ def cluster_by_taxon_partitioning(
                 method=method,
                 n_jobs=n_jobs,
                 verbose=verbose,
+                dynamic_marker_sets=dynamic_marker_sets,
             )
             # Store clustered contigs
             is_clustered = rank_name_txt_binning_df["cluster"].notnull()

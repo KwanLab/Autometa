@@ -10,6 +10,7 @@ This script contains the modified majority vote algorithm used in Autometa versi
 import logging
 import os
 import sys
+import pandas as pd
 from typing import Dict, Union
 
 from tqdm import tqdm
@@ -254,6 +255,7 @@ def majority_vote(
     taxa_db: TaxonomyDatabase,
     verbose: bool = False,
     orfs: str = None,
+    dynamic_marker_sets: bool = False,
 ) -> str:
     """Wrapper for modified majority voting algorithm from Autometa 1.0
 
@@ -271,13 +273,15 @@ def majority_vote(
         Path to prodigal called orfs corresponding to LCA table computed from BLAST output
     force : bool, optional
         Whether to overwrite existing LCA results.
-
+    dynamic_marker_sets : bool, optional
+        Whether to use dynamic marker sets for binning metric calculations (default is False)
     Returns
     -------
     str
         Path to assigned taxids table.
 
     """
+
     outdir = os.path.dirname(os.path.realpath(out))
     lca = LCA(taxonomy_db=taxa_db, verbose=verbose, cache=outdir)
     # retrieve lca taxids for each contig
@@ -287,7 +291,10 @@ def majority_vote(
     voted_taxids = rank_taxids(
         ctg_lcas=classifications, taxa_db=taxa_db, verbose=verbose
     )
-    return write_votes(results=voted_taxids, out=out)
+    if output_type == "str":
+        return write_votes(results=voted_taxids, out=out)
+    else:
+        return pd.Series(voted_taxids)
 
 
 def main():
