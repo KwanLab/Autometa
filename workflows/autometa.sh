@@ -231,10 +231,10 @@ then
         set -x
         grep ">" $kingdom_fasta | \
             sed 's/^>//' | \
-            cut -f1 -d" " | \
-            sed 's/$/_/' > $orf_prefixes
+            sed 's/$/_/' | \
+            cut -f1 -d" " > $orf_prefixes
         # Retrieve ORF IDs from contig IDs
-        grep -f $orf_prefixes $orfs | cut -f1 -d" " | sed 's/^>//'  > $orf_ids
+        grep -f $orf_prefixes $orfs | sed 's/^>//' | cut -f1 -d" " > $orf_ids
         # Retrieve ORF seqs from ORF IDs
         seqkit grep \
             --pattern-file $orf_ids \
