@@ -6,7 +6,6 @@ File containing definition of the GTDB class and containing functions useful for
 """
 
 
-import shutil
 import gzip
 import logging
 import os
@@ -61,7 +60,8 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         reps_faa = dbdir
  
     genome_protein_faa_filepaths = glob.glob(
-        os.path.join(reps_faa, "**", "*_protein.faa.gz"), recursive=True
+       os.path.join(reps_faa, "**", "*_protein.faa*"), recursive=True
+       # To find *_protein.faa and *_protein.faa.gz files
     )
 
     faa_index: Dict[str, str] = {}
@@ -83,13 +83,13 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         for faa_file, acc in faa_index.items():
             with gzip.open(faa_file, "rb") as f_in:
                 for line in f_in:
-                    # print(line.decode('utf-8'))
-                    if line.decode('utf-8').startswith(">"):
-                        seqheader = line.decode('utf-8').lstrip(">")
-                        line = f"\n>{acc} {seqheader}"
-                        f_out.write(line)
+                    line = line.decode("utf-8")
+                    if line.startswith(">"):
+                        seqheader = line.lstrip(">")
+                        outline = f"\n>{acc} {seqheader}"
                     else:    
-                        f_out.write(line.decode('utf-8'))
+                        outline = line
+                    f_out.write(outline)
     logger.debug(f"Combined GTDB faa file written to {combined_faa}") 
     return combined_faa 
 
