@@ -10,12 +10,10 @@ import gzip
 import logging
 import os
 import re
-import string
 import tarfile
 import glob
-from pathlib import Path
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Set, Tuple
 from itertools import chain
 from tqdm import tqdm
 from typing import Dict
@@ -26,7 +24,6 @@ import multiprocessing as mp
 from autometa.common.utilities import file_length, is_gz_file
 from autometa.common.external import diamond
 from autometa.taxonomy.database import TaxonomyDatabase
-from autometa.common.exceptions import DatabaseOutOfSyncError
 
 
 logger = logging.getLogger(__name__)
@@ -58,10 +55,11 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         tar.close()
         logger.debug("Extraction done.")
         reps_faa = dbdir
- 
+
     genome_protein_faa_filepaths = glob.glob(
-       os.path.join(reps_faa, "**", "*_protein.faa*"), recursive=True
-       # To find *_protein.faa and *_protein.faa.gz files
+        os.path.join(reps_faa, "**", "*_protein.faa*"),
+        recursive=True
+        # To find *_protein.faa and *_protein.faa.gz files
     )
 
     faa_index: Dict[str, str] = {}
@@ -78,7 +76,7 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
         os.makedirs(dbdir)
 
     logger.debug(f"Merging {len(faa_index):,} faa files.")
-    combined_faa = os.path.join(dbdir, "gtdb.faa") 
+    combined_faa = os.path.join(dbdir, "gtdb.faa")
     with open(combined_faa, "w") as f_out:
         for faa_file, acc in faa_index.items():
             with gzip.open(faa_file, "rb") as f_in:
@@ -87,11 +85,11 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
                     if line.startswith(">"):
                         seqheader = line.lstrip(">")
                         outline = f"\n>{acc} {seqheader}"
-                    else:    
+                    else:
                         outline = line
                     f_out.write(outline)
-    logger.debug(f"Combined GTDB faa file written to {combined_faa}") 
-    return combined_faa 
+    logger.debug(f"Combined GTDB faa file written to {combined_faa}")
+    return combined_faa
 
 
 class GTDB(TaxonomyDatabase):
