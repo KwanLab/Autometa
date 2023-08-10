@@ -25,7 +25,7 @@ dependencies:
   - samtools>=1.11
   - scikit-bio
   - scipy
-  - scikit-learn 
+  - scikit-learn
   - seqkit
   - tqdm
   - trimap
