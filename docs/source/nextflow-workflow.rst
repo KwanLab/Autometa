@@ -868,4 +868,4 @@ To use this tagged version (or any other Autometa image tag) add the argument ``
 .. _FastQC: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 .. _metaQuast: http://quast.sourceforge.net/metaquast
 .. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
-.. _mamba: https://mamba.readthedocs.io/en/latest/index.html
+.. _mamba: https://mamba.readthedocs.io/en/latest/
