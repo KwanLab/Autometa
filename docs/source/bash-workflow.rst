@@ -14,8 +14,7 @@ Getting Started
 Compute Environment Setup
 *************************
 
-If you have not previously installed/used mamba_, you can get it using the
-Mambaforge installer appropriate to your system, here: `<https://github.com/conda-forge/miniforge#mambaforge>`_
+If you have not previously installed/used mamba_, you can get it from Mambaforge_.
 
 You may either create a new mamba environment named "autometa"...
 
@@ -323,4 +322,5 @@ See :ref:`advanced-usage-binning` section for details
 .. _Trimmomatic: http://www.usadellab.org/cms/?page=trimmomatic
 .. _FastQC: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 .. _metaQuast: http://quast.sourceforge.net/metaquast
-.. _mamba: https://mamba.readthedocs.io/en/latest/index.html
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _mamba: https://mamba.readthedocs.io/en/latest/

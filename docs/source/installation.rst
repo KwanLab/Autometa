@@ -5,7 +5,7 @@ Installation
 ============
 
 Currently Autometa package installation is supported by mamba_, and docker_.
-For installation using mamba, download mamba from mambaforge_.
+For installation using mamba, download mamba from Mambaforge_.
 
 .. attention::
 
@@ -64,7 +64,7 @@ Direct installation (Quickest)
                 mamba config --append channels bioconda
                 mamba config --append channels conda-forge
 
-            Now mamba will search the bioconda and conda-forge
+            Now mamba will search the ``bioconda`` and ``conda-forge``
             channels alongside the defaults channel.
 
             .. code-block:: bash
@@ -199,5 +199,5 @@ For more information about the above commands see the :ref:`Contributing Guideli
 Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
 
 .. _mamba: https://mamba.readthedocs.io/en/latest/index.html
-.. _mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
 .. _Docker: https://www.docker.com/

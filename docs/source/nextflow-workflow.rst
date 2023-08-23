@@ -16,12 +16,12 @@ System Requirements
 Currently the nextflow pipeline requires Docker 🐳 so it must be installed on your system.
 If you don't have Docker installed you can install it from `docs.docker.com/get-docker <https://docs.docker.com/get-docker>`_.
 We plan on removing this dependency in future versions, so that other dependency managers
-(e.g. Conda, Singularity, etc) can be used.
+(e.g. Conda, Mamba, Singularity, etc) can be used.
 
 Nextflow runs on any Posix compatible system. Detailed system requirements
 can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest/getstarted.html#requirements>`_
 
-Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
+Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-mamba`.
 
 Data Preparation
 ################
@@ -146,14 +146,14 @@ Installation
 
 For full installation instructions, please see the :ref:`installation-page` section
 
-If you would like to install Autometa via conda (I'd recommend it, its almost foolproof!),
-you'll need to first install Miniconda on your system. You can do this in a few easy steps:
+If you would like to install Autometa via mamba (I'd recommend it, its almost foolproof!),
+you'll need to first download the Mambaforge_ installer on your system. You can do this in a few easy steps:
 
-1. Type in the following and then hit enter. This will download the Miniconda installer to your home directory.
+1. Type in the following and then hit enter. This will download the Mambaforge installer to your home directory.
 
 .. code-block:: bash
 
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/Miniconda3-latest-Linux-x86_64.sh
+    wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh" -O "$HOME/Mambaforge-$(uname)-$(uname -m).sh"
 
 .. note::
 
@@ -163,7 +163,8 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 
 .. code-block:: bash
 
-    bash $HOME/Miniconda3-latest-Linux-x86_64.sh
+    bash $HOME/Mambaforge-$(uname)-$(uname -m).sh
+    # On my machine this was /home/sam/Mambaforge-latest-Linux-x86_64.sh
 
 3.	Follow all of the prompts. Keep pressing enter until it asks you to accept. Then type yes and enter. Say yes to everything.
 
@@ -174,33 +175,32 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 
     .. code-block:: bash
 
-        cd $HOME/miniconda3/bin/
-        ./conda init
+        $HOME/mambaforge/bin/mamba init
 
 
-4. 	Finally, for the changes to take effect, you'll need to run the following line of code which effectively acts as a "refresh"
-
-.. code-block:: bash
-
-    source ~/.bashrc
-
-Now that you have conda up and running, its time to install the Autometa conda environment. Run the following code:
+1. 	Finally, for the changes to take effect, you'll need to run the following line of code which effectively acts as a "refresh"
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+    source $HOME/.bashrc
+
+Now that you have mamba up and running, its time to install the Autometa mamba environment. Run the following code:
+
+.. code-block:: bash
+
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 
 .. attention::
 
     You will only need to run the installation (code above) once. The installation does NOT need to be performed every time you wish to use Autometa.
-    Once installation is complete, the conda environment (which holds all the tools that Autometa needs) will live on your server/computer
+    Once installation is complete, the mamba environment (which holds all the tools that Autometa needs) will live on your server/computer
     much like any other program you install.
 
-Anytime you would like to run Autometa, you'll need to activate the conda environment. To activate the environment you'll need to run the following command:
+Anytime you would like to run Autometa, you'll need to activate the mamba environment. To activate the environment you'll need to run the following command:
 
 .. code-block:: bash
 
-    conda activate autometa-nf
+    mamba activate autometa-nf
 
 Configuring a scheduler
 ***********************
@@ -261,11 +261,11 @@ If the metagenome was assembled via SPAdes, Autometa can extract coverage and co
 If you used a different assembler you will need to provide either raw reads or a table containing contig/scaffold coverage information.
 Full details for data preparation may be found under :ref:`sample-sheet-preparation`
 
-First ensure that your Autometa conda environment is activated. You can activate your environment by running:
+First ensure that your Autometa mamba environment is activated. You can activate your environment by running:
 
 .. code-block:: bash
 
-    conda activate autometa-nf
+    mamba activate autometa-nf
 
 Run the following code to launch Autometa:
 
@@ -433,22 +433,21 @@ Basic
 While the Autometa Nextflow pipeline can be run using Nextflow directly, we designed
 it using nf-core standards and templating to provide an easier user experience through
 use of the nf-core "tools" python library. The directions below demonstrate using a minimal
-Conda environment to install Nextflow and nf-core tools and then running the Autometa pipeline.
+mamba environment to install Nextflow and nf-core tools and then running the Autometa pipeline.
 
-.. _install-nextflow-nfcore-with-conda:
+.. _install-nextflow-nfcore-with-mamba:
 
-Installing Nextflow and nf-core tools with Conda
+Installing Nextflow and nf-core tools with mamba
 ************************************************
 
-If you have not previously installed/used Conda, you can get it using the
-Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
+If you have not previously installed/used mamba_, you can get it from Mambaforge_.
 
-After installing conda, running the following command will create a minimal
-Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
+After installing mamba, running the following command will create a minimal
+mamba environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 
 If you receive the message...
 
@@ -461,13 +460,13 @@ the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml --force
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml --force
 
-Once Conda has finished creating the environment be sure to activate it:
+Once mamba has finished creating the environment be sure to activate it:
 
 .. code-block:: bash
 
-    conda activate autometa-nf
+    mamba activate autometa-nf
 
 
 Using nf-core
@@ -543,7 +542,7 @@ The other parameter is a nextflow argument, specified with :code:`-profile`. Thi
     are able to successfully configure these profiles, please get in touch or submit a pull request and we will add these configurations
     to the repository.
 
-    - :code:`conda`: Enables running all processes using `conda <https://www.nextflow.io/docs/latest/conda.html>`_
+    - :code:`mamba`: Enables running all processes using `mamba <https://mamba.readthedocs.io/en/latest/>`_
     - :code:`singularity`: Enables running all processes using `singularity <https://www.nextflow.io/docs/latest/singularity.html>`_
     - :code:`podman`: Enables running all processes using `podman <https://www.nextflow.io/docs/latest/podman.html>`_
     - :code:`shifter`: Enables running all processes using `shifter <https://www.nextflow.io/docs/latest/shifter.html>`_
@@ -795,7 +794,7 @@ Visualizing the Workflow
 ------------------------
 
 You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install
-`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
+`Graphviz <https://graphviz.org/>`_ (``mamba install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
 in the ``png`` format.
 
 Configuring your process executor
@@ -868,3 +867,5 @@ To use this tagged version (or any other Autometa image tag) add the argument ``
 .. _Trimmomatic: http://www.usadellab.org/cms/?page=trimmomatic
 .. _FastQC: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 .. _metaQuast: http://quast.sourceforge.net/metaquast
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _mamba: https://mamba.readthedocs.io/en/latest/index.html
