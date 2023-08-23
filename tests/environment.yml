@@ -11,9 +11,7 @@ dependencies:
   - bowtie2
   - diamond>=2.0
   - gdown
-  - hdbscan
   - hmmer
-  - joblib==1.1.0 # See https://stackoverflow.com/a/73830525/12671809
   - numba>=0.47
   - numpy>=1.13
   - pandas>=1.1
@@ -30,8 +28,8 @@ dependencies:
   - rsync
   - samtools>=1.11
   - scikit-bio
-  - scipy==1.8.1 #force scipy 1.8 until scikit-bio updates to 1.9, https://github.com/KwanLab/Autometa/issues/285
-  - scikit-learn==0.24 # prevent error from joblib in multiprocessing distance calculations
+  - scipy
+  - scikit-learn>=1.3
   - sphinx
   - sphinx_rtd_theme
   - tqdm
