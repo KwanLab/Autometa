@@ -453,7 +453,7 @@ If you receive the message...
 
 .. code-block:: bash
 
-    CondaValueError: prefix already exists:
+    CondaValueError: prefix already exists: /home/user/mambaforge/envs/autometa-nf
 
 ...it means you have already created the environment. If you want to overwrite/update
 the environment then add the :code:`--force` flag to the end of the command.
