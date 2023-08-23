@@ -4,8 +4,8 @@
 Installation
 ============
 
-Currently Autometa package installation is supported by conda_ and docker_.
-For installation using conda, we suggest downloading miniconda_.
+Currently Autometa package installation is supported by mamba_, and docker_.
+For installation using mamba, download mamba from mambaforge_.
 
 .. attention::
 
@@ -14,23 +14,74 @@ For installation using conda, we suggest downloading miniconda_.
 Direct installation (Quickest)
 ==============================
 
-#. Install miniconda_
+#. Install mamba_
+
+    .. code-block:: bash
+
+        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+        bash Mambaforge-$(uname)-$(uname -m).sh
+
+    Follow the installation prompts and when you get to this:
+
+    .. code-block:: bash
+
+        Do you wish the installer to initialize Mambaforge
+        by running conda init? [yes|no]
+        [no] >>> yes
+
+    This will require restarting the terminal, or resetting
+    the terminal with the source command
+
+    .. code-block:: bash
+
+        # To resolve the comment:
+        # ==> For changes to take effect, close and re-open your current shell. <==
+        # type:
+        source ~/.bashrc
+
+    .. note::
+
+        If you already have conda installed, you can install mamba as a drop-in replacement.
+
+        .. code-block:: bash
+
+            conda -n base -c conda-forge mamba -y
+
+
 #. Create a new environment with ``autometa`` installed:
 
     .. code-block:: bash
 
-        conda create -c bioconda -n autometa autometa
+        mamba create -c conda-forge -c bioconda -n autometa autometa
+
+    .. note::
+
+            You may add the ``bioconda`` and ``conda-forge`` channels to your mamba
+            config to simplify the command.
+
+            .. code-block:: bash
+
+                mamba config --append channels bioconda
+                mamba config --append channels conda-forge
+
+            Now mamba will search the bioconda and conda-forge
+            channels alongside the defaults channel.
+
+            .. code-block:: bash
+
+                mamba create -n autometa autometa
+
 
 #. Activate ``autometa`` environment:
 
     .. code-block::
 
-        conda activate autometa
+        mamba activate autometa
 
 Install from source (using make)
 ================================
 
-Download and install miniconda_. Now run the following commands:
+Download and install mamba_. Now run the following commands:
 
 .. code-block:: bash
 
@@ -43,11 +94,11 @@ Download and install miniconda_. Now run the following commands:
     # Navigate into the cloned repository
     cd Autometa
 
-    # create autometa conda environment
+    # create autometa mamba environment
     make create_environment
 
-    # activate autometa conda environment
-    conda activate autometa
+    # activate autometa mamba environment
+    mamba activate autometa
 
     # install autometa source code in autometa environment
     make install
@@ -59,7 +110,7 @@ Download and install miniconda_. Now run the following commands:
 Install from source (full commands)
 ===================================
 
-Download and install miniconda_. Now run the following commands:
+Download and install mamba_. Now run the following commands:
 
 .. code-block:: bash
 
@@ -73,10 +124,10 @@ Download and install miniconda_. Now run the following commands:
     cd Autometa
 
     # Construct the autometa environment from autometa-env.yml
-    conda env create --file=autometa-env.yml
+    mamba env create --file=autometa-env.yml
 
     # Activate environment
-    conda activate autometa
+    mamba activate autometa
 
     # Install the autometa code base from source
     python -m pip install . --ignore-installed --no-deps -vv
@@ -115,8 +166,8 @@ To run the tests, however, you'll first need to install the following packages a
 
 .. code-block:: bash
 
-    # Activate your autometa conda environment
-    conda activate autometa
+    # Activate your autometa mamba environment
+    mamba activate autometa
 
     # List all make options
     make
@@ -141,12 +192,12 @@ You can now run different unit tests using the following commands:
     make unit_test_wip
 
 .. note::
+
     As a shortcut you can also create the test environment and run **all** the unit tests using ``make unit_test`` command.
 
 For more information about the above commands see the :ref:`Contributing Guidelines` page.
 Additional unit tests are provided in the test directory. These are designed to aid in future development of autometa.
 
-.. _conda: https://docs.conda.io/en/latest/
-.. _miniconda: https://docs.conda.io/en/latest/miniconda.html
+.. _mamba: https://mamba.readthedocs.io/en/latest/index.html
+.. _mambaforge: https://github.com/conda-forge/miniforge#mambaforge
 .. _Docker: https://www.docker.com/
-.. _anaconda: https://www.anaconda.com/
