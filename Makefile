@@ -45,7 +45,7 @@ endif
 	@echo ">>> New mamba env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
 	@echo "Mamba not detected. Please install before proceeding..."
-	@echo "Mamba docs: https://mamba.readthedocs.io/en/latest/index.html"
+	@echo "Mamba docs: https://mamba.readthedocs.io/en/latest/"
 	exit
 endif
 
