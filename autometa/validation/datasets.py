@@ -44,7 +44,7 @@ def download(
     """
 
     if community_type == "synthetic" or community_type == "all":
-        raise NotImplementedError
+        raise NotImplementedError("Sorry, the '{}' community type is not currently supported. Please choose a different community type.".format(community_type))
 
     # points to csv file on google drive
     df = pd.read_csv(
