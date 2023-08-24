@@ -407,9 +407,13 @@ def get_confidence_filtered_predictions(
     # Filter predictions by confidence threshold
     confidence_threshold = num_classifications * confidence
     df = df[df.max(axis="columns") >= confidence_threshold]
-    filtered_predictions = df.idxmax(axis="columns")
-    filtered_predictions.name = "cluster"
-    return filtered_predictions.to_frame()
+    if df.empty:
+        filtered_predictions = pd.DataFrame(
+            [], columns=["contig", "cluster"]
+        ).set_index("contig")
+    else:
+        filtered_predictions = df.idxmax(axis="columns").to_frame(name="cluster")
+    return filtered_predictions
 
 
 def filter_contaminating_predictions(

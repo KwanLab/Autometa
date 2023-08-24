@@ -7,7 +7,7 @@
 Here is the step by step tutorial of the entire pipeline. This is helpful in case you have your own files or just want to run a specific step.
 
 Before running anything make sure you have activated the conda environment using
-``conda activate autometa``.
+``mamba activate autometa``.
 
 See the :ref:`Autometa Package Installation` page for details on setting up your conda environment.
 

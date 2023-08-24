@@ -14,17 +14,16 @@ Getting Started
 Compute Environment Setup
 *************************
 
-If you have not previously installed/used Conda, you can get it using the
-Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
+If you have not previously installed/used mamba_, you can get it from Mambaforge_.
 
-You may either create a new Conda environment named "autometa"...
+You may either create a new mamba environment named "autometa"...
 
 .. code-block:: bash
 
-    conda create -n autometa -c bioconda autometa
-    # Then, once Conda has finished creating the environment
+    mamba create -n autometa -c conda-forge -c bioconda autometa
+    # Then, once mamba has finished creating the environment
     # you may activate it:
-    conda activate autometa
+    mamba activate autometa
 
 \.\.\. or install Autometa into any of your existing environments.
 
@@ -32,13 +31,13 @@ This installs Autometa in your current active environment:
 
 .. code-block:: bash
 
-    conda install -c bioconda autometa
+    mamba install -c conda-forge -c bioconda autometa
 
 The next command installs Autometa in the provided environment:
 
 .. code-block:: bash
 
-    conda install -n <your-env-name> -c bioconda autometa
+    mamba install -n <your-env-name> -c conda-forge -c bioconda autometa
 
 Download Workflow Template
 **************************
@@ -128,7 +127,7 @@ Alignments Preparation
 .. note::
     The following example requires ``bwa``, ``kart`` and ``samtools``
 
-    ``conda install -c bioconda bwa kart samtools``
+    ``mamba install -c bioconda bwa kart samtools``
 
 .. code-block:: bash
 
@@ -158,7 +157,7 @@ ORFs
 ****
 
 .. note::
-    The following example requires ``prodigal``. e.g. ``conda install -c bioconda prodigal``
+    The following example requires ``prodigal``. e.g. ``mamba install -c bioconda prodigal``
 
 .. code-block:: bash
 
@@ -175,7 +174,7 @@ Diamond blastp Preparation
 **************************
 
 .. note::
-    The following example requires ``diamond``. e.g. ``conda install -c bioconda diamond``
+    The following example requires ``diamond``. e.g. ``mamba install -c bioconda diamond``
 
 .. code-block:: bash
 
@@ -267,7 +266,7 @@ For example, with slurm:
 
 .. caution::
 
-    Make sure your conda autometa environment is activated or the autometa entrypoints will not be available.
+    Make sure your mamba autometa environment is activated or the autometa entrypoints will not be available.
 
 Additional parameters
 #####################
@@ -323,3 +322,5 @@ See :ref:`advanced-usage-binning` section for details
 .. _Trimmomatic: http://www.usadellab.org/cms/?page=trimmomatic
 .. _FastQC: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 .. _metaQuast: http://quast.sourceforge.net/metaquast
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _mamba: https://mamba.readthedocs.io/en/latest/

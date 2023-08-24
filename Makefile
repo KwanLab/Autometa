@@ -10,10 +10,10 @@ PYTHON_INTERPRETER = python3
 # This was retrieved from https://drive.google.com/file/d/1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk/view?usp=sharing
 TEST_DATA_FILEID = 1bSlPldaq3C6Cf9Y5Rm7iwtUDcjxAaeEk
 
-ifeq (,$(shell which conda))
-HAS_CONDA=False
+ifeq (,$(shell which mamba))
+HAS_MAMBA=False
 else
-HAS_CONDA=True
+HAS_MAMBA=True
 endif
 
 #################################################################################
@@ -35,20 +35,18 @@ black:
 
 ## Set up python interpreter environment
 create_environment: autometa-env.yml
-ifeq (True,$(HAS_CONDA))
-		@echo ">>> Detected conda, creating conda environment."
+ifeq (True,$(HAS_MAMBA))
+		@echo ">>> Detected mamba, creating mamba environment."
 ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda env create --file=autometa-env.yml
+	mamba env create --file=autometa-env.yml
 else
 	@echo "It looks like you are not using python 3. Autometa is only compatible with python 3. Please upgrade."
 endif
-	@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
+	@echo ">>> New mamba env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
-	$(PYTHON_INTERPRETER) -m pip install -q virtualenv virtualenvwrapper
-	@echo ">>> Installing virtualenvwrapper if not already installed.\nMake sure the following lines are in shell startup file\n\
-	export WORKON_HOME=$$HOME/.virtualenvs\nexport PROJECT_HOME=$$HOME/Devel\nsource /usr/local/bin/virtualenvwrapper.sh\n"
-	@bash -c "source `which virtualenvwrapper.sh`;mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER)"
-	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
+	@echo "Mamba not detected. Please install before proceeding..."
+	@echo "Mamba docs: https://mamba.readthedocs.io/en/latest/"
+	exit
 endif
 
 #################################################################################
@@ -61,7 +59,7 @@ install: setup.py
 
 ## Install dependencies for test environment
 test_environment: tests/environment.yml
-	conda env update -n $(PROJECT_NAME) --file=$<
+	mamba env update -n $(PROJECT_NAME) --file=$<
 
 ## Build docker image from Dockerfile (auto-taggged as jasonkwan/autometa:<current-branch>)
 image: Dockerfile
