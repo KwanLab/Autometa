@@ -31,7 +31,7 @@ class TaxonomyDatabase(ABC):
     class GTDB(TaxonomyDatabase):
         def __init__(self, ...):
             self.nodes = self.parse_nodes()
-            self.names = self.parse_names()            
+            self.names = self.parse_names()
             self.merged = self.parse_merged()
             self.delnodes = self.parse_delnodes()
             ...
@@ -59,6 +59,7 @@ class TaxonomyDatabase(ABC):
     Available attributes:
 
     CANONICAL_RANKS
+    UNCLASSIFIED
     """
 
     CANONICAL_RANKS = [
@@ -71,6 +72,7 @@ class TaxonomyDatabase(ABC):
         "superkingdom",
         "root",
     ]
+    UNCLASSIFIED = "unclassified"
 
     @abstractmethod
     def parse_nodes(self) -> Dict[int, Dict[str, Union[str, int]]]:
@@ -100,7 +102,7 @@ class TaxonomyDatabase(ABC):
         Returns
         -------
         str
-            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
+            Name of provided `taxid` if `taxid` is found in names.dmp else TaxonomyDatabase.UNCLASSIFIED
 
         """
 
@@ -237,7 +239,7 @@ class TaxonomyDatabase(ABC):
         Returns
         -------
         str
-            Name of provided `taxid` if `taxid` is found in names.dmp else 'unclassified'
+            Name of provided `taxid` if `taxid` is found in names.dmp else TaxonomyDatabase.UNCLASSIFIED
 
         """
         try:
@@ -246,19 +248,19 @@ class TaxonomyDatabase(ABC):
             logger.warning(err)
             taxid = 0
         if not rank:
-            return self.names.get(taxid, "unclassified")
+            return self.names.get(taxid, TaxonomyDatabase.UNCLASSIFIED)
         if rank not in set(TaxonomyDatabase.CANONICAL_RANKS):
             logger.warning(f"{rank} not in canonical ranks!")
-            return "unclassified"
+            return TaxonomyDatabase.UNCLASSIFIED
         ancestor_taxid = taxid
         while ancestor_taxid != 1:
             ancestor_rank = self.rank(ancestor_taxid)
             if ancestor_rank == rank:
-                return self.names.get(ancestor_taxid, "unclassified")
+                return self.names.get(ancestor_taxid, TaxonomyDatabase.UNCLASSIFIED)
             ancestor_taxid = self.parent(ancestor_taxid)
         # At this point we have not encountered a name for the taxid rank
         # so we will place this as unclassified.
-        return "unclassified"
+        return TaxonomyDatabase.UNCLASSIFIED
 
     def rank(self, taxid: int) -> str:
         """
@@ -272,7 +274,7 @@ class TaxonomyDatabase(ABC):
         Returns
         -------
         str
-            rank name if taxid is found in nodes else "unclassified"
+            rank name if taxid is found in nodes else autoattribute:: autometa.taxonomy.database.TaxonomyDatabase.UNCLASSIFIED
 
         """
         try:
@@ -280,7 +282,9 @@ class TaxonomyDatabase(ABC):
         except DatabaseOutOfSyncError as err:
             logger.warning(err)
             taxid = 0
-        return self.nodes.get(taxid, {"rank": "unclassified"}).get("rank")
+        return self.nodes.get(taxid, {"rank": TaxonomyDatabase.UNCLASSIFIED}).get(
+            "rank"
+        )
 
     def parent(self, taxid: int) -> int:
         """
@@ -368,7 +372,7 @@ class TaxonomyDatabase(ABC):
         taxids : iterable
             `taxids` whose lineage dataframe is being returned
         fillna : bool, optional
-            Whether to fill the empty cells  with 'unclassified' or not, default True
+            Whether to fill the empty cells with TaxonomyDatabase.UNCLASSIFIED or not, default True
 
         Returns
         -------
@@ -408,5 +412,5 @@ class TaxonomyDatabase(ABC):
         df = pd.DataFrame(ranked_taxids).transpose()
         df.index.name = "taxid"
         if fillna:
-            df.fillna(value="unclassified", inplace=True)
+            df.fillna(value=TaxonomyDatabase.UNCLASSIFIED, inplace=True)
         return df

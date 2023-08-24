@@ -7,11 +7,11 @@ Benchmarking
 
 .. note::
 
-    The most recent Autometa benchmarking results covering multiple modules and input parameters are hosted on our 
-    `KwanLab/metaBenchmarks <https://github.com/KwanLab/metaBenchmarks>`_ Github repository and provide a range of 
+    The most recent Autometa benchmarking results covering multiple modules and input parameters are hosted on our
+    `KwanLab/metaBenchmarks <https://github.com/KwanLab/metaBenchmarks>`_ Github repository and provide a range of
     analyses covering multiple stages and parameter sets. These benchmarks are available with their own respective
-    modules so that the community may easily assess how Autometa's novel (``taxon-profiling``, ``clustering``, 
-    ``binning``, ``refinement``) algorithms perform compared to current state-of-the-art methods. Tools were selected for 
+    modules so that the community may easily assess how Autometa's novel (``taxon-profiling``, ``clustering``,
+    ``binning``, ``refinement``) algorithms perform compared to current state-of-the-art methods. Tools were selected for
     benchmarking based on their relevance to environmental, single-assembly, reference-free binning pipelines.
 
 Benchmarking with the ``autometa-benchmark`` module
@@ -51,7 +51,7 @@ Example benchmarking with simulated communities
 
     # Set community size (see above for selection/download of other community types)
     community_size=78Mbp
-    
+
     # Inputs
     ## NOTE: predictions and reference were downloaded using autometa-download-dataset
     predictions="$HOME/Autometa/autometa/datasets/simulated/${community_size}/taxonomy.tsv.gz" # required columns -> contig, taxid
@@ -73,7 +73,7 @@ Example benchmarking with simulated communities
         --output-classification-reports $reports
 
 .. note::
-    Using ``--benchmark=classification`` requires the path to a directory containing files (nodes.dmp, names.dmp, merged.dmp) 
+    Using ``--benchmark=classification`` requires the path to a directory containing files (nodes.dmp, names.dmp, merged.dmp)
     from NCBI's taxdump tarball. This should be supplied using the ``--ncbi`` parameter.
 
 Clustering
@@ -95,7 +95,7 @@ Example benchmarking with simulated communities
     # Outputs
     output_wide="${community_size}.clustering_benchmarks.wide.tsv.gz"
     output_long="${community_size}.clustering_benchmarks.long.tsv.gz"
-    
+
     autometa-benchmark \
         --benchmark clustering \
         --predictions $predictions \
@@ -114,16 +114,16 @@ Example benchmarking with simulated communities
 
     # Set community size (see above for selection/download of other community types)
     community_size=78Mbp
-    
+
     # Inputs
     ## NOTE: predictions and reference were downloaded using autometa-download-dataset
     predictions="$HOME/Autometa/autometa/datasets/simulated/${community_size}/binning.tsv.gz" # required columns -> contig, cluster
     reference="$HOME/Autometa/autometa/datasets/simulated/${community_size}/reference_assignments.tsv.gz"
-    
+
     # Outputs
     output_wide="${community_size}.binning_benchmarks.wide.tsv.gz"
     output_long="${community_size}.binning_benchmarks.long.tsv.gz"
-    
+
     autometa-benchmark \
         --benchmark binning-classification \
         --predictions $predictions \
@@ -172,7 +172,7 @@ Autometa is packaged with a built-in module that allows any user to download any
 To use retrieve these datasets one simply needs to run the ``autometa-download-dataset`` command.
 
 For example, to download the reference assignments for a simulated community as well as the most recent Autometa
-binning and taxon-profiling predictions for this community, provide the following parameters: 
+binning and taxon-profiling predictions for this community, provide the following parameters:
 
 .. code:: bash
 
@@ -195,15 +195,15 @@ Using ``gdrive``
 
 You can download the individual assemblies of different datasests with the help of ``gdown`` using command line
 (This is what ``autometa-download-dataset`` is using behind the scenes). If you have installed ``autometa`` using
-``conda`` then ``gdown`` should already be installed. If not, you can install it using 
-``conda install -c conda-forge gdown`` or ``pip install gdown``.
+``mamba`` then ``gdown`` should already be installed. If not, you can install it using
+``mamba install -c conda-forge gdown`` or ``pip install gdown``.
 
 Example for the 78Mbp simulated community
 """""""""""""""""""""""""""""""""""""""""
 
 1. Navigate to the 78Mbp community dataset using the `link <https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ mentioned above.
-2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option. 
-    This will have a ``copy link`` button that you should use. The link for the metagenome assembly 
+2. Get the file ID by navigating to any of the files and right clicking, then selecting the ``get link`` option.
+    This will have a ``copy link`` button that you should use. The link for the metagenome assembly
     (ie. ``metagenome.fna.gz``) should look like this : ``https://drive.google.com/file/d/15CB8rmQaHTGy7gWtZedfBJkrwr51bb2y/view?usp=sharing``
 3. The file ID is within the ``/`` forward slashes between ``file/d/`` and ``/``, e.g:
 

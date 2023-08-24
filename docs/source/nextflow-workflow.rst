@@ -16,12 +16,12 @@ System Requirements
 Currently the nextflow pipeline requires Docker 🐳 so it must be installed on your system.
 If you don't have Docker installed you can install it from `docs.docker.com/get-docker <https://docs.docker.com/get-docker>`_.
 We plan on removing this dependency in future versions, so that other dependency managers
-(e.g. Conda, Singularity, etc) can be used.
+(e.g. Conda, Mamba, Singularity, etc) can be used.
 
 Nextflow runs on any Posix compatible system. Detailed system requirements
 can be found in the `nextflow documentation <https://www.nextflow.io/docs/latest/getstarted.html#requirements>`_
 
-Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-conda`.
+Nextflow (required) and nf-core tools (optional but highly recommended) installation will be discussed in :ref:`install-nextflow-nfcore-with-mamba`.
 
 Data Preparation
 ################
@@ -138,7 +138,7 @@ Example ``sample_sheet.csv``
 Quick Start
 ###########
 
-The following is a condensed summary of steps required to get Autometa installed, configured and running. 
+The following is a condensed summary of steps required to get Autometa installed, configured and running.
 There are links throughout to the appropriate documentation sections that can provide more detail if required.
 
 Installation
@@ -146,14 +146,14 @@ Installation
 
 For full installation instructions, please see the :ref:`installation-page` section
 
-If you would like to install Autometa via conda (I'd recommend it, its almost foolproof!), 
-you'll need to first install Miniconda on your system. You can do this in a few easy steps:
+If you would like to install Autometa via mamba (I'd recommend it, its almost foolproof!),
+you'll need to first download the Mambaforge_ installer on your system. You can do this in a few easy steps:
 
-1. Type in the following and then hit enter. This will download the Miniconda installer to your home directory.
+1. Type in the following and then hit enter. This will download the Mambaforge installer to your home directory.
 
 .. code-block:: bash
 
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/Miniconda3-latest-Linux-x86_64.sh
+    wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh" -O "$HOME/Mambaforge-$(uname)-$(uname -m).sh"
 
 .. note::
 
@@ -163,44 +163,44 @@ you'll need to first install Miniconda on your system. You can do this in a few 
 
 .. code-block:: bash
 
-    bash $HOME/Miniconda3-latest-Linux-x86_64.sh
+    bash $HOME/Mambaforge-$(uname)-$(uname -m).sh
+    # On my machine this was /home/sam/Mambaforge-latest-Linux-x86_64.sh
 
 3.	Follow all of the prompts. Keep pressing enter until it asks you to accept. Then type yes and enter. Say yes to everything.
 
-.. note:: 
+.. note::
 
-    If for whatever reason, you accidentally said no to the initialization, do not fear. 
+    If for whatever reason, you accidentally said no to the initialization, do not fear.
     We can fix this by running the initialization with the following command:
 
     .. code-block:: bash
 
-        cd $HOME/miniconda3/bin/
-        ./conda init
-    
+        $HOME/mambaforge/bin/mamba init
 
-4. 	Finally, for the changes to take effect, you'll need to run the following line of code which effectively acts as a "refresh"
 
-.. code-block:: bash
-    
-    source ~/.bashrc
-
-Now that you have conda up and running, its time to install the Autometa conda environment. Run the following code:
+1. 	Finally, for the changes to take effect, you'll need to run the following line of code which effectively acts as a "refresh"
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
-    
+    source $HOME/.bashrc
+
+Now that you have mamba up and running, its time to install the Autometa mamba environment. Run the following code:
+
+.. code-block:: bash
+
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+
 .. attention::
 
-    You will only need to run the installation (code above) once. The installation does NOT need to be performed every time you wish to use Autometa. 
-    Once installation is complete, the conda environment (which holds all the tools that Autometa needs) will live on your server/computer 
+    You will only need to run the installation (code above) once. The installation does NOT need to be performed every time you wish to use Autometa.
+    Once installation is complete, the mamba environment (which holds all the tools that Autometa needs) will live on your server/computer
     much like any other program you install.
 
-Anytime you would like to run Autometa, you'll need to activate the conda environment. To activate the environment you'll need to run the following command:
+Anytime you would like to run Autometa, you'll need to activate the mamba environment. To activate the environment you'll need to run the following command:
 
 .. code-block:: bash
 
-    conda activate autometa-nf
+    mamba activate autometa-nf
 
 Configuring a scheduler
 ***********************
@@ -239,13 +239,13 @@ Then copy the following code block into that new file ("agrp" is the slurm parti
             }
         }
 
-Keep this file somewhere central to you. For the sake of this example I will be keeping it in a folder called "Useful scripts" in my home directory 
+Keep this file somewhere central to you. For the sake of this example I will be keeping it in a folder called "Useful scripts" in my home directory
 because that is a central point for me where I know I can easily find the file and it won't be moved e.g.
 :code:`/home/sam/Useful_scripts/slurm_nextflow.config`
 
-Save your new file with Ctrl+O and then exit nano with Ctrl+O. 
+Save your new file with Ctrl+O and then exit nano with Ctrl+O.
 
-Installation and set up is now complete. 🎉 🥳 
+Installation and set up is now complete. 🎉 🥳
 
 Running Autometa
 ****************
@@ -253,19 +253,19 @@ Running Autometa
 For a comprehensive list of features and options and how to use them please see :ref:`Running the pipeline`
 
 Autometa can bin one or several metagenomic datasets in one run. Regardless of the number of metagenomes you
-want to process, you will need to provide a sample sheet which specifies the name of your sample, the full path to 
+want to process, you will need to provide a sample sheet which specifies the name of your sample, the full path to
 where that data is found and how to retrieve the sample's contig coverage information.
 
-If the metagenome was assembled via SPAdes, Autometa can extract coverage and contig length information from the sequence headers. 
+If the metagenome was assembled via SPAdes, Autometa can extract coverage and contig length information from the sequence headers.
 
-If you used a different assembler you will need to provide either raw reads or a table containing contig/scaffold coverage information. 
-Full details for data preparation may be found under :ref:`sample-sheet-preparation` 
+If you used a different assembler you will need to provide either raw reads or a table containing contig/scaffold coverage information.
+Full details for data preparation may be found under :ref:`sample-sheet-preparation`
 
-First ensure that your Autometa conda environment is activated. You can activate your environment by running:
+First ensure that your Autometa mamba environment is activated. You can activate your environment by running:
 
 .. code-block:: bash
-    
-    conda activate autometa-nf
+
+    mamba activate autometa-nf
 
 Run the following code to launch Autometa:
 
@@ -275,7 +275,7 @@ Run the following code to launch Autometa:
 
 .. note::
 
-    You may want to note where you have saved your input sample sheet prior to running the launch command. 
+    You may want to note where you have saved your input sample sheet prior to running the launch command.
     It is much easier (and less error prone) to copy/paste the sample sheet file path when specifying the input (We'll get to this later in :ref:`quickstart-menu-4`).
 
 You will now use the arrow keys to move up and down between your options and hit your "Enter" or "Return" key to make your choice.
@@ -296,8 +296,8 @@ You will now use the arrow keys to move up and down between your options and hit
 Choose a version
 ----------------
 
-The double, right-handed arrows should already indicate the latest release of Autometa (in our case ``2.0.0``). 
-The latest version of the tool will always be at the top of the list with older versions descending below. 
+The double, right-handed arrows should already indicate the latest release of Autometa (in our case ``2.0.0``).
+The latest version of the tool will always be at the top of the list with older versions descending below.
 To select the latest version, ensure that the double, right-handed arrows are next to ``2.0.0``, then hit "Enter".
 
 .. image:: ../img/Menu1.png
@@ -311,7 +311,7 @@ Pick the ``Command line`` option.
 
 .. note::
 
-    Unless you've done some fancy server networking (i.e. tunneling and port-forwarding), 
+    Unless you've done some fancy server networking (i.e. tunneling and port-forwarding),
     or are using Autometa locally, ``Command line`` is your *only* option.
 
 .. image:: ../img/Menu2.png
@@ -321,7 +321,7 @@ Pick the ``Command line`` option.
 General nextflow parameters
 ---------------------------
 
-If you are using a scheduler (Slurm in this example), ``-profile`` is the only option you'll need to change. 
+If you are using a scheduler (Slurm in this example), ``-profile`` is the only option you'll need to change.
 If you are not using a scheduler, you may skip this step.
 
 .. image:: ../img/Menu3.png
@@ -331,12 +331,12 @@ If you are not using a scheduler, you may skip this step.
 Input and Output
 ----------------
 
-Now we need to give Autometa the full paths to our input sample sheet, output results folder 
-and output logs folder (aka where trace files are stored). 
+Now we need to give Autometa the full paths to our input sample sheet, output results folder
+and output logs folder (aka where trace files are stored).
 
 .. note::
 
-    A new folder, named by its respective sample value, will be created within the output results folder for 
+    A new folder, named by its respective sample value, will be created within the output results folder for
     each metagenome listed in the sample sheet.
 
 .. image:: ../img/Menu4.png
@@ -346,14 +346,14 @@ and output logs folder (aka where trace files are stored).
 Binning parameters
 ------------------
 
-If you're not sure what you're doing I would recommend only changing ``length_cutoff``. 
-The default cutoff is 3000bp, which means that any contigs/scaffolds smaller than 3000bp will not be considered for binning. 
+If you're not sure what you're doing I would recommend only changing ``length_cutoff``.
+The default cutoff is 3000bp, which means that any contigs/scaffolds smaller than 3000bp will not be considered for binning.
 
 .. note::
 
-    This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200bp, I would choose a cutoff of 1000. 
+    This cutoff will depend on how good your assembly is: e.g. if your N50 is 1200bp, I would choose a cutoff of 1000.
     If your N50 is more along the lines of 5000, I would leave the cutoff at the default 3000. I would strongly recommend
-    against choosing a number below 900 here. In the example below, I have chosen a cutoff of 1000bp as my assembly was 
+    against choosing a number below 900 here. In the example below, I have chosen a cutoff of 1000bp as my assembly was
     not particularly great (the N50 is 1100bp).
 
 .. image:: ../img/Menu5.png
@@ -363,17 +363,17 @@ The default cutoff is 3000bp, which means that any contigs/scaffolds smaller tha
 Additional Autometa options
 ---------------------------
 
-Here you have a choice to make: 
+Here you have a choice to make:
 
-* By enabling taxonomy aware mode, Autometa will attempt to use taxonomic data to make your bins more accurate. 
+* By enabling taxonomy aware mode, Autometa will attempt to use taxonomic data to make your bins more accurate.
 
-However, this is a more computationally expensive step and will make the process take longer. 
+However, this is a more computationally expensive step and will make the process take longer.
 
 * By leaving this option as the default ``False`` option, Autometa will bin according to coverage and kmer patterns.
 
 Despite your choice, you will need to provide a path to the necessary databases using the ``single_db_dir`` option.
-In the example below, I have enabled the taxonomy aware mode and provided the path to where the databases are stored 
-(in my case this is :code:`/home/sam/Databases`). 
+In the example below, I have enabled the taxonomy aware mode and provided the path to where the databases are stored
+(in my case this is :code:`/home/sam/Databases`).
 
 For additional details on required databases, see the :ref:`Databases` section.
 
@@ -384,13 +384,13 @@ For additional details on required databases, see the :ref:`Databases` section.
 Computational parameters
 ------------------------
 
-This will depend on the computational resources you have available. You could start with the default values and see 
-how the binning goes. If you have particularly complex datasets you may want to bump this up a bit. For your 
-average metagenome, you won't need more than 150Gb of memory. I've opted to use 75 Gb as a 
-starting point for a few biocrust (somewhat diverse) metagenomes. 
+This will depend on the computational resources you have available. You could start with the default values and see
+how the binning goes. If you have particularly complex datasets you may want to bump this up a bit. For your
+average metagenome, you won't need more than 150Gb of memory. I've opted to use 75 Gb as a
+starting point for a few biocrust (somewhat diverse) metagenomes.
 
 .. note::
-    
+
     These options correspond to the resources provided to *each* process of Autometa, *not* the entire workflow itself.
 
     Also, for TB worth of assembled data you may want to try the :ref:`autometa-bash-workflow` using the
@@ -409,7 +409,7 @@ to prevent immediately performing the nextflow run command.
 
 .. image:: ../img/launch_choice.png
 
-If you recall, we created a file called :code:`slurm_nextflow.config` that contains the information Autometa will need to communicate with the Slurm scheduler. 
+If you recall, we created a file called :code:`slurm_nextflow.config` that contains the information Autometa will need to communicate with the Slurm scheduler.
 We need to include that file using the :code:`-c` flag (or configuration flag). Therefore to launch the Autometa workflow, run the following command:
 
 .. note::
@@ -433,41 +433,40 @@ Basic
 While the Autometa Nextflow pipeline can be run using Nextflow directly, we designed
 it using nf-core standards and templating to provide an easier user experience through
 use of the nf-core "tools" python library. The directions below demonstrate using a minimal
-Conda environment to install Nextflow and nf-core tools and then running the Autometa pipeline.
+mamba environment to install Nextflow and nf-core tools and then running the Autometa pipeline.
 
-.. _install-nextflow-nfcore-with-conda:
+.. _install-nextflow-nfcore-with-mamba:
 
-Installing Nextflow and nf-core tools with Conda
+Installing Nextflow and nf-core tools with mamba
 ************************************************
 
-If you have not previously installed/used Conda, you can get it using the
-Miniconda installer appropriate to your system, here: `<https://docs.conda.io/en/latest/miniconda.html>`_
+If you have not previously installed/used mamba_, you can get it from Mambaforge_.
 
-After installing conda, running the following command will create a minimal
-Conda environment named "autometa-nf", and install Nextflow and nf-core tools.
+After installing mamba, running the following command will create a minimal
+mamba environment named "autometa-nf", and install Nextflow and nf-core tools.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 
 If you receive the message...
 
 .. code-block:: bash
 
-    CondaValueError: prefix already exists:
+    CondaValueError: prefix already exists: /home/user/mambaforge/envs/autometa-nf
 
 ...it means you have already created the environment. If you want to overwrite/update
 the environment then add the :code:`--force` flag to the end of the command.
 
 .. code-block:: bash
 
-    conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml --force
+    mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml --force
 
-Once Conda has finished creating the environment be sure to activate it:
+Once mamba has finished creating the environment be sure to activate it:
 
 .. code-block:: bash
 
-    conda activate autometa-nf
+    mamba activate autometa-nf
 
 
 Using nf-core
@@ -484,7 +483,7 @@ start the pipeline launch process.
     nf-core launch KwanLab/Autometa
 
 .. caution::
-    
+
     nf-core will give a list of revisions to use following the above command.
     Any of the version 1.* revisions are NOT supported.
 
@@ -543,7 +542,7 @@ The other parameter is a nextflow argument, specified with :code:`-profile`. Thi
     are able to successfully configure these profiles, please get in touch or submit a pull request and we will add these configurations
     to the repository.
 
-    - :code:`conda`: Enables running all processes using `conda <https://www.nextflow.io/docs/latest/conda.html>`_
+    - :code:`mamba`: Enables running all processes using `mamba <https://mamba.readthedocs.io/en/latest/>`_
     - :code:`singularity`: Enables running all processes using `singularity <https://www.nextflow.io/docs/latest/singularity.html>`_
     - :code:`podman`: Enables running all processes using `podman <https://www.nextflow.io/docs/latest/podman.html>`_
     - :code:`shifter`: Enables running all processes using `shifter <https://www.nextflow.io/docs/latest/shifter.html>`_
@@ -581,7 +580,7 @@ using the :code:`nextflow run ...` command by prepending the parameter name with
 
     You can run the ``KwanLab/Autometa`` project without using nf-core if you already have a correctly
     formatted parameters file. (like the one generated from ``nf-core launch ...``, i.e. ``nf-params.json``)
-    
+
     .. code-block:: bash
 
         nextflow run KwanLab/Autometa -params-file nf-params.json -profile slurm -resume
@@ -795,7 +794,7 @@ Visualizing the Workflow
 ------------------------
 
 You can visualize the entire workflow ie. create the directed acyclic graph (DAG) of processes from the written DOT file. First install
-`Graphviz <https://graphviz.org/>`_ (``conda install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
+`Graphviz <https://graphviz.org/>`_ (``mamba install -c anaconda graphviz``) then do ``dot -Tpng < pipeline_info/autometa-dot > autometa-dag.png`` to get the
 in the ``png`` format.
 
 Configuring your process executor
@@ -868,3 +867,5 @@ To use this tagged version (or any other Autometa image tag) add the argument ``
 .. _Trimmomatic: http://www.usadellab.org/cms/?page=trimmomatic
 .. _FastQC: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 .. _metaQuast: http://quast.sourceforge.net/metaquast
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _mamba: https://mamba.readthedocs.io/en/latest/
