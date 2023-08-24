@@ -272,6 +272,12 @@ def write_ranks(
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     assembly_records = [record for record in SeqIO.parse(assembly, "fasta")]
+    # Include unaligned records in unclassified fasta
+    unaligned_contigs = set(
+        record.id
+        for record in SeqIO.parse(assembly, "fasta")
+        if record.id not in taxonomy.index
+    )
     fpaths = []
     for rank_name, dff in taxonomy.groupby(rank):
         # First determine the file path respective to the rank name
@@ -282,7 +288,12 @@ def write_ranks(
             rank_name_fname = ".".join([rank_name.lower(), "fna"])
         rank_name_fpath = os.path.join(outdir, rank_name_fname)
         # Now retrieve and write records respective to rank
-        records = [record for record in assembly_records if record.id in dff.index]
+        # include unaligned contigs if rank is unclassified
+        if rank_name == TaxonomyDatabase.UNCLASSIFIED:
+            contig_set = set(dff.index).union(unaligned_contigs)
+        else:
+            contig_set = dff.index
+        records = [record for record in assembly_records if record.id in contig_set]
         if not records:
             logger.warning(f"No records to write to {rank_name_fpath}")
         else:

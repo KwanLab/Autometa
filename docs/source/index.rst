@@ -17,7 +17,7 @@ Guide
    getting-started
    nextflow-workflow
    bash-workflow
-   step-by-step-tutorial
+   bash-step-by-step-tutorial
    databases
    examining-results
    benchmarking

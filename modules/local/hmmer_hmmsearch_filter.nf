@@ -24,7 +24,7 @@ process HMMER_HMMSEARCH_FILTER {
 
     conda (params.enable_conda ? "autometa" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE"
+        container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
         container "jasonkwan/autometa:${params.autometa_image_tag}"
     }

@@ -16,7 +16,7 @@ I.e. ``python -m autometa.common.kmers -h``
     Autometa has many *entrypoints* available that are utilized by the :ref:`autometa-nextflow-workflow` and :ref:`autometa-bash-workflow`. If you have installed autometa,
     all of these entrypoints will be available to you.
 
-    If you would like to get a better understanding of each entrypoint, we recommend reading the :ref:`step-by-step-tutorial` section.
+    If you would like to get a better understanding of each entrypoint, we recommend reading the :ref:`bash-step-by-step-tutorial` section.
 
 Using Autometa's Python API
 ###########################

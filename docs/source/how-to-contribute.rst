@@ -16,10 +16,10 @@ Autometa builds documentation using `readthedocs <https://readthedocs.org/>`__. 
 
 .. code-block:: bash
 
-    # Activate your autometa conda environment
-    conda activate autometa
+    # Activate your autometa mamba environment
+    mamba activate autometa
     # Install dependencies
-    conda install -n autometa -c conda-forge \
+    mamba install -n autometa -c conda-forge \
         sphinx sphinx_rtd_theme
     # List all make options
     make
@@ -38,8 +38,8 @@ You will have to install certain dependencies as well as test data to be able to
 
 .. code-block:: bash
 
-    # Activate your autometa conda environment
-    conda activate autometa
+    # Activate your autometa mamba environment
+    mamba activate autometa
     # List all make options
     make
     # Install dependencies for test environment
