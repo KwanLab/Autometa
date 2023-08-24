@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge:latest 
+FROM continuumio/miniconda3
 LABEL maintainer="jason.kwan@wisc.edu"
 
 # Copyright 2022 Ian J. Miller, Evan R. Rees, Kyle Wolf, Siddharth Uppal,
@@ -25,12 +25,11 @@ RUN apt-get update --allow-releaseinfo-change \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY autometa-env.yml ./
-RUN mamba env update -n base --file=autometa-env.yml \
-    && mamba clean --all -y
+RUN conda env update -n base --file=autometa-env.yml \
+    && conda clean --all -y
 
 
-COPY . /Autometa
-WORKDIR /Autometa
+COPY . .
 RUN make install && make clean
 
 # NOTE: DB_DIR must be an absolute path (not a relative path)

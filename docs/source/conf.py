@@ -17,22 +17,7 @@ sys.path.append(os.path.abspath("./_ext"))
 for dirpath, dirnames, filenames in os.walk("../../", topdown=True):
     sys.path.insert(0, os.path.abspath(dirpath))
 
-autodoc_mock_imports = [
-    "Bio",
-    "hdbscan",
-    "tsne",
-    "sklearn",
-    "umap",
-    "tqdm",
-    "pandas",
-    "numpy",
-    "scipy",
-    "numba",
-    "skbio",
-    "trimap",
-    "attrs",
-    "gdown",
-]
+autodoc_mock_imports = ["Bio", "hdbscan", "tsne", "sklearn", "umap", "tqdm"]
 
 # fmt: off
 import parse_argparse
