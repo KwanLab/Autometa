@@ -1,10 +1,13 @@
-.. _step-by-step-tutorial:
+.. _bash-step-by-step-tutorial:
 
-===========================
-📓 Step by Step Tutorial 📓
-===========================
+================================
+📓 Bash Step by Step Tutorial 📓
+================================
 
-Here is the step by step tutorial of the entire pipeline. This is helpful in case you have your own files or just want to run a specific step.
+Here is the step by step tutorial of on running the entire pipeline manually through Bash.
+This is helpful in case you have your own files or just want to run a specific step.
+
+If you would like to set up a run of the whole pipeline through Bash, see the :ref:`Bash Workflow<🐚 Bash Workflow 🐚>` section.
 
 Before running anything make sure you have activated the conda environment using
 ``mamba activate autometa``.
