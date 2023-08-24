@@ -244,7 +244,7 @@ then
             cut -f1 -d" " | \
             sed 's/$/_/' > $orf_prefixes
         # Retrieve ORF IDs from contig IDs
-        grep -f $orf_prefixes $orfs | cut -f1 -d" " | sed 's/^>//'  > $orf_ids  
+        grep -f $orf_prefixes $orfs | cut -f1 -d" " | sed 's/^>//' > $orf_ids
         # Retrieve ORF seqs from ORF IDs
         seqkit grep \
             --pattern-file $orf_ids \
