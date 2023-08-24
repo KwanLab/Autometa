@@ -83,8 +83,8 @@ def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
                 for line in f_in:
                     line = line.decode("utf-8")
                     if line.startswith(">"):
-                        seqheader = line.lstrip(">")
-                        outline = f"\n>{acc} {seqheader}"
+                        seqheader = line.lstrip(">").strip()
+                        outline = f">{acc} {seqheader}\n"
                     else:
                         outline = line
                     f_out.write(outline)
