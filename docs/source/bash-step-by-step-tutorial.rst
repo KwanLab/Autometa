@@ -1,4 +1,4 @@
-.. _step-by-step-tutorial:
+.. _bash-step-by-step-tutorial:
 
 ================================
 📓 Bash Step by Step Tutorial 📓
