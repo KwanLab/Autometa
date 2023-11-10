@@ -45,7 +45,7 @@ Direct installation (Quickest)
 
         .. code-block:: bash
 
-            conda -n base -c conda-forge mamba -y
+            conda install -n base -c conda-forge mamba -y
 
 
 #. Create a new environment with ``autometa`` installed:
