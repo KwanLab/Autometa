@@ -13,7 +13,7 @@ dependencies:
   - hmmer
   - numba>=0.47
   - numpy>=1.13
-  - pandas>=1.1
+  - pandas>1.1,<1.5
   - parallel
   - pip
   - prodigal # NOTE: 2.5 and 2.6 output format is different for sequence headers
