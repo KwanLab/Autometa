@@ -1,13 +1,16 @@
-.. _step-by-step-tutorial:
+.. _bash-step-by-step-tutorial:
 
-===========================
-📓 Step by Step Tutorial 📓
-===========================
+================================
+📓 Bash Step by Step Tutorial 📓
+================================
 
-Here is the step by step tutorial of the entire pipeline. This is helpful in case you have your own files or just want to run a specific step.
+Here is the step by step tutorial of on running the entire pipeline manually through Bash.
+This is helpful in case you have your own files or just want to run a specific step.
+
+If you would like to set up a run of the whole pipeline through Bash, see the :ref:`Bash Workflow<🐚 Bash Workflow 🐚>` section.
 
 Before running anything make sure you have activated the conda environment using
-``conda activate autometa``.
+``mamba activate autometa``.
 
 See the :ref:`Autometa Package Installation` page for details on setting up your conda environment.
 
@@ -637,51 +640,53 @@ Use the following command to perform binning:
         --coverages $HOME/tutorial/78mbp_metagenome.coverages.tsv \
         --gc-content $HOME/tutorial/78mbp_metagenome.gc_content.tsv \
         --markers $HOME/tutorial/78mbp_metagenome.markers.tsv \
+        --output-binning $HOME/tutorial/78mbp_metagenome.binning.tsv \
+        --output-main $HOME/tutorial/78mbp_metagenome.main.tsv \
         --clustering-method dbscan \
         --completeness 20 \
         --purity 90 \
         --cov-stddev-limit 25 \
         --gc-stddev-limit 5 \
         --taxonomy $HOME/tutorial/78mbp_metagenome.taxonomy.tsv \
-        --output-binning $HOME/tutorial/78mbp_metagenome.binning.tsv \
-        --output-main $HOME/tutorial/78mbp_metagenome.main.tsv \
         --starting-rank superkingdom \
-        --rank-filter superkingdom
+        --rank-filter superkingdom \
         --rank-name-filter bacteria
 
 Let us dissect the above command:
 
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| Flag                    | Function                                                                                | Requirement |
-+=========================+=========================================================================================+=============+
-| ``--kmers``             | Path to embedded k-mer frequencies table                                                | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--coverages``         | Path to metagenome coverages table                                                      | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--gc-content``        | Path to metagenome GC contents table                                                    | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--markers``           | Path to Autometa annotated markers table                                                | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--output-binning``    | Path to write Autometa binning results                                                  | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--output-main``       | Path to write Autometa main table                                                       | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--clustering-method`` | Clustering algorithm to use for recursive binning. Choices dbscan (default) and hdbscan | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--completeness``      | completeness cutoff to retain cluster (default 20)                                      | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--purity``            | purity cutoff to retain cluster (default 95)                                            | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--cov-stddev-limit``  | coverage standard deviation limit to retain cluster (default 25)                        | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--gc-stddev-limit``   | GC content standard deviation limit to retain cluster (default 5)                       | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--taxonomy``          | Path to Autometa assigned taxonomies table                                              | Required    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--starting-rank``     | Canonical rank at which to begin subsetting taxonomy (default: superkingdom)            | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
-| ``--domain``            | Kingdom to consider. Choices bacteria (default) and archaea                             | Optional    |
-+-------------------------+-----------------------------------------------------------------------------------------+-------------+
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| Flag                    | Function                                                                                                           | Requirement |
++=========================+====================================================================================================================+=============+
+| ``--kmers``             | Path to embedded k-mer frequencies table                                                                           | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--coverages``         | Path to metagenome coverages table                                                                                 | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--gc-content``        | Path to metagenome GC contents table                                                                               | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--markers``           | Path to Autometa annotated markers table                                                                           | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--output-binning``    | Path to write Autometa binning results                                                                             | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--output-main``       | Path to write Autometa main table                                                                                  | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--clustering-method`` | Clustering algorithm to use for recursive binning. Choices dbscan (default) and hdbscan                            | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--completeness``      | completeness cutoff to retain cluster (default 20)                                                                 | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--purity``            | purity cutoff to retain cluster (default 95)                                                                       | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--cov-stddev-limit``  | coverage standard deviation limit to retain cluster (default 25)                                                   | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--gc-stddev-limit``   | GC content standard deviation limit to retain cluster (default 5)                                                  | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--taxonomy``          | Path to Autometa assigned taxonomies table                                                                         | Required    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--starting-rank``     | Canonical rank at which to begin subsetting taxonomy (default: superkingdom)                                       | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--rank-filter``       | Canonical rank to subset by the value provided by ``--rank-name-filter`` default: superkingdom                     | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
+| ``--rank-name-filter``  | Only retrieve contigs with this value in the canonical rank column provided in ``rank-filter`` (default: bacteria) | Optional    |
++-------------------------+--------------------------------------------------------------------------------------------------------------------+-------------+
 
 You can view the complete command-line options using ``autometa-binning -h``
 

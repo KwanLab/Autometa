@@ -28,13 +28,13 @@ Quickstart
 ##### Install into your current env...
 
 ```bash
-conda install -c bioconda autometa
+mamba install -c conda-forge -c bioconda autometa
 ```
 
 ##### ... or create a new env
 
 ```bash
-conda create -n autometa -c bioconda autometa
+mamba create -n autometa -c conda-forge -c bioconda autometa
 ```
 
 #### 2. Download the bash workflow template, [autometa.sh](https://raw.githubusercontent.com/KwanLab/Autometa/main/workflows/autometa.sh "autometa.sh template")
@@ -54,15 +54,15 @@ conda create -n autometa -c bioconda autometa
 ##### Install into your current env...
 
 ```bash
-conda env update -n <your-env> --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+mamba env update -n <your-env> --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 ```
 
 ##### ... or create a new env
 
 ```bash
-conda env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
+mamba env create --file=https://raw.githubusercontent.com/KwanLab/Autometa/main/nextflow-env.yml
 # Activate the env after creation
-conda activate autometa-nf
+mamba activate autometa-nf
 ```
 
 #### 2. Launch and run the workflow

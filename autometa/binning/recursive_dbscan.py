@@ -16,8 +16,7 @@ from typing import List, Tuple
 import pandas as pd
 import numpy as np
 
-from sklearn.cluster import DBSCAN
-from hdbscan import HDBSCAN
+from sklearn.cluster import DBSCAN, HDBSCAN
 from numba import config
 
 
@@ -235,8 +234,7 @@ def run_hdbscan(
     df: pd.DataFrame,
     min_cluster_size: int,
     min_samples: int,
-    cache_dir: str = None,
-    core_dist_n_jobs: int = -1,
+    n_jobs: int = -1,
 ) -> pd.DataFrame:
     """Run clustering on `df` at provided `min_cluster_size`.
 
@@ -261,14 +259,9 @@ def run_hdbscan(
         The number of samples in a neighborhood for a point to be
         considered a core point.
 
-    cache_dir : str, optional
-        Used to cache the output of the computation of the tree.
-        By default, no caching is done. If a string is given, it is the
-        path to the caching directory.
-
-    core_dist_n_jobs: int
+    n_jobs: int
         Number of parallel jobs to run in core distance computations.
-        For ``core_dist_n_jobs`` below -1, (n_cpus + 1 + core_dist_n_jobs) are used.
+        For ``n_jobs`` below -1, (n_cpus + 1 + n_jobs) are used.
 
     Returns
     -------
@@ -304,8 +297,7 @@ def run_hdbscan(
         min_samples=min_samples,
         cluster_selection_method="leaf",
         allow_single_cluster=True,
-        memory=cache_dir,
-        core_dist_n_jobs=core_dist_n_jobs,
+        n_jobs=n_jobs,
     ).fit_predict(features_df.to_numpy())
     clusters = pd.Series(clusters, index=df.index, name="cluster")
     # NOTE: HDBSCAN labels outliers with -1
@@ -325,7 +317,7 @@ def recursive_hdbscan(
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Recursively run HDBSCAN starting with defaults and iterating the min_samples
-     and min_cluster_size until only 1 cluster is recovered.
+    and min_cluster_size until only 1 cluster is recovered.
 
     Parameters
     ----------
@@ -372,14 +364,12 @@ def recursive_hdbscan(
     n_clusters = float("inf")
     best_median = float("-inf")
     best_df = pd.DataFrame()
-    cache_dir = tempfile.mkdtemp()
     while n_clusters > 1:
         binned_df = run_hdbscan(
             table,
             min_cluster_size=min_cluster_size,
             min_samples=min_samples,
-            cache_dir=cache_dir,
-            core_dist_n_jobs=n_jobs,
+            n_jobs=n_jobs,
         )
         df, metrics_df = add_metrics(df=binned_df, markers_df=markers_df)
         filtered_df = apply_binning_metrics_filter(
@@ -403,8 +393,6 @@ def recursive_hdbscan(
             )
 
         if min_cluster_size >= max_min_cluster_size:
-            shutil.rmtree(cache_dir)
-            cache_dir = tempfile.mkdtemp()
             min_samples += 1
             min_cluster_size = 2
         else:
@@ -416,8 +404,6 @@ def recursive_hdbscan(
         if min_samples >= max_min_samples:
             max_min_cluster_size *= 2
 
-    # clean up cache now that we are out of while loop
-    shutil.rmtree(cache_dir)
     # Check our df is not empty from while loop
     if best_df.empty:
         if verbose:
