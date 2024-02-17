@@ -6,7 +6,7 @@ channels:
 dependencies:
   - attrs # test-data requirement
   - bedtools
-  - biopython>1.82
+  - biopython>=1.82
   - bowtie2
   - diamond>=2.0
   - gdown
