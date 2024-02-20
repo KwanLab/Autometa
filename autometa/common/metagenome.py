@@ -139,7 +139,7 @@ class Metagenome:
         for seq in self.sequences:
             weight = len(seq) / self.size
             add_weight(weight)
-            gc_content = SeqUtils.GC(seq)
+            gc_content = SeqUtils.gc_fraction(seq) * 100
             add_gc_contents(gc_content)
         return np.average(a=gc_contents, weights=weights)
 
@@ -312,7 +312,7 @@ class Metagenome:
             [
                 {
                     "contig": record.id,
-                    "gc_content": SeqUtils.GC(record.seq),
+                    "gc_content": SeqUtils.gc_fraction(seq) * 100,
                     "length": len(record.seq),
                 }
                 for record in self.seqrecords

@@ -69,7 +69,7 @@ def test_length_weighted_gc(metagenome):
     if metagenome.nseqs == 3:
         expected = 65.3167472932504
     elif metagenome.nseqs == 4:
-        expected = 63.195548489666145
+        expected = 63.19554848966614
     else:
         expected = None
     assert isinstance(metagenome.length_weighted_gc, float)
