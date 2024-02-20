@@ -200,9 +200,10 @@ class Databases:
             raise ValueError(
                 f"'section' must be 'ncbi' or 'markers'. Provided: {section}"
             )
-        if not ncbi_is_connected():
-            raise ConnectionError("Cannot connect to the NCBI rsync server")
+        print(f"The section is : {section}")
         if section == "ncbi":
+            if not ncbi_is_connected():
+                raise ConnectionError("Cannot connect to the NCBI rsync server")
             host = self.config.get(section, "host")
             ftp_fullpath = self.config.get("checksums", option)
             chksum_fpath = ftp_fullpath.split(host)[-1]
@@ -604,7 +605,11 @@ class Databases:
                     # Skip user added options not required by Autometa
                     continue
                 # nodes.dmp, names.dmp and merged.dmp are all in taxdump.tar.gz
-                option = "taxdump" if option in {"nodes", "names", "merged", "delnodes"} else option
+                option = (
+                    "taxdump"
+                    if option in {"nodes", "names", "merged", "delnodes"}
+                    else option
+                )
                 fpath = self.config.get(section, option)
                 fpath_md5 = f"{fpath}.md5"
                 # We can not checksum a file that does not exist.
