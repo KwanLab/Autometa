@@ -187,6 +187,8 @@ def recursive_dbscan(
             gc_content_stddev_cutoff=gc_content_stddev_cutoff,
         )
         median_completeness = filtered_df.completeness.median()
+        if pd.isna(median_completeness):
+            median_completeness = 0
         if median_completeness >= best_median:
             best_median = median_completeness
             best_df = df

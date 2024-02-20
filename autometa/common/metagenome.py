@@ -312,7 +312,7 @@ class Metagenome:
             [
                 {
                     "contig": record.id,
-                    "gc_content": SeqUtils.gc_fraction(seq) * 100,
+                    "gc_content": SeqUtils.gc_fraction(record.seq) * 100,
                     "length": len(record.seq),
                 }
                 for record in self.seqrecords
