@@ -74,7 +74,7 @@ def test_length_weighted_gc(metagenome):
         expected = None
     assert isinstance(metagenome.length_weighted_gc, float)
     if expected:
-        assert metagenome.length_weighted_gc == expected
+        assert metagenome.length_weighted_gc == pytest.approx(expected, 1e-12)
 
 
 def test_largest_seq(metagenome):
