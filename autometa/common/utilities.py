@@ -19,12 +19,17 @@ import time
 import subprocess
 from types import FunctionType
 from typing import Any
+from Bio.SeqUtils import gc_fraction
 
 import numpy as np
 
 from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+
+def GC(sequence):
+    return 100 * gc_fraction(sequence, ambiguous="ignore")
 
 
 def is_gz_file(filepath) -> bool:

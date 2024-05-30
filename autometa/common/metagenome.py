@@ -22,6 +22,7 @@ from Bio import SeqUtils
 from functools import lru_cache
 
 from autometa.common.utilities import timeit
+from autometa.common.utilities import GC
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ class Metagenome:
         for seq in self.sequences:
             weight = len(seq) / self.size
             add_weight(weight)
-            gc_content = SeqUtils.GC(seq)
+            gc_content = GC(seq)
             add_gc_contents(gc_content)
         return np.average(a=gc_contents, weights=weights)
 
@@ -312,7 +313,7 @@ class Metagenome:
             [
                 {
                     "contig": record.id,
-                    "gc_content": SeqUtils.GC(record.seq),
+                    "gc_content": GC(record.seq),
                     "length": len(record.seq),
                 }
                 for record in self.seqrecords
