@@ -256,7 +256,7 @@ def get_metabin_taxonomies(
     outcols = [cluster_col, "length", "taxid", *canonical_ranks]
     tmp_lines = (
         bin_df[outcols]
-        .to_csv(sep="\t", index=False, header=False, line_terminator="\n")
+        .to_csv(sep="\t", index=False, header=False, lineterminator="\n")
         .split("\n")
     )
     taxonomies = {}
