@@ -31,6 +31,8 @@ import logging
 
 import pandas as pd
 
+import numpy as np
+
 from typing import Iterable, Tuple
 
 from autometa.taxonomy.database import TaxonomyDatabase
@@ -183,7 +185,9 @@ def add_metrics(
         # redundant_marker_count = cluster_marker_counts.gt(1).sum(axis=1)
         # calculate completeness and purity and std. dev. metrics
         completeness = present_marker_count / reference_markers_count * 100
+        completeness = completeness.where(~np.isnan(completeness),pd.NA)
         purity = single_copy_marker_count / present_marker_count * 100
+        purity = purity.where(~np.isnan(purity), pd.NA)
         coverage_stddev = main_grouped_by_cluster.coverage.std()
         gc_content_stddev = main_grouped_by_cluster.gc_content.std()
         # merge metrics with given dataframe
