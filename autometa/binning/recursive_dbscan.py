@@ -383,7 +383,11 @@ def recursive_hdbscan(
             coverage_stddev_cutoff=coverage_stddev_cutoff,
             gc_content_stddev_cutoff=gc_content_stddev_cutoff,
         )
-        median_completeness = filtered_df.completeness.median()
+        if filtered_df.empty:
+            median_completeness = float("-inf")
+        else:
+            median_completeness = filtered_df.completeness.median()
+            
         if median_completeness >= best_median:
             best_median = median_completeness
             best_df = df
