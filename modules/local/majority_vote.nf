@@ -1,16 +1,9 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 
 process MAJORITY_VOTE {
     tag "Performing taxon majority vote on ${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -19,21 +12,27 @@ process MAJORITY_VOTE {
 
     input:
         tuple val(meta), path(lca)
-        path(ncbi_tax_dir)
+        path taxdump_files // instead of passing to --dbdir, stage and pass '.'
 
     output:
-        tuple val(meta), path("votes.tsv"), emit: votes
-        path  '*.version.txt'             , emit: version
+        tuple val(meta), path("*votes.tsv"), emit: votes
+        path  'versions.yml'             , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-taxonomy-majority-vote \\
             --lca ${lca} \\
-            --output votes.tsv \\
-            --dbdir "${ncbi_tax_dir}" \\
+            --output ${prefix}.votes.tsv \\
+            --dbdir . \\
             --dbtype ncbi
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

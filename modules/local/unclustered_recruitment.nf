@@ -1,16 +1,8 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process RECRUIT {
     tag "sample:${meta.id}, classifier:${params.classification_method}, kmer dims:${params.classification_kmer_pca_dimensions}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -27,10 +19,13 @@ process RECRUIT {
         tuple val(meta), path("${params.kingdom}.recruitment.tsv.gz")         , emit: binning, optional: true
         tuple val(meta), path("${params.kingdom}.recruitment.main.tsv.gz")    , emit: main, optional: true
         tuple val(meta), path("${params.kingdom}.recruitment.features.tsv.gz"), emit: features, optional: true
-        path  '*.version.txt'                                                 , emit: version
+        path  'versions.yml'                                                 , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
+        def prefix = task.ext.prefix ?: "${meta.id}"
         if (!params.taxonomy_aware)
         """
         autometa-unclustered-recruitment \\
@@ -41,27 +36,33 @@ process RECRUIT {
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
-            --output-features ${params.kingdom}.recruitment.features.tsv.gz
+            --output-binning ${prefix}.${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${prefix}.${params.kingdom}.recruitment.features.tsv.gz
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
         else
         """
         autometa-unclustered-recruitment \\
-            --classifier ${params.classification_method} \\
-            --kmer-dimensions ${params.classification_kmer_pca_dimensions} \\
+            --classifier ${prefix}.${params.classification_method} \\
+            --kmer-dimensions ${prefix}.${params.classification_kmer_pca_dimensions} \\
             --seed 42 \\
             --taxonomy $taxonomy \\
             --kmers $kmers \\
             --coverage $coverage \\
             --binning $binning \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.recruitment.tsv.gz \\
-            --output-main ${params.kingdom}.recruitment.main.tsv.gz \\
-            --output-features ${params.kingdom}.recruitment.features.tsv.gz
+            --output-binning ${prefix}.${params.kingdom}.recruitment.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.recruitment.main.tsv.gz \\
+            --output-features ${prefix}.${params.kingdom}.recruitment.features.tsv.gz
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

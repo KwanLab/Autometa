@@ -8,14 +8,18 @@ dependencies:
   - bedtools
   - biopython>=1.82
   - bowtie2
+  - curl
   - diamond>=2.0
   - gdown
   - hmmer
+  - joblib>=1.1.0 # See https://stackoverflow.com/a/73830525/12671809
   - numba>=0.47
   - numpy>=1.13
   - pandas>=1.5
   - parallel
   - pip
+  - procps-ng # required by nextflow
+
   - prodigal # NOTE: 2.5 and 2.6 output format is different for sequence headers
   - python-annoy>=1.11 # required for trimap installation.
   - requests

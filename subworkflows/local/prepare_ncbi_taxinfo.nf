@@ -1,11 +1,5 @@
 // this file probably needs to be reevaluated, but from a python-first
 // perspective since the python code assumes file/directory structure
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-params.taxdump_tar_gz_dir = [:]
-params.prot_accession2taxid_gz_dir = [:]
-options = initOptions(params.options)
 
 process TEST_DOWNLOAD {
     // For development work so you don't download the entire prot.accession2taxid.gz database
@@ -13,7 +7,7 @@ process TEST_DOWNLOAD {
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -22,6 +16,9 @@ process TEST_DOWNLOAD {
 
     output:
         path("prot.accession2taxid"), emit: singlefile
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """
@@ -36,7 +33,7 @@ process DOWNLOAD_ACESSION2TAXID {
     label 'process_low'
     storeDir "${params.prot_accession2taxid_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -46,7 +43,10 @@ process DOWNLOAD_ACESSION2TAXID {
     output:
         // hack nf-core options.args3 and use for output name
         path "prot.accession2taxid.gz" , emit: accession2taxid
-        path  "*.version.txt"   , emit: version
+        path "versions.yml"            , emit: versions
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         """
         rsync -a \\
@@ -59,17 +59,18 @@ process DOWNLOAD_ACESSION2TAXID {
 
         md5sum -c *.md5
 
-        rsync --version | head -n1 > rsync.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+        END_VERSIONS
         """
 }
-
 
 process DOWNLOAD_TAXDUMP {
     tag "Downloading taxdump.tar.gz"
     label 'process_low'
-    storeDir "${params.taxdump_tar_gz_dir}"
 
-    conda (params.enable_conda ? "conda-forge::rsync=3.2.3" : null)
+    conda "conda-forge::rsync=3.2.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -77,8 +78,11 @@ process DOWNLOAD_TAXDUMP {
     }
 
     output:
-        path "*" , emit: taxdump_files
-        path  "*.version.txt"   , emit: version
+        path "*.dmp"        , emit: taxdump_files
+        path "versions.yml" , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """
@@ -95,42 +99,55 @@ process DOWNLOAD_TAXDUMP {
         tar -xf taxdump.tar.gz
         rm taxdump.tar.gz
 
-        rsync --version | head -n1 > rsync.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            rsync: \$(rsync --version | head -n1 | sed 's/^rsync  version //' | sed 's/\s.*//')
+        END_VERSIONS
         """
 }
 
-
 workflow PREPARE_TAXONOMY_DATABASES {
     main:
+        ch_versions = Channel.empty()
+
         taxdump_dir = file(params.taxdump_tar_gz_dir)
         taxdump_dir_files = taxdump_dir.list()
         expected_files = ['citations.dmp', 'delnodes.dmp', 'division.dmp', 'gencode.dmp', 'merged.dmp', 'names.dmp', 'nodes.dmp']
 
-        if (taxdump_dir_files.containsAll(expected_files)){
-            taxdump_files = taxdump_dir_files
+        dmp_files = file("${params.taxdump_tar_gz_dir}/*.dmp")
+        taxonomy_files_exist = dmp_files.name.containsAll(expected_files)
+
+        if (taxonomy_files_exist){
+            taxdump_files = dmp_files
         } else {
             DOWNLOAD_TAXDUMP()
+            ch_versions = ch_versions.mix(DOWNLOAD_TAXDUMP.out.versions)
             DOWNLOAD_TAXDUMP.out.taxdump_files
                 .set{taxdump_files}
         }
 
-        accession2taxid_dir = file(params.prot_accession2taxid_gz_dir)
-        accession2taxid_dir_files = accession2taxid_dir_files.list()
-        expected_files = ['prot.accession2taxid']
+        expected_files2 = ['prot.accession2taxid']
 
-        if (accession2taxid_dir_files.containsAll(expected_files)){
+        taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
+
+        if (taxonomy_files_exist2){
             prot_accession2taxid_ch = accession2taxid_dir_files
         } else if (params.debug){
             TEST_DOWNLOAD().singlefile
                 .set{prot_accession2taxid_ch}
+
         } else {
-            DOWNLOAD_ACESSION2TAXID().accession2taxid
+            DOWNLOAD_ACESSION2TAXID()
+            DOWNLOAD_ACESSION2TAXID.out.accession2taxid
                 .set{prot_accession2taxid_ch}
+            ch_versions = ch_versions.mix(DOWNLOAD_ACESSION2TAXID.out.versions)
+
         }
 
     emit:
-        taxdump = taxdump_files
+        taxdump_files = taxdump_files
         prot_accession2taxid = prot_accession2taxid_ch
+        versions = ch_versions
 
 }
 

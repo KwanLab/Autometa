@@ -1,16 +1,8 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process BINNING_SUMMARY {
     tag "Gathering binning summary for ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -18,30 +10,35 @@ process BINNING_SUMMARY {
     }
 
     input:
-        tuple val(meta), path(binning_main), path(markers), path(metagenome)
-        val(binning_column)
-        path(ncbi)
+        tuple val(meta), path(binning_main), path(markers), path(metagenome), val(binning_column)
+        path("*")
 
     output:
-        tuple val(meta), path("metabin_stats.tsv")   , emit: stats
-        tuple val(meta), path("metabins")            , emit: metabins
-        tuple val(meta), path("metabin_taxonomy.tsv"), emit: taxonomies, optional: true
-        path  '*.version.txt'                        , emit: version
+        tuple val(meta), path("*metabin_stats.tsv")   , emit: stats
+        tuple val(meta), path("*metabins")            , emit: metabins
+        tuple val(meta), path("*metabin_taxonomy.tsv"), emit: taxonomies, optional: true
+        path 'versions.yml'                          , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-binning-summary \\
-            --dbdir $ncbi \\
+            --dbdir . \\
             --dbtype ncbi \\
             --binning-main $binning_main \\
             --markers $markers \\
             --metagenome $metagenome \\
             --binning-column $binning_column \\
-            --output-stats "metabin_stats.tsv" \\
-            --output-taxonomy "metabin_taxonomy.tsv" \\
-            --output-metabins "metabins"
+            --output-stats "${prefix}.metabin_stats.tsv" \\
+            --output-taxonomy "${prefix}.metabin_taxonomy.tsv" \\
+            --output-metabins "${prefix}.metabins"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

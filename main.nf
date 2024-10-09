@@ -19,7 +19,6 @@ nextflow.enable.dsl = 2
 ========================================================================================
 */
 
-WorkflowMain.initialise(workflow, params, log)
 
 
 ////////////////////////////////////////////////////
@@ -41,7 +40,7 @@ Results directory: ${params.outdir}
 ========================================================================================
 */
 
-include { AUTOMETA } from './workflows/autometa.nf' addParams(single_db_dir: params.single_db_dir)
+include { AUTOMETA } from './workflows/autometa.nf'
 
 /*
 ========================================================================================

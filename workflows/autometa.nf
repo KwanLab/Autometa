@@ -4,8 +4,6 @@
  * -------------------------------------------------
 */
 
-def modules = params.modules.clone()
-
 if (params.single_db_dir) {
     internal_nr_dmnd_dir = params.single_db_dir
     internal_prot_accession2taxid_gz_dir = params.single_db_dir
@@ -38,15 +36,12 @@ if (!params.taxonomy_aware) {
  *  Import local modules
  * -------------------------------------------------
 */
-
-include { GET_SOFTWARE_VERSIONS                   } from '../modules/local/get_software_versions'   addParams( options: [publish_files : ['csv':'']]     )
-include { SEQKIT_FILTER                           } from '../modules/local/seqkit_filter'           addParams( options: [publish_files : ['*':'']]       )
-include { SPADES_KMER_COVERAGE as COV_FROM_SPADES } from '../modules/local/spades_kmer_coverage'    addParams( options: modules['spades_kmer_coverage']  )
-include { MARKERS                                 } from '../modules/local/markers'                 addParams( options: modules['seqkit_split_options']  )
-include { BINNING                                 } from '../modules/local/binning'                 addParams( options: modules['binning_options']   )
-include { RECRUIT                                 } from '../modules/local/unclustered_recruitment' addParams( options: modules['unclustered_recruitment_options'])
-include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'         addParams( options: modules['binning_summary_options']   )
-include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'      addParams( options: modules['mock_data_report']      )
+include { CUSTOM_DUMPSOFTWAREVERSIONS             } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { MARKERS                                 } from '../modules/local/markers'
+include { BINNING                                 } from '../modules/local/binning'
+include { RECRUIT                                 } from '../modules/local/unclustered_recruitment'
+include { BINNING_SUMMARY                         } from '../modules/local/binning_summary'
+include { MOCK_DATA_REPORT                        } from '../modules/local/mock_data_reporter'
 
 /*
  * -------------------------------------------------
@@ -56,7 +51,7 @@ include { MOCK_DATA_REPORT                        } from '../modules/local/mock_
 // https://github.com/nf-core/modules/tree/master/modules
 // https://nf-co.re/tools/#modules
 // nf-core modules --help
-include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParams( options: modules['prodigal_options'] )
+include { PRODIGAL } from './../modules/nf-core/prodigal/main.nf'
 
 /*
  * -------------------------------------------------
@@ -64,78 +59,27 @@ include { PRODIGAL } from './../modules/nf-core/modules/prodigal/main'  addParam
  * -------------------------------------------------
 */
 
-include { CREATE_MOCK                 } from '../subworkflows/local/mock_data'        addParams( get_genomes_for_mock: modules['get_genomes_for_mock'])
-include { INPUT_CHECK                 } from '../subworkflows/local/input_check'      addParams( )
-include { CONTIG_COVERAGE as COVERAGE } from '../subworkflows/local/contig_coverage'  addParams( align_reads_options: modules['align_reads_options'], samtools_viewsort_options: modules['samtools_viewsort_options'], bedtools_genomecov_options: modules['bedtools_genomecov_options'])
-include { KMERS                       } from '../subworkflows/local/kmers'            addParams( count_kmers_options: modules['count_kmers_options'], normalize_kmers_options: modules['normalize_kmers_options'], embed_kmers_options: modules['embed_kmers_options'])
-include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment' addParams( options: modules['taxon_assignment'], majority_vote_options: modules['majority_vote_options'], split_kingdoms_options: modules['split_kingdoms_options'], nr_dmnd_dir: internal_nr_dmnd_dir, taxdump_tar_gz_dir: internal_taxdump_tar_gz_dir, prot_accession2taxid_gz_dir: internal_prot_accession2taxid_gz_dir, diamond_blastp_options: modules['diamond_blastp_options'], large_downloads_permission: params.large_downloads_permission )
+include { COVERAGE                       } from '../subworkflows/local/coverage'
+include { KMERS                       } from '../subworkflows/local/kmers'
+include { PROCESS_METAGENOME          } from '../subworkflows/local/process_metagenome'
+include { TAXON_ASSIGNMENT            } from '../subworkflows/local/taxon_assignment'
 
 workflow AUTOMETA {
-    // Software versions channel
-    Channel
-        .empty()
-        .set{ch_software_versions}
-    // Samplesheet channel
-    Channel
-        .fromPath(params.input)
-        .set{samplesheet_ch}
 
-    // Set the metagenome and coverage channels
-    if (params.mock_test){
-        CREATE_MOCK()
-        CREATE_MOCK.out.fasta
-            .set{metagenome_ch}
-        Channel
-            .empty()
-            .set{coverage_tab_ch}
-    } else {
-        INPUT_CHECK(samplesheet_ch)
-        INPUT_CHECK.out.metagenome
-            .set{metagenome_ch}
-        INPUT_CHECK.out.coverage
-            .set{coverage_tab_ch}
-    }
+    ch_versions = Channel.empty()
 
+    PROCESS_METAGENOME()
+    ch_versions = ch_versions.mix(PROCESS_METAGENOME.out.versions)
 
-    SEQKIT_FILTER(
-        metagenome_ch
+    COVERAGE(
+        PROCESS_METAGENOME.out.filtered_metagenome_fasta,
+        PROCESS_METAGENOME.out.filtered_metagenome_fasta_and_reads,
+        PROCESS_METAGENOME.out.user_provided_coverage_table
     )
-    SEQKIT_FILTER.out.fasta
-        .set{fasta_ch}
+    ch_versions = ch_versions.mix(COVERAGE.out.versions)
 
-    /*
-    * -------------------------------------------------
-    *  Find coverage, currently only pulling from SPADES output
-    * -------------------------------------------------
-    */
-
-
-    if (!params.mock_test) {
-        fasta_ch
-            .join(INPUT_CHECK.out.reads)
-            .set{coverage_input_ch}
-    } else {
-        Channel
-            .empty()
-            .set{coverage_input_ch}
-    }
-
-    COVERAGE (
-        coverage_input_ch
-    )
-    COVERAGE.out.coverage
-        .set{contig_coverage_ch}
-
-    COV_FROM_SPADES (
-        fasta_ch,
-    )
-    COV_FROM_SPADES.out.coverage
-        .set{spades_kmer_coverage_ch}
-    // https://nextflow-io.github.io/patterns/index.html#_conditional_process_executions
-    contig_coverage_ch
-        .mix(spades_kmer_coverage_ch)
-        .mix(coverage_tab_ch)
-        .set{coverage_ch}
+    filtered_metagenome_fasta = PROCESS_METAGENOME.out.filtered_metagenome_fasta
+    coverage_ch = COVERAGE.out.coverage_ch
 
     /*
     * -------------------------------------------------
@@ -144,9 +88,10 @@ workflow AUTOMETA {
     */
 
     PRODIGAL (
-        fasta_ch,
+        filtered_metagenome_fasta,
         "gbk"
     )
+    ch_versions = ch_versions.mix(PRODIGAL.out.versions)
 
     PRODIGAL.out.amino_acid_fasta
         .set{orfs_ch}
@@ -159,25 +104,28 @@ workflow AUTOMETA {
 
     if (params.taxonomy_aware) {
         TAXON_ASSIGNMENT (
-            fasta_ch,
+            filtered_metagenome_fasta,
             orfs_ch
         )
-        TAXON_ASSIGNMENT.out.taxonomy
-            .set{taxonomy_results}
+        ch_versions = ch_versions.mix(TAXON_ASSIGNMENT.out.versions)
+
+        taxonomy_results = TAXON_ASSIGNMENT.out.taxonomy
+        taxdump_files = TAXON_ASSIGNMENT.out.taxdump_files
+
         if (params.kingdom.equals('bacteria')) {
-            TAXON_ASSIGNMENT.out.bacteria
-                .set{kmers_input_ch}
+            kmers_input_ch = TAXON_ASSIGNMENT.out.bacteria
         } else {
             // params.kingdom.equals('archaea')
-            TAXON_ASSIGNMENT.out.archaea
-                .set{kmers_input_ch}
+            kmers_input_ch = TAXON_ASSIGNMENT.out.archaea
         }
     } else {
-        fasta_ch
-            .set{kmers_input_ch}
+        kmers_input_ch = filtered_metagenome_fasta
         Channel
             .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
             .set{taxonomy_results}
+        Channel
+            .fromPath(file("$baseDir/assets/dummy_file.txt", checkIfExists: true ))
+            .set{taxdump_files}
     }
 
     /*
@@ -186,32 +134,25 @@ workflow AUTOMETA {
     * -------------------------------------------------
     */
 
-    KMERS(
-        kmers_input_ch
-    )
-    KMERS.out.normalized
-        .set{kmers_normalized_ch}
-
-    KMERS.out.embedded
-        .set{kmers_embedded_ch}
-
+    KMERS( kmers_input_ch )
+    ch_versions = ch_versions.mix(KMERS.out.versions)
 
     // --------------------------------------------------------------------------------
     // Run hmmscan and look for marker genes in contig orfs
     // --------------------------------------------------------------------------------
 
-    MARKERS(
-        orfs_ch
-    )
-    MARKERS.out.markers_tsv
-        .set{markers_ch}
+    MARKERS( orfs_ch )
+    ch_versions = ch_versions.mix(MARKERS.out.versions)
+
+    markers_ch = MARKERS.out.markers_tsv
 
     // Prepare inputs for binning channel
-    kmers_embedded_ch
+    KMERS.out.embedded
         .join(coverage_ch)
-        .join(SEQKIT_FILTER.out.gc_content)
+        .join(PROCESS_METAGENOME.out.filtered_metagenome_gc_content)
         .join(markers_ch)
         .set{binning_ch}
+
     if (params.taxonomy_aware) {
         binning_ch
             .join(taxonomy_results)
@@ -225,10 +166,11 @@ workflow AUTOMETA {
     BINNING(
         binning_ch
     )
+    ch_versions = ch_versions.mix(BINNING.out.versions)
 
     if (params.unclustered_recruitment) {
         // Prepare inputs for recruitment channel
-        kmers_normalized_ch
+        KMERS.out.normalized
             .join(coverage_ch)
             .join(BINNING.out.main)
             .join(markers_ch)
@@ -245,47 +187,48 @@ workflow AUTOMETA {
         RECRUIT(
             recruitment_ch
         )
+        ch_versions = ch_versions.mix(RECRUIT.out.versions)
+
         RECRUIT.out.main
             .set{binning_results_ch}
-        Channel
-            .value("recruited_cluster")
-            .set{binning_col}
+        binning_col = Channel.of("recruited_cluster")
     } else {
-        BINNING.out.main
-            .set{binning_results_ch}
-        Channel
-            .value("cluster")
-            .set{binning_col}
+        binning_results_ch = BINNING.out.main
+        binning_col = Channel.of("cluster")
     }
 
     // Set inputs for binning summary
     binning_results_ch
         .join(markers_ch)
-        .join(fasta_ch)
+        .join(filtered_metagenome_fasta)
+        .combine(binning_col)
         .set{binning_summary_ch}
 
-    if (params.single_db_dir) {
-        ncbi = file(params.single_db_dir)
-    } else {
-        ncbi = file("$baseDir/assets/dummy_file.txt")
-    }
 
     BINNING_SUMMARY(
         binning_summary_ch,
-        binning_col,
-        ncbi,
+        taxdump_files.collect()
     )
+
+
+
+    ch_versions = ch_versions.mix(BINNING_SUMMARY.out.versions)
 
     if (params.mock_test){
         binning_results_ch
-            .join(CREATE_MOCK.out.assembly_to_locus)
-            .join(CREATE_MOCK.out.assembly_report)
+            .join(PROCESS_METAGENOME.out.assembly_to_locus)
+            .join(PROCESS_METAGENOME.out.assembly_report)
             .set { mock_input_ch }
 
         MOCK_DATA_REPORT(
             mock_input_ch,
             file("$baseDir/lib/mock_data_report.Rmd")
         )
+        ch_versions = ch_versions.mix(MOCK_DATA_REPORT.out.versions)
     }
+
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
 
 }

@@ -1,39 +1,46 @@
 
+//TODO: These don't map to anything
 params.fwd_reads = null
 params.rev_reads = null
 params.se_reads = null
 
-params.align_reads_options        = [:]
-params.samtools_viewsort_options  = [:]
-params.bedtools_genomecov_options    = [:]
+include { ALIGN_READS               } from '../../modules/local/align_reads'
+include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_sort'
+include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'
+include { PARSE_BED                 } from '../../modules/local/parse_bed'
 
-include { ALIGN_READS               } from '../../modules/local/align_reads'            addParams( options: params.align_reads_options                          )
-include { SAMTOOLS_VIEW_AND_SORT    } from '../../modules/local/samtools_view_sort'     addParams( samtools_viewsort_options: params.samtools_viewsort_options  )
-include { BEDTOOLS_GENOMECOV        } from '../../modules/local/bedtools_genomecov'     addParams( options: params.bedtools_genomecov_options                   )
-include { PARSE_BED                 } from '../../modules/local/parse_bed'              addParams( )
-
-
-workflow CONTIG_COVERAGE {
+workflow CALCULATE_COVERAGE {
     take:
         metagenome_reads_ch
 
     main:
+        ch_versions = Channel.empty()
+
         ALIGN_READS(
             metagenome_reads_ch
         )
+        ch_versions = ch_versions.mix(ALIGN_READS.out.versions)
+
         SAMTOOLS_VIEW_AND_SORT(
             ALIGN_READS.out.sam
         )
+        ch_versions = ch_versions.mix(SAMTOOLS_VIEW_AND_SORT.out.versions)
+
         BEDTOOLS_GENOMECOV(
             SAMTOOLS_VIEW_AND_SORT.out.bam
         )
+        ch_versions = ch_versions.mix(BEDTOOLS_GENOMECOV.out.versions)
+
         PARSE_BED(BEDTOOLS_GENOMECOV.out.bed)
+        ch_versions = ch_versions.mix(PARSE_BED.out.versions)
 
     emit:
         sam = ALIGN_READS.out.sam
         bam = SAMTOOLS_VIEW_AND_SORT.out.bam
         bed = BEDTOOLS_GENOMECOV.out.bed
         coverage = PARSE_BED.out.coverage
+        versions = ch_versions
+
 }
 
 /*

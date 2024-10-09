@@ -63,9 +63,8 @@ from autometa.common.markers import load as load_markers
 logger = logging.getLogger(__name__)
 
 # Disable pandas and numpy warnings
-pd.options.mode.chained_assignment = None
+
 # https://stackoverflow.com/a/46721064/13118765
-warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def validate_training_data(instance, attribute, value):

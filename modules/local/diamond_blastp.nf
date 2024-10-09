@@ -1,9 +1,3 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process DIAMOND_BLASTP {
     tag "Aligning ORFS in ${meta.id} against ${diamond_database}"
     label 'process_high'
@@ -11,9 +5,8 @@ process DIAMOND_BLASTP {
     // TODO: There appears to be features for multiprocessing available now
     // See: https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing
     maxForks 1
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "bioconda::diamond=2.0.14" : null)
+    conda "bioconda::diamond=2.0.14"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/diamond:2.0.14--hdcc8f71_0"
     } else {
@@ -25,18 +18,25 @@ process DIAMOND_BLASTP {
         path(diamond_database)
 
     output:
-        tuple val(meta), path("blastp.tsv"), emit: diamond_results
-        path "*.version.txt"               , emit: version
+        tuple val(meta), path("*blastp.tsv"), emit: diamond_results
+        path "versions.yml"                 , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
+        def args = task.ext.args ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
-        diamond blastp $options.args \\
+        diamond blastp $args \\
             --query ${protein_fasta} \\
             --db ${diamond_database} \\
             --threads ${task.cpus} \\
-            --out blastp.tsv
+            --out ${prefix}.blastp.tsv
 
-        diamond version | sed 's/^.*diamond version //' > diamond.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            diamond: \$(diamond --version 2>&1 | tail -n 1 | sed 's/^diamond version //')
+        END_VERSIONS
         """
 }

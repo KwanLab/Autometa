@@ -1,19 +1,11 @@
 #!/usr/bin/env nextflow
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 
 process ALIGN_READS {
     tag "Aligning reads to ${meta.id}"
     label 'process_high'
 
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
-
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -24,28 +16,34 @@ process ALIGN_READS {
         tuple val(meta), path(metagenome), path(fwd_reads), path(rev_reads)
 
     output:
-        tuple val(meta), path("alignments.sam"), emit: sam
+        tuple val(meta), path("*.alignments.sam"), emit: sam
         path "*.db*.bt2"                       , emit: bt2_db
-        path "*.version.txt"                   , emit: version
+        path "versions.yml"                   , emit: versions
 
     when:
-        meta.cov_from_assembly.equals('0')
+        task.ext.when == null || task.ext.when
 
     script:
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         bowtie2-build \\
-            ${options.args} \\
+            ${args} \\
             ${metagenome} \\
-            ${meta.id}.db
+            ${prefix}.db
 
         bowtie2 \\
             -x ${meta.id}.db \\
-            ${options.args2} \\
+            ${args2} \\
             -p ${task.cpus} \\
-            -S alignments.sam \\
+            -S ${prefix}.alignments.sam \\
             -1 $fwd_reads \\
             -2 $rev_reads
 
-        echo \$(bowtie2 --version 2>&1) | sed -n 's/^.*bowtie2-align-s version //p; s/ .*\$//' > bowtie2.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bowtie2: \$(echo \$(bowtie2 --version 2>&1) | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')
+        END_VERSIONS
         """
 }

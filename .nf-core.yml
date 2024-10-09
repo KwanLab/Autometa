@@ -36,4 +36,7 @@ lint:
 
   schema_lint: true
   template_strings: false
-  nextflow_config: false
+  nextflow_config:
+    - manifest.name
+    - manifest.homePage
+repository_type: pipeline

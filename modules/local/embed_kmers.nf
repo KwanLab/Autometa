@@ -1,15 +1,8 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process EMBED_KMERS {
     tag "PCA dims:${params.pca_dimensions}, dims:${params.embedding_dimensions}, method:${params.embedding_method}, sample:${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa"
     } else {
@@ -23,21 +16,28 @@ process EMBED_KMERS {
         tuple val(meta), path(normalized)
 
     output:
-        tuple val(meta), path("kmers.embedded.tsv")  , emit: embedded
-        path  '*.version.txt'                        , emit: version
+        tuple val(meta), path("*kmers.embedded.tsv")  , emit: embedded
+        path  'versions.yml'                          , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-kmers \\
             --norm-output $normalized \\
             --pca-dimensions "${params.pca_dimensions}" \\
-            --embedding-output "kmers.embedded.tsv" \\
+            --embedding-output "${prefix}.kmers.embedded.tsv" \\
             --embedding-method "${params.embedding_method}" \\
             --embedding-dimensions "${params.embedding_dimensions}" \\
             --cpus "${task.cpus}" \\
             --seed 42
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }
+

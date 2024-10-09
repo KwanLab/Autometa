@@ -1,34 +1,39 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-params.prepare_lca_options  = [:]
-params.reduce_lca_options    = [:]
-
-include { PREPARE_LCA as PREP_DBS } from './../../modules/local/prepare_lca.nf' addParams( options: params.prepare_lca_options )
-include { REDUCE_LCA as REDUCE    } from './../../modules/local/reduce_lca.nf'  addParams( options: params.reduce_lca_options )
+include { PREPARE_LCA as PREP_DBS } from './../../modules/local/prepare_lca.nf'
+include { REDUCE_LCA as REDUCE    } from './../../modules/local/reduce_lca.nf'
 
 
 workflow LCA {
 
     take:
         blastp_results
-        blastp_dbdir
+        taxdump_files
+        prot_accession2taxid
 
     main:
+        ch_versions = Channel.empty()
+
         PREP_DBS(
-            blastp_dbdir
+            taxdump_files
         )
+        ch_versions = ch_versions.mix(PREP_DBS.out.versions)
+
         REDUCE(
             blastp_results,
-            blastp_dbdir,
-            PREP_DBS.out.cache
+            taxdump_files,
+            PREP_DBS.out.cache,
+            prot_accession2taxid
         )
+        ch_versions = ch_versions.mix(REDUCE.out.versions)
 
     emit:
         lca = REDUCE.out.lca
         error_taxid = REDUCE.out.error_taxids
         sseqid_to_taxids = REDUCE.out.sseqid_to_taxids
         cache  = PREP_DBS.out.cache
+        versions = ch_versions
 }
 
 /*

@@ -2,9 +2,8 @@
 process SAMPLESHEET_CHECK {
     tag "$samplesheet"
     label 'process_low'
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    conda "conda-forge::python=3.8.3"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/python:3.8.3"
     } else {
@@ -15,10 +14,19 @@ process SAMPLESHEET_CHECK {
         path samplesheet
 
     output:
-        path '*.csv'
+        path '*.csv'         , emit: csv
+        path "versions.yml"  , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
         """
         check_samplesheet.py $samplesheet samplesheet.valid.csv
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1 | tail -n 1 | sed 's/^Python //')
+        END_VERSIONS
         """
 }

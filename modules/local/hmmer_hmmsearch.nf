@@ -9,19 +9,13 @@ the results of this process
 =======================
 */
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process HMMER_HMMSEARCH {
     tag "Annotating ORFs in $meta.id"
     label 'process_medium'
 
     // no publishdir
 
-    conda (params.enable_conda ? "bioconda::hmmer=3.3.2" : null)
+    conda "bioconda::hmmer=3.3.2"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/hmmer:3.3.2--h1b792b2_1"
     } else {
@@ -34,20 +28,30 @@ process HMMER_HMMSEARCH {
 
     output:
         tuple val(meta), path("*.domtblout"), emit: domtblout
-        path "*.version.txt"                , emit: version
+        path "versions.yml"                , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
-        def fastacmd = fasta.getExtension() == 'gz' ? "gunzip -c $fasta" : "cat $fasta"
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
         """
+        # hmmsearch can'ts use or pipe in gzipped fasta
+
+        zcat "${fasta}" > temp.fa
+
         hmmsearch \\
             --domtblout "${hmm.simpleName}.domtblout" \\
-            ${options.args} \\
-            ${options.args2} \\
-            $hmm \\
-            $fasta > /dev/null 2>&1
+            --cpu $task.cpus \\
+            $args \\
+            $args2 \\
+            "${hmm}" \\
+            temp.fa > /dev/null 2>&1
 
-        echo \$(hmmalign -h | grep -o '^# HMMER [0-9.]*') | sed 's/^# HMMER *//' > HMMER.version.txt
-        """
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        hmmer: \$(hmmsearch -h | grep -o '^# HMMER [0-9.]*' | sed 's/^# HMMER *//')
+    END_VERSIONS
+    """
 }

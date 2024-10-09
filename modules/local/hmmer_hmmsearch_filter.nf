@@ -7,12 +7,6 @@ TODO: Not yet implemented
 */
 
 
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process HMMER_HMMSEARCH_FILTER {
     tag "Filtering marker hmms in ${meta.id}"
     label 'process_medium'
@@ -20,9 +14,8 @@ process HMMER_HMMSEARCH_FILTER {
     // if ( params.num_splits < 2 ) {
     // if running in parallel, the results are published from the process
     // that merges the individual results from this process
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "autometa" : null)
+    conda "autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -35,11 +28,14 @@ process HMMER_HMMSEARCH_FILTER {
 
     output:
         tuple val(meta), path("markers.tsv"), emit: markers_tsv
-        path "*.version.txt"                           , emit: version
+        path "versions.yml"                           , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
         """
         autometa-hmmsearch-filter \\
             --domtblout "$domtblout" \\
@@ -47,6 +43,9 @@ process HMMER_HMMSEARCH_FILTER {
             --seqdb "$fasta" \\
             --out "markers.tsv"
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }

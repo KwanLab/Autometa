@@ -1,15 +1,8 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process BINNING {
     tag "sample:${meta.id}, clustering:${params.clustering_method}, completeness:${params.completeness}, purity:${params.purity}, cov.std.dev.:${params.cov_stddev_limit}, gc.std.dev.:${params.gc_stddev_limit}"
     label 'process_high'
-    publishDir "${params.outdir}/${meta.id}", mode: params.publish_dir_mode
 
-    conda (params.enable_conda ? "bioconda::autometa" : null)
+    conda "bioconda::autometa"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/autometa:2.2.0--pyh7cba7a3_0"
     } else {
@@ -23,21 +16,24 @@ process BINNING {
         tuple val(meta), path(kmers), path(coverage), path(gc_content), path(markers), path(taxonomy)
 
     output:
-        tuple val(meta), path("${params.kingdom}.binning.tsv.gz")     , emit: binning
-        tuple val(meta), path("${params.kingdom}.binning.main.tsv.gz"), emit: main
-        path  '*.version.txt'                                         , emit: version
+        tuple val(meta), path("*.binning.tsv.gz")        , emit: binning
+        tuple val(meta), path("*.binning.main.tsv.gz")   , emit: main
+        path 'versions.yml'                              , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
         taxonomy_call = params.taxonomy_aware ? "--taxonomy $taxonomy" : "" // https://github.com/nextflow-io/nextflow/issues/1694#issuecomment-683272275
+        def prefix = task.ext.prefix ?: "${meta.id}"
         """
         autometa-binning \\
             --kmers $kmers \\
             --coverages $coverage \\
             --gc-content $gc_content \\
             --markers $markers \\
-            --output-binning ${params.kingdom}.binning.tsv.gz \\
-            --output-main ${params.kingdom}.binning.main.tsv.gz \\
+            --output-binning ${prefix}.${params.kingdom}.binning.tsv.gz \\
+            --output-main ${prefix}.${params.kingdom}.binning.main.tsv.gz \\
             --clustering-method ${params.clustering_method} \\
             --completeness ${params.completeness} \\
             --purity ${params.purity} \\
@@ -47,8 +43,12 @@ process BINNING {
             --starting-rank ${params.binning_starting_rank} \\
             --cpus ${task.cpus} \\
             --rank-filter superkingdom \\
-            --rank-name-filter ${params.kingdom}
+            --rank-name-filter ${params.kingdom} \\
+            --verbose
 
-        autometa --version | sed -e "s/autometa: //g" > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            autometa: \$(autometa --version | sed -e 's/autometa: //g')
+        END_VERSIONS
         """
 }
