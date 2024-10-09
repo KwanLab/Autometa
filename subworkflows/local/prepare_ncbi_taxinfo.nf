@@ -126,12 +126,10 @@ workflow PREPARE_TAXONOMY_DATABASES {
                 .set{taxdump_files}
         }
 
-        expected_files2 = ['prot.accession2taxid']
+        taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/prot.accession2taxid.gz")
 
-        taxonomy_files_exist2 = file("${params.prot_accession2taxid_gz_dir}/*.dmp").name.containsAll(expected_files2)
-
-        if (taxonomy_files_exist2){
-            prot_accession2taxid_ch = accession2taxid_dir_files
+        if (taxonomy_files_exist2.exists()){
+            prot_accession2taxid_ch = taxonomy_files_exist2
         } else if (params.debug){
             TEST_DOWNLOAD().singlefile
                 .set{prot_accession2taxid_ch}
