@@ -34,7 +34,7 @@ from autometa.config.utilities import DEFAULT_CONFIG
 from autometa.config.utilities import AUTOMETA_DIR
 from autometa.config.utilities import put_config, get_config
 from autometa.taxonomy.gtdb import create_gtdb_db
-
+from autometa.taxonomy.download_gtdb_files import download_gtdb_taxdump, download_proteins_aa_reps
 
 logger = logging.getLogger(__name__)
 urllib_logger = logging.getLogger("urllib3")
@@ -405,28 +405,21 @@ class Databases:
             self.format_nr()
 
     def download_gtdb_files(self) -> None:
-        gtdb_taxdump_url = self.config.get("database_urls", "gtdb_taxdmp")
-        proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
 
-        # User path:
-        gtdb_taxdump_filepath = self.config.get("gtdb", "gtdb_taxdmp")
-        proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
+        # urls
+        gtdb_taxdump_url = self.config.get("gtdb", "host") # e.g. data.gtdb.ecogenomic.org
+        gtdb_version = self.config.get("gtdb", "release") # e.g. latest, 220
 
-        urls = [gtdb_taxdump_url, proteins_aa_reps_url]
-        filepaths = [gtdb_taxdump_filepath, proteins_aa_reps_filepath]
+        # local file parent directories
+        gtdb_taxdmp_directory = self.config.get("gtdb", "gtdb_taxdmp")
+        proteins_aa_reps_directory = self.config.get("gtdb", "proteins_aa_reps")
 
-        logger.debug(f"starting GTDB databases download")
-        for url, filepath in zip(urls, filepaths):
-            cmd = ["wget", url, "-O", filepath]
-            full_path = os.path.abspath(filepath)
-            dir_path = os.path.dirname(full_path)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-                logger.debug(f"Created missing database directory: {dir_path}")
-            logger.debug(" ".join(cmd))
-            subprocess.run(
-                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
-            )
+        download_gtdb_taxdump(gtdb_version = gtdb_version,
+                             outdir = gtdb_taxdmp_directory)
+        download_proteins_aa_reps(host = gtdb_taxdump_url,
+                                  version = gtdb_version,
+                                  outdir = proteins_aa_reps_directory)
+
 
     def press_hmms(self) -> None:
         """hmmpress markers hmm database files.
