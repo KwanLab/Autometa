@@ -28,7 +28,7 @@ clean:
 	find . -type d -name "Autometa.egg-info" -exec rm -r {} +
 	find . -type d -name "dist" -exec rm -r {} +
 	find . -type d -name "build" -exec rm -r {} +
-    find . -name ".nextflow.log.*" -exec rm -r {} +
+	find . -name ".nextflow.log.*" -exec rm -r {} +
 	find . -name ".nextflow.log" -exec rm {} +
 	find . -type d -name ".nextflow" -exec rm -r {} +
 	find . -type d -name "work" -exec rm -r {} +
