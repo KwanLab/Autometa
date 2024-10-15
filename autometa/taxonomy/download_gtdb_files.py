@@ -2,7 +2,7 @@ import requests
 import logging
 import math
 import os
-
+import glob
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +30,13 @@ def get_release_url(gtdb_version):
         return None
 
 
-def download_gtdb_taxdump(gtdb_version, outdir):
+def download_gtdb_taxdump(gtdb_version, outdir, force=False):
+    if not force:
+        # Check if the file already exists
+        filepath = os.path.join(outdir, f"gtdb-taxdump-R{gtdb_version}.tar.gz")
+        if os.path.exists(filepath):
+            logger.info(f"File already exists: {filepath}")
+            return
     try:
         download_url = get_release_url(gtdb_version)
         if download_url:
@@ -48,7 +54,13 @@ def download_gtdb_taxdump(gtdb_version, outdir):
     except IOError as e:
         logger.error(f"File write error: {e}")
 
-def download_proteins_aa_reps(host,version,outdir):
+def download_proteins_aa_reps(host,version,outdir,force=False):
+    if not force:
+        # Stop if the file already exists, use glob to find the file because version not known
+        filepath = os.path.join(outdir, "gtdb_proteins_aa_reps_r*.tar.gz")
+        if len(glob.glob(filepath)) > 0:
+            logger.info(f"File already exists: {filepath}")
+            return
     # if version is integer string:
     if str(version).isdigit():
         version = str(version)
