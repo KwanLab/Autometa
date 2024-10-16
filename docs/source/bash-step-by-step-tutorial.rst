@@ -14,7 +14,7 @@ Before running anything make sure you have activated the conda environment using
 
 See the :ref:`Autometa Package Installation` page for details on setting up your conda environment.
 
-I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_.
+I will be going through this tutorial using the 78Mbp test dataset which can be found here `<https://drive.google.com/drive/u/2/folders/1McxKviIzkPyr8ovj8BG7n_IYk-QfHAgG>`_ (and deposited on `figshare <https://figshare.com/articles/dataset/Reference_assignment_and_other_files_associated_with_Autometa_simulated_datasets_/26338984/1>`_)
 You only need to download ``metagenome.fna.gz`` from the above link and save it at a directory as per your liking. I'm saving it in ``$HOME/tutorial/test_data/``.
 For instructions on how to download the dataset using command-line see the "Using command-line" section on :ref:`Benchmarking` page.
 
