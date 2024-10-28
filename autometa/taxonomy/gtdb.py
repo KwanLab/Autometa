@@ -9,14 +9,12 @@ File containing definition of the GTDB class and containing functions useful for
 import gzip
 import logging
 import os
-import re
-import tarfile
-import glob
 
 from typing import Dict, Set, Tuple
 from itertools import chain
 from tqdm import tqdm
 from typing import Dict
+from configparser import ConfigParser
 
 import pandas as pd
 import multiprocessing as mp
@@ -24,91 +22,43 @@ import multiprocessing as mp
 from autometa.common.utilities import file_length, is_gz_file
 from autometa.common.external import diamond
 from autometa.taxonomy.database import TaxonomyDatabase
-
+from autometa.taxonomy.download_gtdb_files import create_combined_gtdb_fasta,get_latest_gtdb_version
+from autometa.config.utilities import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
-
-
-def create_gtdb_db(reps_faa: str, dbdir: str) -> str:
-    """
-    Generate a combined faa file to create the GTDB-t database.
-
-    Parameters
-    ----------
-    reps_faa : str
-        Directory having faa file of all representative genomes. Can be tarballed.
-    dbdir : str
-        Path to output directory.
-
-    Returns
-    -------
-    str
-        Path to combined faa file. This can be used to make a diamond database.
-    """
-
-    if reps_faa.endswith(".tar.gz"):
-        logger.debug(
-            f"Extracting tarball containing GTDB ref genome animo acid data sequences to: {dbdir}/protein_faa_reps"
-        )
-        tar = tarfile.open(reps_faa)
-        tar.extractall(path=dbdir)
-        tar.close()
-        logger.debug("Extraction done.")
-        reps_faa = dbdir
-
-    genome_protein_faa_filepaths = glob.glob(
-        os.path.join(reps_faa, "**", "*_protein.faa*"),
-        recursive=True
-        # To find *_protein.faa and *_protein.faa.gz files
-    )
-
-    faa_index: Dict[str, str] = {}
-    for genome_protein_faa_filepath in genome_protein_faa_filepaths:
-        # Regex to get the genome accession from the file path
-        genome_acc_search = re.search(
-            r"GCA_\d+.\d?|GCF_\d+.\d?", genome_protein_faa_filepath
-        )
-        if genome_acc_search:
-            faa_index[genome_protein_faa_filepath] = genome_acc_search.group()
-
-    # Create dbdir if it doesn't exist
-    if not os.path.isdir(dbdir):
-        os.makedirs(dbdir)
-
-    logger.debug(f"Merging {len(faa_index):,} faa files.")
-    combined_faa = os.path.join(dbdir, "gtdb.faa")
-    with open(combined_faa, "w") as f_out:
-        for faa_file, acc in faa_index.items():
-            with gzip.open(faa_file, "rb") as f_in:
-                for line in f_in:
-                    line = line.decode("utf-8")
-                    if line.startswith(">"):
-                        seqheader = line.lstrip(">").strip()
-                        outline = f">{acc} {seqheader}\n"
-                    else:
-                        outline = line
-                    f_out.write(outline)
-    logger.debug(f"Combined GTDB faa file written to {combined_faa}")
-    return combined_faa
-
 
 class GTDB(TaxonomyDatabase):
     """Taxonomy utilities for GTDB databases."""
 
-    def __init__(self, dbdir: str, verbose: bool = True):
+    def __init__(self, dbdir: str, verbose: bool = True, config=DEFAULT_CONFIG):
         """
         Instantiates the GTDB class
-
         """
+        if not isinstance(config, ConfigParser):
+            raise TypeError(f"config is not ConfigParser : {type(config)}")
+        self.config = config
+        # before instantiating the class, check if the GTDB database is present
+        gtdb_version = self.config.get("gtdb", "release")
+        if gtdb_version == "latest":
+            gtdb_version = get_latest_gtdb_version()
+            logger.info(f"Using 'latest' GTDB version: {gtdb_version}")
+        if "." in gtdb_version:
+            gtdb_version = gtdb_version.split(".")[0]
+            gtdb_subversion = gtdb_version.split(".")[1]
+        else:
+            gtdb_subversion = "0"        
         self.dbdir = dbdir
         self.verbose = verbose
         self.disable = not self.verbose
-        self.dmnd_db = os.path.join(self.dbdir, "gtdb.dmnd")
-        self.accession2taxid = os.path.join(self.dbdir, "taxid.map")
-        self.nodes_fpath = os.path.join(self.dbdir, "nodes.dmp")
-        self.names_fpath = os.path.join(self.dbdir, "names.dmp")
-        self.merged_fpath = os.path.join(self.dbdir, "merged.dmp")
-        self.delnodes_fpath = os.path.join(self.dbdir, "delnodes.dmp")
+        self.dmnd_db = os.path.join(
+            self.config.get("databases", "gtdb"),
+            f"autometa_formatted_gtdb-version-{gtdb_version}.{gtdb_subversion}.faa.gz",
+        )
+        self.accession2taxid = os.path.join(dbdir, "taxid.map")
+        self.nodes_fpath = os.path.join(dbdir, "nodes.dmp")
+        self.names_fpath = os.path.join(dbdir, "names.dmp")
+        self.merged_fpath = os.path.join(dbdir, "merged.dmp")
+        self.delnodes_fpath = os.path.join(dbdir, "delnodes.dmp")
         self.verify_databases()
         self.names = self.parse_names()
         self.nodes = self.parse_nodes()
@@ -341,7 +291,7 @@ def main():
 
     parser.add_argument(
         "--reps-faa",
-        help="Path to directory containing GTDB ref genome animo acid data sequences. Can be tarballed.",
+        help="Path to directory containing the tarballed GTDB ref genome animo acid data sequences.",
         required=True,
     )
     parser.add_argument(
@@ -355,7 +305,8 @@ def main():
 
     args = parser.parse_args()
 
-    gtdb_combined = create_gtdb_db(reps_faa=args.reps_faa, dbdir=args.dbdir)
+    gtdb_combined = create_combined_gtdb_fasta(reps_faa=args.reps_faa, dbdir=args.dbdir)
+    
     diamond.makedatabase(
         fasta=gtdb_combined,
         database=gtdb_combined.replace(".faa", ".dmnd"),
