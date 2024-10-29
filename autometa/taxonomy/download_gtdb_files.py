@@ -30,11 +30,10 @@ def get_latest_gtdb_version(host):
         response = requests.get(f"https://{host}/releases/latest/VERSION.txt")
         response.raise_for_status()
         version = response.text.splitlines()[0]
-        version = version.removeprefix("v")
+        version = version[1:] if version.startswith("v") else version
         return version
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch GTDB version number: {e}")
-        raise
+        raise RuntimeError(f"Failed to fetch GTDB version: {e}")
 
 
 # --------------------- Taxdump Release URL Fetch ---------------------
