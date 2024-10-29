@@ -2,6 +2,7 @@ import pytest
 from unittest import mock
 import requests
 import logging
+
 from autometa.taxonomy.download_gtdb_files import (
     get_latest_gtdb_version,
     get_gtdb_taxdump_release_url,
@@ -42,7 +43,9 @@ def test_get_latest_gtdb_version_fail(mock_requests_get):
     )
 
     host = "data.gtdb.ecogenomic.org"
-    with pytest.raises(requests.exceptions.RequestException):
+    with pytest.raises(
+        RuntimeError, match="Failed to fetch GTDB version: Error occurred"
+    ):
         get_latest_gtdb_version(host)
 
 
