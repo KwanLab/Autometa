@@ -22,10 +22,14 @@ import multiprocessing as mp
 from autometa.common.utilities import file_length, is_gz_file
 from autometa.common.external import diamond
 from autometa.taxonomy.database import TaxonomyDatabase
-from autometa.taxonomy.download_gtdb_files import create_combined_gtdb_fasta,get_latest_gtdb_version
+from autometa.taxonomy.download_gtdb_files import (
+    create_combined_gtdb_fasta,
+    get_latest_gtdb_version,
+)
 from autometa.config.utilities import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
+
 
 class GTDB(TaxonomyDatabase):
     """Taxonomy utilities for GTDB databases."""
@@ -46,7 +50,7 @@ class GTDB(TaxonomyDatabase):
             gtdb_version = gtdb_version.split(".")[0]
             gtdb_subversion = gtdb_version.split(".")[1]
         else:
-            gtdb_subversion = "0"        
+            gtdb_subversion = "0"
         self.dbdir = dbdir
         self.verbose = verbose
         self.disable = not self.verbose
@@ -306,7 +310,7 @@ def main():
     args = parser.parse_args()
 
     gtdb_combined = create_combined_gtdb_fasta(reps_faa=args.reps_faa, dbdir=args.dbdir)
-    
+
     diamond.makedatabase(
         fasta=gtdb_combined,
         database=gtdb_combined.replace(".faa", ".dmnd"),

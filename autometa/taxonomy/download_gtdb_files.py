@@ -95,6 +95,7 @@ def download_gtdb_taxdump(gtdb_version, outpath, force=False):
         logger.error(f"File write error: {e}")
     return outpath
 
+
 def unpack_gtdb_taxdump(tar_file, gtdb_version, outdir=None, force=False):
     """Extracts the GTDB taxdump file and renames the directory to include the GTDB version"""
     if not outdir:
@@ -102,7 +103,9 @@ def unpack_gtdb_taxdump(tar_file, gtdb_version, outdir=None, force=False):
     target_dir = f"gtdb-taxdump/R{gtdb_version}"
     new_dir_prefix = f"gtdb_taxdump-version-{gtdb_version}"
     if not force and Path(outdir, new_dir_prefix).exists():
-        logger.info(f"Directory already exists: {outdir}/{new_dir_prefix}, use --force to overwrite.")
+        logger.info(
+            f"Directory already exists: {outdir}/{new_dir_prefix}, use --force to overwrite."
+        )
         return Path(outdir, new_dir_prefix)
     with tarfile.open(tar_file, "r:gz") as tar:
         members = []
@@ -117,7 +120,7 @@ def unpack_gtdb_taxdump(tar_file, gtdb_version, outdir=None, force=False):
         else:
             print(f"Directory {target_dir} not found in the archive.")
     return Path(outdir, new_dir_prefix)
-    
+
 
 # --------------------- Proteins AA Reps Download with MD5 Verification ---------------------
 def download_proteins_aa_reps(host, version, subversion, outpath, force=False):
@@ -286,7 +289,9 @@ def download_and_format(gtdb_host, gtdb_version, single_dir, force=False):
     gtdb_taxdmp_path = download_gtdb_taxdump(
         gtdb_version=gtdb_version, outpath=gtdb_taxdmp_path, force=force
     )
-    taxdmp_dir=unpack_gtdb_taxdump(tar_file=gtdb_taxdmp_path, gtdb_version=gtdb_version, force=force)
+    taxdmp_dir = unpack_gtdb_taxdump(
+        tar_file=gtdb_taxdmp_path, gtdb_version=gtdb_version, force=force
+    )
     aa_reps_path = download_proteins_aa_reps(
         host=gtdb_host,
         version=gtdb_version,
