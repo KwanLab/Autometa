@@ -422,6 +422,13 @@ class Databases:
         # local file parent directories
         gtdb_taxdmp_directory = self.config.get("gtdb", "gtdb_taxdmp")
         proteins_aa_reps_directory = self.config.get("gtdb", "proteins_aa_reps")
+        # ensure the directories exist
+        if not Path(gtdb_taxdmp_directory).exists():
+            logger.info(f"Creating directory: {gtdb_taxdmp_directory}")
+            Path(gtdb_taxdmp_directory).mkdir(parents=True)
+        if not Path(proteins_aa_reps_directory).exists():
+            logger.info(f"Creating directory: {proteins_aa_reps_directory}")
+            Path(proteins_aa_reps_directory).mkdir(parents=True)
 
         if gtdb_version == "latest":
             gtdb_version = get_latest_gtdb_version(gtdb_taxdump_url)
