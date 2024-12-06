@@ -27,7 +27,7 @@ def test_get_latest_gtdb_version_success(mock_requests_get):
     mock_response.text = "v220\n"
     mock_requests_get.return_value = mock_response
 
-    host = "data.ace.uq.edu.au"
+    host = "data.ace.uq.edu.au/public/gtdb/data"
     version = get_latest_gtdb_version(host)
 
     assert version == "220"
@@ -42,7 +42,7 @@ def test_get_latest_gtdb_version_fail(mock_requests_get):
         "Error occurred"
     )
 
-    host = "data.ace.uq.edu.au"
+    host = "data.ace.uq.edu.au/public/gtdb/data"
     with pytest.raises(
         RuntimeError, match="Failed to fetch GTDB version: Error occurred"
     ):
@@ -158,7 +158,7 @@ def test_download_proteins_aa_reps_success(mock_requests_get):
                     "autometa.taxonomy.download_gtdb_files.tqdm"
                 ) as mock_tqdm:
                     download_proteins_aa_reps(
-                        "data.ace.uq.edu.au",
+                        "data.ace.uq.edu.au/public/gtdb/data",
                         "220",
                         "1",
                         "/some/dir/gtdb_proteins_aa_reps-R220.tar.gz",

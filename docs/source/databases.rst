@@ -98,7 +98,7 @@ The previous command will download the following GTDB databases and format them 
 The original files
 
 - Amino acid sequences of representative genome
-    - `gtdb_proteins_aa_reps.tar.gz <https://data.ace.uq.edu.au/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
+    - `gtdb_proteins_aa_reps.tar.gz <https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
 - gtdb-taxdump.tar.gz from `shenwei356/gtdb-taxdump <https://github.com/shenwei356/gtdb-taxdump/releases>`_
     - `gtdb-taxdump.tar.gz <https://github.com/shenwei356/gtdb-taxdump/releases/latest/download/gtdb-taxdump.tar.gz>`_
 
