@@ -415,9 +415,7 @@ class Databases:
     def download_and_format_gtdb_files(self) -> None:
 
         # urls
-        gtdb_taxdump_url = self.config.get(
-            "gtdb", "host"
-        )  # e.g. data.gtdb.ecogenomic.org
+        gtdb_taxdump_url = self.config.get("gtdb", "host")  # e.g. data.ace.uq.edu.au
         gtdb_version = self.config.get("gtdb", "release")  # e.g. latest, 220
         # local file parent directories
         gtdb_taxdmp_directory = self.config.get("gtdb", "gtdb_taxdmp")
