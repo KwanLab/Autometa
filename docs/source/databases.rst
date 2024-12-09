@@ -68,7 +68,7 @@ Genome Taxonomy Database (GTDB)
 ###############################
 
 If you would like to incorporate the benefits of using the Genome Taxonomy Database,
-you can either run the following script or manually download the respective databases.
+you can either run the following script or manually download the respective databases. GTDB version 220 or later is required.
 
 .. code-block:: bash
 
