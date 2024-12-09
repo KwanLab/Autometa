@@ -440,6 +440,8 @@ class Databases:
             gtdb_subversion = gtdb_version.split(".")[1]
         else:
             gtdb_subversion = "0"
+        if int(gtdb_version) < 220:
+            raise ValueError("GTDB versions <220 cannot be used due file differences")
         gtdb_taxdmp_path = Path(
             gtdb_taxdmp_directory, f"gtdb-taxdump-version-{gtdb_version}.tar.gz"
         )
