@@ -9,6 +9,7 @@ of Autometa Databases.
 
 import logging
 import os
+from pathlib import Path
 import requests
 import sys
 import subprocess
@@ -33,8 +34,15 @@ from autometa.config.utilities import DEFAULT_FPATH
 from autometa.config.utilities import DEFAULT_CONFIG
 from autometa.config.utilities import AUTOMETA_DIR
 from autometa.config.utilities import put_config, get_config
-from autometa.taxonomy.gtdb import create_gtdb_db
-
+from autometa.taxonomy.download_gtdb_files import (
+    create_combined_gtdb_fasta,
+    unpack_gtdb_taxdump,
+)
+from autometa.taxonomy.download_gtdb_files import (
+    download_gtdb_taxdump,
+    download_proteins_aa_reps,
+    get_latest_gtdb_version,
+)
 
 logger = logging.getLogger(__name__)
 urllib_logger = logging.getLogger("urllib3")
@@ -404,29 +412,65 @@ class Databases:
         if "nr" in options:
             self.format_nr()
 
-    def download_gtdb_files(self) -> None:
-        gtdb_taxdump_url = self.config.get("database_urls", "gtdb_taxdmp")
-        proteins_aa_reps_url = self.config.get("database_urls", "proteins_aa_reps")
+    def download_and_format_gtdb_files(self) -> None:
 
-        # User path:
-        gtdb_taxdump_filepath = self.config.get("gtdb", "gtdb_taxdmp")
-        proteins_aa_reps_filepath = self.config.get("gtdb", "proteins_aa_reps")
+        # urls
+        gtdb_taxdump_url = self.config.get(
+            "gtdb", "host"
+        )  # e.g. data.ace.uq.edu.au/public/gtdb/data
+        gtdb_version = self.config.get("gtdb", "release")  # e.g. latest, 220
+        # local file parent directories
+        gtdb_taxdmp_directory = self.config.get("gtdb", "gtdb_taxdmp")
+        proteins_aa_reps_directory = self.config.get("gtdb", "proteins_aa_reps")
+        # ensure the directories exist
+        if not Path(gtdb_taxdmp_directory).exists():
+            logger.info(f"Creating directory: {gtdb_taxdmp_directory}")
+            Path(gtdb_taxdmp_directory).mkdir(parents=True)
+        if not Path(proteins_aa_reps_directory).exists():
+            logger.info(f"Creating directory: {proteins_aa_reps_directory}")
+            Path(proteins_aa_reps_directory).mkdir(parents=True)
 
-        urls = [gtdb_taxdump_url, proteins_aa_reps_url]
-        filepaths = [gtdb_taxdump_filepath, proteins_aa_reps_filepath]
+        if gtdb_version == "latest":
+            gtdb_version = get_latest_gtdb_version(gtdb_taxdump_url)
+            logger.info(f"Using 'latest' GTDB version: {gtdb_version}")
+            self.config.set("gtdb", "release", gtdb_version)
 
-        logger.debug(f"starting GTDB databases download")
-        for url, filepath in zip(urls, filepaths):
-            cmd = ["wget", url, "-O", filepath]
-            full_path = os.path.abspath(filepath)
-            dir_path = os.path.dirname(full_path)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-                logger.debug(f"Created missing database directory: {dir_path}")
-            logger.debug(" ".join(cmd))
-            subprocess.run(
-                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
-            )
+        if "." in gtdb_version:
+            gtdb_version = gtdb_version.split(".")[0]
+            gtdb_subversion = gtdb_version.split(".")[1]
+        else:
+            gtdb_subversion = "0"
+        if int(gtdb_version) < 220:
+            raise ValueError("GTDB versions <220 cannot be used due file differences")
+        gtdb_taxdmp_path = Path(
+            gtdb_taxdmp_directory, f"gtdb-taxdump-version-{gtdb_version}.tar.gz"
+        )
+        aa_reps_path = Path(
+            proteins_aa_reps_directory,
+            f"gtdb_proteins_aa_reps-version-{gtdb_version}.{gtdb_subversion}.tar.gz",
+        )
+        gtdb_taxdmp_path = download_gtdb_taxdump(
+            gtdb_version=gtdb_version, outpath=gtdb_taxdmp_path
+        )
+        taxdmp_dir = unpack_gtdb_taxdump(
+            tar_file=gtdb_taxdmp_path, gtdb_version=gtdb_version
+        )
+        combined_faa_path = Path(
+            self.config.get("databases", "gtdb"),
+            f"autometa_formatted_gtdb-version-{gtdb_version}.{gtdb_subversion}.faa.gz",
+        )
+        aa_reps_path = download_proteins_aa_reps(
+            host=gtdb_taxdump_url,
+            version=gtdb_version,
+            subversion=gtdb_subversion,
+            outpath=aa_reps_path,
+        )
+        create_combined_gtdb_fasta(tar_file=aa_reps_path, outpath=combined_faa_path)
+        return {
+            "taxdmp_dir": taxdmp_dir,
+            "gtdb_aa_reps_path": aa_reps_path,
+            "combined_faa_path": combined_faa_path,
+        }
 
     def press_hmms(self) -> None:
         """hmmpress markers hmm database files.
@@ -809,19 +853,15 @@ def main():
     elif args.update_ncbi:
         section = "ncbi"
     elif args.update_gtdb:
-        if not os.path.exists(
-            dbs.config.get("gtdb", "proteins_aa_reps")
-        ) and not os.path.exists(dbs.config.get("gtdb", "gtdb_taxdmp")):
-            logger.info(f"GTDB database downloading: ")
-            dbs.download_gtdb_files()
-        # Format GTDB amino acid database
-        gtdb_combined = create_gtdb_db(
-            reps_faa=dbs.config.get("gtdb", "proteins_aa_reps"),
-            dbdir=dbs.config.get("databases", "gtdb"),
-        )
+        paths = dbs.download_and_format_gtdb_files()
+
+        database_path = str(paths.get("combined_faa_path")).replace(".faa.gz", ".dmnd")
+        if os.path.exists(database_path):
+            logger.info(f"GTDB DIAMOND database already exists: {database_path}")
+            sys.exit(0)
         diamond.makedatabase(
-            fasta=gtdb_combined,
-            database=gtdb_combined.replace(".faa", ".dmnd"),
+            fasta=str(paths.get("combined_faa_path")),
+            database=str(paths.get("combined_faa_path")).replace(".faa.gz", ".dmnd"),
             cpus=args.nproc,
         )
         sys.exit(0)

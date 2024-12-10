@@ -13,17 +13,17 @@ Markers
 #######
 
 .. code-block:: bash
-    
+
     # Point Autometa to where you would like your markers database directory
     autometa-config \
         --section databases --option markers \
         --value <path/to/your/markers/database/directory>
-    
+
     # Update your markers database directory
     autometa-update-databases --update-markers
 
 .. alert::
-    
+
     Do NOT use a trailing slash, e.g. NO ``/`` for the database directory paths!
 
 Links to these markers files and their associated cutoff values are below:
@@ -68,7 +68,7 @@ Genome Taxonomy Database (GTDB)
 ###############################
 
 If you would like to incorporate the benefits of using the Genome Taxonomy Database,
-you can either run the following script or manually download the respective databases.
+you can either run the following script or manually download the respective databases. GTDB version 220 or later is required.
 
 .. code-block:: bash
 
@@ -81,7 +81,7 @@ you can either run the following script or manually download the respective data
     autometa-config \
         --section gtdb --option release \
         --value latest
-        # Or --value r207 or --value r202, etc.
+        # Or a version number like `--value 220`, or `--value 220.0`, etc.
 
     # Download and format the configured GTDB databases release
     autometa-update-databases --update-gtdb
@@ -93,28 +93,21 @@ you can either run the following script or manually download the respective data
 
     See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
 
-The previous command will download the following GTDB databases and format the `gtdb_proteins_aa_reps.tar.gz` to generate `gtdb.dmnd` to be used by Autometa:
+The previous command will download the following GTDB databases and format them for use by Autometa. The filenames will be modified to include the release version number for reproducibility.
+
+The original files
 
 - Amino acid sequences of representative genome
-    - `gtdb_proteins_aa_reps.tar.gz <https://data.gtdb.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
+    - `gtdb_proteins_aa_reps.tar.gz <https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz>`_
 - gtdb-taxdump.tar.gz from `shenwei356/gtdb-taxdump <https://github.com/shenwei356/gtdb-taxdump/releases>`_
     - `gtdb-taxdump.tar.gz <https://github.com/shenwei356/gtdb-taxdump/releases/latest/download/gtdb-taxdump.tar.gz>`_
 
 
-Once unzipped `gtdb-taxdump.tar.gz` will have the taxdump files of all the respective GTDB releases. 
-Make sure that the release you use is in line with the `gtdb_proteins_aa_reps.tar.gz` release version. 
-It's better to always use the latest version. 
+The initial download and formatting of the GTDB databases can take some time. The GTDB databases are large, and downloading/formatting requires ~283 GB of hard disk space.
 
-All the taxonomy files for a specific taxonomy database should be in a single directory. 
-You can now copy the taxdump files of the desired release version in the sample directory as `gtdb.dmnd`
+For version 220, the file sizes are approximately:
 
-Alternatively if you have manually downloaded `gtdb_proteins_aa_reps.tar.gz` and `gtdb-taxdump.tar.gz` you can run the 
-following command to format the `gtdb_proteins_aa_reps.tar.gz` to generate `gtdb.dmnd` and make it ready for Autometa.
-
-.. code-block:: bash
-
-    autometa-setup-gtdb --reps-faa <path/to/gtdb_proteins_aa_reps.tar.gz> --dbdir <path/to/output_directory> --cpus 20
-
-.. note::
-
-    Again Make sure that the formatted `gtdb_proteins_aa_reps.tar.gz` database and gtdb taxdump files are in the same directory. 
+- 77 MB gtdb-taxdump-version-220.tar.gz
+- 67 GB gtdb_proteins_aa_reps-version-220.tar.gz
+- 149 GB autometa_formatted_gtdb-version-220.0.dmnd
+- 103 MB ./gtdb_taxdump-version-220/
