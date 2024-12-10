@@ -32,19 +32,19 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
     name: pytest & codecov
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Cache conda
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/conda_pkgs_dir
           key: ${{ runner.os }}-conda-py${{ matrix.python-version }}-${{ hashFiles('tests/environment.yml') }}
       - name: Cache test data
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: tests/data/test_data.json
           key: ${{ runner.os }}-test-data
       - name: Setup mamba
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python-version }}
           mamba-version: "*"
@@ -70,7 +70,7 @@ jobs:
         shell: bash -l {0}
         run: python -m pytest --cov-report=xml --cov=autometa tests/
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
           env_vars: OS,PYTHON
           flags: unittests
