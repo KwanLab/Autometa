@@ -63,7 +63,7 @@ class GTDB(TaxonomyDatabase):
         self.names_fpath = os.path.join(dbdir, "names.dmp")
         self.merged_fpath = os.path.join(dbdir, "merged.dmp")
         self.delnodes_fpath = os.path.join(dbdir, "delnodes.dmp")
-        self.verify_databases()
+        # self.verify_databases()
         self.names = self.parse_names()
         self.nodes = self.parse_nodes()
         self.merged = self.parse_merged()

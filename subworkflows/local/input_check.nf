@@ -4,37 +4,41 @@
 
 nextflow.enable.dsl=2
 
-params.options = [:]
 
-include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check' addParams( options: params.options )
+
+include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 
 workflow INPUT_CHECK {
     take:
         samplesheet // file: /path/to/samplesheet.csv
 
     main:
+        ch_versions = Channel.empty()
+
         SAMPLESHEET_CHECK ( samplesheet )
+        ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
 
         // reads channel
-        SAMPLESHEET_CHECK.out
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_fastq_channel(it) }
             .set { reads }
         // metagenome channel
-        SAMPLESHEET_CHECK.out
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_metagenome_channel(it) }
             .set { metagenome }
 
         // coverage channel
-        SAMPLESHEET_CHECK.out
+        SAMPLESHEET_CHECK.out.csv
             .splitCsv ( header:true, sep:',' )
             .map { create_coverage_channel(it) }
             .set { coverage }
     emit:
-        reads      // channel: [ val(meta), [ reads ] ]
-        metagenome // channel: [ val(meta), [ assembly ]]
-        coverage   // channel: [ val(meta), [ coverage ]]
+        reads = reads      // channel: [ val(meta), [ reads ] ]
+        metagenome = metagenome // channel: [ val(meta), [ assembly ]]
+        coverage = coverage   // channel: [ val(meta), [ coverage ]]
+        versions = ch_versions
 }
 
 

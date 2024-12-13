@@ -1,14 +1,9 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
+// Not implemented yet but thought was to split to parallelize prodigal
 process SEQKIT_SPLIT {
     tag "Splitting $meta.id for parallel processing"
     label 'process_medium'
 
-    conda (params.enable_conda ? "bioconda::seqkit=0.16.1" : null)
+    conda "bioconda::seqkit=0.16.1"
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/seqkit:0.16.1--h9ee0642_0"
     } else {
@@ -20,19 +15,25 @@ process SEQKIT_SPLIT {
 
     output:
         tuple val(meta), path("outfolder/*")    , emit: fasta
-        path "*.version.txt"                    , emit: version
+        path "versions.yml"                     , emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
 
     script:
-        def software = getSoftwareName(task.process)
-        def prefix   = options.suffix ? "${meta.id}${options.suffix}" : "${meta.id}"
+        def args = task.ext.args ?: ''
+        def args2 = task.ext.args2 ?: ''
         """
         seqkit \\
             split \\
             ${fasta} \\
-            ${options.args} \\
-            ${options.args2} \\
+            ${args} \\
+            ${args2} \\
             -O outfolder
 
-        seqkit version | sed 's/seqkit v//g' > ${software}.version.txt
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            seqkit: \$( seqkit | sed '3!d; s/Version: //' )
+        END_VERSIONS
         """
 }

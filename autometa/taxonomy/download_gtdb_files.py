@@ -9,6 +9,8 @@ import re
 
 from tqdm import tqdm
 
+from autometa.config.utilities import DEFAULT_FPATH
+
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -312,3 +314,39 @@ def download_and_format(gtdb_host, gtdb_version, single_dir, force=False):
         "aa_reps_path": aa_reps_path,
         "combined_gtdb_fasta": combined_gtdb_fasta,
     }
+
+
+
+def main():
+    import argparse
+    import logging as logger
+
+    logger.basicConfig(
+        format="[%(asctime)s %(levelname)s] %(name)s: %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        level=logger.DEBUG,
+    )
+    parser = argparse.ArgumentParser(
+        description="Download GTDB files",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--version",
+        help="GTDB version to download, 'latest' to get the latest version, otherwise specify a version number.",
+        default="220",
+    )
+    parser.add_argument(
+        "--host",
+        help="GTDB host to download files from.",
+        default="data.gtdb.ecogenomic.org",
+    )
+    parser.add_argument(
+        "--outdir",
+        help="Directory to save the downloaded files.",
+        required=True        
+    )
+    args = parser.parse_args()
+    download_and_format(gtdb_host=args.host, gtdb_version=args.version, single_dir=args.outdir)
+
+if __name__ == "__main__":
+    main()

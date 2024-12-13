@@ -1,13 +1,26 @@
 {
-    "name": "nf-core/autometa",
-    "homePage": "https://github.com/nf-core/autometa",
+    "name": "autometa",
+    "homePage": "https://github.com/KwanLab/Autometa",
     "repos": {
-        "nf-core/modules": {
-            "bowtie2/align": {
-                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
-            },
-            "prodigal": {
-                "git_sha": "e937c7950af70930d1f34bb961403d9d2aa81c7d"
+        "https://github.com/nf-core/modules.git": {
+            "modules": {
+                "nf-core": {
+                    "bowtie2/align": {
+                        "branch": "master",
+                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": ["modules"]
+                    },
+                    "custom/dumpsoftwareversions": {
+                        "branch": "master",
+                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": ["modules"]
+                    },
+                    "prodigal": {
+                        "branch": "master",
+                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": ["modules"]
+                    }
+                }
             }
         }
     }

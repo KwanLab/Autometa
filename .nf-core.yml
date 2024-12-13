@@ -14,7 +14,6 @@ lint:
     - docs/images/nf-core-autometa_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.md
     - .github/ISSUE_TEMPLATE/feature_request.md
-
   files_unchanged:
     - manifest
     - .github/CONTRIBUTING.md
@@ -30,10 +29,11 @@ lint:
     - LICENSE
     - .github/PULL_REQUEST_TEMPLATE.md
     - lib/NfcoreTemplate.groovy
-
   actions_ci:
     - .github/workflows/ci.yml
-
   schema_lint: true
   template_strings: false
-  nextflow_config: false
+  nextflow_config:
+    - manifest.name
+    - manifest.homePage
+repository_type: pipeline

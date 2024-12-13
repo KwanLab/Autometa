@@ -5,6 +5,72 @@
 =======================
 
 
+Ultra-Quick Start
+#############
+
+If you already have Nextflow and Docker installed the following commands will get you started. For detailed instructions see the sections following this.
+
+
+.. code-block:: bash
+
+    # change this to your desired directories
+    example_dir="/tmp/autometa_test"
+    single_database_dir="/tmp/autometa_test/database_directory"
+
+    # make the needed subdirectories
+    mkdir -p $example_dir $example_dir/output
+    cd $example_dir
+
+    # download small example data
+    curl -L -H "Accept: application/vnd.github.v3.raw" https://github.com/KwanLab/autometa_test_data/raw/refs/heads/main/minimal/combined_nucleotide.fna.gz -o $example_dir/combined_nucleotide.fna.gz
+    curl -L -H "Accept: application/vnd.github.v3.raw" https://github.com/KwanLab/autometa_test_data/raw/refs/heads/main/minimal/reads_1.fastq.gz -o $example_dir/reads_1.fastq.gz
+    curl -L -H "Accept: application/vnd.github.v3.raw" https://github.com/KwanLab/autometa_test_data/raw/refs/heads/main/minimal/reads_2.fastq.gz -o $example_dir/reads_2.fastq.gz
+    curl -L -H "Accept: application/vnd.github.v3.raw" https://github.com/KwanLab/autometa_test_data/raw/refs/heads/main/minimal/database_directory/prot.accession2taxid.gz -o $example_dir/database_directory/prot.accession2taxid.gz
+    curl -L -H "Accept: application/vnd.github.v3.raw" https://github.com/KwanLab/autometa_test_data/raw/refs/heads/main/minimal/database_directory/nr.dmnd -o $example_dir/database_directory/nr.dmnd
+
+    # Create a sample sheet
+    sample_sheet="$example_dir/autometa_test_samplesheet.csv"
+    echo "sample,assembly,fastq_1,fastq_2,coverage_tab,cov_from_assembly" > $sample_sheet
+    echo "example_1,${example_dir}/combined_nucleotide.fna.gz,${example_dir}/reads_1.fastq.gz,${example_dir}/reads_2.fastq.gz,,0" >> $sample_sheet
+
+    # Run Autometa without taxon splitting
+    nextflow run KwanLab/Autometa \
+        -profile docker \
+        --input $sample_sheet \
+        --outdir ${example_dir}/output \
+        --max_memory '16.GB' \
+        --max_cpus 9 \
+        --max_time '8.h'
+
+    # Or use NCBI nr to split contigs by taxonomy
+    nextflow run KwanLab/Autometa \
+        -profile docker \
+        --input $sample_sheet \
+        --taxonomy_aware \
+        --outdir ${example_dir}/output \
+        --single_db_dir ${single_database_dir} \
+        --autometa_image_tag 'dev' \
+        --large_downloads_permission \
+        --max_memory '16.GB' \
+        --max_cpus 9 \
+        --max_time '8.h'
+
+    # Or with GTDB refinement
+        nextflow run KwanLab/Autometa \
+            -profile docker  \
+            --input $sample_sheet \
+            --taxonomy_aware \
+            --outdir ${example_dir}/output_gtdb \
+            --single_db_dir ${single_database_dir} \
+            --autometa_image_tag 'dev' \
+            --use_gtdb \
+            --gtdb_version '220' \
+            --gtdb_dir ${single_database_dir} \
+            --large_downloads_permission \
+            --max_memory '16.GB' \
+            --max_cpus 9 \
+            --max_time '8.h'
+
 Why nextflow?
 #############
 
@@ -227,12 +293,6 @@ Then copy the following code block into that new file ("agrp" is the slurm parti
             slurm {
                 process.executor       = "slurm"
                 process.queue          = "agrp" // <<-- change this to whatever your partition is called
-                docker.enabled         = true
-                docker.userEmulation   = true
-                singularity.enabled    = false
-                podman.enabled         = false
-                shifter.enabled        = false
-                charliecloud.enabled   = false
                 executor {
                     queueSize = 8
                 }
@@ -609,7 +669,7 @@ may still use multiple cores.
 Databases
 *********
 
-Autometa uses the following NCBI databases throughout its pipeline:
+When the Autometa workflow is run with the `--taxonomy_aware` flag it will use NCBI nr databases to help bin contigs. If the databases aren't present and you include the `--large_downloads_permission` flag, the workflow will download and format the following databases:
 
 - Non-redundant nr database
     - `ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz <https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz>`_
@@ -618,18 +678,27 @@ Autometa uses the following NCBI databases throughout its pipeline:
 - nodes.dmp, names.dmp and merged.dmp - Found within
     - `ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz <ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz>`_
 
-If you are running autometa for the first time you'll have to download these databases.
-You may use ``autometa-update-databases --update-ncbi``. This will download the databases to the default path. You can check
-the default paths using ``autometa-config --print``. If you need to change the default download directory you can use
-``autometa-config --section databases --option ncbi --value <path/to/new/ncbi_database_directory>``.
-See ``autometa-update-databases -h`` and ``autometa-config -h`` for full list of options.
+Additionally, the NCBI-taxonomy based taxa assignments can be refined using GTDB. To do so you must use the flag `--use_gtdb` and, optionally, the version of GTDB you would like to use with the `--gtdb_version` flag.
+
+If the `--large_downloads_permission` is provided the workflow will handle the downloading and formatting of the following files; and you should let it because it isn't straightforward to do manually.
+
+- GTDB taxdump
+    - `https://github.com/shenwei356/gtdb-taxdump/releases <https://github.com/shenwei356/gtdb-taxdump/releases>`_
+- GTDB database
+    - e.g. `https://data.gtdb.ecogenomic.org/releases/release220/220.0/genomic_files_reps/gtdb_proteins_aa_reps_r220.tar.gz <https://data.gtdb.ecogenomic.org/releases/release220/220.0/genomic_files_reps/gtdb_proteins_aa_reps_r220.tar.gz>`_
 
 In your ``nf-params.json`` file you also need to specify the directory where the different databases are present.
-Make sure that the directory path contains the following databases:
 
-- Diamond formatted nr file => nr.dmnd
-- Extracted files from tarball taxdump.tar.gz
-- prot.accession2taxid.gz
+The easiest method is to just set `--single_db_dir` to the directory where all the databases will stored and let the workflow handle the rest.
+If you want finer control you can direct the workflow to specific database directories using the following parameters:
+
+- `--nr_dmnd_dir`
+- `--lca_dir`
+- `--prot_accession2taxid_gz_dir`
+- `--taxdump_tar_gz_dir`
+- `--gtdb_dir`
+
+
 
 .. code-block::
 

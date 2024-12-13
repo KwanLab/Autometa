@@ -20,7 +20,7 @@ LABEL maintainer="jason.kwan@wisc.edu"
 # along with Autometa. If not, see <http://www.gnu.org/licenses/>.
 
 RUN apt-get update --allow-releaseinfo-change \
-    && apt-get install -y procps make \
+    && apt-get install -y procps make curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -28,6 +28,8 @@ COPY autometa-env.yml ./
 RUN mamba env update -n base --file=autometa-env.yml \
     && mamba clean --all -y
 
+RUN mamba env update -n base --file=autometa-env.yml \
+    && mamba clean --all -y
 
 COPY . /Autometa
 WORKDIR /Autometa
@@ -42,6 +44,11 @@ RUN hmmpress -f autometa/databases/markers/bacteria.single_copy.hmm \
     && autometa-config --section databases --option base --value ${DB_DIR} \
     && echo "databases base directory set in ${DB_DIR}/"
 
+
+# make the /scratch/dbs directory available to anyone
+RUN chmod -R 755 /scratch/dbs
+
+    
 RUN echo "Testing autometa import" \
     && python -c "import autometa"
 
@@ -67,3 +74,5 @@ RUN echo "Checking autometa entrypoints" \
     && autometa-binning-ldm-loginfo -h > /dev/null \
     && autometa-benchmark -h > /dev/null \
     && autometa-download-dataset -h > /dev/null
+
+ENV NUMBA_CACHE_DIR=/tmp

@@ -63,7 +63,10 @@ def download(
             file_id = df.loc[(community_size, file_name), "file_id"]
             file_id_filepath = os.path.join(community_size_outdir, file_name)
             url = f"https://drive.google.com/uc?id={file_id}"
-
+            # if the file already exists, skip downloading
+            if os.path.exists(file_id_filepath):
+                logger.info(f"File {file_name} already exists in {community_size_outdir}. Skipping download.")
+                continue
             gdown.download(url, file_id_filepath)
 
 

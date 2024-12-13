@@ -1,19 +1,29 @@
-include { COUNT_KMERS as COUNT            } from '../../modules/local/count_kmers'     addParams( options: params.count_kmers_options      )
-include { NORMALIZE_KMERS as NORMALIZE    } from '../../modules/local/normalize_kmers' addParams( options: params.normalize_kmers_options  )
-include { EMBED_KMERS as EMBED            } from '../../modules/local/embed_kmers'     addParams( options: params.embed_kmers_options      )
+include { COUNT_KMERS as COUNT            } from '../../modules/local/count_kmers'
+include { NORMALIZE_KMERS as NORMALIZE    } from '../../modules/local/normalize_kmers'
+include { EMBED_KMERS as EMBED            } from '../../modules/local/embed_kmers'
 
 
 workflow KMERS {
     take:
         fasta
     main:
+        ch_versions = Channel.empty()
+
         COUNT(fasta)
+        ch_versions = ch_versions.mix(COUNT.out.versions)
+
         NORMALIZE(COUNT.out.counts)
+        ch_versions = ch_versions.mix(NORMALIZE.out.versions)
+
         EMBED(NORMALIZE.out.normalized)
+        ch_versions = ch_versions.mix(EMBED.out.versions)
+
     emit:
         counts = COUNT.out.counts
         normalized = NORMALIZE.out.normalized
         embedded = EMBED.out.embedded
+        versions = ch_versions
+
 }
 
 /*
