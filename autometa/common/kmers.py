@@ -586,9 +586,12 @@ def embed(
             f"{method} not in embedding methods. Choices: {', '.join(choices)}"
         )
     # PCA
-    n_samples, n_components = df.shape
+
     # Drop any rows that all cols contain NaN. This may occur if the contig length is below the k-mer size
     X = df.dropna(axis="index", how="all").fillna(0).to_numpy()
+    n_samples, n_components = df.shape
+
+    logger.warning(f"n_samples: {n_samples} n_components: {n_components}")
     # Set random state using provided seed
     random_state = np.random.RandomState(seed)
     if isinstance(pca_dimensions, str):
@@ -599,11 +602,15 @@ def embed(
                 f"pca_dimensions must be an integer! given: {pca_dimensions}"
             )
     if n_components > pca_dimensions and pca_dimensions != 0:
+        if n_samples < pca_dimensions:
+            logging.error(
+                f"n_samples ({n_samples}) is less than pca_dimensions ({pca_dimensions}), lowering pca_dimensions to {min(n_samples, pca_dimensions)} ."
+            )
+            pca_dimensions = min(n_samples, pca_dimensions)
         logger.debug(
             f"Performing decomposition with PCA (seed {seed}): {n_components} to {pca_dimensions} dims"
         )
         X = PCA(n_components=pca_dimensions, random_state=random_state).fit_transform(X)
-        # X = PCA(n_components='mle').fit_transform(X)
         n_samples, n_components = X.shape
 
     logger.debug(f"{method}: {n_samples} data points and {n_components} dimensions")

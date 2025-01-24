@@ -43,6 +43,7 @@ setup(
             "autometa-download-dataset = autometa.validation.datasets:main",
             "autometa-cami-format = autometa.validation.cami:main",
             "autometa-benchmark = autometa.validation.benchmark:main",
+            "autometa-download-gtdb = autometa.taxonomy.download_gtdb_files:main",
             "autometa = autometa.__main__:main",
         ]
     },
