@@ -62,6 +62,7 @@ workflow TAXON_SPLIT {
         // Step 1: Generate combinations of meta and fna_file and flatten them correctly
         // handle if multiple fna files are present
         SPLIT_KINGDOMS.out.fna.map { meta, fna_file ->
+            fna_file = fna_file instanceof List ? fna_file : [fna_file]
             [[meta], fna_file].combinations()
         }.flatten().collate(2) // Creates pairs of [meta, fna_file]
         .set { tempch1 }
